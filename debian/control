@@ -1,0 +1,54 @@
+Source: ubuntu-location-service
+Priority: extra
+Maintainer: Thomas Voß <thomas.voss@canonical.com>
+Build-Depends: debhelper (>= 8.0.0), 
+	       cmake, 
+	       libboost-program-options-dev, 
+	       libboost-system-dev, 
+	       libgtest-dev, 
+	       libdbus-1-dev, 
+	       dbus-cpp-dev, 
+	       doxygen,
+	       libgoogle-glog-dev,
+	       graphviz, 
+	       google-mock, 
+	       dbus-test-runner, 
+	       lcov, 
+	       geoclue-ubuntu-geoip, 
+	       libplatform-api1-dev, 
+	       libubuntu-platform-api1-dev, 
+	       libwpsapi-dev,
+	       curl, 
+	       libiw-dev,
+	       ruby-ronn
+Standards-Version: 3.9.4
+Homepage: http://launchpad.net/location-service
+
+Package: libubuntu-location-service0
+Section: libs
+Architecture: any
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
+Description: A location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains the shared library needed by client applications.
+
+Package: libubuntu-location-service-dev
+Section: libdevel
+Architecture: any
+Depends: libubuntu-location-service0,
+	 ${misc:Depends}
+Description: A location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains header files required to develop clients talking to the ubuntu location service.
+
+Package: ubuntu-location-service-examples
+Architecture: any
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
+Description: A location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains example service and client.

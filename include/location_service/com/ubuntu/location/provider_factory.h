@@ -1,0 +1,48 @@
+#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDER_FACTORY_H_
+#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDER_FACTORY_H_
+
+#include "com/ubuntu/location/provider.h"
+
+#include <functional>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <string>
+
+namespace com
+{
+namespace ubuntu
+{
+namespace location
+{
+class Provider;
+
+class ProviderFactory
+{
+  public:
+    typedef std::map<std::string, std::string> Configuration; // TODO(tvoss): Make this a little more sophisticated.
+    typedef std::function<Provider::Ptr(const Configuration&)> Factory;
+
+    static ProviderFactory& instance();
+
+    void add_factory_for_name(const std::string& name, const Factory& factory);
+
+    Provider::Ptr create_provider_for_name_with_config(const std::string& name, const Configuration& config);
+
+    void enumerate(const std::function<void(const std::string&, const Factory&)>& enumerator);
+
+  private:
+    ProviderFactory() = default;
+    ~ProviderFactory() = default;
+
+    ProviderFactory(const ProviderFactory&) = delete;
+    ProviderFactory& operator=(const ProviderFactory&) = delete;
+
+    std::mutex guard;
+    std::map<std::string, Factory> factory_store;    
+};
+}
+}
+}
+
+#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDER_FACTORY_H_
