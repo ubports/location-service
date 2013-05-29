@@ -16,7 +16,6 @@ Build-Depends: debhelper (>= 8.0.0),
 	       geoclue-ubuntu-geoip, 
 	       libplatform-api1-dev, 
 	       libubuntu-platform-api1-dev, 
-	       libwpsapi-dev,
 	       curl, 
 	       libiw-dev,
 	       ruby-ronn
