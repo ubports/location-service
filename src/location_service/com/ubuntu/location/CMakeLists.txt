@@ -7,7 +7,7 @@ add_library(
   default_provider_set.cpp
   
   engine.cpp
-  logging.cpp
+  init_and_shutdown.cpp
   position.cpp
   provider.cpp
   provider_factory.cpp

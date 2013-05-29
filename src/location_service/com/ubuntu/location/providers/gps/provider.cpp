@@ -117,6 +117,11 @@ static void on_agps_ril_request_ref_lock(uint32_t /*flags*/, void* /*context*/)
     VLOG(1) << __PRETTY_FUNCTION__;
 }
 
+    static void on_gps_xtra_download_request(void*)
+    {
+        VLOG(1) << __PRETTY_FUNCTION__;
+    }
+
     void start() 
     { 
         ubuntu_gps_start(gps_handle);
@@ -130,6 +135,8 @@ static void on_agps_ril_request_ref_lock(uint32_t /*flags*/, void* /*context*/)
     UbuntuGpsParams gps_params;
     UbuntuGps gps_handle;
 };
+
+
 
 std::string culg::Provider::class_name()
 {
@@ -165,7 +172,7 @@ culg::Provider::Provider()
     d->gps_params.nmea_cb = culg::Provider::Private::on_nmea_update;
     d->gps_params.set_capabilities_cb = culg::Provider::Private::on_set_capabilities;
     d->gps_params.request_utc_time_cb = culg::Provider::Private::on_request_utc_time;
-    d->gps_params.xtra_download_request_cb = nullptr;
+    d->gps_params.xtra_download_request_cb = culg::Provider::Private::on_gps_xtra_download_request;
     
     d->gps_params.agps_status_cb = culg::Provider::Private::on_agps_status_update;
     

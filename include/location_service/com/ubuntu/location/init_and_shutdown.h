@@ -15,23 +15,22 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/logging.h"
+#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_INIT_AND_SHUTDOWN_H_
+#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_INIT_AND_SHUTDOWN_H_
 
-namespace
+namespace com
 {
-struct LoggingInitializer
+namespace ubuntu
 {
-    LoggingInitializer()
-    {
-        google::InitGoogleLogging("com.ubuntu.location");
-    }
+namespace location
+{
+/** \brief Initializes the library. */
+void init(int* argc, char*** argv);
 
-    ~LoggingInitializer()
-    {
-        google::ShutdownGoogleLogging();
-    }
-};
-
-static LoggingInitializer logging_initializer;
+/** \brief Shuts down the library and frees all acquired resources. */
+void shutdown();
+}
+}
 }
 
+#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_INIT_AND_SHUTDOWN_H_

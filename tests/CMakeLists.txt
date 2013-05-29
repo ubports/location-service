@@ -16,46 +16,61 @@ endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
 add_executable(
     acceptance_tests
     acceptance_tests.cpp
+    test_main.cpp
 )
 
 add_executable(
     accuracy_tests
     accuracy_tests.cpp
+    test_main.cpp
+)
+
+add_executable(
+    controller_test
+    controller_test.cpp
+    test_main.cpp
 )
 
 add_executable(
     default_permission_manager_test
     default_permission_manager_test.cpp
+    test_main.cpp
 )
 
 add_executable(
     engine_test
     engine_test.cpp
+    test_main.cpp
 )
 
 add_executable(
     position_test
     position_test.cpp
+    test_main.cpp
 )
 
 add_executable(
     heading_test
     heading_test.cpp
+    test_main.cpp
 )
 
 add_executable(
     velocity_test
     velocity_test.cpp
+    test_main.cpp
 )
 
 add_executable(
     wgs84_test
     wgs84_test.cpp
+    test_main.cpp
 )
 
 add_executable(
     provider_test
     provider_test.cpp
+    test_main.cpp
 )
 
 target_link_libraries(
@@ -66,8 +81,8 @@ target_link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
+    
     gtest
-    gtest_main
 )
 
 target_link_libraries(
@@ -78,9 +93,9 @@ target_link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
+    
     gmock
     gtest
-    gtest_main
 )
 
 target_link_libraries(
@@ -91,8 +106,8 @@ target_link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
+    
     gtest
-    gtest_main
 )
 
 target_link_libraries(
@@ -103,8 +118,8 @@ target_link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
+    
     gtest
-    gtest_main
 )
 
 target_link_libraries(
@@ -115,8 +130,8 @@ target_link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
+    
     gtest
-    gtest_main
 )
 
 target_link_libraries(
@@ -127,8 +142,8 @@ target_link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
+    
     gtest
-    gtest_main
 )
 
 target_link_libraries(
@@ -139,9 +154,9 @@ target_link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
+    
     gmock
     gtest
-    gtest_main
 )
 
 target_link_libraries(
@@ -153,7 +168,6 @@ target_link_libraries(
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
     gtest
-    gtest_main
 )
 
 target_link_libraries(
@@ -165,7 +179,19 @@ target_link_libraries(
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
     gtest
-    gtest_main
+)
+
+target_link_libraries(
+    controller_test
+
+    ubuntu-location-service
+
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${Boost_LIBRARIES}
+    ${DBUS_LIBRARIES}
+
+    gmock
+    gtest
 )
 
 if (LOCATION_SERVICE_ENABLE_GPS_PROVIDERS)
@@ -213,6 +239,7 @@ endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
 
 add_test(provider_test provider_test)
 add_test(accuracy_tests accuracy_tests)
+add_test(controller_test controller_test)
 add_test(default_permission_manager_test default_permission_manager_test)
 add_test(engine_test engine_test)
 add_test(position_test position_test)
