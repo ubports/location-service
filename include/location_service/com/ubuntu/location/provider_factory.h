@@ -18,6 +18,7 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDER_FACTORY_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDER_FACTORY_H_
 
+#include "com/ubuntu/location/configuration.h"
 #include "com/ubuntu/location/provider.h"
 
 #include <functional>
@@ -37,7 +38,7 @@ class Provider;
 class ProviderFactory
 {
   public:
-    typedef std::map<std::string, std::string> Configuration; // TODO(tvoss): Make this a little more sophisticated.
+    typedef com::ubuntu::location::Configuration Configuration;
     typedef std::function<Provider::Ptr(const Configuration&)> Factory;
 
     static ProviderFactory& instance();

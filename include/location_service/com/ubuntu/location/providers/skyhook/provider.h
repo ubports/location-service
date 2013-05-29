@@ -19,6 +19,7 @@
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_SKYHOOK_PROVIDER_H_
 
 #include "com/ubuntu/location/provider.h"
+#include "com/ubuntu/location/provider_factory.h"
 
 #include <memory>
 
@@ -35,14 +36,17 @@ namespace skyhook
 class Provider : public com::ubuntu::location::Provider
 {
   public:
-    static Provider::Ptr create_instance(
-        const std::map<std::string, std::string>& configuration);
+    static Provider::Ptr create_instance(const ProviderFactory::Configuration& config);
     
     static const Provider::FeatureFlags& default_feature_flags();
     static const Provider::RequirementFlags& default_requirement_flags();
 
     struct Configuration
     {
+        static std::string key_username() { return "username"; }
+        static std::string key_realm() { return "realm"; }
+        static std::string key_period() { return "period"; }
+
         std::string user_name;
         std::string realm;
         std::chrono::milliseconds period;

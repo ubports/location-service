@@ -7,7 +7,7 @@ set(UBUNTU_LOCATION_SERVICE_VERSION_MINOR 0)
 set(UBUNTU_LOCATION_SERVICE_VERSION_PATCH 1)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -pedantic -Wextra -fPIC -pthread")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fno-strict-aliasing -pedantic -Wextra -fPIC -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Werror -Wall -fno-strict-aliasing -pedantic -Wextra -fPIC -pthread")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -22,6 +22,21 @@ find_package(Boost 1.49 COMPONENTS system program_options)
 find_package(GLog)
 pkg_check_modules(DBUS dbus-1)
 pkg_check_modules(DBUS_CPP dbus-cpp)
+
+#####################################################################
+# Enable code coverage calculation with gcov/gcovr/lcov
+# Usage:
+#  * Switch build type to coverage (use ccmake or cmake-gui)
+#  * Invoke make, make test, make coverage
+#  * Find html report in subdir coveragereport
+#  * Find xml report feasible for jenkins in coverage.xml
+#####################################################################
+IF(CMAKE_BUILD_TYPE MATCHES [cC][oO][vV][eE][rR][aA][gG][eE])
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftest-coverage -fprofile-arcs" )
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftest-coverage -fprofile-arcs" )
+  SET(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -ftest-coverage -fprofile-arcs" )
+  SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -ftest-coverage -fprofile-arcs" )
+ENDIF(CMAKE_BUILD_TYPE MATCHES [cC][oO][vV][eE][rR][aA][gG][eE])
 
 include_directories(
   ${Boost_INCLUDE_DIRS}
@@ -39,3 +54,9 @@ add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(tests)
 
+# There's no nice way to format this. Thanks CMake.
+add_test(LGPL-required
+  /bin/sh -c "! grep -rl 'GNU General' ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/include"
+)
+
+enable_coverage_report(service)

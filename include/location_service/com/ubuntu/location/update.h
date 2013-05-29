@@ -31,6 +31,10 @@ namespace location
 template<typename T>
 struct Update
 {
+    Update(const T& value = T{}, const Clock::Timestamp& when = Clock::Timestamp{}) : value{value}, when{when}
+    {
+    }
+
     bool operator==(const Update<T>& rhs) const
     {
         return value == rhs.value && when == rhs.when;

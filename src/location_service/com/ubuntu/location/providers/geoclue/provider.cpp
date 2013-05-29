@@ -79,8 +79,8 @@ struct culpg::Provider::Private
 cul::Provider::Ptr culpg::Provider::create_instance(const cul::ProviderFactory::Configuration& config)
 {
     culpg::Provider::Configuration pConfig;
-    pConfig.name = config.count("name") > 0 ? config.at("name") : throw std::runtime_error("Missing bus-name");
-    pConfig.path = config.count("path") > 0 ? config.at("path") : throw std::runtime_error("Missing bus-path");
+    pConfig.name = config.count(Configuration::key_name()) > 0 ? config.get<std::string>(Configuration::key_name()) : throw std::runtime_error("Missing bus-name");
+    pConfig.path = config.count(Configuration::key_path()) > 0 ? config.get<std::string>(Configuration::key_path()) : throw std::runtime_error("Missing bus-path");
     return cul::Provider::Ptr{new culpg::Provider{pConfig}};
 }
 

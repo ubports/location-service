@@ -105,7 +105,13 @@ cul::Provider::Controller::Controller(cul::Provider& instance)
     : instance(instance),
       position_updates_counter(0),
       heading_updates_counter(0),
-      velocity_updates_counter(0)
+      velocity_updates_counter(0),
+      cached
+      {
+          Cache<Update<Position>>{},
+          Cache<Update<Velocity>>{},
+          Cache<Update<Heading>>{}
+      }
 {
     position_update_connection =
             instance.subscribe_to_position_updates(

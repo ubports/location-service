@@ -92,7 +92,7 @@ int main(int argc, char** argv)
                 
                 std::cout << "\t" << key << " -> " << value << std::endl;
 
-                config_lut[provider][key] = value;
+                config_lut[provider].put(key, value);
             });
 
         try

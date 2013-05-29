@@ -20,8 +20,10 @@
 #include "com/ubuntu/location/logging.h"
 #include "com/ubuntu/location/provider_factory.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wignored-qualifiers"
 #include <wpsapi.h>
-
+#pragma GCC diagnostic pop
 #include <map>
 #include <thread>
 
@@ -169,15 +171,13 @@ WPS_Continuation culs::Provider::Private::periodic_callback(void* context,
     
 cul::Provider::Ptr culs::Provider::create_instance(const cul::ProviderFactory::Configuration& config)
 {
-    culs::Provider::Configuration configuration{"", "", std::chrono::milliseconds{100}};
-    configuration.user_name = config.count("username") > 0 ? config.at("username") : "";
-    configuration.realm = config.count("realm") > 0 ? config.at("realm") : "";
-    if (config.count("period"))
+    culs::Provider::Configuration configuration
     {
-        int64_t value;
-        std::stringstream ss(config.at("period"));
-        ss >> value; configuration.period = std::chrono::milliseconds{value};
-    }
+        config.get(Configuration::key_username(), ""), 
+        config.get(Configuration::key_realm(), ""),
+        std::chrono::milliseconds{config.get(Configuration::key_period(), 500)}
+    };
+
     return cul::Provider::Ptr{new culs::Provider{configuration}};
 }
 

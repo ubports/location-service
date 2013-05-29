@@ -41,6 +41,8 @@ class Provider : public com::ubuntu::location::Provider
 
     struct Configuration
     {
+        static std::string key_name() { return "name"; }
+        static std::string key_path() { return "path"; }
         std::string name;
         std::string path;
 
