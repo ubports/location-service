@@ -19,7 +19,6 @@
 #include "com/ubuntu/location/service/default_permission_manager.h"
 
 #include "com/ubuntu/location/default_provider_selection_policy.h"
-#include "com/ubuntu/location/default_provider_set.h"
 
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
@@ -47,7 +46,7 @@ cul::ProviderSelectionPolicy::Ptr culs::DefaultConfiguration::the_provider_selec
 std::set<cul::Provider::Ptr> culs::DefaultConfiguration::the_provider_set(
     const cul::Provider::Ptr& seed)
 {
-    return default_provider_set(seed);
+    return std::set<cul::Provider::Ptr>{seed};
 }
 
 culs::PermissionManager::Ptr culs::DefaultConfiguration::the_permission_manager()
