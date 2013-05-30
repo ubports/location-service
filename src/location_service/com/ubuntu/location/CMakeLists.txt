@@ -4,7 +4,6 @@ add_library(
   ubuntu-location-service SHARED
 
   default_provider_selection_policy.cpp
-  default_provider_set.cpp
   
   engine.cpp
   init_and_shutdown.cpp
