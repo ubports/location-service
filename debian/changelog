@@ -1,3 +1,11 @@
+ubuntu-location-service (0.0.1-1ubuntu1) UNRELEASED; urgency=low
+
+  * debian/compat, debian/rules, debian/control, debian/copyright:
+    - Modifications related to compliance with our packaging standards
+  * Automatic snapshot from revision 6 (bootstrap)
+
+ -- Łukasz 'sil2100' Zemczak <lukasz.zemczak@canonical.com>  Tue, 04 Jun 2013 17:54:09 +0200
+
 ubuntu-location-service (0.0.1-1) raring; urgency=low
 
   * Initial release
