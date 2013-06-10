@@ -32,6 +32,14 @@ struct Criteria;
 
 struct ProviderSelection
 {
+    ProviderSelection(const Provider::Ptr position = Provider::Ptr{},
+                      const Provider::Ptr heading = Provider::Ptr{},
+                      const Provider::Ptr velocity = Provider::Ptr{}) : position_updates_provider(position),
+                                                      heading_updates_provider(heading),
+                                                      velocity_updates_provider(velocity)
+    {
+    }
+    
     Provider::FeatureFlags to_feature_flags() const
     {
         Provider::FeatureFlags flags;
@@ -46,6 +54,13 @@ struct ProviderSelection
     Provider::Ptr heading_updates_provider;
     Provider::Ptr velocity_updates_provider;
 };
+
+inline bool operator==(const ProviderSelection& lhs, const ProviderSelection& rhs)
+{
+    return lhs.position_updates_provider == rhs.position_updates_provider &&
+            lhs.heading_updates_provider == rhs.heading_updates_provider &&
+            lhs.velocity_updates_provider == rhs.velocity_updates_provider;
+}
 
 class ProviderSelectionPolicy
 {

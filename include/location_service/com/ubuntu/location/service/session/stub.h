@@ -29,7 +29,7 @@
 
 #include <org/freedesktop/dbus/stub.h>
 
-#include <functional>
+#include <memory>
 
 namespace com
 {
@@ -45,11 +45,14 @@ class Stub : public org::freedesktop::dbus::Stub<Interface>
 {
   public:
     Stub(
-        const org::freedesktop::dbus::Bus::Ptr& bus, 
-        const org::freedesktop::dbus::types::ObjectPath& session_path); 
+        const org::freedesktop::dbus::Bus::Ptr& bus,
+        const org::freedesktop::dbus::types::ObjectPath& session_path);
+    Stub(const Stub&) = delete;
+    virtual ~Stub() noexcept;
+    Stub& operator=(const Stub&) = delete;
 
     virtual const org::freedesktop::dbus::types::ObjectPath& path() const;
-    
+
     virtual void start_position_updates();
     virtual void stop_position_updates() noexcept;
 
@@ -60,12 +63,8 @@ class Stub : public org::freedesktop::dbus::Stub<Interface>
     virtual void stop_heading_updates() noexcept;
 
   private:
-    void update_heading(DBusMessage* msg);
-    void update_position(DBusMessage* msg);
-    void update_velocity(DBusMessage* msg);
-
-    org::freedesktop::dbus::types::ObjectPath session_path;
-    org::freedesktop::dbus::Object::Ptr object;
+    struct Private;
+    std::unique_ptr<Private> d;
 };
 }
 }

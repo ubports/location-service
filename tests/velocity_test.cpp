@@ -27,6 +27,11 @@ TEST(Velocity, constructing_a_velocity_with_invalid_value_throws)
         com::ubuntu::location::Velocity::min().value() - std::numeric_limits<double>::min());
     double d = dist(rng);
     EXPECT_ANY_THROW(com::ubuntu::location::Velocity v {d*com::ubuntu::location::units::MetersPerSecond};);
+    dist = std::uniform_real_distribution<double>(
+        com::ubuntu::location::Velocity::max().value() + std::numeric_limits<double>::min(),
+        std::numeric_limits<double>::max());
+    d = dist(rng);
+    EXPECT_NO_THROW(com::ubuntu::location::Velocity v {d*com::ubuntu::location::units::MetersPerSecond};);
 }
 
 TEST(Velocity, constructing_a_velocity_with_a_valid_value_does_not_throw)

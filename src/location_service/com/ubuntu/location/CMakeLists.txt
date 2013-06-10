@@ -14,9 +14,11 @@ add_library(
 
   service/default_configuration.cpp
   service/default_permission_manager.cpp
+  service/implementation.cpp
   service/skeleton.cpp
   service/stub.cpp
 
+  service/session/implementation.cpp
   service/session/interface.cpp
   service/session/skeleton.cpp
   service/session/stub.cpp

@@ -140,13 +140,10 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
         com::ubuntu::location::Provider::Ptr helper(dummy);
         com::ubuntu::location::service::DefaultConfiguration config;
         
-        auto location_service =
-        org::freedesktop::dbus::announce_service_on_bus<
-            com::ubuntu::location::service::Interface, 
-            com::ubuntu::location::service::Implementation
-        >(bus,
-          config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
-          config.the_permission_manager());
+        com::ubuntu::location::service::Implementation service(bus,
+                                                               config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+                                                               config.the_permission_manager());
+
 
         sync_start.signal_ready();
 

@@ -22,9 +22,7 @@
 #include "com/ubuntu/location/service/permission_manager.h"
 #include "com/ubuntu/location/service/session/interface.h"
 
-#include <org/freedesktop/dbus/dbus.h>
 #include <org/freedesktop/dbus/skeleton.h>
-#include <org/freedesktop/dbus/types/object_path.h>
 
 namespace com
 {
@@ -41,19 +39,13 @@ class Skeleton : public org::freedesktop::dbus::Skeleton<com::ubuntu::location::
     typedef std::shared_ptr<Skeleton> Ptr;
     
     Skeleton(const dbus::Bus::Ptr& connection, const PermissionManager::Ptr& permission_manager);
+    Skeleton(const Skeleton&) = delete;
+    Skeleton& operator=(const Skeleton&) = delete;
     ~Skeleton() noexcept;
 
   private:
-    struct SessionWrapper;
-
-    void handle_create_session_for_criteria(DBusMessage* msg);
-    void remove_session(const std::shared_ptr<SessionWrapper>& session);
-    
-    PermissionManager::Ptr permission_manager;
-    dbus::DBus daemon;
-    dbus::Object::Ptr object;
-    std::mutex guard;
-    std::map<dbus::types::ObjectPath, std::shared_ptr<SessionWrapper>> session_store;
+    struct Private;
+    std::shared_ptr<Private> d;
 };
 }
 }
