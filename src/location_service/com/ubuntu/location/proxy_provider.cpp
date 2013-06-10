@@ -70,23 +70,23 @@ void cul::ProxyProvider::stop_position_updates()
 void cul::ProxyProvider::start_velocity_updates()
 {
     if (velocity_updates_provider)
-        position_updates_provider->state_controller()->start_velocity_updates();
+        velocity_updates_provider->state_controller()->start_velocity_updates();
 }
 
 void cul::ProxyProvider::stop_velocity_updates()
 {
     if (velocity_updates_provider)
-        position_updates_provider->state_controller()->stop_velocity_updates();
+        velocity_updates_provider->state_controller()->stop_velocity_updates();
 }    
 
 void cul::ProxyProvider::start_heading_updates()
 {
     if (heading_updates_provider)
-        position_updates_provider->state_controller()->start_heading_updates();
+        heading_updates_provider->state_controller()->start_heading_updates();
 }
 
 void cul::ProxyProvider::stop_heading_updates()
 {
     if (heading_updates_provider)
-        position_updates_provider->state_controller()->stop_heading_updates();
+        heading_updates_provider->state_controller()->stop_heading_updates();
 }

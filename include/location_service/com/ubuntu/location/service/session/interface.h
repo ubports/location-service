@@ -26,7 +26,6 @@
 #include "com/ubuntu/location/velocity.h"
 
 #include <org/freedesktop/dbus/codec.h>
-#include <org/freedesktop/dbus/service.h>
 #include <org/freedesktop/dbus/traits/service.h>
 #include <org/freedesktop/dbus/types/object_path.h>
 
@@ -97,7 +96,7 @@ public:
         inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
     };
 
-    struct StartPositionUpdates 
+    struct StartPositionUpdates
     {
         typedef com::ubuntu::location::service::session::Interface Interface;
 
@@ -115,7 +114,7 @@ public:
         inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
     };
 
-    struct StopPositionUpdates 
+    struct StopPositionUpdates
     {
         typedef com::ubuntu::location::service::session::Interface Interface;
 
@@ -133,7 +132,7 @@ public:
         inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
     };
 
-    struct StartVelocityUpdates 
+    struct StartVelocityUpdates
     {
         typedef com::ubuntu::location::service::session::Interface Interface;
 
@@ -151,7 +150,7 @@ public:
         inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
     };
 
-    struct StopVelocityUpdates 
+    struct StopVelocityUpdates
     {
         typedef com::ubuntu::location::service::session::Interface Interface;
 
@@ -169,7 +168,7 @@ public:
         inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
     };
 
-    struct StartHeadingUpdates 
+    struct StartHeadingUpdates
     {
         typedef com::ubuntu::location::service::session::Interface Interface;
 
@@ -187,7 +186,7 @@ public:
         inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
     };
 
-    struct StopHeadingUpdates 
+    struct StopHeadingUpdates
     {
         typedef com::ubuntu::location::service::session::Interface Interface;
 
@@ -214,15 +213,15 @@ public:
     typedef std::shared_ptr<Interface> Ptr;
 
     Interface(const Interface&) = delete;
-    Interface& operator=(const Interface&) = delete;
     virtual ~Interface() noexcept;
+    Interface& operator=(const Interface&) = delete;
 
     virtual const org::freedesktop::dbus::types::ObjectPath& path() const = 0;
 
     ChannelConnection install_position_updates_handler(std::function<void(const Update<Position>&)> handler);
     ChannelConnection install_velocity_updates_handler(std::function<void(const Update<Velocity>&)> handler);
     ChannelConnection install_heading_updates_handler(std::function<void(const Update<Heading>&)> handler);
-    
+
     virtual void start_position_updates() = 0;
     virtual void stop_position_updates() noexcept = 0;
     virtual void start_velocity_updates() = 0;
@@ -231,16 +230,15 @@ public:
     virtual void stop_heading_updates() noexcept = 0;
 
 protected:
-    Interface() = default;
+    Interface();
 
     Channel<Update<Position>>& access_position_updates_channel();
     Channel<Update<Heading>>& access_heading_updates_channel();
     Channel<Update<Velocity>>& access_velocity_updates_channel();
 
 private:
-    Channel<Update<Position>> position_updates_channel;
-    Channel<Update<Heading>> heading_updates_channel;
-    Channel<Update<Velocity>> velocity_updates_channel;
+    struct Private;
+    std::unique_ptr<Private> d;
 };
 }
 }

@@ -35,16 +35,14 @@ namespace ubuntu
 {
 namespace location
 {
+
 struct Criteria;
+
 namespace service
 {
 class Interface
 {
   protected:
-    friend class ServiceStub;
-    friend class ServiceSkeleton;
-    friend class Service;
-
     struct Errors
     {
         struct InsufficientPermissions { inline static std::string name() { return "com.ubuntu.location.Service.Error.InsufficientPermissions"; } };

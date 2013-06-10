@@ -35,13 +35,15 @@ class Stub : public org::freedesktop::dbus::Stub<Interface>
 {
   public:
     Stub(const dbus::Bus::Ptr& connection);
+    Stub(const Stub&) = delete;
+    Stub& operator=(const Stub&) = delete;
     ~Stub() noexcept;
 
     session::Interface::Ptr create_session_for_criteria(const Criteria& criteria);
 
   private:
-    org::freedesktop::dbus::Bus::Ptr bus;
-    org::freedesktop::dbus::Object::Ptr object;
+    struct Private;
+    std::unique_ptr<Private> d;
 };
 }
 }

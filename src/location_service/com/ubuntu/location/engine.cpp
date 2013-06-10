@@ -21,9 +21,8 @@
 
 namespace cul = com::ubuntu::location;
 
-cul::Engine::Engine(
-    const std::set<cul::Provider::Ptr>& initial_providers,
-    const cul::ProviderSelectionPolicy::Ptr& provider_selection_policy)
+cul::Engine::Engine(const std::set<cul::Provider::Ptr>& initial_providers,
+                    const cul::ProviderSelectionPolicy::Ptr& provider_selection_policy)
         : providers(initial_providers),
           provider_selection_policy(provider_selection_policy)
 {
@@ -45,7 +44,7 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
 {
     if (!provider)
         throw std::runtime_error("Cannot add null provider");
-    
+
     providers.insert(provider);
 }
 
@@ -53,4 +52,3 @@ void cul::Engine::remove_provider(const cul::Provider::Ptr& provider) noexcept
 {
     providers.erase(provider);
 }
-

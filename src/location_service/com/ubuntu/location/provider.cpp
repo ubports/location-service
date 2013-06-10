@@ -206,26 +206,9 @@ void cul::Provider::deliver_velocity_updates(const cul::Update<cul::Velocity>& u
     velocity_updates_channel(update);
 }
 
-void cul::Provider::start_position_updates()
-{
-}
-
-void cul::Provider::stop_position_updates()
-{
-}
-
-void cul::Provider::start_heading_updates()
-{
-}
-
-void cul::Provider::stop_heading_updates()
-{
-}
-
-void cul::Provider::start_velocity_updates()
-{
-}
-
-void cul::Provider::stop_velocity_updates()
-{
-}
+void cul::Provider::start_position_updates() {}
+void cul::Provider::stop_position_updates() {}
+void cul::Provider::start_heading_updates() {}
+void cul::Provider::stop_heading_updates() {}
+void cul::Provider::start_velocity_updates() {}
+void cul::Provider::stop_velocity_updates() {}

@@ -50,6 +50,12 @@ add_executable(
 )
 
 add_executable(
+    provider_selection_policy_test
+    provider_selection_policy_test.cpp
+    test_main.cpp
+)
+
+add_executable(
     heading_test
     heading_test.cpp
     test_main.cpp
@@ -70,6 +76,12 @@ add_executable(
 add_executable(
     provider_test
     provider_test.cpp
+    test_main.cpp
+)
+
+add_executable(
+    provider_factory_test
+    provider_factory_test.cpp
     test_main.cpp
 )
 
@@ -111,6 +123,19 @@ target_link_libraries(
 )
 
 target_link_libraries(
+    provider_selection_policy_test
+
+    ubuntu-location-service
+    
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${Boost_LIBRARIES}
+    ${DBUS_LIBRARIES}
+    
+    gmock
+    gtest
+)
+
+target_link_libraries(
     heading_test
     
     ubuntu-location-service
@@ -148,6 +173,19 @@ target_link_libraries(
 
 target_link_libraries(
     provider_test
+
+    ubuntu-location-service
+
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${Boost_LIBRARIES}
+    ${DBUS_LIBRARIES}
+    
+    gmock
+    gtest
+)
+
+target_link_libraries(
+    provider_factory_test
 
     ubuntu-location-service
 
@@ -243,6 +281,8 @@ add_test(controller_test controller_test)
 add_test(default_permission_manager_test default_permission_manager_test)
 add_test(engine_test engine_test)
 add_test(position_test position_test)
+add_test(provider_factory_test provider_factory_test)
+add_test(provider_selection_policy_test provider_selection_policy_test)
 add_test(heading_test heading_test)
 add_test(velocity_test velocity_test)
 add_test(wgs84_test wgs84_test)

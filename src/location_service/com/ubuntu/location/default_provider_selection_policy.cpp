@@ -122,4 +122,3 @@ cul::Provider::Ptr cul::DefaultProviderSelectionPolicy::determine_velocity_updat
     return matching_providers.empty() ? Provider::Ptr {} :
     *matching_providers.begin();
 }
-

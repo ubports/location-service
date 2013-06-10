@@ -42,29 +42,21 @@ namespace service
 {
 namespace session
 {
-class Skeleton : public org::freedesktop::dbus::Skeleton<Interface>              
+class Skeleton : public org::freedesktop::dbus::Skeleton<Interface>
 {
   public:
     Skeleton(
-        const org::freedesktop::dbus::Bus::Ptr& bus, 
+        const org::freedesktop::dbus::Bus::Ptr& bus,
         const org::freedesktop::dbus::types::ObjectPath& session_path);
-    
+    Skeleton(const Skeleton&) = delete;
     virtual ~Skeleton() noexcept;
-    
+    Skeleton& operator=(const Skeleton&) = delete;
+
     virtual const org::freedesktop::dbus::types::ObjectPath& path() const;
 
   private:
-    void handle_start_position_updates(DBusMessage* msg);
-    void handle_stop_position_updates(DBusMessage* msg);
-
-    void handle_start_velocity_updates(DBusMessage* msg);
-    void handle_stop_velocity_updates(DBusMessage* msg);
-
-    void handle_start_heading_updates(DBusMessage* msg);
-    void handle_stop_heading_updates(DBusMessage* msg);
-
-    org::freedesktop::dbus::types::ObjectPath session_path;
-    org::freedesktop::dbus::Object::Ptr object;
+    struct Private;
+    std::unique_ptr<Private> d;
 };
 }
 }
