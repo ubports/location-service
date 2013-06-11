@@ -1,4 +1,5 @@
 Source: ubuntu-location-service
+Section: utils
 Priority: optional
 Maintainer: Thomas Voß <thomas.voss@canonical.com>
 Build-Depends: cmake,
@@ -39,7 +40,7 @@ Description: A location service aggregating position/velocity/heading
 Package: libubuntu-location-service-dev
 Section: libdevel
 Architecture: any
-Depends: libubuntu-location-service0,
+Depends: libubuntu-location-service0 (= ${binary:Version}),
          ${misc:Depends},
 Description: A location service aggregating position/velocity/heading
  updates and exporting them over dbus.
