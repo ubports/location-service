@@ -20,6 +20,7 @@
 #include <boost/program_options/variables_map.hpp>
 
 #include <functional>
+#include <iostream>
 
 namespace com {
 namespace ubuntu {
