@@ -42,7 +42,7 @@ Package: libubuntu-location-service-dev
 Section: libdevel
 Architecture: all
 Multi-Arch: foreign
-Depends: libubuntu-location-service0 (= ${source:Version}),
+Depends: libubuntu-location-service0 (= ${binary:Version}),
          ${misc:Depends},
 Description: location service aggregating position/velocity/heading
  updates and exporting them over dbus.
