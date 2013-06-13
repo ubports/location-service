@@ -57,7 +57,7 @@ add_custom_target(
 
 install(
     TARGETS service client
-    DESTINATION bin/${CMAKE_PROJECT_NAME}/examples/
+    DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/examples/
 )
 
 install(

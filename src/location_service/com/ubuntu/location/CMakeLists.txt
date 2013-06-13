@@ -48,5 +48,5 @@ target_link_libraries(
 
 install(
   TARGETS ubuntu-location-service
-  DESTINATION lib
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )

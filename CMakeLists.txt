@@ -17,6 +17,8 @@ include(cmake/FindGLog.cmake)
 include(cmake/PrePush.cmake)
 include(CTest)
 
+include(GNUInstallDirs)
+
 find_package(PkgConfig)
 find_package(Boost 1.49 COMPONENTS system program_options)
 find_package(GLog)
