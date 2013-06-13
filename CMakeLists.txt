@@ -17,6 +17,8 @@ include(cmake/FindGLog.cmake)
 include(cmake/PrePush.cmake)
 include(CTest)
 
+include(GNUInstallDirs)
+
 find_package(PkgConfig)
 find_package(Boost 1.49 COMPONENTS system program_options)
 find_package(GLog)
@@ -37,6 +39,11 @@ IF(CMAKE_BUILD_TYPE MATCHES [cC][oO][vV][eE][rR][aA][gG][eE])
   SET(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -ftest-coverage -fprofile-arcs" )
   SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -ftest-coverage -fprofile-arcs" )
 ENDIF(CMAKE_BUILD_TYPE MATCHES [cC][oO][vV][eE][rR][aA][gG][eE])
+
+option (DISABLE_ERROR_ON_LOCAL_TYPEDEFS_WARNINGS "Disable errors when local typedefs are unused" ON)
+if (DISABLE_ERROR_ON_LOCAL_TYPEDEFS_WARNINGS)
+	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=unused-local-typedefs")
+endif (DISABLE_ERROR_ON_LOCAL_TYPEDEFS_WARNINGS)
 
 include_directories(
   ${Boost_INCLUDE_DIRS}
