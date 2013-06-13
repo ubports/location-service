@@ -33,7 +33,7 @@ Architecture: any
 Multi-Arch: same
 Depends: ${misc:Depends},
          ${shlibs:Depends},
-Description: A location service aggregating position/velocity/heading
+Description: location service aggregating position/velocity/heading
  updates and exporting them over dbus.
  .
  Contains the shared library needed by client applications.
@@ -42,19 +42,20 @@ Package: libubuntu-location-service-dev
 Section: libdevel
 Architecture: all
 Multi-Arch: foreign
-Depends: libubuntu-location-service0 (= ${binary:Version}),
+Depends: libubuntu-location-service0 (= ${source:Version}),
          ${misc:Depends},
-Description: A location service aggregating position/velocity/heading
+Description: location service aggregating position/velocity/heading
  updates and exporting them over dbus.
  .
- Contains header files required to develop clients talking to the ubuntu location service.
+ Contains header files required to develop clients talking to the ubuntu
+ location service.
 
 Package: ubuntu-location-service-examples
 Architecture: any
 Multi-Arch: same
 Depends: ${misc:Depends},
          ${shlibs:Depends},
-Description: A location service aggregating position/velocity/heading
+Description: location service aggregating position/velocity/heading
  updates and exporting them over dbus.
  .
  Contains example service and client.
