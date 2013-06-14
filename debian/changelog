@@ -1,4 +1,4 @@
-ubuntu-location-service (0.0.1-0ubuntu1) UNRELEASED; urgency=low
+location-service (0.0.1-0ubuntu1) UNRELEASED; urgency=low
 
   * debian/compat, debian/rules, debian/control, debian/copyright:
     - Modifications related to compliance with our packaging standards

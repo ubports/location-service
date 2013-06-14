@@ -1,4 +1,4 @@
-Source: ubuntu-location-service
+Source: location-service
 Section: utils
 Priority: optional
 Maintainer: Thomas Voß <thomas.voss@canonical.com>
