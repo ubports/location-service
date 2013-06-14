@@ -1,7 +1,24 @@
-location-service (0.0.1-0ubuntu1) UNRELEASED; urgency=low
+location-service (0.0.1daily13.06.14.1-0ubuntu1) saucy; urgency=low
 
+  [ Łukasz 'sil2100' Zemczak ]
   * debian/compat, debian/rules, debian/control, debian/copyright:
     - Modifications related to compliance with our packaging standards
   * Automatic snapshot from revision 6 (bootstrap)
 
- -- Łukasz 'sil2100' Zemczak <lukasz.zemczak@canonical.com>  Tue, 04 Jun 2013 17:54:09 +0200
+  [ Thomas Voß ]
+  * Clean up the overall source tree and add additional tests.
+  * * Fix test-cases to rely on proper floating point comparisons.
+
+  [ Didier Roche ]
+  * add section and -dev -> binary dep
+  * Fix the FTBFS due to the new saucy toolchain. Add multi-arch
+    support, fix the binary paths (libexec). Fix some lintian issues.
+
+  [ Łukasz 'sil2100' Zemczak ]
+  * Fix the FTBFS due to the new saucy toolchain. Add multi-arch
+    support, fix the binary paths (libexec). Fix some lintian issues.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 12
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 14 Jun 2013 15:25:24 +0000
