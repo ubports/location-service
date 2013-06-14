@@ -50,5 +50,5 @@ TEST(Velocity, a_velocity_contains_value_passed_at_construction)
             com::ubuntu::location::Velocity::max().value());
     double d = dist(rng);
     com::ubuntu::location::Velocity v {d* com::ubuntu::location::units::MetersPerSecond};
-    EXPECT_EQ(d * com::ubuntu::location::units::MetersPerSecond, v.value);
+    EXPECT_DOUBLE_EQ(d, v.value.value());
 }

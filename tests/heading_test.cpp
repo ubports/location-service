@@ -41,5 +41,5 @@ TEST(Heading, a_heading_contains_value_passed_at_construction)
             com::ubuntu::location::Heading::max().value());
     double d = dist(rng);
     com::ubuntu::location::Heading h {d* com::ubuntu::location::units::Degrees};
-    EXPECT_EQ(d * com::ubuntu::location::units::Degrees, h.value);
+    EXPECT_DOUBLE_EQ(d, h.value.value());
 }
