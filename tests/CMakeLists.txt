@@ -11,7 +11,7 @@ if (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
     message(STATUS "Executing test suite under dbus-test-runner")
 endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
 
-# Build with system gmock and embeeded gtest
+# Build with system gmock and embedded gtest
 set (GMOCK_INCLUDE_DIR "/usr/include/gmock/include" CACHE PATH "gmock source include directory")
 set (GMOCK_SOURCE_DIR "/usr/src/gmock" CACHE PATH "gmock source directory")
 set (GTEST_INCLUDE_DIR "${GMOCK_SOURCE_DIR}/gtest/include" CACHE PATH "gtest source include directory")
