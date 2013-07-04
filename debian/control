@@ -40,7 +40,7 @@ Description: location service aggregating position/velocity/heading
 
 Package: libubuntu-location-service-dev
 Section: libdevel
-Architecture: all
+Architecture: any
 Multi-Arch: foreign
 Depends: libubuntu-location-service0 (= ${binary:Version}),
          ${misc:Depends},
