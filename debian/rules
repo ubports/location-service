@@ -14,7 +14,10 @@ DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 export DPKG_GENSYMBOLS_CHECK_LEVEL=4
 
 %:
-	dh $@
+	dh $@ --parallel --fail-missing
+
+override_dh_install:
+	dh_install -Xubuntu-location-service.1 --fail-missing
 
 override_dh_auto_configure:
 	dh_auto_configure -- -DCMAKE_INSTALL_LIBEXECDIR=/usr/lib/$(DEB_HOST_MULTIARCH)/ubuntu-location-service
