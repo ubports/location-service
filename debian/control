@@ -55,7 +55,20 @@ Architecture: any
 Multi-Arch: same
 Depends: ${misc:Depends},
          ${shlibs:Depends},
+         ubuntu-location-service-doc,
 Description: location service aggregating position/velocity/heading
  updates and exporting them over dbus.
  .
  Contains example service and client.
+
+Package: ubuntu-location-service-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         libubuntu-location-service-dev,
+Recommends: ubuntu-location-service-examples,
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains documentation for service and client.
