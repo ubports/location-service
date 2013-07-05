@@ -1,3 +1,14 @@
+location-service (0.0.1+13.10.20130705-0ubuntu1) saucy; urgency=low
+
+  [ Didier Roche ]
+  * Ship a -doc package now to install the documentation. In addition to
+    it, build in parallel as well as check for missing files.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 16
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 05 Jul 2013 02:01:11 +0000
+
 location-service (0.0.1daily13.06.18-0ubuntu1) saucy; urgency=low
 
   * Automatic snapshot from revision 14
