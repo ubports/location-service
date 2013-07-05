@@ -44,6 +44,7 @@ Architecture: any
 Multi-Arch: foreign
 Depends: libubuntu-location-service0 (= ${binary:Version}),
          ${misc:Depends},
+Suggests: ubuntu-location-service-doc
 Description: location service aggregating position/velocity/heading
  updates and exporting them over dbus.
  .
