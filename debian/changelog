@@ -1,3 +1,9 @@
+location-service (0.0.1+13.10.20130709-0ubuntu1) saucy; urgency=low
+
+  * Automatic snapshot from revision 18
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 09 Jul 2013 02:02:37 +0000
+
 location-service (0.0.1+13.10.20130705-0ubuntu1) saucy; urgency=low
 
   [ Didier Roche ]
