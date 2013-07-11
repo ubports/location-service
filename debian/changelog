@@ -1,3 +1,14 @@
+location-service (0.0.1+13.10.20130711-0ubuntu1) saucy; urgency=low
+
+  [ Didier Roche ]
+  * Adapt to new gmock snapshot (which doesn't ship anymore shared lib).
+    (LP: #1185265)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 20
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 11 Jul 2013 02:01:50 +0000
+
 location-service (0.0.1+13.10.20130709-0ubuntu1) saucy; urgency=low
 
   * Automatic snapshot from revision 18
