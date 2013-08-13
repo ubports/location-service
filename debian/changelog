@@ -1,3 +1,14 @@
+location-service (0.0.1+13.10.20130813-0ubuntu1) saucy; urgency=low
+
+  [ Thomas Voß ]
+  * Adjust build and runtime dependency to use the hardware bits of the
+    platform API.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 22
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 13 Aug 2013 10:06:35 +0000
+
 location-service (0.0.1+13.10.20130711-0ubuntu1) saucy; urgency=low
 
   [ Didier Roche ]
