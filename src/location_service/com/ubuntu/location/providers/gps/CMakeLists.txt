@@ -6,16 +6,16 @@ option(
 
 if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
   find_file(
-    UBUNTU_APPLICATION_GPS_H ubuntu_application_gps.h
-    NAMES ubuntu/application/ubuntu_application_gps.h
+    UBUNTU_HARDWARE_GPS_H gps.h
+    NAMES ubuntu/hardware/gps.h
   )
 
-  if (UBUNTU_APPLICATION_GPS_H)
+  if (UBUNTU_HARDWARE_GPS_H)
     message(STATUS "Enabling GPS location provider")
 
     add_library(gps provider.cpp)
 
-    target_link_libraries(gps ubuntu_application_api)
+    target_link_libraries(gps ubuntu_platform_hardware_api.so)
   
     set(
       ENABLED_PROVIDER_TARGETS
@@ -27,5 +27,5 @@ if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
       -DCOM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GPS ${ENABLED_PROVIDER_TARGETS_DEFINITIONS}
       PARENT_SCOPE
     )
-  endif (UBUNTU_APPLICATION_GPS_H)
+  endif (UBUNTU_HARDWARE_GPS_H)
 endif (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)

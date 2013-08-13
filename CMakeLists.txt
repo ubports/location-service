@@ -22,8 +22,8 @@ include(GNUInstallDirs)
 find_package(PkgConfig)
 find_package(Boost 1.49 COMPONENTS system program_options)
 find_package(GLog)
-pkg_check_modules(DBUS dbus-1)
-pkg_check_modules(DBUS_CPP dbus-cpp)
+pkg_check_modules(DBUS dbus-1 REQUIRED)
+pkg_check_modules(DBUS_CPP dbus-cpp REQUIRED)
 
 #####################################################################
 # Enable code coverage calculation with gcov/gcovr/lcov

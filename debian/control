@@ -17,8 +17,8 @@ Build-Depends: cmake,
                libgoogle-glog-dev,
                libgtest-dev,
                libiw-dev,
-               libplatform-api1-dev,
-               libubuntu-platform-api1-dev,
+               libplatform-hardware-api-headers,
+               libplatform-hardware-api1-dev,
                ruby-ronn,
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/location-service
