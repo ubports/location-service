@@ -19,7 +19,7 @@
 
 #include "com/ubuntu/location/logging.h"
 
-#include <ubuntu/application/ubuntu_application_gps.h>
+#include <ubuntu/hardware/gps.h>
 
 namespace cul = com::ubuntu::location;
 namespace culg = com::ubuntu::location::providers::gps;
@@ -28,45 +28,45 @@ namespace
 {
 static const std::map<uint16_t, std::string> status_lut = 
 {
-    {UBUNTU_GPS_STATUS_NONE, "UBUNTU_GPS_STATUS_NONE"},
-    {UBUNTU_GPS_STATUS_SESSION_BEGIN, "UBUNTU_GPS_STATUS_SESSION_BEGIN"},
-    {UBUNTU_GPS_STATUS_SESSION_END, "UBUNTU_GPS_STATUS_SESSION_END"},
-    {UBUNTU_GPS_STATUS_ENGINE_ON, "UBUNTU_GPS_STATUS_ENGINE_ON"},
-    {UBUNTU_GPS_STATUS_ENGINE_OFF, "UBUNTU_GPS_STATUS_ENGINE_OFF"}
+    {U_HARDWARE_GPS_STATUS_NONE, "U_HARDWARE_GPS_STATUS_NONE"},
+    {U_HARDWARE_GPS_STATUS_SESSION_BEGIN, "U_HARDWARE_GPS_STATUS_SESSION_BEGIN"},
+    {U_HARDWARE_GPS_STATUS_SESSION_END, "U_HARDWARE_GPS_STATUS_SESSION_END"},
+    {U_HARDWARE_GPS_STATUS_ENGINE_ON, "U_HARDWARE_GPS_STATUS_ENGINE_ON"},
+    {U_HARDWARE_GPS_STATUS_ENGINE_OFF, "U_HARDWARE_GPS_STATUS_ENGINE_OFF"}
 };
 }
 
 struct culg::Provider::Private
 {
 
-static void on_location_update(UbuntuGpsLocation* location, void* context)
+static void on_location_update(UHardwareGpsLocation* location, void* context)
 {
     auto thiz = static_cast<culg::Provider*>(context);
         
-    if (location->flags & UBUNTU_GPS_LOCATION_HAS_LAT_LONG)
+    if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_LAT_LONG)
     {
-        VLOG(1) << "location->flags & UBUNTU_GPS_LOCATION_HAS_LAT_LONG";
+        VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_LAT_LONG";
 
         cul::Position pos;
         pos.latitude(cul::wgs84::Latitude{location->latitude * cul::units::Degrees});
         pos.longitude(cul::wgs84::Longitude{location->longitude * cul::units::Degrees});
-        if(location->flags & UBUNTU_GPS_LOCATION_HAS_ALTITUDE)
+        if(location->flags & U_HARDWARE_GPS_LOCATION_HAS_ALTITUDE)
             pos.altitude(cul::wgs84::Altitude{location->altitude * cul::units::Meters});
         
         thiz->deliver_position_updates(cul::Update<cul::Position>{pos, cul::Clock::now()});
     }
     
-    if (location->flags & UBUNTU_GPS_LOCATION_HAS_SPEED)
+    if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_SPEED)
     {
-        VLOG(1) << "location->flags & UBUNTU_GPS_LOCATION_HAS_SPEED";
+        VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_SPEED";
         
         cul::Velocity v{location->speed * cul::units::MetersPerSecond};
         thiz->deliver_velocity_updates(cul::Update<cul::Velocity>{v, cul::Clock::now()});
     }
 
-    if (location->flags & UBUNTU_GPS_LOCATION_HAS_BEARING)
+    if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_BEARING)
     {
-        VLOG(1) << "location->flags & UBUNTU_GPS_LOCATION_HAS_BEARING";
+        VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_BEARING";
         
         cul::Heading h{location->bearing * cul::units::Degrees};
         thiz->deliver_heading_updates(cul::Update<cul::Heading>{h, cul::Clock::now()});
@@ -78,7 +78,7 @@ static void on_status_update(uint16_t status, void* /*context*/)
     VLOG(1) << "Status = " << status_lut.at(status);
 }
 
-static void on_sv_status_update(UbuntuGpsSvStatus* sv_info, void* /*context*/)
+static void on_sv_status_update(UHardwareGpsSvStatus* sv_info, void* /*context*/)
 {
     VLOG(1) << "SV status update: [#svs: " << sv_info->num_svs << "]";
 }
@@ -97,12 +97,12 @@ static void on_request_utc_time(void* /*context*/)
     VLOG(1) << __PRETTY_FUNCTION__;
 }
 
-static void on_agps_status_update(UbuntuAgpsStatus* /*status*/, void* /*context*/)
+static void on_agps_status_update(UHardwareGpsAGpsStatus* /*status*/, void* /*context*/)
 {
     VLOG(1) << __PRETTY_FUNCTION__;
 }
 
-static void on_gps_ni_notification(UbuntuGpsNiNotification* /*notification*/, void* /*context*/)
+static void on_gps_ni_notification(UHardwareGpsNiNotification* /*notification*/, void* /*context*/)
 {
     VLOG(1) << __PRETTY_FUNCTION__;
 }
@@ -124,16 +124,16 @@ static void on_agps_ril_request_ref_lock(uint32_t /*flags*/, void* /*context*/)
 
     void start() 
     { 
-        ubuntu_gps_start(gps_handle);
+        u_hardware_gps_start(gps_handle);
     }
     
     void stop() 
     { 
-        ubuntu_gps_stop(gps_handle);
+        u_hardware_gps_stop(gps_handle);
     }
 
-    UbuntuGpsParams gps_params;
-    UbuntuGps gps_handle;
+    UHardwareGpsParams gps_params;
+    UHardwareGps gps_handle;
 };
 
 
@@ -182,13 +182,13 @@ culg::Provider::Provider()
     d->gps_params.request_refloc_cb = culg::Provider::Private::on_agps_ril_request_ref_lock;
     d->gps_params.context = this;
     
-    d->gps_handle = ubuntu_gps_new(std::addressof(d->gps_params));
+    d->gps_handle = u_hardware_gps_new(std::addressof(d->gps_params));
 }
 
 culg::Provider::~Provider() noexcept
 {
     d->stop();
-    ubuntu_gps_delete(d->gps_handle);
+    u_hardware_gps_delete(d->gps_handle);
 }
 
 bool culg::Provider::matches_criteria(const cul::Criteria&)
