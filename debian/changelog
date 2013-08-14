@@ -1,3 +1,18 @@
+location-service (0.0.1+13.10.20130814-0ubuntu1) saucy; urgency=low
+
+  [ Ted Gould ]
+  * Add an upstart config file to examples, adjust path to service
+    executable.
+
+  [ Thomas Voß ]
+  * Add an upstart config file to examples, adjust path to service
+    executable.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 24
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 14 Aug 2013 10:07:04 +0000
+
 location-service (0.0.1+13.10.20130813-0ubuntu1) saucy; urgency=low
 
   [ Thomas Voß ]
