@@ -1,0 +1,5 @@
+description "Location Services"
+
+start on started dbus
+
+exec @CMAKE_INSTALL_LIBEXECDIR@/examples/ubuntu-location-service --bus system --provider gps::Provider
