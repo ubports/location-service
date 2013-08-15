@@ -1,3 +1,13 @@
+location-service (0.0.1+13.10.20130815.1-0ubuntu1) saucy; urgency=low
+
+  [ Thomas Voß ]
+  * Adjust path to service executable.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 26
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 15 Aug 2013 06:06:14 +0000
+
 location-service (0.0.1+13.10.20130814-0ubuntu1) saucy; urgency=low
 
   [ Ted Gould ]
