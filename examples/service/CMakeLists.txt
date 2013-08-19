@@ -5,7 +5,7 @@ find_package(Threads)
 pkg_check_modules(DBUS dbus-1)
 pkg_check_modules(DBUS_CPP dbus-cpp)
 include_directories(
-    ${Boost_INCLUDE_DIRS}    
+    ${Boost_INCLUDE_DIRS}
     ${DBUS_INCLUDE_DIRS}
     ${DBUS_CPP_INCLUDE_DIRS}/dbus
 
@@ -32,7 +32,7 @@ target_link_libraries(
 
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}    
+    ${DBUS_LIBRARIES}
 )
 
 target_link_libraries(
