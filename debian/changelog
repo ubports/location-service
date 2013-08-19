@@ -1,3 +1,13 @@
+location-service (0.0.1+13.10.20130819-0ubuntu1) saucy; urgency=low
+
+  [ Thomas Voß ]
+  * Add linker flags to pkgconfig setup.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 28
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 19 Aug 2013 10:06:44 +0000
+
 location-service (0.0.1+13.10.20130815.1-0ubuntu1) saucy; urgency=low
 
   [ Thomas Voß ]
