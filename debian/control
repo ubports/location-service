@@ -1,3 +1,5 @@
+# Using g{cc,++} 4.7 as the platform-api consumes it and the platform
+# api is stuck with android's 4.7 toolchain.
 Source: location-service
 Section: utils
 Priority: optional
@@ -8,8 +10,8 @@ Build-Depends: cmake,
                dbus-test-runner,
                debhelper (>= 9),
                doxygen,
-               gcc-4.7, # Need to match gcc version of the platform api
-               g++-4.7, # Need to match g++ version of the platform api
+               gcc-4.7,
+               g++-4.7,
                geoclue-ubuntu-geoip,
                google-mock (>= 1.6.0+svn437),
                lcov,
