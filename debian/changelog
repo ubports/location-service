@@ -1,3 +1,13 @@
+location-service (0.0.1+13.10.20130821-0ubuntu1) saucy; urgency=low
+
+  [ Thomas Voß ]
+  * Switch to gcc 4.7.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 30
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 21 Aug 2013 08:04:30 +0000
+
 location-service (0.0.1+13.10.20130819-0ubuntu1) saucy; urgency=low
 
   [ Thomas Voß ]
