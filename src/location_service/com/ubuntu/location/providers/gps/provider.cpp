@@ -75,12 +75,12 @@ static void on_location_update(UHardwareGpsLocation* location, void* context)
 
 static void on_status_update(uint16_t status, void* /*context*/)
 {
-    VLOG(1) << "Status = " << status_lut.at(status);
+    SYSLOG(INFO) << "Status = " << status_lut.at(status);
 }
 
 static void on_sv_status_update(UHardwareGpsSvStatus* sv_info, void* /*context*/)
 {
-    VLOG(1) << "SV status update: [#svs: " << sv_info->num_svs << "]";
+    SYSLOG_EVERY_N(INFO, 20) << "SV status update: [#svs: " << sv_info->num_svs << "]";
 }
     
 static void on_nmea_update(int64_t /*timestamp*/, const char* /*nmea*/, int /*length*/, void* /*context*/)
