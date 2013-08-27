@@ -1,3 +1,14 @@
+location-service (0.0.1+13.10.20130827-0ubuntu1) saucy; urgency=low
+
+  [ thomas-voss ]
+  * Log gps::Provider status updates to syslog, but only every 20th
+    satellite visibility update.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 32
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 27 Aug 2013 02:10:46 +0000
+
 location-service (0.0.1+13.10.20130821-0ubuntu1) saucy; urgency=low
 
   [ Thomas Voß ]
