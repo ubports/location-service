@@ -23,7 +23,6 @@ Build-Depends: cmake,
                libiw-dev,
                libplatform-hardware-api-headers,
                libplatform-hardware-api1-dev,
-               ruby-ronn,
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/location-service
 # If you aren't a member of ~phablet-team but need to upload packaging changes,
