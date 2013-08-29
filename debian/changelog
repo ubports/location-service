@@ -1,3 +1,13 @@
+location-service (0.0.1+13.10.20130829.1-0ubuntu1) saucy; urgency=low
+
+  [ thomas-voss ]
+  * Remove ruby-ronn from the build-dependencies.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 34
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 29 Aug 2013 15:21:28 +0000
+
 location-service (0.0.1+13.10.20130827-0ubuntu1) saucy; urgency=low
 
   [ thomas-voss ]
