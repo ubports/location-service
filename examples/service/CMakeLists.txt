@@ -51,8 +51,8 @@ add_custom_command(
 )
 
 add_custom_target(
-    ubuntu-location-service-man-page ALL
-    DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/ubuntu-location-service.1"
+    ubuntu-location-service-man-page
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/ubuntu-location-service.1"
 )
 
 install(
@@ -61,6 +61,6 @@ install(
 )
 
 install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/ubuntu-location-service.1
+    FILES ${CMAKE_CURRENT_SOURCE_DIR}/ubuntu-location-service.1
     DESTINATION share/doc/${CMAKE_PROJECT_NAME}/man
 )
