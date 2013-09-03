@@ -44,6 +44,7 @@ target_link_libraries(
   ${Boost_LIBRARIES}
   ${DBUS_LIBRARIES}
   ${GLog_LIBRARY}
+  ${GFlags_LIBRARY}
 )
 
 install(
