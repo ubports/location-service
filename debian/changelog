@@ -1,3 +1,17 @@
+location-service (0.0.1+13.10.20130903-0ubuntu1) saucy; urgency=low
+
+  [ thomas-voss ]
+  * * Remove build-dependency on lcov. * Add build-dependency on
+    graphviz. * Add "Pre-Depends: ${misc:Pre-Depends}" for libubuntu-
+    location-service0. * Add MultiArch: foreign for ubuntu-location-
+    service-doc. * Disable JS-based search engine in doxygen setup to
+    address lintian warning. (LP: #1218896)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 36
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 03 Sep 2013 15:16:22 +0000
+
 location-service (0.0.1+13.10.20130829.1-0ubuntu1) saucy; urgency=low
 
   [ thomas-voss ]
