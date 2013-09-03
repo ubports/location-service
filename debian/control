@@ -14,7 +14,7 @@ Build-Depends: cmake,
                g++-4.7,
                geoclue-ubuntu-geoip,
                google-mock (>= 1.6.0+svn437),
-               lcov,
+               graphviz,
                libboost-program-options-dev,
                libboost-system-dev,
                libdbus-1-dev,
@@ -34,6 +34,7 @@ Package: libubuntu-location-service0
 Section: libs
 Architecture: any
 Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
 Description: location service aggregating position/velocity/heading
@@ -68,6 +69,7 @@ Description: location service aggregating position/velocity/heading
 Package: ubuntu-location-service-doc
 Section: doc
 Architecture: all
+Multi-Arch: foreign
 Depends: ${misc:Depends},
          ${shlibs:Depends},
          libubuntu-location-service-dev,
