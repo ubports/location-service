@@ -22,6 +22,7 @@ include(GNUInstallDirs)
 find_package(PkgConfig)
 find_package(Boost 1.49 COMPONENTS system program_options)
 find_package(GLog)
+find_package(GFlags)
 pkg_check_modules(DBUS dbus-1 REQUIRED)
 pkg_check_modules(DBUS_CPP dbus-cpp REQUIRED)
 
@@ -50,7 +51,7 @@ include_directories(
   ${DBUS_INCLUDE_DIRS}
   ${DBUS_CPP_INCLUDE_DIRS}/dbus
   ${GLog_INCLUDE_DIR}
-  
+  ${GFlags_INCLUDE_DIR}
   include/location_service
 )
 
