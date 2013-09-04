@@ -1,3 +1,13 @@
+location-service (0.0.1+13.10.20130904-0ubuntu1) saucy; urgency=low
+
+  [ thomas-voss ]
+  * Correctly link against gflags. (LP: #1218896)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 38
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 04 Sep 2013 03:02:21 +0000
+
 location-service (0.0.1+13.10.20130903-0ubuntu1) saucy; urgency=low
 
   [ thomas-voss ]
