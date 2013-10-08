@@ -55,6 +55,16 @@ Description: location service aggregating position/velocity/heading
  Contains header files required to develop clients talking to the ubuntu
  location service.
 
+Package: ubuntu-location-service-bin
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains the service executable and man pages.
+
 Package: ubuntu-location-service-examples
 Architecture: any
 Multi-Arch: same

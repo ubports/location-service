@@ -51,3 +51,28 @@ install(
   TARGETS ubuntu-location-service
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
+
+add_executable(
+  ubuntu-location-serviced
+
+  service/main.cpp
+)
+
+target_link_libraries(
+  ubuntu-location-serviced
+
+  ubuntu-location-service
+
+  ${ENABLED_PROVIDER_TARGETS}
+
+  ${Boost_LIBRARIES}
+  ${DBUS_LIBRARIES}
+  ${GLog_LIBRARY}
+  ${GFlags_LIBRARY}
+)
+
+install(
+  TARGETS ubuntu-location-serviced
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
