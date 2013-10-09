@@ -18,6 +18,8 @@
 
 #include "com/ubuntu/location/service/session/stub.h"
 
+#include "com/ubuntu/location/logging.h"
+
 #include <org/freedesktop/dbus/stub.h>
 
 #include <functional>
@@ -80,7 +82,7 @@ void culss::Stub::stop_position_updates() noexcept
     auto result = d->object->invoke_method_synchronously<Interface::StopPositionUpdates,void>();
 
     if (result.is_error())
-        throw std::runtime_error(result.error());
+        LOG(WARNING) << result.error();
 }
 
 void culss::Stub::start_velocity_updates()
@@ -96,7 +98,7 @@ void culss::Stub::stop_velocity_updates() noexcept
     auto result = d->object->invoke_method_synchronously<Interface::StopVelocityUpdates,void>();
 
     if (result.is_error())
-        throw std::runtime_error(result.error());
+        LOG(WARNING) << result.error();
 }
 
 void culss::Stub::start_heading_updates()
@@ -112,7 +114,7 @@ void culss::Stub::stop_heading_updates() noexcept
     auto result = d->object->invoke_method_synchronously<Interface::StopHeadingUpdates,void>();
 
     if (result.is_error())
-        throw std::runtime_error(result.error());
+        LOG(WARNING) << result.error();
 }
 
 void culss::Stub::Private::update_heading(DBusMessage* msg)
