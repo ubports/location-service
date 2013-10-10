@@ -79,10 +79,15 @@ void culss::Stub::start_position_updates()
 
 void culss::Stub::stop_position_updates() noexcept
 {
-    auto result = d->object->invoke_method_synchronously<Interface::StopPositionUpdates,void>();
+    try {
+        auto result = d->object->invoke_method_synchronously<Interface::StopPositionUpdates,void>();
 
-    if (result.is_error())
-        LOG(WARNING) << result.error();
+        if (result.is_error())
+            LOG(WARNING) << result.error();
+    } catch(const std::runtime_error& e)
+    {
+        LOG(WARNING) << e.what();
+    }
 }
 
 void culss::Stub::start_velocity_updates()
@@ -95,10 +100,15 @@ void culss::Stub::start_velocity_updates()
 
 void culss::Stub::stop_velocity_updates() noexcept
 {
-    auto result = d->object->invoke_method_synchronously<Interface::StopVelocityUpdates,void>();
+    try {
+        auto result = d->object->invoke_method_synchronously<Interface::StopVelocityUpdates,void>();
 
-    if (result.is_error())
-        LOG(WARNING) << result.error();
+        if (result.is_error())
+            LOG(WARNING) << result.error();
+    } catch(const std::runtime_error& e)
+    {
+        LOG(WARNING) << e.what();
+    }
 }
 
 void culss::Stub::start_heading_updates()
@@ -111,10 +121,15 @@ void culss::Stub::start_heading_updates()
 
 void culss::Stub::stop_heading_updates() noexcept
 {
-    auto result = d->object->invoke_method_synchronously<Interface::StopHeadingUpdates,void>();
+    try {
+        auto result = d->object->invoke_method_synchronously<Interface::StopHeadingUpdates,void>();
 
-    if (result.is_error())
-        LOG(WARNING) << result.error();
+        if (result.is_error())
+            LOG(WARNING) << result.error();
+    } catch(const std::runtime_error& e)
+    {
+        LOG(WARNING) << e.what();
+    }
 }
 
 void culss::Stub::Private::update_heading(DBusMessage* msg)
