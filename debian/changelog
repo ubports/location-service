@@ -1,3 +1,17 @@
+location-service (0.0.1+13.10.20131011-0ubuntu1) saucy; urgency=low
+
+  [ thomas-voss ]
+  * Replace throwing an exception with logging, fulfill the noexcept
+    promise. (LP: #1182658)
+
+  [ Olivier Tilloy ]
+  * Really fulfil the noexcept promise. (LP: #1182658)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 41
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 11 Oct 2013 05:41:09 +0000
+
 location-service (0.0.1+13.10.20130904-0ubuntu1) saucy; urgency=low
 
   [ thomas-voss ]
