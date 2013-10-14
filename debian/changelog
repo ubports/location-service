@@ -1,6 +1,13 @@
 location-service (0.0.1+13.10.20130904-0ubuntu1) saucy; urgency=low
 
   [ thomas-voss ]
+  * Refactor packaging such that the service executable is part of ubuntu-location-service-bin.
+
+ -- Thomas Voß <thomas.voss@canonical.com>  Mon, 14 Oct 2013 06:02:21 +0000
+
+location-service (0.0.1+13.10.20130904-0ubuntu1) saucy; urgency=low
+
+  [ thomas-voss ]
   * Correctly link against gflags. (LP: #1218896)
 
   [ Ubuntu daily release ]

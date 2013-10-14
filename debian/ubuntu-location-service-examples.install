@@ -1,4 +1,2 @@
-etc/dbus-1/system.d/
-etc/init/*
 usr/lib/*/ubuntu-location-service/examples/client
 usr/lib/*/ubuntu-location-service/examples/service
