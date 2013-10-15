@@ -1,4 +1,4 @@
-location-service (0.0.2-0ubuntu1) saucy; urgency=low
+location-service (0.0.2-0ubuntu1) UNRELEASED; urgency=low
 
   [ thomas-voss ]
   * Refactor packaging such that the service executable is part of ubuntu-location-service-bin.
