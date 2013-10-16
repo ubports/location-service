@@ -1,3 +1,14 @@
+location-service (0.0.2+13.10.20131016.1-0ubuntu1) saucy; urgency=low
+
+  [ Olivier Tilloy ]
+  * Ensure the service is restarted if ended unexpectedly. (LP:
+    #1240025)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 47
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 16 Oct 2013 11:01:51 +0000
+
 location-service (0.0.2+13.10.20131015.2-0ubuntu1) saucy; urgency=low
 
   [ thomas-voss ]
