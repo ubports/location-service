@@ -183,6 +183,19 @@ culg::Provider::Provider()
     d->gps_params.context = this;
     
     d->gps_handle = u_hardware_gps_new(std::addressof(d->gps_params));
+
+    static const std::chrono::milliseconds minimum_interval{500};
+    static const uint32_t preferred_accuracy{0};
+    static const uint32_t preferred_time_to_first_fix{0};
+
+    u_hardware_gps_set_position_mode(
+                d->gps_handle,
+                U_HARDWARE_GPS_POSITION_MODE_MS_BASED,
+                U_HARDWARE_GPS_POSITION_RECURRENCE_PERIODIC,
+                minimum_interval.count(),
+                preferred_accuracy,
+                preferred_time_to_first_fix
+                );
 }
 
 culg::Provider::~Provider() noexcept
