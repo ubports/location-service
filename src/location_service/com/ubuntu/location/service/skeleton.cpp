@@ -198,17 +198,21 @@ void culs::Skeleton::Private::handle_create_session_for_criteria(DBusMessage* ms
 	auto service = dbus::Service::use_service(parent->access_bus(), dbus_message_get_sender(msg));
 	auto object = service->object_for_path(session->path());
 
-	auto wrapper = SessionWrapper::Ptr{new SessionWrapper{shared_from_this(), session, service, object}};
+    {
+        std::lock_guard<std::mutex> lg(guard);
 
-	auto reply = dbus::Message::make_method_return(msg);
-	reply->writer() << session->path();
-	parent->access_bus()->send(reply->get());
+        auto wrapper = SessionWrapper::Ptr{new SessionWrapper{shared_from_this(), session, service, object}};
 
-	bool inserted = false;
-	std::tie(std::ignore, inserted) = session_store.insert(std::make_pair(session->path(), wrapper));
+        auto reply = dbus::Message::make_method_return(msg);
+        reply->writer() << session->path();
+        parent->access_bus()->send(reply->get());
 
-	if (!inserted)
-	    throw std::runtime_error("Could not insert duplicate session into store.");
+        bool inserted = false;
+        std::tie(std::ignore, inserted) = session_store.insert(std::make_pair(session->path(), wrapper));
+
+        if (!inserted)
+            throw std::runtime_error("Could not insert duplicate session into store.");
+    }
 
     } catch(const std::runtime_error& e)
     {
