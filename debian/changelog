@@ -1,3 +1,9 @@
+location-service (0.0.2+13.10.20131016.1-0ubuntu2) trusty; urgency=low
+
+  * No change rebuild for Boost 1.54 transition.
+
+ -- Dmitrijs Ledkovs <xnox@ubuntu.com>  Mon, 21 Oct 2013 18:26:01 +0100
+
 location-service (0.0.2+13.10.20131016.1-0ubuntu1) saucy; urgency=low
 
   [ Olivier Tilloy ]

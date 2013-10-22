@@ -3,7 +3,8 @@
 Source: location-service
 Section: utils
 Priority: optional
-Maintainer: Thomas Voß <thomas.voss@canonical.com>
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Thomas Voß <thomas.voss@canonical.com>
 Build-Depends: cmake,
                curl,
                dbus-cpp-dev,
