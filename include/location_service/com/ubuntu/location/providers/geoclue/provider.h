@@ -36,9 +36,6 @@ class Provider : public com::ubuntu::location::Provider
   public:
     static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
 
-    static const Provider::FeatureFlags& default_feature_flags();
-    static const Provider::RequirementFlags& default_requirement_flags();
-
     struct Configuration
     {
         static std::string key_name() { return "name"; }
@@ -46,8 +43,8 @@ class Provider : public com::ubuntu::location::Provider
         std::string name;
         std::string path;
 
-        Provider::FeatureFlags features;
-        Provider::RequirementFlags requirements;
+        Provider::Features features = Provider::Features::none;
+        Provider::Requirements requirements = Provider::Requirements::none;
     };
 
     Provider(const Configuration& config);

@@ -25,7 +25,7 @@ find_package(GLog)
 find_package(GFlags)
 pkg_check_modules(DBUS dbus-1 REQUIRED)
 pkg_check_modules(DBUS_CPP dbus-cpp REQUIRED)
-
+pkg_check_modules(PROPERTIES_CPP properties-cpp REQUIRED)
 #####################################################################
 # Enable code coverage calculation with gcov/gcovr/lcov
 # Usage:
@@ -50,6 +50,7 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
   ${DBUS_INCLUDE_DIRS}
   ${DBUS_CPP_INCLUDE_DIRS}/dbus
+  ${PROPERTIES_CPP_INCLUDE_DIRS}
   ${GLog_INCLUDE_DIR}
   ${GFlags_INCLUDE_DIR}
   include/location_service

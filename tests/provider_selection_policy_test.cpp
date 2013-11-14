@@ -7,17 +7,20 @@ namespace cul = com::ubuntu::location;
 
 namespace
 {
-class DummyProvider : public com::ubuntu::location::Provider
+class DummyProvider : public cul::Provider
 {
 public:
-    DummyProvider(com::ubuntu::location::Provider::FeatureFlags feature_flags = com::ubuntu::location::Provider::FeatureFlags {},
-                  com::ubuntu::location::Provider::RequirementFlags requirement_flags = com::ubuntu::location::Provider::RequirementFlags {})
-        : com::ubuntu::location::Provider(feature_flags, requirement_flags)
+    DummyProvider(cul::Provider::Features feats = cul::Provider::Features::none,
+                  cul::Provider::Requirements requs= cul::Provider::Requirements::none)
+        : com::ubuntu::location::Provider(feats, requs)
     {
     }
 
     MOCK_METHOD1(matches_criteria, bool(const cul::Criteria&));
 };
+
+static const cul::Provider::Features all_features
+    = cul::Provider::Features::heading | cul::Provider::Features::position | cul::Provider::Features::velocity;
 }
 
 TEST(ProviderSelection, feature_flags_calculation_works_correctly)
@@ -26,7 +29,7 @@ TEST(ProviderSelection, feature_flags_calculation_works_correctly)
 
     cul::ProviderSelection selection{provider, provider, provider};
 
-    EXPECT_EQ(cul::Provider::FeatureFlags{"111"}, selection.to_feature_flags());
+    EXPECT_EQ(all_features, selection.to_feature_flags());
 }
 
 #include "com/ubuntu/location/default_provider_selection_policy.h"

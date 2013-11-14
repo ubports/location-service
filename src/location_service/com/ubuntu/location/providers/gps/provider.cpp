@@ -148,22 +148,10 @@ cul::Provider::Ptr culg::Provider::create_instance(const cul::ProviderFactory::C
     return cul::Provider::Ptr{new culg::Provider{}};
 }
 
-const cul::Provider::FeatureFlags& culg::Provider::default_feature_flags()
-{
-    static const cul::Provider::FeatureFlags flags{"001"};
-    return flags;
-}
-
-const cul::Provider::RequirementFlags& culg::Provider::default_requirement_flags()
-{
-    static const cul::Provider::RequirementFlags flags{"1010"};
-    return flags;
-}
-
 culg::Provider::Provider()
         : cul::Provider(
-              culg::Provider::default_feature_flags(), 
-              culg::Provider::default_requirement_flags()),
+              cul::Provider::Features::position | cul::Provider::Features::velocity | cul::Provider::Features::heading,
+              cul::Provider::Requirements::satellites),
           d(new Private())
 {
     d->gps_params.location_cb = culg::Provider::Private::on_location_update;

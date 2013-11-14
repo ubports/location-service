@@ -25,6 +25,8 @@
 #include "com/ubuntu/location/update.h"
 #include "com/ubuntu/location/velocity.h"
 
+#include <com/ubuntu/property.h>
+
 #include <atomic>
 #include <bitset>
 #include <memory>
@@ -40,24 +42,22 @@ class Provider
 public:
     typedef std::shared_ptr<Provider> Ptr;
 
-    enum class Feature : std::size_t
+    enum class Features : std::size_t
     {
-        position,
-        velocity,
-        heading
-    };
+        none = 0,
+        position = 1 << 0,
+        velocity = 1 << 1,
+        heading = 1 << 2
+    };    
 
-    typedef std::bitset<3> FeatureFlags;
-
-    enum class Requirement : std::size_t
+    enum class Requirements : std::size_t
     {
-        satellites,
-        cell_network,
-        data_network,
-        monetary_spending
-    };
-
-    typedef std::bitset<4> RequirementFlags;
+        none = 0,
+        satellites = 1 << 0,
+        cell_network = 1 << 1,
+        data_network = 1 << 2,
+        monetary_spending = 1 << 4
+    };    
 
     class Controller
     {
@@ -139,15 +139,15 @@ public:
     virtual ChannelConnection subscribe_to_heading_updates(std::function<void(const Update<Heading>&)> f);
     virtual ChannelConnection subscribe_to_velocity_updates(std::function<void(const Update<Velocity>&)> f);
 
-    virtual bool supports(const Feature& f) const;
-    virtual bool requires(const Requirement& r) const;
+    virtual bool supports(const Features& f) const;
+    virtual bool requires(const Requirements& r) const;
 
     virtual bool matches_criteria(const Criteria&);
     
 protected:
     explicit Provider(
-        const FeatureFlags& feature_flags = FeatureFlags(),
-        const RequirementFlags& requirement_flags = RequirementFlags());
+        const Features& features = Features::none,
+        const Requirements& requirements = Requirements::none);
 
     void deliver_position_updates(const Update<Position>& update);
     void deliver_heading_updates(const Update<Heading>& update);
@@ -163,13 +163,19 @@ protected:
     virtual void stop_velocity_updates();
 
 private:
-    FeatureFlags feature_flags;
-    RequirementFlags requirement_flags;
+    Features features;
+    Requirements requirements;
     Channel<Update<Position>> position_updates_channel;
     Channel<Update<Heading>> heading_updates_channel;
     Channel<Update<Velocity>> velocity_updates_channel;
     Controller::Ptr controller;
 };
+
+Provider::Features operator|(Provider::Features lhs, Provider::Features rhs);
+Provider::Features operator&(Provider::Features lhs, Provider::Features rhs);
+
+Provider::Requirements operator|(Provider::Requirements lhs, Provider::Requirements rhs);
+Provider::Requirements operator&(Provider::Requirements lhs, Provider::Requirements rhs);
 }
 }
 }

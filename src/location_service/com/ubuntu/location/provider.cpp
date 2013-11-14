@@ -167,14 +167,14 @@ cul::ChannelConnection cul::Provider::subscribe_to_velocity_updates(std::functio
     return velocity_updates_channel.connect(f);
 }
 
-bool cul::Provider::supports(const cul::Provider::Feature& f) const
+bool cul::Provider::supports(const cul::Provider::Features& f) const
 {
-    return feature_flags.test(static_cast<std::size_t>(f));
+    return (features & f) != Features::none;
 }
 
-bool cul::Provider::requires(const cul::Provider::Requirement& r) const
+bool cul::Provider::requires(const cul::Provider::Requirements& r) const
 {
-    return requirement_flags.test(static_cast<std::size_t>(r));
+    return (requirements & r) != Requirements::none;
 }
 
 bool cul::Provider::matches_criteria(const cul::Criteria&)
@@ -183,10 +183,10 @@ bool cul::Provider::matches_criteria(const cul::Criteria&)
 }
 
 cul::Provider::Provider(
-    const cul::Provider::FeatureFlags& feature_flags,
-    const cul::Provider::RequirementFlags& requirement_flags)
-    : feature_flags(feature_flags),
-      requirement_flags(requirement_flags),
+    const cul::Provider::Features& features,
+    const cul::Provider::Requirements& requirements)
+    : features(features),
+      requirements(requirements),
       controller(new Controller(*this))
 {
 }
@@ -212,3 +212,23 @@ void cul::Provider::start_heading_updates() {}
 void cul::Provider::stop_heading_updates() {}
 void cul::Provider::start_velocity_updates() {}
 void cul::Provider::stop_velocity_updates() {}
+
+cul::Provider::Features cul::operator|(cul::Provider::Features lhs, cul::Provider::Features rhs)
+{
+    return static_cast<cul::Provider::Features>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+cul::Provider::Features cul::operator&(cul::Provider::Features lhs, cul::Provider::Features rhs)
+{
+    return static_cast<cul::Provider::Features>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+cul::Provider::Requirements cul::operator|(cul::Provider::Requirements lhs, cul::Provider::Requirements rhs)
+{
+    return static_cast<cul::Provider::Requirements>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+cul::Provider::Requirements cul::operator&(cul::Provider::Requirements lhs, cul::Provider::Requirements rhs)
+{
+    return static_cast<cul::Provider::Requirements>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}

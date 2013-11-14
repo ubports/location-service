@@ -27,9 +27,9 @@ namespace
 class DummyProvider : public com::ubuntu::location::Provider
 {
 public:
-    DummyProvider(com::ubuntu::location::Provider::FeatureFlags feature_flags = com::ubuntu::location::Provider::FeatureFlags {},
-                  com::ubuntu::location::Provider::RequirementFlags requirement_flags = com::ubuntu::location::Provider::RequirementFlags {})
-        : com::ubuntu::location::Provider(feature_flags, requirement_flags)
+    DummyProvider(cul::Provider::Features feats = cul::Provider::Features::none,
+                  cul::Provider::Requirements requs= cul::Provider::Requirements::none)
+        : com::ubuntu::location::Provider(feats, requs)
     {
     }
 
@@ -52,26 +52,32 @@ public:
 
 TEST(Provider, requirement_flags_passed_at_construction_are_correctly_stored)
 {
-    com::ubuntu::location::Provider::FeatureFlags feature_flags;
-    com::ubuntu::location::Provider::RequirementFlags requirement_flags;
-    requirement_flags.set();
-    DummyProvider provider(feature_flags, requirement_flags);
+    cul::Provider::Features features = cul::Provider::Features::none;
+    cul::Provider::Requirements requirements =
+            cul::Provider::Requirements::cell_network |
+            cul::Provider::Requirements::data_network |
+            cul::Provider::Requirements::monetary_spending |
+            cul::Provider::Requirements::satellites;
 
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirement::satellites));
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirement::cell_network));
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirement::data_network));
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirement::monetary_spending));
+    DummyProvider provider(features, requirements);
+
+    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::satellites));
+    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::cell_network));
+    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::data_network));
+    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::monetary_spending));
 }
 
 TEST(Provider, feature_flags_passed_at_construction_are_correctly_stored)
 {
-    com::ubuntu::location::Provider::FeatureFlags flags;
-    flags.set();
-    DummyProvider provider(flags);
+    cul::Provider::Features all_features
+        = cul::Provider::Features::heading |
+          cul::Provider::Features::position |
+          cul::Provider::Features::velocity;
+    DummyProvider provider(all_features);
 
-    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Feature::position));
-    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Feature::velocity));
-    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Feature::heading));
+    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Features::position));
+    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Features::velocity));
+    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Features::heading));
 }
 
 TEST(Provider, delivering_a_message_invokes_subscribers)

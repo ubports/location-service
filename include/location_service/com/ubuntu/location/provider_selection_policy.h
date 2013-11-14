@@ -40,12 +40,16 @@ struct ProviderSelection
     {
     }
     
-    Provider::FeatureFlags to_feature_flags() const
+    Provider::Features to_feature_flags() const
     {
-        Provider::FeatureFlags flags;
-        flags.set(static_cast<std::size_t>(Provider::Feature::position), static_cast<bool>(position_updates_provider));
-        flags.set(static_cast<std::size_t>(Provider::Feature::heading), static_cast<bool>(heading_updates_provider));
-        flags.set(static_cast<std::size_t>(Provider::Feature::velocity), static_cast<bool>(velocity_updates_provider));
+        Provider::Features flags = Provider::Features::none;
+
+        if (position_updates_provider)
+            flags = flags | Provider::Features::position;
+        if (heading_updates_provider)
+            flags = flags | Provider::Features::heading;
+        if(velocity_updates_provider)
+            flags = flags | Provider::Features::velocity;
 
         return flags;
     }

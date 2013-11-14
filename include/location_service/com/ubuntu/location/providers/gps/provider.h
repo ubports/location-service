@@ -37,9 +37,6 @@ class Provider : public com::ubuntu::location::Provider
     static std::string class_name();
     static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
 
-    static const Provider::FeatureFlags& default_feature_flags();
-    static const Provider::RequirementFlags& default_requirement_flags();
-
     Provider();
     Provider(const Provider&) = delete;
     Provider& operator=(const Provider&) = delete;

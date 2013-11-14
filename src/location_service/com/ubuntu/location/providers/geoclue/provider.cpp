@@ -84,18 +84,6 @@ cul::Provider::Ptr culpg::Provider::create_instance(const cul::ProviderFactory::
     return cul::Provider::Ptr{new culpg::Provider{pConfig}};
 }
 
-const cul::Provider::FeatureFlags& culpg::Provider::default_feature_flags()
-{
-    static const cul::Provider::FeatureFlags flags{"001"};
-    return flags;
-}
-
-const cul::Provider::RequirementFlags& culpg::Provider::default_requirement_flags()
-{
-    static const cul::Provider::RequirementFlags flags{"1010"};
-    return flags;
-}
-
 culpg::Provider::Provider(const culpg::Provider::Configuration& config) 
         : com::ubuntu::location::Provider(config.features, config.requirements),
           d(new Private(config))
