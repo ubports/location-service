@@ -46,7 +46,7 @@ class Implementation : public Skeleton
     virtual ~Implementation() noexcept;
     Implementation& operator=(const Implementation&) = delete;
 
-    virtual session::Interface::Ptr create_session_for_criteria(const Criteria& criteria);
+    session::Interface::Ptr create_session_for_criteria(const Criteria& criteria);
 
   private:
     struct Private;

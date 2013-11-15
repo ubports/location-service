@@ -53,7 +53,7 @@ static void on_location_update(UHardwareGpsLocation* location, void* context)
         if(location->flags & U_HARDWARE_GPS_LOCATION_HAS_ALTITUDE)
             pos.altitude(cul::wgs84::Altitude{location->altitude * cul::units::Meters});
         
-        thiz->deliver_position_updates(cul::Update<cul::Position>{pos, cul::Clock::now()});
+        thiz->mutable_updates().position = cul::Update<cul::Position>{pos, cul::Clock::now()};
     }
     
     if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_SPEED)
@@ -61,7 +61,7 @@ static void on_location_update(UHardwareGpsLocation* location, void* context)
         VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_SPEED";
         
         cul::Velocity v{location->speed * cul::units::MetersPerSecond};
-        thiz->deliver_velocity_updates(cul::Update<cul::Velocity>{v, cul::Clock::now()});
+        thiz->mutable_updates().velocity = cul::Update<cul::Velocity>{v, cul::Clock::now()};
     }
 
     if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_BEARING)
@@ -69,7 +69,7 @@ static void on_location_update(UHardwareGpsLocation* location, void* context)
         VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_BEARING";
         
         cul::Heading h{location->bearing * cul::units::Degrees};
-        thiz->deliver_heading_updates(cul::Update<cul::Heading>{h, cul::Clock::now()});
+        thiz->mutable_updates().heading = cul::Update<cul::Heading>{h, cul::Clock::now()};
     }
 }
 

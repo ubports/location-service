@@ -138,7 +138,7 @@ void culss::Stub::Private::update_heading(DBusMessage* msg)
     try
     {
         Update<Heading> update; incoming->reader() >> update;
-        parent->access_heading_updates_channel()(update);
+        parent->updates().heading = update;
         parent->access_bus()->send(dbus::Message::make_method_return(msg)->get());
     } catch(const std::runtime_error& e)
     {
@@ -152,7 +152,7 @@ void culss::Stub::Private::update_position(DBusMessage* msg)
     try
     {
         Update<Position> update; incoming->reader() >> update;
-        parent->access_position_updates_channel()(update);
+        parent->updates().position = update;
         parent->access_bus()->send(dbus::Message::make_method_return(msg)->get());
     } catch(const std::runtime_error& e)
     {
@@ -166,7 +166,7 @@ void culss::Stub::Private::update_velocity(DBusMessage* msg)
     try
     {
         Update<Velocity> update; incoming->reader() >> update;
-        parent->access_velocity_updates_channel()(update);
+        parent->updates().velocity = update;
         parent->access_bus()->send(dbus::Message::make_method_return(msg)->get());
     } catch(const std::runtime_error& e)
     {

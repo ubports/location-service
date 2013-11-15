@@ -25,6 +25,8 @@
 #include "com/ubuntu/location/update.h"
 #include "com/ubuntu/location/velocity.h"
 
+#include <com/ubuntu/property.h>
+
 #include <org/freedesktop/dbus/codec.h>
 #include <org/freedesktop/dbus/traits/service.h>
 #include <org/freedesktop/dbus/types/object_path.h>
@@ -39,6 +41,9 @@ namespace service
 {
 namespace session
 {
+/**
+ * @brief Models a session with the location service.
+ */
 class Interface
 {
 public:
@@ -206,9 +211,67 @@ public:
 
     struct Errors
     {
-        struct ErrorParsingUpdate { inline static std::string name() { return "com.ubuntu.location.Service.Session.ErrorParsingUpdate"; } };
-        struct ErrorStartingUpdate { inline static std::string name() { return "com.ubuntu.location.Service.Session.ErrorStartingUpdate"; } };
+        struct ErrorParsingUpdate
+        {
+            inline static std::string name()
+            {
+                return "com.ubuntu.location.Service.Session.ErrorParsingUpdate";
+            }
+        };
+
+        struct ErrorStartingUpdate
+        {
+            inline static std::string name()
+            {
+                return "com.ubuntu.location.Service.Session.ErrorStartingUpdate";
+            }
+        };
     };
+
+    /**
+     * @brief Encapsulates updates provided for this session, and the ability to enable/disable updates.
+     */
+    struct Updates
+    {
+        /**
+         * @brief The Status enum models the possible states of updates.
+         */
+        enum class Status
+        {
+            enabled, ///< Updates are enabled and delivered to this session.
+            disabled ///< Updates are disabled and not delivered to this session.
+        };
+
+        /**
+         * @brief Updates for position measurements.
+         */
+        com::ubuntu::Property<Update<Position>> position;
+        /**
+         * @brief Status of position updates, mutable.
+         */
+        com::ubuntu::Property<Status> position_status;
+
+        /**
+         * @brief Updates for the heading measurements.
+         */
+        com::ubuntu::Property<Update<Heading>> heading;
+        /**
+         * @brief Status of position updates, mutable.
+         */
+        com::ubuntu::Property<Status> heading_status;
+
+        /**
+         * @brief Updates for velocity measurements.
+         */
+        com::ubuntu::Property<Update<Velocity>> velocity;
+        /**
+         * @brief Status of velocity updates, mutable.
+         */
+        com::ubuntu::Property<Status> velocity_status;
+    };
+
+    /** Forward declaration for an ID uniquely identifying this session. */
+    struct Id;
 
     typedef std::shared_ptr<Interface> Ptr;
 
@@ -218,23 +281,14 @@ public:
 
     virtual const org::freedesktop::dbus::types::ObjectPath& path() const = 0;
 
-    ChannelConnection install_position_updates_handler(std::function<void(const Update<Position>&)> handler);
-    ChannelConnection install_velocity_updates_handler(std::function<void(const Update<Velocity>&)> handler);
-    ChannelConnection install_heading_updates_handler(std::function<void(const Update<Heading>&)> handler);
-
-    virtual void start_position_updates() = 0;
-    virtual void stop_position_updates() noexcept = 0;
-    virtual void start_velocity_updates() = 0;
-    virtual void stop_velocity_updates() noexcept = 0;
-    virtual void start_heading_updates() = 0;
-    virtual void stop_heading_updates() noexcept = 0;
+    /**
+     * @brief Provides access to the updates delivered for this session.
+     * @return A mutable reference to updates.
+     */
+    virtual Updates& updates();
 
 protected:
     Interface();
-
-    Channel<Update<Position>>& access_position_updates_channel();
-    Channel<Update<Heading>>& access_heading_updates_channel();
-    Channel<Update<Velocity>>& access_velocity_updates_channel();
 
 private:
     struct Private;

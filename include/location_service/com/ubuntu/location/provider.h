@@ -37,95 +37,123 @@ namespace ubuntu
 {
 namespace location
 {
+/**
+ * @brief The Provider class is the abstract base of all positioning providers.
+ */
 class Provider
 {
 public:
     typedef std::shared_ptr<Provider> Ptr;
 
+    /**
+     * @brief Enumerates the known features that can be supported by providers.
+     */
     enum class Features : std::size_t
     {
-        none = 0,
-        position = 1 << 0,
-        velocity = 1 << 1,
-        heading = 1 << 2
+        none = 0, ///< The provider does not support any feature.
+        position = 1 << 0, ///< The provider features position updates.
+        velocity = 1 << 1, ///< The provider features velocity updates.
+        heading = 1 << 2 ///< The provider features heading updates.
     };    
 
+    /**
+     * @brief Enumerates the requirements of a provider implementation.
+     */
     enum class Requirements : std::size_t
     {
-        none = 0,
-        satellites = 1 << 0,
-        cell_network = 1 << 1,
-        data_network = 1 << 2,
-        monetary_spending = 1 << 4
-    };    
+        none = 0, ///< The provider does not require anything.
+        satellites = 1 << 0, ///< The provider requires satellites to be visible.
+        cell_network = 1 << 1, ///< The provider requires a cell-network to work correctly.
+        data_network = 1 << 2, ///< The provider requires a data-network to work correctly.
+        monetary_spending = 1 << 4 ///< Using the provider results in monetary cost.
+    };
 
+    /**
+     * @brief Facade for controlling the state of position/heading/velocity updates.
+     *
+     * Multiple observers can request state changes for updates. This class ensures
+     * that the specific updates are started and stopped if at least one observer
+     * requests them and stopped when the last observer issues a stop request.
+     */
     class Controller
     {
     public:
         typedef std::shared_ptr<Controller> Ptr;
 
-        template<typename T> 
-        class Cache
-        {
-          public:
-            Cache() : d{ T{}, false }
-            {
-            }
-            const T& value() const { return d.value; }
-            void update(const T& new_value) { d.value = new_value; d.is_valid = true; }
-            bool is_valid() const { return d.is_valid; }
-            void invalidate() { d.is_valid = false; }
-
-          private:
-            struct
-            {
-                T value;
-                bool is_valid;
-            } d;
-        };
-
         virtual ~Controller() = default;
         Controller(const Controller&) = delete;
         Controller& operator=(const Controller&) = delete;
 
+        /**
+         * @brief Request to start position updates if not already running.
+         */
         virtual void start_position_updates();
+
+        /**
+         * @brief Request to stop position updates. Only stops the provider when the last observer calls this function.
+         */
         virtual void stop_position_updates();
+
+        /**
+         * @brief Checks if position updates are currently running.
+         * @return true iff position updates are currently running.
+         */
         bool are_position_updates_running() const;
 
+        /**
+         * @brief Request to start heading updates if not already running.
+         */
         virtual void start_heading_updates();
+
+        /**
+         * @brief Request to stop heading updates. Only stops the provider when the last observer calls this function.
+         */
         virtual void stop_heading_updates();
+
+        /**
+         * @brief Checks if position updates are currently running.
+         * @return true iff position updates are currently running.
+         */
         bool are_heading_updates_running() const;
 
+        /**
+         * @brief Request to start velocity updates if not already running.
+         */
         virtual void start_velocity_updates();
-        virtual void stop_velocity_updates();
-        bool are_velocity_updates_running() const;
 
-        const Cache<Update<Position>>& cached_position_update() const;
-        const Cache<Update<Heading>>& cached_heading_update() const;
-        const Cache<Update<Velocity>>& cached_velocity_update() const;
+        /**
+         * @brief Request to stop velocity updates. Only stops the provider when the last observer calls this function.
+         */
+        virtual void stop_velocity_updates();
+
+        /**
+         * @brief Checks if velocity updates are currently running.
+         * @return true iff velocity updates are currently running.
+         */
+        bool are_velocity_updates_running() const;
 
     protected:
         friend class Provider;
         explicit Controller(Provider& instance);
 
     private:
-        void on_position_updated(const Update<Position>& position);
-        void on_velocity_updated(const Update<Velocity>& velocity);
-        void on_heading_updated(const Update<Heading>& heading);
-
         Provider& instance;
         std::atomic<int> position_updates_counter;
         std::atomic<int> heading_updates_counter;
         std::atomic<int> velocity_updates_counter;
-        ScopedChannelConnection position_update_connection;
-        ScopedChannelConnection velocity_update_connection;
-        ScopedChannelConnection heading_update_connection;
-        struct
-        {
-            Cache<Update<Position>> position;
-            Cache<Update<Velocity>> velocity;
-            Cache<Update<Heading>> heading;            
-        } cached;
+    };
+
+    /**
+     * @brief Wraps all updates that can be delivered by a provider.
+     */
+    struct Updates
+    {
+        /** Position updates. */
+        com::ubuntu::Property<Update<Position>> position;
+        /** Heading updates. */
+        com::ubuntu::Property<Update<Heading>> heading;
+        /** Velocity updates. */
+        com::ubuntu::Property<Update<Velocity>> velocity;
     };
 
     virtual ~Provider() = default;
@@ -133,42 +161,83 @@ public:
     Provider(const Provider&) = delete;
     Provider& operator=(const Provider&) = delete;
 
+    /**
+     * @brief Provides non-mutable access to this provider's updates.
+     * @return A non-mutable reference to the updates.
+     */
+    virtual const Updates& updates() const;
+
+    /**
+     * @brief Access to the controller facade of this provider instance.
+     */
     virtual const Controller::Ptr& state_controller() const;
 
-    virtual ChannelConnection subscribe_to_position_updates(std::function<void(const Update<Position>&)> f);
-    virtual ChannelConnection subscribe_to_heading_updates(std::function<void(const Update<Heading>&)> f);
-    virtual ChannelConnection subscribe_to_velocity_updates(std::function<void(const Update<Velocity>&)> f);
-
+    /**
+     * @brief Checks if the provider supports a specific feature.
+     * @param f Feature to test for
+     * @return true iff the provider supports the feature.
+     */
     virtual bool supports(const Features& f) const;
+
+    /**
+     * @brief Checks if the provider has got a specific requirement.
+     * @param r Requirement to test for.
+     * @return true iff the provider has the specific requirement.
+     */
     virtual bool requires(const Requirements& r) const;
 
-    virtual bool matches_criteria(const Criteria&);
+    /**
+     * @brief Checks if a provider satisfies a set of accuracy criteria.
+     * @param [in] criteria The criteria to check.
+     * @return true iff the provider satisfies the given criteria.
+     */
+    virtual bool matches_criteria(const Criteria& criteria);
     
 protected:
     explicit Provider(
         const Features& features = Features::none,
         const Requirements& requirements = Requirements::none);
 
-    void deliver_position_updates(const Update<Position>& update);
-    void deliver_heading_updates(const Update<Heading>& update);
-    void deliver_velocity_updates(const Update<Velocity>& update);
+    virtual Updates& mutable_updates();
     
+    /**
+     * @brief Implementation-specific, empty by default.
+     */
     virtual void start_position_updates();
+
+    /**
+     * @brief Implementation-specific, empty by default.
+     */
     virtual void stop_position_updates();
 
+    /**
+     * @brief Implementation-specific, empty by default.
+     */
     virtual void start_heading_updates();
+
+    /**
+     * @brief Implementation-specific, empty by default.
+     */
     virtual void stop_heading_updates();
 
+    /**
+     * @brief Implementation-specific, empty by default.
+     */
     virtual void start_velocity_updates();
+
+    /**
+     * @brief Implementation-specific, empty by default.
+     */
     virtual void stop_velocity_updates();
 
 private:
-    Features features;
-    Requirements requirements;
-    Channel<Update<Position>> position_updates_channel;
-    Channel<Update<Heading>> heading_updates_channel;
-    Channel<Update<Velocity>> velocity_updates_channel;
-    Controller::Ptr controller;
+    struct
+    {
+        Features features = Features::none;
+        Requirements requirements = Requirements::none;
+        Updates updates = Updates{};
+        Controller::Ptr controller = Controller::Ptr{};
+    } d;
 };
 
 Provider::Features operator|(Provider::Features lhs, Provider::Features rhs);

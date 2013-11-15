@@ -102,7 +102,7 @@ void culss::Skeleton::Private::handle_start_position_updates(DBusMessage* msg)
 {
     try
     {
-        parent->start_position_updates();
+        parent->updates().position_status = culss::Interface::Updates::Status::enabled;
         auto reply = dbus::Message::make_method_return(msg);
         bus->send(reply->get());
     } catch(const std::runtime_error& e)
@@ -114,7 +114,7 @@ void culss::Skeleton::Private::handle_start_position_updates(DBusMessage* msg)
 
 void culss::Skeleton::Private::handle_stop_position_updates(DBusMessage* msg)
 {
-    parent->stop_position_updates();
+    parent->updates().position_status = culss::Interface::Updates::Status::disabled;
     auto reply = org::freedesktop::dbus::Message::make_method_return(msg);
     bus->send(reply->get());
 }
@@ -123,7 +123,7 @@ void culss::Skeleton::Private::handle_start_velocity_updates(DBusMessage* msg)
 {
     try
     {
-        parent->start_velocity_updates();
+        parent->updates().velocity_status = culss::Interface::Updates::Status::enabled;
         auto reply = org::freedesktop::dbus::Message::make_method_return(msg);
         bus->send(reply->get());
     } catch(const std::runtime_error& e)
@@ -135,7 +135,7 @@ void culss::Skeleton::Private::handle_start_velocity_updates(DBusMessage* msg)
 
 void culss::Skeleton::Private::handle_stop_velocity_updates(DBusMessage* msg)
 {
-    parent->stop_velocity_updates();
+    parent->updates().velocity_status = culss::Interface::Updates::Status::disabled;
     auto reply = org::freedesktop::dbus::Message::make_method_return(msg);
     bus->send(reply->get());
 }
@@ -144,7 +144,7 @@ void culss::Skeleton::Private::handle_start_heading_updates(DBusMessage* msg)
 {
     try
     {
-        parent->start_heading_updates();
+        parent->updates().heading_status = culss::Interface::Updates::Status::enabled;
         auto reply = org::freedesktop::dbus::Message::make_method_return(msg);
         bus->send(reply->get());
     } catch(const std::runtime_error& e)
@@ -156,7 +156,7 @@ void culss::Skeleton::Private::handle_start_heading_updates(DBusMessage* msg)
 
 void culss::Skeleton::Private::handle_stop_heading_updates(DBusMessage* msg)
 {
-    parent->stop_heading_updates();
+    parent->updates().heading_status = culss::Interface::Updates::Status::disabled;
     auto reply = org::freedesktop::dbus::Message::make_method_return(msg);
     bus->send(reply->get());
 }

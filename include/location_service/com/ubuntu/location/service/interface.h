@@ -35,18 +35,31 @@ namespace ubuntu
 {
 namespace location
 {
-
 struct Criteria;
-
 namespace service
 {
+/**
+ * @brief The Interface class models the primary interface to the location service.
+ */
 class Interface
 {
   protected:
     struct Errors
     {
-        struct InsufficientPermissions { inline static std::string name() { return "com.ubuntu.location.Service.Error.InsufficientPermissions"; } };
-        struct CreatingSession { inline static std::string name() { return "com.ubuntu.location.Service.Error.CreatingSession"; } };
+        struct InsufficientPermissions
+        {
+            inline static std::string name()
+            {
+                return "com.ubuntu.location.Service.Error.InsufficientPermissions";
+            }
+        };
+        struct CreatingSession
+        {
+            inline static std::string name()
+            {
+                return "com.ubuntu.location.Service.Error.CreatingSession";
+            }
+        };
     };
 
     struct CreateSessionForCriteria
@@ -64,7 +77,47 @@ class Interface
 
         typedef dbus::types::ObjectPath ResultType;
 
-        inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
+        inline static const std::chrono::milliseconds default_timeout()
+        {
+            return std::chrono::seconds{1};
+        }
+    };
+
+    struct Properties
+    {
+        struct DoesSatelliteBasedPositioning
+        {
+            inline static const std::string& name()
+            {
+                static const std::string s
+                {
+                    "DoesSatelliteBasedPositioning"
+                };
+                return s;
+            }
+
+            typedef com::ubuntu::location::service::Interface Interface;
+            typedef bool ValueType;
+            static const bool readable = true;
+            static const bool writable = true;
+        };
+
+        struct IsOnline
+        {
+            inline static const std::string& name()
+            {
+                static const std::string s
+                {
+                    "IsOnline"
+                };
+                return s;
+            }
+
+            typedef com::ubuntu::location::service::Interface Interface;
+            typedef bool ValueType;
+            static const bool readable = true;
+            static const bool writable = true;
+        };
     };
 
     Interface() = default;
@@ -72,6 +125,9 @@ class Interface
   public:
     typedef std::shared_ptr<Interface> Ptr;
 
+    /**
+     * @brief Queries the path that this object is known under.
+     */
     inline static const std::string& path()
     {
         static const std::string s{"/com/ubuntu/location/Service"};
@@ -82,6 +138,24 @@ class Interface
     Interface& operator=(const Interface&) = delete;
     virtual ~Interface() = default;
 
+    /**
+     * @brief Whether the service uses satellite-based positioning.
+     * @return  A setable/getable/observable property.
+     */
+    virtual com::ubuntu::Property<bool>& does_satellite_based_positioning() = 0;
+
+    /**
+     * @brief Whether the overall service and its positioning engine is online or not.
+     * @return  A setable/getable/observable property.
+     */
+    virtual com::ubuntu::Property<bool>& is_online() = 0;
+
+    /**
+     * @brief Starts a new session for the given criteria
+     * @throw std::runtime_error in case of errors.
+     * @param criteria The client's requirements in terms of accuraccy and functionality
+     * @return A session instance.
+     */
     virtual session::Interface::Ptr create_session_for_criteria(const Criteria& criteria) = 0;
 };
 }

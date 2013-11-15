@@ -40,6 +40,8 @@ class Stub : public org::freedesktop::dbus::Stub<Interface>
     ~Stub() noexcept;
 
     session::Interface::Ptr create_session_for_criteria(const Criteria& criteria);
+    com::ubuntu::Property<bool>& does_satellite_based_positioning();
+    com::ubuntu::Property<bool>& is_online();
 
   private:
     struct Private;

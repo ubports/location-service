@@ -24,6 +24,12 @@ namespace cul = com::ubuntu::location;
 
 namespace
 {
+template<typename T>
+cul::Update<T> update_as_of_now(const T& value = T())
+{
+    return cul::Update<T>{value, cul::Clock::now()};
+}
+
 class DummyProvider : public com::ubuntu::location::Provider
 {
 public:
@@ -35,17 +41,17 @@ public:
 
     void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Position>& update)
     {
-        deliver_position_updates(update);
+        mutable_updates().position = update;
     }
 
     void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Velocity>& update)
     {
-        deliver_velocity_updates(update);
+        mutable_updates().velocity = update;
     }
 
     void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Heading>& update)
     {
-        deliver_heading_updates(update);
+        mutable_updates().heading = update;
     }
 };
 }
@@ -87,24 +93,27 @@ TEST(Provider, delivering_a_message_invokes_subscribers)
     bool heading_update_triggered {false};
     bool velocity_update_triggered {false};
 
-    dp.subscribe_to_position_updates([&](const com::ubuntu::location::Update<com::ubuntu::location::Position>&)
-    {
-        position_update_triggered = true;
-    });
+    auto c1 = dp.updates().position.changed().connect(
+        [&](const com::ubuntu::location::Update<com::ubuntu::location::Position>&)
+        {
+            position_update_triggered = true;
+        });
 
-    dp.subscribe_to_heading_updates([&](const com::ubuntu::location::Update<com::ubuntu::location::Heading>&)
-    {
-        heading_update_triggered = true;
-    });
+    auto c2 = dp.updates().heading.changed().connect(
+        [&](const com::ubuntu::location::Update<com::ubuntu::location::Heading>&)
+        {
+            heading_update_triggered = true;
+        });
 
-    dp.subscribe_to_velocity_updates([&](const com::ubuntu::location::Update<com::ubuntu::location::Velocity>&)
-    {
-        velocity_update_triggered = true;
-    });
+    auto c3 = dp.updates().velocity.changed().connect(
+        [&](const com::ubuntu::location::Update<com::ubuntu::location::Velocity>&)
+        {
+            velocity_update_triggered = true;
+        });
 
-    dp.inject_update(com::ubuntu::location::Update<com::ubuntu::location::Position>());
-    dp.inject_update(com::ubuntu::location::Update<com::ubuntu::location::Heading>());
-    dp.inject_update(com::ubuntu::location::Update<com::ubuntu::location::Velocity>());
+    dp.inject_update(update_as_of_now<cul::Position>());
+    dp.inject_update(update_as_of_now<cul::Heading>());
+    dp.inject_update(update_as_of_now<cul::Velocity>());
 
     EXPECT_TRUE(position_update_triggered);
     EXPECT_TRUE(heading_update_triggered);
@@ -181,16 +190,6 @@ TEST(ProxyProvider, start_and_stop_does_not_throw_for_null_providers)
 
     EXPECT_NO_THROW(pp.start_velocity_updates());
     EXPECT_NO_THROW(pp.stop_velocity_updates());
-}
-
-TEST(ProxyProvider, setting_up_signal_connections_does_not_throw_for_null_providers)
-{
-    cul::ProviderSelection selection;
-    cul::ProxyProvider pp{selection};
-
-    EXPECT_NO_THROW(pp.subscribe_to_position_updates([](const cul::Update<cul::Position>&){}));
-    EXPECT_NO_THROW(pp.subscribe_to_heading_updates([](const cul::Update<cul::Heading>&){}));
-    EXPECT_NO_THROW(pp.subscribe_to_velocity_updates([](const cul::Update<cul::Velocity>&){}));
 }
 
 TEST(ProxyProvider, start_and_stop_of_updates_propagates_to_correct_providers)

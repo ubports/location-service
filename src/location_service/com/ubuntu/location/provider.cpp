@@ -86,95 +86,27 @@ bool cul::Provider::Controller::are_velocity_updates_running() const
     return velocity_updates_counter > 0;
 }
 
-const cul::Provider::Controller::Cache<cul::Update<cul::Position>>& cul::Provider::Controller::cached_position_update() const
-{
-    return cached.position;
-}
-
-const cul::Provider::Controller::Cache<cul::Update<cul::Heading>>& cul::Provider::Controller::cached_heading_update() const
-{
-    return cached.heading;
-}
-
-const cul::Provider::Controller::Cache<cul::Update<cul::Velocity>>& cul::Provider::Controller::cached_velocity_update() const
-{
-    return cached.velocity;
-}
-
 cul::Provider::Controller::Controller(cul::Provider& instance)
     : instance(instance),
       position_updates_counter(0),
       heading_updates_counter(0),
-      velocity_updates_counter(0),
-      cached
-      {
-          Cache<Update<Position>>{},
-          Cache<Update<Velocity>>{},
-          Cache<Update<Heading>>{}
-      }
+      velocity_updates_counter(0)
 {
-    position_update_connection =
-            instance.subscribe_to_position_updates(
-                std::bind(&Controller::on_position_updated,
-                          this,
-                          std::placeholders::_1));
-
-    velocity_update_connection =
-            instance.subscribe_to_velocity_updates(
-                std::bind(&Controller::on_velocity_updated,
-                          this,
-                          std::placeholders::_1));
-
-    heading_update_connection =
-            instance.subscribe_to_heading_updates(
-                std::bind(&Controller::on_heading_updated,
-                          this,
-                          std::placeholders::_1));
-}
-
-void cul::Provider::Controller::on_position_updated(const cul::Update<cul::Position>& position)
-{
-    cached.position.update(position);
-}
-
-void cul::Provider::Controller::on_velocity_updated(const cul::Update<cul::Velocity>& velocity)
-{
-    cached.velocity.update(velocity);
-}
-
-void cul::Provider::Controller::on_heading_updated(const cul::Update<cul::Heading>& heading)
-{
-    cached.heading.update(heading);
 }
 
 const cul::Provider::Controller::Ptr& cul::Provider::state_controller() const
 {
-    return controller;
-}
-
-cul::ChannelConnection cul::Provider::subscribe_to_position_updates(std::function<void(const cul::Update<cul::Position>&)> f)
-{
-    return position_updates_channel.connect(f);
-}
-
-cul::ChannelConnection cul::Provider::subscribe_to_heading_updates(std::function<void(const cul::Update<cul::Heading>&)> f)
-{
-    return heading_updates_channel.connect(f);
-}
-
-cul::ChannelConnection cul::Provider::subscribe_to_velocity_updates(std::function<void(const cul::Update<cul::Velocity>&)> f)
-{
-    return velocity_updates_channel.connect(f);
+    return d.controller;
 }
 
 bool cul::Provider::supports(const cul::Provider::Features& f) const
 {
-    return (features & f) != Features::none;
+    return (d.features & f) != Features::none;
 }
 
 bool cul::Provider::requires(const cul::Provider::Requirements& r) const
 {
-    return (requirements & r) != Requirements::none;
+    return (d.requirements & r) != Requirements::none;
 }
 
 bool cul::Provider::matches_criteria(const cul::Criteria&)
@@ -182,28 +114,23 @@ bool cul::Provider::matches_criteria(const cul::Criteria&)
     return false;
 }
 
+const cul::Provider::Updates& cul::Provider::updates() const
+{
+    return d.updates;
+}
+
 cul::Provider::Provider(
     const cul::Provider::Features& features,
     const cul::Provider::Requirements& requirements)
-    : features(features),
-      requirements(requirements),
-      controller(new Controller(*this))
 {
+    d.features = features;
+    d.requirements = requirements;
+    d.controller = std::shared_ptr<Provider::Controller>(new Provider::Controller(*this));
 }
 
-void cul::Provider::deliver_position_updates(const cul::Update<cul::Position>& update)
+cul::Provider::Updates& cul::Provider::mutable_updates()
 {
-    position_updates_channel(update);
-}
-
-void cul::Provider::deliver_heading_updates(const cul::Update<cul::Heading>& update)
-{
-    heading_updates_channel(update);
-}
-
-void cul::Provider::deliver_velocity_updates(const cul::Update<cul::Velocity>& update)
-{
-    velocity_updates_channel(update);
+    return d.updates;
 }
 
 void cul::Provider::start_position_updates() {}

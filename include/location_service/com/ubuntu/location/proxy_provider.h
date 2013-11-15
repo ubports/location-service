@@ -38,10 +38,6 @@ public:
     ProxyProvider(const ProviderSelection& selection);
     ~ProxyProvider() noexcept;
 
-    ChannelConnection subscribe_to_position_updates(std::function<void(const Update<Position>&)> f);
-    ChannelConnection subscribe_to_heading_updates(std::function<void(const Update<Heading>&)> f);
-    ChannelConnection subscribe_to_velocity_updates(std::function<void(const Update<Velocity>&)> f);
-
     virtual void start_position_updates();
     virtual void stop_position_updates();
 

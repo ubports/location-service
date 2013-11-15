@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 
+namespace cu = com::ubuntu;
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 namespace culss = com::ubuntu::location::service::session;
@@ -11,14 +12,23 @@ namespace dbus = org::freedesktop::dbus;
 
 struct culss::Implementation::Private
 {
-    Private(const Provider::Ptr& provider) : provider(provider)
-    {
-    }
-
     Provider::Ptr provider;
-    ScopedChannelConnection position_updates_connection;
-    ScopedChannelConnection velocity_updates_connection;
-    ScopedChannelConnection heading_updates_connection;
+    struct Connections
+    {
+        Connections(
+                const cu::Connection& pu,
+                const cu::Connection& vu,
+                const cu::Connection& hu)
+            : position_updates(pu),
+              velocity_updates(vu),
+              heading_updates(hu)
+        {
+        }
+
+        cu::Connection position_updates;
+        cu::Connection velocity_updates;
+        cu::Connection heading_updates;
+    } connections;
 };
 
 culss::Implementation::Implementation(
@@ -26,26 +36,29 @@ culss::Implementation::Implementation(
     const dbus::types::ObjectPath& session_path,
     const cul::Provider::Ptr& provider)
         : Skeleton(bus, session_path),
-          d(new Private{provider})
+          d(new Private
+            {
+                provider,
+                Private::Connections
+                {
+                    provider->updates().position.changed().connect(
+                        [this](const Update<Position>& update)
+                        {
+                            updates().position = update;
+                        }),
+                    provider->updates().heading.changed().connect(
+                        [this](const Update<Heading>& update)
+                        {
+                            updates().heading = update;
+                        }),
+                    provider->updates().velocity.changed().connect(
+                        [this](const Update<Velocity>& update)
+                        {
+                            updates().velocity = update;
+                        })
+                }
+            })
 {
-    if (!provider)
-        throw std::runtime_error("Cannot create implementation for null provider.");
-    
-    d->position_updates_connection =
-            provider->subscribe_to_position_updates([this](const Update<Position>& update)
-                                                    {
-                                                        access_position_updates_channel()(update);
-                                                    });
-    d->heading_updates_connection =
-            provider->subscribe_to_heading_updates([this](const Update<Heading>& update)
-                                                   {
-                                                       access_heading_updates_channel()(update);
-                                                   });
-    d->velocity_updates_connection =
-            provider->subscribe_to_velocity_updates([this](const Update<Velocity>& update)
-                                                    {
-                                                        access_velocity_updates_channel()(update);
-                                                    });
 }
 
 culss::Implementation::~Implementation() noexcept
@@ -55,8 +68,6 @@ culss::Implementation::~Implementation() noexcept
 void culss::Implementation::start_position_updates()
 {
     d->provider->state_controller()->start_position_updates();
-    if (d->provider->state_controller()->cached_position_update().is_valid())
-        access_position_updates_channel()(d->provider->state_controller()->cached_position_update().value());
 }
 
 void culss::Implementation::stop_position_updates() noexcept
@@ -67,8 +78,6 @@ void culss::Implementation::stop_position_updates() noexcept
 void culss::Implementation::start_velocity_updates()
 {
     d->provider->state_controller()->start_velocity_updates();
-    if (d->provider->state_controller()->cached_velocity_update().is_valid())
-        access_velocity_updates_channel()(d->provider->state_controller()->cached_velocity_update().value());
 }
 
 void culss::Implementation::stop_velocity_updates() noexcept
@@ -79,8 +88,6 @@ void culss::Implementation::stop_velocity_updates() noexcept
 void culss::Implementation::start_heading_updates()
 {
     d->provider->state_controller()->start_heading_updates();
-    if (d->provider->state_controller()->cached_heading_update().is_valid())
-        access_heading_updates_channel()(d->provider->state_controller()->cached_heading_update().value());
 }
 
 void culss::Implementation::stop_heading_updates() noexcept

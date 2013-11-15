@@ -28,8 +28,45 @@ namespace dbus = org::freedesktop::dbus;
 
 struct culs::Stub::Private
 {
-    org::freedesktop::dbus::Bus::Ptr bus;
-    org::freedesktop::dbus::Object::Ptr object;
+    Private(const dbus::Bus::Ptr& connection,
+            const dbus::Object::Ptr& object)
+        : bus(connection),
+          remote
+          {
+              object,
+              object->get_property<culs::Interface::Properties::DoesSatelliteBasedPositioning>(),
+              object->get_property<culs::Interface::Properties::IsOnline>()
+          }
+    {
+        void (dbus::Property<culs::Interface::Properties::DoesSatelliteBasedPositioning>::*vs1)(const bool&)
+                = &dbus::Property<culs::Interface::Properties::DoesSatelliteBasedPositioning>::value;
+
+        does_satellite_based_positioning.changed().connect(
+                std::bind(
+                    vs1,
+                    remote.does_satellite_based_positioning,
+                    std::placeholders::_1));
+
+        void (dbus::Property<culs::Interface::Properties::IsOnline>::*vs2)(const bool&)
+                = &dbus::Property<culs::Interface::Properties::IsOnline>::value;
+
+        is_online.changed().connect(
+                std::bind(
+                    vs2,
+                    remote.is_online,
+                    std::placeholders::_1));
+
+    }
+
+    dbus::Bus::Ptr bus;
+    com::ubuntu::Property<bool> does_satellite_based_positioning;
+    com::ubuntu::Property<bool> is_online;
+    struct
+    {
+        dbus::Object::Ptr object;
+        std::shared_ptr<dbus::Property<culs::Interface::Properties::DoesSatelliteBasedPositioning>> does_satellite_based_positioning;
+        std::shared_ptr<dbus::Property<culs::Interface::Properties::IsOnline>> is_online;
+    } remote;
 };
 
 culs::Stub::Stub(const dbus::Bus::Ptr& connection) : dbus::Stub<culs::Interface>(connection),
@@ -43,13 +80,23 @@ culs::Stub::~Stub() noexcept
 
 culss::Interface::Ptr culs::Stub::create_session_for_criteria(const cul::Criteria& criteria)
 {
-    auto op = d->object->invoke_method_synchronously<
-	culs::Interface::CreateSessionForCriteria,
-	culs::Interface::CreateSessionForCriteria::ResultType
-    >(criteria);
+    auto op = d->remote.object->invoke_method_synchronously<
+            culs::Interface::CreateSessionForCriteria,
+            culs::Interface::CreateSessionForCriteria::ResultType
+            >(criteria);
 
     if (op.is_error())
-	throw std::runtime_error(op.error());
+        throw std::runtime_error(op.error());
 
     return culss::Interface::Ptr(new culss::Stub{d->bus, op.value()});
+}
+
+com::ubuntu::Property<bool>& culs::Stub::does_satellite_based_positioning()
+{
+    return d->does_satellite_based_positioning;
+}
+
+com::ubuntu::Property<bool>& culs::Stub::is_online()
+{
+    return d->is_online;
 }

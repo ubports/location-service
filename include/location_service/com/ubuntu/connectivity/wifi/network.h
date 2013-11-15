@@ -15,33 +15,24 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/service/session/interface.h"
+#ifndef LOCATION_SERVICE_COM_UBUNTU_CONNECTIVITY_WIFI_NETWORK_H_
+#define LOCATION_SERVICE_COM_UBUNTU_CONNECTIVITY_WIFI_NETWORK_H_
 
-#include <org/freedesktop/dbus/codec.h>
-#include <org/freedesktop/dbus/service.h>
-#include <org/freedesktop/dbus/traits/service.h>
-#include <org/freedesktop/dbus/types/object_path.h>
-
-namespace cul = com::ubuntu::location;
-namespace culs = com::ubuntu::location::service;
-namespace culss = com::ubuntu::location::service::session;
-
-namespace dbus = org::freedesktop::dbus;
-
-struct culss::Interface::Private
+namespace com
 {
-    culss::Interface::Updates updates;
+namespace ubuntu
+{
+namespace connectivity
+{
+namespace wifi
+{
+struct Network
+{
 };
-
-culss::Interface::Interface() : d{new Private{}}
-{
+}
+}
+}
 }
 
-culss::Interface::~Interface() noexcept
-{
-}
+#endif // LOCATION_SERVICE_COM_UBUNTU_CONNECTIVITY_WIFI_NETWORK_H_
 
-culss::Interface::Updates& culss::Interface::updates()
-{
-    return d->updates;
-}

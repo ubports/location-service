@@ -49,9 +49,11 @@
 #include <set>
 #include <stdexcept>
 
+namespace cul = com::ubuntu::location;
+namespace culss = com::ubuntu::location::service::session;
+
 namespace
 {
-
 org::freedesktop::dbus::Bus::Ptr the_session_bus()
 {
     org::freedesktop::dbus::Bus::Ptr bus{
@@ -59,7 +61,13 @@ org::freedesktop::dbus::Bus::Ptr the_session_bus()
     return bus;
 }
 
-class DummyProvider : public com::ubuntu::location::Provider
+template<typename T>
+cul::Update<T> update_as_of_now(const T& value = T())
+{
+    return cul::Update<T>{value, cul::Clock::now()};
+}
+
+class DummyProvider : public cul::Provider
 {
 public:
     DummyProvider()
@@ -70,58 +78,58 @@ public:
     {
     }
 
-    void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Position>& update)
+    void inject_update(const cul::Update<cul::Position>& update)
     {
-        deliver_position_updates(update);
+        mutable_updates().position = update;
     }
 
-    void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Velocity>& update)
+    void inject_update(const cul::Update<cul::Velocity>& update)
     {
-        deliver_velocity_updates(update);
+        mutable_updates().velocity = update;
     }
 
-    void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Heading>& update)
+    void inject_update(const cul::Update<cul::Heading>& update)
     {
-        deliver_heading_updates(update);
+        mutable_updates().heading = update;
     }
 
-    bool matches_criteria(const com::ubuntu::location::Criteria& /*criteria*/)
+    bool matches_criteria(const cul::Criteria& /*criteria*/)
     {
         return true;
     }
 };
 
-struct AlwaysGrantingPermissionManager : public com::ubuntu::location::service::PermissionManager
+struct AlwaysGrantingPermissionManager : public cul::service::PermissionManager
 {
     PermissionManager::Result
-    check_permission_for_credentials(const com::ubuntu::location::Criteria&, 
-                                     const com::ubuntu::location::service::Credentials&)
+    check_permission_for_credentials(const cul::Criteria&,
+                                     const cul::service::Credentials&)
     {
         return PermissionManager::Result::granted;
     }
 };
 
-auto timestamp = com::ubuntu::location::Clock::now();
+auto timestamp = cul::Clock::now();
 
-com::ubuntu::location::Update<com::ubuntu::location::Position> reference_position_update
+cul::Update<cul::Position> reference_position_update
 {
     {
-        com::ubuntu::location::wgs84::Latitude{9. * com::ubuntu::location::units::Degrees},
-        com::ubuntu::location::wgs84::Longitude{53. * com::ubuntu::location::units::Degrees},
-        com::ubuntu::location::wgs84::Altitude{-2. * com::ubuntu::location::units::Meters}
+        cul::wgs84::Latitude{9. * cul::units::Degrees},
+        cul::wgs84::Longitude{53. * cul::units::Degrees},
+        cul::wgs84::Altitude{-2. * cul::units::Meters}
     },
     timestamp
 };
 
-com::ubuntu::location::Update<com::ubuntu::location::Velocity> reference_velocity_update
+cul::Update<cul::Velocity> reference_velocity_update
 {
-    {5. * com::ubuntu::location::units::MetersPerSecond},
+    {5. * cul::units::MetersPerSecond},
     timestamp
 };
 
-com::ubuntu::location::Update<com::ubuntu::location::Heading> reference_heading_update
+cul::Update<cul::Heading> reference_heading_update
 {
-    {120. * com::ubuntu::location::units::Degrees},
+    {120. * cul::units::Degrees},
     timestamp
 };
 }
@@ -137,12 +145,13 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
         auto bus = the_session_bus();
         bus->install_executor(org::freedesktop::dbus::Executor::Ptr(new org::freedesktop::dbus::asio::Executor{bus}));
         auto dummy = new DummyProvider();
-        com::ubuntu::location::Provider::Ptr helper(dummy);
-        com::ubuntu::location::service::DefaultConfiguration config;
+        cul::Provider::Ptr helper(dummy);
+        cul::service::DefaultConfiguration config;
         
-        com::ubuntu::location::service::Implementation service(bus,
-                                                               config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
-                                                               config.the_permission_manager());
+        cul::service::Implementation service(
+                    bus,
+                    config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+                    config.the_permission_manager());
 
 
         sync_start.signal_ready();
@@ -169,34 +178,34 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
         bus->install_executor(org::freedesktop::dbus::Executor::Ptr(new org::freedesktop::dbus::asio::Executor{bus}));
         std::thread t{[bus](){bus->run();}};
         auto location_service = org::freedesktop::dbus::resolve_service_on_bus<
-            com::ubuntu::location::service::Interface, 
-            com::ubuntu::location::service::Stub>(bus);
+            cul::service::Interface,
+            cul::service::Stub>(bus);
         
-        auto s1 = location_service->create_session_for_criteria(com::ubuntu::location::Criteria{});
-        
-        com::ubuntu::location::Update<com::ubuntu::location::Position> position;
-        s1->install_position_updates_handler(
-            [&](const com::ubuntu::location::Update<com::ubuntu::location::Position>& new_position) {
+        auto s1 = location_service->create_session_for_criteria(cul::Criteria{});
+
+        cul::Update<cul::Position> position;
+        auto c1 = s1->updates().position.changed().connect(
+            [&](const cul::Update<cul::Position>& new_position) {
                 std::cout << "On position updated: " << new_position << std::endl;
                 position = new_position;
             });
-        com::ubuntu::location::Update<com::ubuntu::location::Velocity> velocity;
-        s1->install_velocity_updates_handler(
-            [&](const com::ubuntu::location::Update<com::ubuntu::location::Velocity>& new_velocity) {
+        cul::Update<cul::Velocity> velocity;
+        auto c2 = s1->updates().velocity.changed().connect(
+            [&](const cul::Update<cul::Velocity>& new_velocity) {
                 std::cout << "On velocity_changed " << new_velocity << std::endl;
                 velocity = new_velocity;
             });
-        com::ubuntu::location::Update<com::ubuntu::location::Heading> heading;
-        s1->install_heading_updates_handler(
-            [&](const com::ubuntu::location::Update<com::ubuntu::location::Heading>& new_heading) {
+        cul::Update<cul::Heading> heading;
+        auto c3 = s1->updates().heading.changed().connect(
+            [&](const cul::Update<cul::Heading>& new_heading) {
                 std::cout << "On heading changed: " << new_heading << std::endl;
                 heading = new_heading;
                 bus->stop();
             });
         
-        s1->start_position_updates();
-        s1->start_velocity_updates();
-        s1->start_heading_updates();
+        s1->updates().position_status = culss::Interface::Updates::Status::enabled;
+        s1->updates().heading_status = culss::Interface::Updates::Status::enabled;
+        s1->updates().velocity_status = culss::Interface::Updates::Status::enabled;
         
         sync_session_created.signal_ready();
 

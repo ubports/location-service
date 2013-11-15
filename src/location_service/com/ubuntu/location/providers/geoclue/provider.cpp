@@ -105,7 +105,7 @@ culpg::Provider::Provider(const culpg::Provider::Configuration& config)
                         },
                         cul::Clock::now()
                     };
-                    this->deliver_position_updates(update);
+                    this->mutable_updates().position = update;
                 });
 
     d->velocity_updates_connection = 
@@ -122,7 +122,7 @@ culpg::Provider::Provider(const culpg::Provider::Configuration& config)
                             std::get<2>(arg) * cul::units::MetersPerSecond,
                             cul::Clock::now()
                         };
-                        this->deliver_velocity_updates(update);
+                        this->mutable_updates().velocity = update;
                     }
 
                     if (flags.test(org::freedesktop::Geoclue::Velocity::Field::direction))
@@ -133,7 +133,7 @@ culpg::Provider::Provider(const culpg::Provider::Configuration& config)
                             cul::Clock::now()
                         };
                             
-                        this->deliver_heading_updates(update);
+                        this->mutable_updates().heading = update;
                     }
                 });
 

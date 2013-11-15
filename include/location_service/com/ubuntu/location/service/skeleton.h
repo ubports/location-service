@@ -43,6 +43,9 @@ class Skeleton : public org::freedesktop::dbus::Skeleton<com::ubuntu::location::
     Skeleton& operator=(const Skeleton&) = delete;
     ~Skeleton() noexcept;
 
+    com::ubuntu::Property<bool>& does_satellite_based_positioning();
+    com::ubuntu::Property<bool>& is_online();
+
   private:
     struct Private;
     std::shared_ptr<Private> d;

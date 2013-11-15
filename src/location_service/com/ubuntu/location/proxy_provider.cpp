@@ -20,6 +20,7 @@
 #include <bitset>
 #include <memory>
 
+namespace cu = com::ubuntu;
 namespace cul = com::ubuntu::location;
 
 cul::ProxyProvider::ProxyProvider(const cul::ProviderSelection& selection)
@@ -28,31 +29,36 @@ cul::ProxyProvider::ProxyProvider(const cul::ProviderSelection& selection)
       heading_updates_provider(selection.heading_updates_provider),
       velocity_updates_provider(selection.velocity_updates_provider)
 {
+    if (position_updates_provider)
+    {
+        position_updates_provider->updates().position.changed().connect(
+                    [this](const cul::Update<cul::Position>& u)
+                    {
+                        mutable_updates().position = u;
+                    });
+    }
+
+    if (heading_updates_provider)
+    {
+        heading_updates_provider->updates().heading.changed().connect(
+                    [this](const cul::Update<cul::Heading>& u)
+                    {
+                        mutable_updates().heading = u;
+                    });
+    }
+
+    if (velocity_updates_provider)
+    {
+        velocity_updates_provider->updates().velocity.changed().connect(
+                    [this](const cul::Update<cul::Velocity>& u)
+                    {
+                        mutable_updates().velocity = u;
+                    });
+    }
 }
 
 cul::ProxyProvider::~ProxyProvider() noexcept
 {
-}
-
-cul::ChannelConnection cul::ProxyProvider::subscribe_to_position_updates(std::function<void(const cul::Update<cul::Position>&)> f)
-{
-    if (position_updates_provider)
-        return position_updates_provider->subscribe_to_position_updates(f);
-    return ChannelConnection {};
-}
-
-cul::ChannelConnection cul::ProxyProvider::subscribe_to_heading_updates(std::function<void(const cul::Update<cul::Heading>&)> f)
-{
-    if (heading_updates_provider)
-        return heading_updates_provider->subscribe_to_heading_updates(f);
-    return ChannelConnection {};
-}
-
-cul::ChannelConnection cul::ProxyProvider::subscribe_to_velocity_updates(std::function<void(const cul::Update<cul::Velocity>&)> f)
-{
-    if (velocity_updates_provider)
-        return velocity_updates_provider->subscribe_to_velocity_updates(f);
-    return ChannelConnection {};
 }
 
 void cul::ProxyProvider::start_position_updates()
