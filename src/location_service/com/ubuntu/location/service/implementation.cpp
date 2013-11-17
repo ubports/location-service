@@ -49,6 +49,24 @@ culs::Implementation::Implementation(
         throw std::runtime_error("Cannot create service for null engine.");
     if (!permission_manager)
         throw std::runtime_error("Cannot create service for null permission manager.");
+
+    is_online().changed().connect(
+                [this](bool value)
+                {
+                    d->engine->configuration.engine_state
+                            = value ?
+                                Engine::Status::on :
+                                Engine::Status::off;
+                });
+
+    does_satellite_based_positioning().changed().connect(
+                [this](bool value)
+                {
+                    d->engine->configuration.satellite_based_positioning_state
+                            = value ?
+                                Engine::Configuration::SatelliteBasedPositioningState::on :
+                                Engine::Configuration::SatelliteBasedPositioningState::off;
+                });
 }
 
 culs::Implementation::~Implementation() noexcept

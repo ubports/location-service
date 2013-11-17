@@ -15,8 +15,8 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_SERVICE_COM_UBUNTU_CONNECTIVITY_CELL_H_
-#define LOCATION_SERVICE_COM_UBUNTU_CONNECTIVITY_CELL_H_
+#ifndef LOCATION_SERVICE_COM_UBUNTU_CONNECTIVITY_RADIO_CELL_H_
+#define LOCATION_SERVICE_COM_UBUNTU_CONNECTIVITY_RADIO_CELL_H_
 
 #include <stdexcept>
 
@@ -25,6 +25,8 @@ namespace com
 namespace ubuntu
 {
 namespace connectivity
+{
+namespace radio
 {
 template<int min, int max>
 struct BoundedInteger
@@ -189,6 +191,7 @@ private:
 }
 }
 }
+}
 
-#endif // LOCATION_SERVICE_COM_UBUNTU_CONNECTIVITY_CELL_H_
+#endif // LOCATION_SERVICE_COM_UBUNTU_CONNECTIVITY_RADIO_CELL_H_
 

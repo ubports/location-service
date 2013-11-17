@@ -28,6 +28,11 @@ namespace wifi
 {
 struct Network
 {
+    std::string mac;
+    std::string bssid;
+    int frequency; // in [Mhz]
+    int channel;
+    int signal_strength; // in [Db]
 };
 }
 }

@@ -49,11 +49,16 @@ public:
      * @brief The LastKnownReferenceLocation struct contains the best, last known fix.
      */
     struct LastKnownReferenceLocation
-    {
-        Position position; ///< The actual location.
-        units::Length accuracy; ///< The accuracy of the fix.
-        std::set<com::ubuntu::connectivity::Cell> visible_cells; ///< The set of radio cells that were visible.
-        std::set<com::ubuntu::connectivity::wifi::Network> visible_wireless_networks; ///< The wifi's that were visible.
+    {        
+        bool operator==(const LastKnownReferenceLocation&) const
+        {
+            return false;
+        }
+
+        Position position = Position(); ///< The actual location.
+        units::Quantity<units::Length> accuracy = 1E10* units::Meters; ///< The accuracy of the fix.
+        std::set<com::ubuntu::connectivity::Cell> visible_cells = std::set<com::ubuntu::connectivity::Cell>{}; ///< The set of radio cells that were visible.
+        std::set<com::ubuntu::connectivity::wifi::Network> visible_wireless_networks = std::set<com::ubuntu::connectivity::wifi::Network>{}; ///< The wifi's that were visible.
     };
 
     /**
@@ -94,12 +99,33 @@ public:
     Engine& operator=(const Engine&) = delete;
     virtual ~Engine() = default;
 
+    /**
+     * @brief Calculates a set of providers that satisfies the given criteria.
+     * @param [in] criteria The criteria to be satisfied by the returned provider selection.
+     * @return A provider selection that satisfies the given criteria.
+     */
     virtual ProviderSelection determine_provider_selection_for_criteria(const Criteria& criteria);
 
+    /**
+     * @brief Checks if the engine knows about a specific provider.
+     * @return True iff the engine knows about the provider.
+     */
     virtual bool has_provider(const Provider::Ptr& provider) noexcept;
+
+    /**
+     * @brief Makes a provider known to the engine.
+     * @param provider The new provider.
+     */
     virtual void add_provider(const Provider::Ptr& provider);
+
+    /**
+     * @brief Removes a provider from the engine.
+     * @param provider The provider to be removed.
+     */
     virtual void remove_provider(const Provider::Ptr& provider) noexcept;
 
+    /** The engine's configuration. */
+    Configuration configuration;
 private:
     std::set<Provider::Ptr> providers;
     ProviderSelectionPolicy::Ptr provider_selection_policy;

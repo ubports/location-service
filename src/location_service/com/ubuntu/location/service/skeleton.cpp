@@ -184,6 +184,8 @@ struct culs::Skeleton::Private : public SessionStore<SessionWrapper>, std::enabl
                     vs2,
                     bus_is_online,
                     std::placeholders::_1));
+
+        // TODO: we should make dbus properties observable
     }
 
 

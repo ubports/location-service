@@ -235,7 +235,7 @@ private:
     {
         Features features = Features::none;
         Requirements requirements = Requirements::none;
-        Updates updates = Updates{};
+        Updates updates;
         Controller::Ptr controller = Controller::Ptr{};
     } d;
 };
