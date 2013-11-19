@@ -24,6 +24,7 @@
 #include "com/ubuntu/location/criteria.h"
 #include "com/ubuntu/location/provider.h"
 #include "com/ubuntu/location/provider_selection_policy.h"
+#include "com/ubuntu/location/reporter.h"
 #include "com/ubuntu/location/units/units.h"
 
 #include <com/ubuntu/property.h>
@@ -57,8 +58,6 @@ public:
 
         Position position = Position(); ///< The actual location.
         units::Quantity<units::Length> accuracy = 1E10* units::Meters; ///< The accuracy of the fix.
-        std::set<com::ubuntu::connectivity::Cell> visible_cells = std::set<com::ubuntu::connectivity::Cell>{}; ///< The set of radio cells that were visible.
-        std::set<com::ubuntu::connectivity::wifi::Network> visible_wireless_networks = std::set<com::ubuntu::connectivity::wifi::Network>{}; ///< The wifi's that were visible.
     };
 
     /**
@@ -124,10 +123,30 @@ public:
      */
     virtual void remove_provider(const Provider::Ptr& provider) noexcept;
 
+    /**
+     * @brief Checks if the engine knows about a specific reporter.
+     * @return True iff the engine knows about the reporter.
+     */
+    virtual bool has_reporter(const Reporter::Ptr& reporter) noexcept;
+
+    /**
+     * @brief Makes a reporter known to the engine.
+     * @param reporter The new reporter.
+     */
+    virtual void add_reporter(const Reporter::Ptr& reporter);
+
+    /**
+     * @brief Removes a reporter from the engine.
+     * @param reporter The reporter to be removed.
+     */
+    virtual void remove_reporter(const Reporter::Ptr& reporter) noexcept;
+
     /** The engine's configuration. */
     Configuration configuration;
+
 private:
     std::set<Provider::Ptr> providers;
+    std::set<Reporter::Ptr> reporters;
     ProviderSelectionPolicy::Ptr provider_selection_policy;
 };
 }

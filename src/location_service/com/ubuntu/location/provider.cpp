@@ -21,6 +21,7 @@
 #include <bitset>
 #include <memory>
 
+namespace cuc = com::ubuntu::connectivity;
 namespace cul = com::ubuntu::location;
 
 void cul::Provider::Controller::start_position_updates()
@@ -120,6 +121,7 @@ const cul::Provider::Updates& cul::Provider::updates() const
 }
 
 cul::Provider::Provider(
+    const std::shared_ptr<cuc::Manager>&,
     const cul::Provider::Features& features,
     const cul::Provider::Requirements& requirements)
 {

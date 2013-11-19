@@ -21,6 +21,7 @@
 
 #include <thread>
 
+namespace cuc = com::ubuntu::connectivity;
 namespace cul = com::ubuntu::location;
 namespace culpg = com::ubuntu::location::providers::geoclue;
 
@@ -85,7 +86,7 @@ cul::Provider::Ptr culpg::Provider::create_instance(const cul::ProviderFactory::
 }
 
 culpg::Provider::Provider(const culpg::Provider::Configuration& config) 
-        : com::ubuntu::location::Provider(config.features, config.requirements),
+        : com::ubuntu::location::Provider(std::shared_ptr<cuc::Manager>{}, config.features, config.requirements),
           d(new Private(config))
 {
     d->position_updates_connection = 

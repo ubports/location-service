@@ -52,3 +52,21 @@ void cul::Engine::remove_provider(const cul::Provider::Ptr& provider) noexcept
 {
     providers.erase(provider);
 }
+
+bool cul::Engine::has_reporter(const cul::Reporter::Ptr& reporter) noexcept
+{
+    return reporters.count(reporter) > 0;
+}
+
+void cul::Engine::add_reporter(const cul::Reporter::Ptr& reporter)
+{
+    if (!reporter)
+        throw std::runtime_error("Cannot add null reporter");
+
+    reporters.insert(reporter);
+}
+
+void cul::Engine::remove_reporter(const cul::Reporter::Ptr& reporter) noexcept
+{
+    reporters.erase(reporter);
+}

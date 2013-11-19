@@ -18,6 +18,8 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_CONNECTIVITY_WIFI_NETWORK_H_
 #define LOCATION_SERVICE_COM_UBUNTU_CONNECTIVITY_WIFI_NETWORK_H_
 
+#include <com/ubuntu/connectivity/network.h>
+
 namespace com
 {
 namespace ubuntu
@@ -26,13 +28,29 @@ namespace connectivity
 {
 namespace wifi
 {
-struct Network
+class Network : public com::ubuntu::connectivity::Network
 {
-    std::string mac;
-    std::string bssid;
-    int frequency; // in [Mhz]
-    int channel;
-    int signal_strength; // in [Db]
+public:
+    struct Information
+    {
+        std::string mac;
+        std::string bssid;
+        int frequency; // in [Mhz]
+        int channel;
+        int signal_strength; // in [Db]
+    };
+
+    Network(const Information& information);
+
+    const Information& information() const;
+
+    // From com::ubuntu::connectivity::Network
+    const Property<bool>& requires_authentication() const;
+
+    virtual std::string name() const;
+
+    const Property<double>& signal_to_noise_ratio() const;
+    const std::shared_ptr<Link>& link() const;
 };
 }
 }

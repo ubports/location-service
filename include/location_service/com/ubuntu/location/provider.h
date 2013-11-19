@@ -26,6 +26,7 @@
 #include "com/ubuntu/location/velocity.h"
 
 #include <com/ubuntu/property.h>
+#include <com/ubuntu/connectivity/manager.h>
 
 #include <atomic>
 #include <bitset>
@@ -195,6 +196,7 @@ public:
     
 protected:
     explicit Provider(
+        const std::shared_ptr<com::ubuntu::connectivity::Manager>& manager,
         const Features& features = Features::none,
         const Requirements& requirements = Requirements::none);
 

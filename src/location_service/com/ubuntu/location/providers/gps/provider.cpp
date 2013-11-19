@@ -21,6 +21,7 @@
 
 #include <ubuntu/hardware/gps.h>
 
+namespace cuc = com::ubuntu::connectivity;
 namespace cul = com::ubuntu::location;
 namespace culg = com::ubuntu::location::providers::gps;
 
@@ -150,6 +151,7 @@ cul::Provider::Ptr culg::Provider::create_instance(const cul::ProviderFactory::C
 
 culg::Provider::Provider()
         : cul::Provider(
+              std::shared_ptr<cuc::Manager>{},
               cul::Provider::Features::position | cul::Provider::Features::velocity | cul::Provider::Features::heading,
               cul::Provider::Requirements::satellites),
           d(new Private())

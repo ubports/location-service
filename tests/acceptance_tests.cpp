@@ -49,6 +49,7 @@
 #include <set>
 #include <stdexcept>
 
+namespace cuc = com::ubuntu::connectivity;
 namespace cul = com::ubuntu::location;
 namespace culss = com::ubuntu::location::service::session;
 
@@ -70,7 +71,7 @@ cul::Update<T> update_as_of_now(const T& value = T())
 class DummyProvider : public cul::Provider
 {
 public:
-    DummyProvider()
+    DummyProvider() : cul::Provider(std::shared_ptr<cuc::Manager>{})
     {
     }
 

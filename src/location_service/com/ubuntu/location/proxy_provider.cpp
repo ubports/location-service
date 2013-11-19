@@ -21,10 +21,11 @@
 #include <memory>
 
 namespace cu = com::ubuntu;
+namespace cuc = com::ubuntu::connectivity;
 namespace cul = com::ubuntu::location;
 
 cul::ProxyProvider::ProxyProvider(const cul::ProviderSelection& selection)
-    : Provider(selection.to_feature_flags()),
+    : Provider(std::shared_ptr<cuc::Manager>{}, selection.to_feature_flags()),
       position_updates_provider(selection.position_updates_provider),
       heading_updates_provider(selection.heading_updates_provider),
       velocity_updates_provider(selection.velocity_updates_provider)

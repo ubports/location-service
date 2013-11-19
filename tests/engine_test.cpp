@@ -21,10 +21,16 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+namespace cuc = com::ubuntu::connectivity;
+namespace cul = com::ubuntu::location;
+
 namespace
 {
 struct DummyProvider : public com::ubuntu::location::Provider
 {
+    DummyProvider() : cul::Provider(std::shared_ptr<cuc::Manager>{})
+    {
+    }
 };
 
 struct NullProviderSelectionPolicy : public com::ubuntu::location::ProviderSelectionPolicy

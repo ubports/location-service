@@ -49,18 +49,27 @@ struct BoundedInteger
     int value;
 };
 
+/**
+ * @brief Abstracts a radio cell, encapsulating relevant information for different radio types.
+ */
 class Cell
 {
 public:
+    /**
+     * @brief Enumerates the known radio types.
+     */
     enum class RadioType
     {
-        unknown,
-        gsm,
-        umts,
-        cdma,
-        lte
+        unknown, ///< Unknown and invalid.
+        gsm, ///< GSM radio network
+        umts, ///< UMTS radio nework
+        cdma, ///< CDMA radio network
+        lte ///< LTE radio network
     };
 
+    /**
+     * @brief Information specific to GSM radio.
+     */
     struct Gsm
     {
         BoundedInteger<0,999> mobile_country_code;
@@ -72,6 +81,9 @@ public:
         BoundedInteger<0,63> timing_advance;
     };
 
+    /**
+     * @brief Information specific to UMTS radio.
+     */
     struct Umts
     {
         BoundedInteger<0,999> mobile_country_code;
@@ -82,6 +94,9 @@ public:
         BoundedInteger<-5,91> arbitrary_strength_unit;
     };
 
+    /**
+     * @brief Information specific to CDMA radio.
+     */
     struct Cdma
     {
         BoundedInteger<0,999> mobile_country_code;
@@ -92,6 +107,9 @@ public:
         BoundedInteger<1,16> arbitrary_strength_unit;
     };
 
+    /**
+     * @brief Information specific to LTE radio.
+     */
     struct Lte
     {
         BoundedInteger<0,999> mobile_country_code;
