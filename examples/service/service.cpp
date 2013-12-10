@@ -17,10 +17,10 @@
  */
 #include "program_options.h"
 
-#include "com/ubuntu/location/provider_factory.h"
+#include <com/ubuntu/location/provider_factory.h>
 
-#include "com/ubuntu/location/service/default_configuration.h"
-#include "com/ubuntu/location/service/implementation.h"
+#include <com/ubuntu/location/service/default_configuration.h>
+#include <com/ubuntu/location/service/implementation.h>
 
 #include <org/freedesktop/dbus/announcer.h>
 #include <org/freedesktop/dbus/asio/executor.h>

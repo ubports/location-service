@@ -18,9 +18,9 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SESSION_IMPLEMENTATION_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SESSION_IMPLEMENTATION_H_
 
-#include "com/ubuntu/location/service/session/skeleton.h"
+#include <com/ubuntu/location/service/session/skeleton.h>
 
-#include "com/ubuntu/location/provider.h"
+#include <com/ubuntu/location/provider.h>
 
 #include <memory>
 

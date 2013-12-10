@@ -18,7 +18,7 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_DEFAULT_PROVIDER_SELECTION_POLICY_H_
 #define LOCATION_SERVICE_COM_UBUNTU_DEFAULT_PROVIDER_SELECTION_POLICY_H_
 
-#include "com/ubuntu/location/provider_selection_policy.h"
+#include <com/ubuntu/location/provider_selection_policy.h>
 
 namespace com
 {

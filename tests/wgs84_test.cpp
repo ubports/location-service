@@ -15,11 +15,11 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/wgs84/coordinate.h"
-#include "com/ubuntu/location/wgs84/altitude.h"
-#include "com/ubuntu/location/wgs84/latitude.h"
-#include "com/ubuntu/location/wgs84/longitude.h"
-#include "com/ubuntu/location/position.h"
+#include <com/ubuntu/location/wgs84/coordinate.h>
+#include <com/ubuntu/location/wgs84/altitude.h>
+#include <com/ubuntu/location/wgs84/latitude.h>
+#include <com/ubuntu/location/wgs84/longitude.h>
+#include <com/ubuntu/location/position.h>
 
 #include <gtest/gtest.h>
 

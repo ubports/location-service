@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/default_provider_selection_policy.h"
+#include <com/ubuntu/location/default_provider_selection_policy.h>
 
 namespace cul = com::ubuntu::location;
 

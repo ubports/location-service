@@ -18,7 +18,7 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_DEFAULT_PERMISSION_MANAGER_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_DEFAULT_PERMISSION_MANAGER_H_
 
-#include "com/ubuntu/location/service/permission_manager.h"
+#include <com/ubuntu/location/service/permission_manager.h>
 
 #include <sys/types.h>
 #include <unistd.h>

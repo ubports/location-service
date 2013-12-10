@@ -18,9 +18,9 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SKELETON_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SKELETON_H_
 
-#include "com/ubuntu/location/service/interface.h"
-#include "com/ubuntu/location/service/permission_manager.h"
-#include "com/ubuntu/location/service/session/interface.h"
+#include <com/ubuntu/location/service/interface.h>
+#include <com/ubuntu/location/service/permission_manager.h>
+#include <com/ubuntu/location/service/session/interface.h>
 
 #include <org/freedesktop/dbus/skeleton.h>
 
@@ -43,8 +43,10 @@ class Skeleton : public org::freedesktop::dbus::Skeleton<com::ubuntu::location::
     Skeleton& operator=(const Skeleton&) = delete;
     ~Skeleton() noexcept;
 
-    com::ubuntu::Property<bool>& does_satellite_based_positioning();
-    com::ubuntu::Property<bool>& is_online();
+    core::Property<bool>& does_satellite_based_positioning();
+    core::Property<bool>& does_report_cell_and_wifi_ids();
+    core::Property<bool>& is_online();
+    core::Property<std::vector<SpaceVehicle>>& visible_space_vehicles();
 
   private:
     struct Private;

@@ -18,8 +18,8 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDER_FACTORY_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDER_FACTORY_H_
 
-#include "com/ubuntu/location/configuration.h"
-#include "com/ubuntu/location/provider.h"
+#include <com/ubuntu/location/configuration.h>
+#include <com/ubuntu/location/provider.h>
 
 #include <functional>
 #include <map>

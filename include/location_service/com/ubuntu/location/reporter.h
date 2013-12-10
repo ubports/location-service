@@ -18,7 +18,7 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_REPORTER_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_REPORTER_H_
 
-#include <com/ubuntu/property.h>
+#include <core/property.h>
 
 #include <memory>
 

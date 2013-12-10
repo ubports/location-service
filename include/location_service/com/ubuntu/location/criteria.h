@@ -18,12 +18,12 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_CRITERIA_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_CRITERIA_H_
 
-#include "com/ubuntu/location/accuracy.h"
-#include "com/ubuntu/location/heading.h"
-#include "com/ubuntu/location/velocity.h"
-#include "com/ubuntu/location/wgs84/altitude.h"
-#include "com/ubuntu/location/wgs84/latitude.h"
-#include "com/ubuntu/location/wgs84/longitude.h"
+#include <com/ubuntu/location/accuracy.h>
+#include <com/ubuntu/location/heading.h>
+#include <com/ubuntu/location/velocity.h>
+#include <com/ubuntu/location/wgs84/altitude.h>
+#include <com/ubuntu/location/wgs84/latitude.h>
+#include <com/ubuntu/location/wgs84/longitude.h>
 
 #include <limits>
 #include <ostream>

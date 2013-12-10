@@ -15,10 +15,10 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/providers/skyhook/provider.h"
+#include <com/ubuntu/location/providers/skyhook/provider.h>
 
-#include "com/ubuntu/location/logging.h"
-#include "com/ubuntu/location/provider_factory.h"
+#include <com/ubuntu/location/logging.h>
+#include <com/ubuntu/location/provider_factory.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic warning "-Wignored-qualifiers"

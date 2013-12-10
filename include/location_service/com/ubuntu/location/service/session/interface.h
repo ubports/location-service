@@ -18,14 +18,14 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SESSION_INTERFACE_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SESSION_INTERFACE_H_
 
-#include "com/ubuntu/location/channel.h"
-#include "com/ubuntu/location/heading.h"
-#include "com/ubuntu/location/position.h"
-#include "com/ubuntu/location/provider.h"
-#include "com/ubuntu/location/update.h"
-#include "com/ubuntu/location/velocity.h"
+#include <com/ubuntu/location/channel.h>
+#include <com/ubuntu/location/heading.h>
+#include <com/ubuntu/location/position.h>
+#include <com/ubuntu/location/provider.h>
+#include <com/ubuntu/location/update.h>
+#include <com/ubuntu/location/velocity.h>
 
-#include <com/ubuntu/property.h>
+#include <core/property.h>
 
 #include <org/freedesktop/dbus/codec.h>
 #include <org/freedesktop/dbus/traits/service.h>
@@ -245,29 +245,29 @@ public:
         /**
          * @brief Updates for position measurements.
          */
-        com::ubuntu::Property<Update<Position>> position;
+        core::Property<Update<Position>> position;
         /**
          * @brief Status of position updates, mutable.
          */
-        com::ubuntu::Property<Status> position_status;
+        core::Property<Status> position_status;
 
         /**
          * @brief Updates for the heading measurements.
          */
-        com::ubuntu::Property<Update<Heading>> heading;
+        core::Property<Update<Heading>> heading;
         /**
          * @brief Status of position updates, mutable.
          */
-        com::ubuntu::Property<Status> heading_status;
+        core::Property<Status> heading_status;
 
         /**
          * @brief Updates for velocity measurements.
          */
-        com::ubuntu::Property<Update<Velocity>> velocity;
+        core::Property<Update<Velocity>> velocity;
         /**
          * @brief Status of velocity updates, mutable.
          */
-        com::ubuntu::Property<Status> velocity_status;
+        core::Property<Status> velocity_status;
     };
 
     /** Forward declaration for an ID uniquely identifying this session. */
@@ -324,6 +324,6 @@ struct Service<com::ubuntu::location::service::session::Interface>
 }
 }
 
-#include "com/ubuntu/location/codec.h"
+#include <com/ubuntu/location/codec.h>
 
 #endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SESSION_INTERFACE_H_

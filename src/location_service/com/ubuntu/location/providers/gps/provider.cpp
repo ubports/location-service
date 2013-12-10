@@ -15,9 +15,9 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/providers/gps/provider.h"
+#include <com/ubuntu/location/providers/gps/provider.h>
 
-#include "com/ubuntu/location/logging.h"
+#include <com/ubuntu/location/logging.h>
 
 #include <ubuntu/hardware/gps.h>
 

@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/service/session/interface.h"
+#include <com/ubuntu/location/service/session/interface.h>
 
 #include <org/freedesktop/dbus/codec.h>
 #include <org/freedesktop/dbus/service.h>

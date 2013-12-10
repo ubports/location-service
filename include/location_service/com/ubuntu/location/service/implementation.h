@@ -18,8 +18,8 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_IMPLEMENTATION_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_IMPLEMENTATION_H_
 
-#include "com/ubuntu/location/engine.h"
-#include "com/ubuntu/location/service/skeleton.h"
+#include <com/ubuntu/location/engine.h>
+#include <com/ubuntu/location/service/skeleton.h>
 
 #include <memory>
 

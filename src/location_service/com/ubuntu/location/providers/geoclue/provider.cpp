@@ -15,9 +15,9 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/providers/geoclue/provider.h"
+#include <com/ubuntu/location/providers/geoclue/provider.h>
 
-#include "com/ubuntu/location/providers/geoclue/geoclue.h"
+#include <com/ubuntu/location/providers/geoclue/geoclue.h>
 
 #include <thread>
 

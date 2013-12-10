@@ -18,7 +18,7 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_PROVIDER_SELECTION_POLICY_H_
 #define LOCATION_SERVICE_COM_UBUNTU_PROVIDER_SELECTION_POLICY_H_
 
-#include "com/ubuntu/location/provider.h"
+#include <com/ubuntu/location/provider.h>
 
 #include <memory>
 

@@ -1,4 +1,4 @@
-#include "com/ubuntu/location/service/session/implementation.h"
+#include <com/ubuntu/location/service/session/implementation.h>
 
 #include <functional>
 #include <memory>
@@ -16,18 +16,18 @@ struct culss::Implementation::Private
     struct Connections
     {
         Connections(
-                const cu::Connection& pu,
-                const cu::Connection& vu,
-                const cu::Connection& hu)
+                const core::Connection& pu,
+                const core::Connection& vu,
+                const core::Connection& hu)
             : position_updates(pu),
               velocity_updates(vu),
               heading_updates(hu)
         {
         }
 
-        cu::Connection position_updates;
-        cu::Connection velocity_updates;
-        cu::Connection heading_updates;
+        core::Connection position_updates;
+        core::Connection velocity_updates;
+        core::Connection heading_updates;
     } connections;
 };
 

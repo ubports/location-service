@@ -52,13 +52,13 @@
 namespace cuc = com::ubuntu::connectivity;
 namespace cul = com::ubuntu::location;
 namespace culss = com::ubuntu::location::service::session;
+namespace dbus = org::freedesktop::dbus;
 
 namespace
 {
-org::freedesktop::dbus::Bus::Ptr the_session_bus()
+dbus::Bus::Ptr the_session_bus()
 {
-    org::freedesktop::dbus::Bus::Ptr bus{
-        new org::freedesktop::dbus::Bus{org::freedesktop::dbus::WellKnownBus::session}};
+    dbus::Bus::Ptr bus{new dbus::Bus{dbus::WellKnownBus::session}};
     return bus;
 }
 
@@ -112,6 +112,7 @@ struct AlwaysGrantingPermissionManager : public cul::service::PermissionManager
 
 auto timestamp = cul::Clock::now();
 
+// Create reference objects for injecting and validating updates.
 cul::Update<cul::Position> reference_position_update
 {
     {
@@ -133,7 +134,7 @@ cul::Update<cul::Heading> reference_heading_update
     {120. * cul::units::Degrees},
     timestamp
 };
-}
+} // namespace
 
 TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
 {
@@ -144,14 +145,16 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
     {
         SCOPED_TRACE("Server");
         auto bus = the_session_bus();
-        bus->install_executor(org::freedesktop::dbus::Executor::Ptr(new org::freedesktop::dbus::asio::Executor{bus}));
+        bus->install_executor(dbus::Executor::Ptr(new dbus::asio::Executor{bus}));
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
         cul::service::DefaultConfiguration config;
         
         cul::service::Implementation service(
                     bus,
-                    config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+                    config.the_engine(
+                        config.the_provider_set(helper),
+                        config.the_provider_selection_policy()),
                     config.the_permission_manager());
 
 
@@ -176,9 +179,9 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
         sync_start.wait_for_signal_ready();
 
         auto bus = the_session_bus();
-        bus->install_executor(org::freedesktop::dbus::Executor::Ptr(new org::freedesktop::dbus::asio::Executor{bus}));
+        bus->install_executor(dbus::Executor::Ptr(new dbus::asio::Executor{bus}));
         std::thread t{[bus](){bus->run();}};
-        auto location_service = org::freedesktop::dbus::resolve_service_on_bus<
+        auto location_service = dbus::resolve_service_on_bus<
             cul::service::Interface,
             cul::service::Stub>(bus);
         
@@ -216,6 +219,213 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
         EXPECT_EQ(reference_position_update, position);
         EXPECT_EQ(reference_velocity_update, velocity);
         EXPECT_EQ(reference_heading_update, heading);
+    };
+
+    EXPECT_NO_FATAL_FAILURE(test::fork_and_run(server, client));
+}
+
+TEST(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
+{
+    test::CrossProcessSync sync_start;
+
+    auto server = [&sync_start]()
+    {
+        SCOPED_TRACE("Server");
+        auto bus = the_session_bus();
+        bus->install_executor(
+                    dbus::Executor::Ptr(
+                        new dbus::asio::Executor{bus}));
+        auto dummy = new DummyProvider();
+        cul::Provider::Ptr helper(dummy);
+        cul::service::DefaultConfiguration config;
+        auto engine = config.the_engine(
+                    config.the_provider_set(helper),
+                    config.the_provider_selection_policy());
+        engine->configuration.engine_state = cul::Engine::Status::on;
+        auto permission_manager = config.the_permission_manager();
+        cul::service::Implementation service(
+                    bus,
+                    engine,
+                    permission_manager);
+
+        sync_start.signal_ready();
+
+        std::thread t{[bus](){bus->run();}};
+
+        if (t.joinable())
+            t.join();
+    };
+
+    auto client = [&sync_start]()
+    {
+        SCOPED_TRACE("Client");
+
+        sync_start.wait_for_signal_ready();
+
+        auto bus = the_session_bus();
+        auto location_service = dbus::resolve_service_on_bus<
+            cul::service::Interface,
+            cul::service::Stub>(bus);
+
+        EXPECT_TRUE(location_service->is_online());
+        location_service->is_online() = false;
+        EXPECT_FALSE(location_service->is_online());
+    };
+
+    EXPECT_NO_FATAL_FAILURE(test::fork_and_run(server, client));
+}
+
+TEST(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjusted)
+{
+    test::CrossProcessSync sync_start;
+
+    auto server = [&sync_start]()
+    {
+        SCOPED_TRACE("Server");
+        auto bus = the_session_bus();
+        bus->install_executor(
+                    dbus::Executor::Ptr(
+                        new dbus::asio::Executor{bus}));
+        auto dummy = new DummyProvider();
+        cul::Provider::Ptr helper(dummy);
+        cul::service::DefaultConfiguration config;
+        auto engine = config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy());
+        engine->configuration.satellite_based_positioning_state.set(
+                    cul::Engine::Configuration::SatelliteBasedPositioningState::on);
+        auto permission_manager = config.the_permission_manager();
+        cul::service::Implementation service(
+                    bus,
+                    engine,
+                    permission_manager);
+
+        sync_start.signal_ready();
+
+        std::thread t{[bus](){bus->run();}};
+
+        if (t.joinable())
+            t.join();
+    };
+
+    auto client = [&sync_start]()
+    {
+        SCOPED_TRACE("Client");
+
+        sync_start.wait_for_signal_ready();
+
+        auto bus = the_session_bus();
+        auto location_service = dbus::resolve_service_on_bus<
+            cul::service::Interface,
+            cul::service::Stub>(bus);
+
+        EXPECT_TRUE(location_service->does_satellite_based_positioning());
+        location_service->does_satellite_based_positioning() = false;
+        EXPECT_FALSE(location_service->does_satellite_based_positioning());
+    };
+
+    EXPECT_NO_FATAL_FAILURE(test::fork_and_run(server, client));
+}
+
+TEST(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdusted)
+{
+    test::CrossProcessSync sync_start;
+
+    auto server = [&sync_start]()
+    {
+        SCOPED_TRACE("Server");
+        auto bus = the_session_bus();
+        bus->install_executor(
+                    dbus::Executor::Ptr(
+                        new dbus::asio::Executor{bus}));
+        auto dummy = new DummyProvider();
+        cul::Provider::Ptr helper(dummy);
+        cul::service::DefaultConfiguration config;
+        auto engine = config.the_engine(
+                    config.the_provider_set(helper),
+                    config.the_provider_selection_policy());
+        auto permission_manager = config.the_permission_manager();
+        cul::service::Implementation service(
+                    bus,
+                    engine,
+                    permission_manager);
+
+        sync_start.signal_ready();
+
+        std::thread t{[bus](){bus->run();}};
+
+        if (t.joinable())
+            t.join();
+    };
+
+    auto client = [&sync_start]()
+    {
+        SCOPED_TRACE("Client");
+
+        sync_start.wait_for_signal_ready();
+
+        auto bus = the_session_bus();
+        auto location_service = dbus::resolve_service_on_bus<
+            cul::service::Interface,
+            cul::service::Stub>(bus);
+
+        EXPECT_FALSE(location_service->does_report_cell_and_wifi_ids());
+        location_service->does_report_cell_and_wifi_ids() = true;
+        EXPECT_TRUE(location_service->does_report_cell_and_wifi_ids());
+    };
+
+    EXPECT_NO_FATAL_FAILURE(test::fork_and_run(server, client));
+}
+
+TEST(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
+{
+    test::CrossProcessSync sync_start;
+
+    cul::SpaceVehicle sv;
+    sv.type = cul::SpaceVehicle::Type::gps;
+    sv.has_ephimeris_data = true;
+    static const std::vector<cul::SpaceVehicle> visible_space_vehicles{sv};
+
+    auto server = [&sync_start]()
+    {
+        SCOPED_TRACE("Server");
+        auto bus = the_session_bus();
+        bus->install_executor(
+                    dbus::Executor::Ptr(
+                        new dbus::asio::Executor{bus}));
+        auto dummy = new DummyProvider();
+        cul::Provider::Ptr helper(dummy);
+        cul::service::DefaultConfiguration config;
+        auto engine = config.the_engine(
+                    config.the_provider_set(helper),
+                    config.the_provider_selection_policy());
+        auto permission_manager = config.the_permission_manager();
+        cul::service::Implementation service(
+                    bus,
+                    engine,
+                    permission_manager);
+        engine->configuration.visible_space_vehicles.set(visible_space_vehicles);
+
+        sync_start.signal_ready();
+
+        std::thread t{[bus](){bus->run();}};
+
+        if (t.joinable())
+            t.join();
+    };
+
+    auto client = [&sync_start]()
+    {
+        SCOPED_TRACE("Client");
+
+        sync_start.wait_for_signal_ready();
+
+        auto bus = the_session_bus();
+        auto location_service = dbus::resolve_service_on_bus<
+            cul::service::Interface,
+            cul::service::Stub>(bus);
+
+        auto svs = location_service->visible_space_vehicles().get();
+
+        EXPECT_EQ(visible_space_vehicles, svs);
     };
 
     EXPECT_NO_FATAL_FAILURE(test::fork_and_run(server, client));

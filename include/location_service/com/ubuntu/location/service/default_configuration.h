@@ -18,7 +18,7 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_DEFAULT_CONFIGURATION_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_DEFAULT_CONFIGURATION_H_
 
-#include "com/ubuntu/location/service/configuration.h"
+#include <com/ubuntu/location/service/configuration.h>
 
 #include <set>
 

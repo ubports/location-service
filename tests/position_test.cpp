@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/position.h"
+#include <com/ubuntu/location/position.h>
 
 #include <gtest/gtest.h>
 
@@ -69,9 +69,9 @@ TEST(Position, MutatorsAdjustFieldFlags)
     EXPECT_TRUE(p.has_altitude());
 }
 
-#include "com/ubuntu/location/codec.h"
+#include <com/ubuntu/location/codec.h>
 
-#include "org/freedesktop/dbus/message.h"
+#include <org/freedesktop/dbus/message.h>
 
 TEST(Position, EncodingAndDecodingGivesSameResults)
 {

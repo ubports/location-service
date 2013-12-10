@@ -18,7 +18,7 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_UPDATE_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_UPDATE_H_
 
-#include "com/ubuntu/location/clock.h"
+#include <com/ubuntu/location/clock.h>
 
 #include <ostream>
 

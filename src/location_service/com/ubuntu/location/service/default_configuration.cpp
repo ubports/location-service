@@ -15,10 +15,10 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/service/default_configuration.h"
-#include "com/ubuntu/location/service/default_permission_manager.h"
+#include <com/ubuntu/location/service/default_configuration.h>
+#include <com/ubuntu/location/service/default_permission_manager.h>
 
-#include "com/ubuntu/location/default_provider_selection_policy.h"
+#include <com/ubuntu/location/default_provider_selection_policy.h>
 
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;

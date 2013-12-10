@@ -1,5 +1,5 @@
-#include "com/ubuntu/location/init_and_shutdown.h"
-#include "com/ubuntu/location/logging.h"
+#include <com/ubuntu/location/init_and_shutdown.h>
+#include <com/ubuntu/location/logging.h>
 
 #include <gflags/gflags.h>
 

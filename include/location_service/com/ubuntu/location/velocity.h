@@ -18,8 +18,8 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_VELOCITY_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_VELOCITY_H_
 
-#include "com/ubuntu/location/accuracy.h"
-#include "com/ubuntu/location/units/units.h"
+#include <com/ubuntu/location/accuracy.h>
+#include <com/ubuntu/location/units/units.h>
 
 #include <limits>
 #include <ostream>

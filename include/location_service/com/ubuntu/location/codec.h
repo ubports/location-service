@@ -18,16 +18,17 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_CODEC_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_CODEC_H_
 
-#include "com/ubuntu/location/accuracy.h"
-#include "com/ubuntu/location/criteria.h"
-#include "com/ubuntu/location/heading.h"
-#include "com/ubuntu/location/position.h"
-#include "com/ubuntu/location/update.h"
-#include "com/ubuntu/location/velocity.h"
-#include "com/ubuntu/location/units/units.h"
-#include "com/ubuntu/location/wgs84/altitude.h"
-#include "com/ubuntu/location/wgs84/latitude.h"
-#include "com/ubuntu/location/wgs84/longitude.h"
+#include <com/ubuntu/location/accuracy.h>
+#include <com/ubuntu/location/criteria.h>
+#include <com/ubuntu/location/heading.h>
+#include <com/ubuntu/location/position.h>
+#include <com/ubuntu/location/space_vehicle.h>
+#include <com/ubuntu/location/update.h>
+#include <com/ubuntu/location/velocity.h>
+#include <com/ubuntu/location/units/units.h>
+#include <com/ubuntu/location/wgs84/altitude.h>
+#include <com/ubuntu/location/wgs84/latitude.h>
+#include <com/ubuntu/location/wgs84/longitude.h>
 
 #include <org/freedesktop/dbus/codec.h>
 
@@ -323,7 +324,146 @@ struct Codec<com::ubuntu::location::Accuracy<T>>
         Codec<T>::decode_argument(out, in.value);
     }    
 };
+namespace helper
+{
+template<typename T>
+struct TypeMapper<std::vector<T>>
+{
+    constexpr static ArgumentType type_value()
+    {
+        return ArgumentType::array;
+    }
+    constexpr static bool is_basic_type()
+    {
+        return false;
+    }
+    constexpr static bool requires_signature()
+    {
+        return true;
+    }
 
+    static std::string signature()
+    {
+        static const std::string s = DBUS_TYPE_ARRAY_AS_STRING + TypeMapper<typename std::decay<T>::type>::signature();
+        return s;
+    }
+};
+}
+template<typename T>
+struct Codec<std::vector<T>>
+{
+    static void encode_argument(DBusMessageIter* out, const std::vector<T>& arg)
+    {
+        DBusMessageIter sub;
+        if (!dbus_message_iter_open_container(
+                    out,
+                    DBUS_TYPE_ARRAY,
+                    helper::TypeMapper<T>::requires_signature() ? helper::TypeMapper<T>::signature().c_str() : NULL,
+                    std::addressof(sub)))
+            throw std::runtime_error("Problem opening container");
+
+        std::for_each(
+            arg.begin(),
+            arg.end(),
+            std::bind(Codec<T>::encode_argument, std::addressof(sub), std::placeholders::_1));
+
+        if (!dbus_message_iter_close_container(out, std::addressof(sub)))
+            throw std::runtime_error("Problem closing container");
+    }
+
+    static void decode_argument(DBusMessageIter* in, std::vector<T>& out)
+    {
+        if (dbus_message_iter_get_arg_type(in) != static_cast<int>(ArgumentType::array))
+            throw std::runtime_error("Incompatible argument type: dbus_message_iter_get_arg_type(in) != ArgumentType::array");
+
+        if (dbus_message_iter_get_element_type(in) != static_cast<int>(helper::TypeMapper<T>::type_value()))
+            throw std::runtime_error("Incompatible element type");
+
+        int current_type;
+        DBusMessageIter sub;
+        dbus_message_iter_recurse(in, std::addressof(sub));
+        while ((current_type = dbus_message_iter_get_arg_type (std::addressof(sub))) != DBUS_TYPE_INVALID)
+        {
+            out.emplace_back();
+            Codec<T>::decode_argument(std::addressof(sub), out.back());
+
+            dbus_message_iter_next(std::addressof(sub));
+        }
+    }
+};
+namespace helper
+{
+template<>
+struct TypeMapper<com::ubuntu::location::SpaceVehicle>
+{
+    constexpr static ArgumentType type_value()
+    {
+        return ArgumentType::structure;
+    }
+    constexpr static bool is_basic_type()
+    {
+        return false;
+    }
+    constexpr static bool requires_signature()
+    {
+        return true;
+    }
+
+    static std::string signature()
+    {
+        static const std::string s =
+            DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
+                helper::TypeMapper<std::uint32_t>::signature() +
+                helper::TypeMapper<std::size_t>::signature() +
+                helper::TypeMapper<float>::signature() +
+                helper::TypeMapper<bool>::signature() +
+                helper::TypeMapper<bool>::signature() +
+                helper::TypeMapper<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::signature() +
+                helper::TypeMapper<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::signature() +
+            DBUS_STRUCT_END_CHAR_AS_STRING;
+        return s;
+    }
+};
+}
+template<>
+struct Codec<com::ubuntu::location::SpaceVehicle>
+{
+    static void encode_argument(DBusMessageIter* out, const com::ubuntu::location::SpaceVehicle& in)
+    {
+        DBusMessageIter sub;
+        dbus_message_iter_open_container(
+                    out,
+                    DBUS_TYPE_STRUCT,
+                    nullptr,
+                    std::addressof(sub));
+        std::uint32_t value = static_cast<std::uint32_t>(in.type);
+        Codec<std::uint32_t>::encode_argument(&sub, value);
+        Codec<std::size_t>::encode_argument(&sub, in.id);
+        Codec<float>::encode_argument(&sub, in.snr);
+        Codec<bool>::encode_argument(&sub, in.has_almanac_data);
+        Codec<bool>::encode_argument(&sub, in.has_ephimeris_data);
+        Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::encode_argument(&sub, in.azimuth);
+        Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::encode_argument(&sub, in.elevation);
+        dbus_message_iter_close_container(out, &sub);
+    }
+
+    static void decode_argument(DBusMessageIter* out, com::ubuntu::location::SpaceVehicle& in)
+    {
+        DBusMessageIter sub;
+        dbus_message_iter_recurse(out, std::addressof(sub));
+        std::uint32_t value;
+        Codec<std::uint32_t>::decode_argument(&sub, value); dbus_message_iter_next(&sub);
+        in.type = static_cast<com::ubuntu::location::SpaceVehicle::Type>(value);
+        Codec<std::size_t>::decode_argument(&sub, in.id); dbus_message_iter_next(&sub);
+        Codec<float>::decode_argument(&sub, in.snr); dbus_message_iter_next(&sub);
+        Codec<bool>::decode_argument(&sub, in.has_almanac_data); dbus_message_iter_next(&sub);
+        Codec<bool>::decode_argument(&sub, in.has_ephimeris_data); dbus_message_iter_next(&sub);
+        Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::decode_argument(&sub, in.azimuth);
+        dbus_message_iter_next(&sub);
+        Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::decode_argument(&sub, in.elevation);
+        dbus_message_iter_next(&sub);
+    }
+};
 namespace helper
 {
 template<>

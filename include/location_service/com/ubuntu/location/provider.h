@@ -18,14 +18,14 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDER_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDER_H_
 
-#include "com/ubuntu/location/channel.h"
-#include "com/ubuntu/location/criteria.h"
-#include "com/ubuntu/location/heading.h"
-#include "com/ubuntu/location/position.h"
-#include "com/ubuntu/location/update.h"
-#include "com/ubuntu/location/velocity.h"
+#include <com/ubuntu/location/channel.h>
+#include <com/ubuntu/location/criteria.h>
+#include <com/ubuntu/location/heading.h>
+#include <com/ubuntu/location/position.h>
+#include <com/ubuntu/location/update.h>
+#include <com/ubuntu/location/velocity.h>
 
-#include <com/ubuntu/property.h>
+#include <core/property.h>
 #include <com/ubuntu/connectivity/manager.h>
 
 #include <atomic>
@@ -150,11 +150,11 @@ public:
     struct Updates
     {
         /** Position updates. */
-        com::ubuntu::Property<Update<Position>> position;
+        core::Property<Update<Position>> position;
         /** Heading updates. */
-        com::ubuntu::Property<Update<Heading>> heading;
+        core::Property<Update<Heading>> heading;
         /** Velocity updates. */
-        com::ubuntu::Property<Update<Velocity>> velocity;
+        core::Property<Update<Velocity>> velocity;
     };
 
     virtual ~Provider() = default;

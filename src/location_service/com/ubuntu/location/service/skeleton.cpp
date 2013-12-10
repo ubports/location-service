@@ -15,9 +15,9 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/service/skeleton.h"
+#include <com/ubuntu/location/service/skeleton.h>
 
-#include "com/ubuntu/location/logging.h"
+#include <com/ubuntu/location/logging.h>
 
 #include <org/freedesktop/dbus/dbus.h>
 #include <org/freedesktop/dbus/skeleton.h>
@@ -162,33 +162,34 @@ struct culs::Skeleton::Private : public SessionStore<SessionWrapper>, std::enabl
           daemon(connection),
           object(parent->access_service()->add_object_for_path(culs::Interface::path())),
           bus_does_satellite_based_positioning(object->get_property<culs::Interface::Properties::DoesSatelliteBasedPositioning>()),
-          bus_is_online(object->get_property<culs::Interface::Properties::IsOnline>())
+          bus_does_report_cell_and_wifi_ids(object->get_property<culs::Interface::Properties::DoesReportCellAndWifiIds>()),
+          bus_is_online(object->get_property<culs::Interface::Properties::IsOnline>()),
+          bus_visible_space_vehicles(object->get_property<culs::Interface::Properties::VisibleSpaceVehicles>())
     {
         object->install_method_handler<culs::Interface::CreateSessionForCriteria>(
-                    std::bind(&culs::Skeleton::Private::handle_create_session_for_criteria, this, std::placeholders::_1));
+                    std::bind(
+                        &culs::Skeleton::Private::handle_create_session_for_criteria,
+                        this,
+                        std::placeholders::_1));
 
-        void (dbus::Property<culs::Interface::Properties::DoesSatelliteBasedPositioning>::*vs1)(const bool&)
-                = &dbus::Property<culs::Interface::Properties::DoesSatelliteBasedPositioning>::value;
-
-        does_satellite_based_positioning.changed().connect(
-                std::bind(
-                    vs1,
-                    bus_does_satellite_based_positioning,
-                    std::placeholders::_1));
-
-        void (dbus::Property<culs::Interface::Properties::IsOnline>::*vs2)(const bool&)
-                = &dbus::Property<culs::Interface::Properties::IsOnline>::value;
-
-        is_online.changed().connect(
-                std::bind(
-                    vs2,
-                    bus_is_online,
-                    std::placeholders::_1));
-
+        does_satellite_based_positioning.changed().connect([this](bool value)
+        {
+            bus_does_satellite_based_positioning->value(value);
+        });
+        does_report_cell_and_wifi_ids.changed().connect([this](bool value)
+        {
+            bus_does_report_cell_and_wifi_ids->value(value);
+        });
+        is_online.changed().connect([this](bool value)
+        {
+            bus_is_online->value(value);
+        });
+        visible_space_vehicles.changed().connect([this](const std::vector<cul::SpaceVehicle>& svs)
+        {
+            bus_visible_space_vehicles->value(svs);
+        });
         // TODO: we should make dbus properties observable
     }
-
-
 
     ~Private() noexcept {}
 
@@ -200,15 +201,22 @@ struct culs::Skeleton::Private : public SessionStore<SessionWrapper>, std::enabl
     dbus::DBus daemon;
     dbus::Object::Ptr object;
     std::shared_ptr<dbus::Property<culs::Interface::Properties::DoesSatelliteBasedPositioning>> bus_does_satellite_based_positioning;
+    std::shared_ptr<dbus::Property<culs::Interface::Properties::DoesReportCellAndWifiIds>> bus_does_report_cell_and_wifi_ids;
     std::shared_ptr<dbus::Property<culs::Interface::Properties::IsOnline>> bus_is_online;
-    com::ubuntu::Property<bool> does_satellite_based_positioning;
-    com::ubuntu::Property<bool> is_online;
+    std::shared_ptr<dbus::Property<culs::Interface::Properties::VisibleSpaceVehicles>> bus_visible_space_vehicles;
+    core::Property<bool> does_satellite_based_positioning;
+    core::Property<bool> does_report_cell_and_wifi_ids;
+    core::Property<bool> is_online;
+    core::Property<std::vector<cul::SpaceVehicle>> visible_space_vehicles;
     std::mutex guard;
     std::map<dbus::types::ObjectPath, std::shared_ptr<SessionWrapper>> session_store;
 };
 
-culs::Skeleton::Skeleton(const dbus::Bus::Ptr& connection, const culs::PermissionManager::Ptr& permission_manager)
-    : dbus::Skeleton<culs::Interface>(connection), d{new Private{this, connection, permission_manager}}
+culs::Skeleton::Skeleton(
+        const dbus::Bus::Ptr& connection,
+        const culs::PermissionManager::Ptr& permission_manager)
+    : dbus::Skeleton<culs::Interface>(connection),
+      d{new Private{this, connection, permission_manager}}
 {
 }
 
@@ -276,12 +284,22 @@ void culs::Skeleton::Private::remove_session(const SessionWrapper::Ptr& session)
     VLOG(1) << "# of session in session store: " << session_store.size() << std::endl;
 }
 
-com::ubuntu::Property<bool>& culs::Skeleton::does_satellite_based_positioning()
+core::Property<bool>& culs::Skeleton::does_satellite_based_positioning()
 {
     return d->does_satellite_based_positioning;
 }
 
-com::ubuntu::Property<bool>& culs::Skeleton::is_online()
+core::Property<bool>& culs::Skeleton::does_report_cell_and_wifi_ids()
+{
+    return d->does_report_cell_and_wifi_ids;
+}
+
+core::Property<bool>& culs::Skeleton::is_online()
 {
     return d->is_online;
+}
+
+core::Property<std::vector<cul::SpaceVehicle>>& culs::Skeleton::visible_space_vehicles()
+{
+    return d->visible_space_vehicles;
 }

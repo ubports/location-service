@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/service/session/skeleton.h"
+#include <com/ubuntu/location/service/session/skeleton.h>
 
 #include <org/freedesktop/dbus/message.h>
 #include <org/freedesktop/dbus/skeleton.h>

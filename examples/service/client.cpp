@@ -17,7 +17,7 @@
  */
 #include "program_options.h"
 
-#include "com/ubuntu/location/service/stub.h"
+#include <com/ubuntu/location/service/stub.h>
 
 #include <org/freedesktop/dbus/resolver.h>
 #include <org/freedesktop/dbus/asio/executor.h>

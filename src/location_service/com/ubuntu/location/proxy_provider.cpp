@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/proxy_provider.h"
+#include <com/ubuntu/location/proxy_provider.h>
 
 #include <bitset>
 #include <memory>

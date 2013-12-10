@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/velocity.h"
+#include <com/ubuntu/location/velocity.h>
 
 #include <gtest/gtest.h>
 

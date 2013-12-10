@@ -16,9 +16,9 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include "com/ubuntu/location/service/session/stub.h"
+#include <com/ubuntu/location/service/session/stub.h>
 
-#include "com/ubuntu/location/logging.h"
+#include <com/ubuntu/location/logging.h>
 
 #include <org/freedesktop/dbus/stub.h>
 

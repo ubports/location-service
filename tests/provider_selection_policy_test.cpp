@@ -1,4 +1,4 @@
-#include "com/ubuntu/location/provider_selection_policy.h"
+#include <com/ubuntu/location/provider_selection_policy.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -33,7 +33,7 @@ TEST(ProviderSelection, feature_flags_calculation_works_correctly)
     EXPECT_EQ(all_features, selection.to_feature_flags());
 }
 
-#include "com/ubuntu/location/default_provider_selection_policy.h"
+#include <com/ubuntu/location/default_provider_selection_policy.h>
 
 TEST(DefaultProviderSelectionPolicy, if_no_provider_matches_criteria_null_is_returned)
 {

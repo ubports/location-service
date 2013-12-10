@@ -18,8 +18,8 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROXY_PROVIDER_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROXY_PROVIDER_H_
 
-#include "com/ubuntu/location/provider.h"
-#include "com/ubuntu/location/provider_selection_policy.h"
+#include <com/ubuntu/location/provider.h>
+#include <com/ubuntu/location/provider_selection_policy.h>
 
 #include <bitset>
 #include <memory>

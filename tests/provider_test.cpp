@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/provider.h"
+#include <com/ubuntu/location/provider.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -176,7 +176,7 @@ TEST(Provider, starting_and_stopping_multiple_times_results_in_exactly_one_call_
     EXPECT_FALSE(provider.state_controller()->are_velocity_updates_running());
 }
 
-#include "com/ubuntu/location/proxy_provider.h"
+#include <com/ubuntu/location/proxy_provider.h>
 
 TEST(ProxyProvider, start_and_stop_does_not_throw_for_null_providers)
 {

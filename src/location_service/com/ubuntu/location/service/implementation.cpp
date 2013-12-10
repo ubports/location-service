@@ -1,10 +1,10 @@
-#include "com/ubuntu/location/service/implementation.h"
+#include <com/ubuntu/location/service/implementation.h>
 
-#include "com/ubuntu/location/service/session/implementation.h"
+#include <com/ubuntu/location/service/session/implementation.h>
 
-#include "com/ubuntu/location/criteria.h"
-#include "com/ubuntu/location/engine.h"
-#include "com/ubuntu/location/proxy_provider.h"
+#include <com/ubuntu/location/criteria.h>
+#include <com/ubuntu/location/engine.h>
+#include <com/ubuntu/location/proxy_provider.h>
 
 #include <org/freedesktop/dbus/bus.h>
 #include <org/freedesktop/dbus/service.h>
@@ -50,6 +50,9 @@ culs::Implementation::Implementation(
     if (!permission_manager)
         throw std::runtime_error("Cannot create service for null permission manager.");
 
+    is_online() =
+            engine->configuration.engine_state == Engine::Status::on ||
+            engine->configuration.engine_state == Engine::Status::active;
     is_online().changed().connect(
                 [this](bool value)
                 {
@@ -58,7 +61,20 @@ culs::Implementation::Implementation(
                                 Engine::Status::on :
                                 Engine::Status::off;
                 });
-
+    does_report_cell_and_wifi_ids() =
+            d->engine->configuration.wifi_and_cell_id_reporting_state ==
+            Engine::Configuration::WifiAndCellIdReportingState::on;
+    does_report_cell_and_wifi_ids().changed().connect(
+                [this](bool value)
+                {
+                    d->engine->configuration.wifi_and_cell_id_reporting_state
+                            = value ?
+                                Engine::Configuration::WifiAndCellIdReportingState::on :
+                                Engine::Configuration::WifiAndCellIdReportingState::off;
+                });
+    does_satellite_based_positioning() =
+            d->engine->configuration.satellite_based_positioning_state ==
+            Engine::Configuration::SatelliteBasedPositioningState::on;
     does_satellite_based_positioning().changed().connect(
                 [this](bool value)
                 {
@@ -66,6 +82,24 @@ culs::Implementation::Implementation(
                             = value ?
                                 Engine::Configuration::SatelliteBasedPositioningState::on :
                                 Engine::Configuration::SatelliteBasedPositioningState::off;
+                });
+    engine->configuration.engine_state.changed().connect(
+                [this](Engine::Status status)
+                {
+                    is_online() =
+                            d->engine->configuration.engine_state == Engine::Status::on ||
+                            d->engine->configuration.engine_state == Engine::Status::active;
+                });
+    engine->configuration.satellite_based_positioning_state.changed().connect(
+                [this](Engine::Configuration::SatelliteBasedPositioningState state)
+                {
+                    does_satellite_based_positioning() =
+                            state == Engine::Configuration::SatelliteBasedPositioningState::on;
+                });
+    engine->configuration.visible_space_vehicles.changed().connect(
+                [this](const std::vector<cul::SpaceVehicle>&svs)
+                {
+                    visible_space_vehicles() = svs;
                 });
 }
 

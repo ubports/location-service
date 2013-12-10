@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/position.h"
+#include <com/ubuntu/location/position.h>
 
 #include <bitset>
 #include <ostream>
