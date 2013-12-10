@@ -28,7 +28,7 @@ namespace
 {
 struct DummyProvider : public com::ubuntu::location::Provider
 {
-    DummyProvider() : cul::Provider(std::shared_ptr<cuc::Manager>{})
+    DummyProvider() : cul::Provider()
     {
     }
 };

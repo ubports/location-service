@@ -18,9 +18,6 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_ENGINE_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_ENGINE_H_
 
-#include <com/ubuntu/connectivity/cell.h>
-#include <com/ubuntu/connectivity/wifi/network.h>
-
 #include <com/ubuntu/location/criteria.h>
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_selection_policy.h>

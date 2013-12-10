@@ -20,14 +20,13 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-namespace cuc = com::ubuntu::connectivity;
 namespace cul = com::ubuntu::location;
 
 namespace
 {
 struct MockProvider : public cul::Provider
 {
-    MockProvider() : cul::Provider(std::shared_ptr<cuc::Manager>{})
+    MockProvider() : cul::Provider()
     {
     }
 

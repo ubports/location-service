@@ -71,7 +71,7 @@ cul::Update<T> update_as_of_now(const T& value = T())
 class DummyProvider : public cul::Provider
 {
 public:
-    DummyProvider() : cul::Provider(std::shared_ptr<cuc::Manager>{})
+    DummyProvider() : cul::Provider()
     {
     }
 

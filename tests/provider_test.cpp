@@ -20,7 +20,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-namespace cuc = com::ubuntu::connectivity;
 namespace cul = com::ubuntu::location;
 
 namespace
@@ -36,7 +35,7 @@ class DummyProvider : public com::ubuntu::location::Provider
 public:
     DummyProvider(cul::Provider::Features feats = cul::Provider::Features::none,
                   cul::Provider::Requirements requs= cul::Provider::Requirements::none)
-        : com::ubuntu::location::Provider(std::shared_ptr<cuc::Manager>{}, feats, requs)
+        : com::ubuntu::location::Provider(feats, requs)
     {
     }
 
@@ -125,7 +124,7 @@ namespace
 {
 struct MockProvider : public com::ubuntu::location::Provider
 {
-    MockProvider() : cul::Provider(std::shared_ptr<cuc::Manager>{})
+    MockProvider() : cul::Provider()
     {
     }
 
