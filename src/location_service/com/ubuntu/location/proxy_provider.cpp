@@ -31,28 +31,28 @@ cul::ProxyProvider::ProxyProvider(const cul::ProviderSelection& selection)
 {
     if (position_updates_provider)
     {
-        position_updates_provider->updates().position.changed().connect(
+        position_updates_provider->updates().position.connect(
                     [this](const cul::Update<cul::Position>& u)
                     {
-                        mutable_updates().position = u;
+                        mutable_updates().position(u);
                     });
     }
 
     if (heading_updates_provider)
     {
-        heading_updates_provider->updates().heading.changed().connect(
+        heading_updates_provider->updates().heading.connect(
                     [this](const cul::Update<cul::Heading>& u)
                     {
-                        mutable_updates().heading = u;
+                        mutable_updates().heading(u);
                     });
     }
 
     if (velocity_updates_provider)
     {
-        velocity_updates_provider->updates().velocity.changed().connect(
+        velocity_updates_provider->updates().velocity.connect(
                     [this](const cul::Update<cul::Velocity>& u)
                     {
-                        mutable_updates().velocity = u;
+                        mutable_updates().velocity(u);
                     });
     }
 }

@@ -41,17 +41,17 @@ public:
 
     void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Position>& update)
     {
-        mutable_updates().position = update;
+        mutable_updates().position(update);
     }
 
     void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Velocity>& update)
     {
-        mutable_updates().velocity = update;
+        mutable_updates().velocity(update);
     }
 
     void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Heading>& update)
     {
-        mutable_updates().heading = update;
+        mutable_updates().heading(update);
     }
 };
 }
@@ -93,19 +93,19 @@ TEST(Provider, delivering_a_message_invokes_subscribers)
     bool heading_update_triggered {false};
     bool velocity_update_triggered {false};
 
-    auto c1 = dp.updates().position.changed().connect(
+    auto c1 = dp.updates().position.connect(
         [&](const com::ubuntu::location::Update<com::ubuntu::location::Position>&)
         {
             position_update_triggered = true;
         });
 
-    auto c2 = dp.updates().heading.changed().connect(
+    auto c2 = dp.updates().heading.connect(
         [&](const com::ubuntu::location::Update<com::ubuntu::location::Heading>&)
         {
             heading_update_triggered = true;
         });
 
-    auto c3 = dp.updates().velocity.changed().connect(
+    auto c3 = dp.updates().velocity.connect(
         [&](const com::ubuntu::location::Update<com::ubuntu::location::Velocity>&)
         {
             velocity_update_triggered = true;

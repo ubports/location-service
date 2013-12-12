@@ -29,12 +29,6 @@ add_executable(
 )
 
 add_executable(
-    accuracy_tests
-    accuracy_tests.cpp
-    test_main.cpp
-)
-
-add_executable(
     controller_test
     controller_test.cpp
     test_main.cpp
@@ -61,18 +55,6 @@ add_executable(
 add_executable(
     provider_selection_policy_test
     provider_selection_policy_test.cpp
-    test_main.cpp
-)
-
-add_executable(
-    heading_test
-    heading_test.cpp
-    test_main.cpp
-)
-
-add_executable(
-    velocity_test
-    velocity_test.cpp
     test_main.cpp
 )
 
@@ -145,30 +127,6 @@ target_link_libraries(
 )
 
 target_link_libraries(
-    heading_test
-    
-    ubuntu-location-service
-
-    ${CMAKE_THREAD_LIBS_INIT}
-    ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
-    
-    gtest
-)
-
-target_link_libraries(
-    velocity_test
-
-    ubuntu-location-service
-
-    ${CMAKE_THREAD_LIBS_INIT}
-    ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
-    
-    gtest
-)
-
-target_link_libraries(
     wgs84_test
 
     ubuntu-location-service
@@ -208,17 +166,6 @@ target_link_libraries(
 
 target_link_libraries(
     acceptance_tests
-
-    ubuntu-location-service
-
-    ${CMAKE_THREAD_LIBS_INIT}
-    ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
-    gtest
-)
-
-target_link_libraries(
-    accuracy_tests
 
     ubuntu-location-service
 
@@ -285,13 +232,10 @@ else (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
 endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
 
 add_test(provider_test provider_test)
-add_test(accuracy_tests accuracy_tests)
 add_test(controller_test controller_test)
 add_test(default_permission_manager_test default_permission_manager_test)
 add_test(engine_test engine_test)
 add_test(position_test position_test)
 add_test(provider_factory_test provider_factory_test)
 add_test(provider_selection_policy_test provider_selection_policy_test)
-add_test(heading_test heading_test)
-add_test(velocity_test velocity_test)
 add_test(wgs84_test wgs84_test)

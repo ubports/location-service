@@ -41,17 +41,17 @@ struct MockProvider : public cul::Provider
 
     void inject_update(const cul::Update<cul::Position>& update)
     {
-        mutable_updates().position = update;
+        mutable_updates().position(update);
     }
 
     void inject_update(const cul::Update<cul::Velocity>& update)
     {
-        mutable_updates().velocity = update;
+        mutable_updates().velocity(update);
     }
 
     void inject_update(const cul::Update<cul::Heading>& update)
     {
-        mutable_updates().heading = update;
+        mutable_updates().heading(update);
     }
 };
 

@@ -46,7 +46,7 @@ class Skeleton : public org::freedesktop::dbus::Skeleton<com::ubuntu::location::
     core::Property<bool>& does_satellite_based_positioning();
     core::Property<bool>& does_report_cell_and_wifi_ids();
     core::Property<bool>& is_online();
-    core::Property<std::vector<SpaceVehicle>>& visible_space_vehicles();
+    core::Property<std::set<SpaceVehicle>>& visible_space_vehicles();
 
   private:
     struct Private;

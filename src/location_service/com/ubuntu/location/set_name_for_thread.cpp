@@ -15,21 +15,10 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include <com/ubuntu/location/accuracy.h>
 
-#include <com/ubuntu/location/heading.h>
-#include <com/ubuntu/location/velocity.h>
-#include <com/ubuntu/location/wgs84/altitude.h>
-#include <com/ubuntu/location/wgs84/latitude.h>
-#include <com/ubuntu/location/wgs84/longitude.h>
+#include "set_name_for_thread.h"
 
-namespace cul = com::ubuntu::location;
-
-TEST(HeadingAccuracy, classification_of_min_and_max_values_works_correctly)
+void com::ubuntu::location::set_name_for_thread(std::thread& t, const char* name)
 {
-    cul::Accuracy<cul::Heading> acc_max{cul::Heading{cul::Heading::max()}};
-    EXPECT_EQ(cul::AccuracyLevel::worst = acc.classify());
-
-    cul::Accuracy<cul::Heading> acc_min{cul::Heading{cul::Heading::min()}};
-    EXPECT_EQ(cul::AccuracyLevel::best = acc.classify());
+    pthread_setname_np(t.native_handle(), name);
 }

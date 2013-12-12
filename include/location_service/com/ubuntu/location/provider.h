@@ -22,10 +22,12 @@
 #include <com/ubuntu/location/criteria.h>
 #include <com/ubuntu/location/heading.h>
 #include <com/ubuntu/location/position.h>
+#include <com/ubuntu/location/space_vehicle.h>
 #include <com/ubuntu/location/update.h>
 #include <com/ubuntu/location/velocity.h>
 
 #include <core/property.h>
+#include <core/signal.h>
 
 #include <atomic>
 #include <bitset>
@@ -65,7 +67,7 @@ public:
         satellites = 1 << 0, ///< The provider requires satellites to be visible.
         cell_network = 1 << 1, ///< The provider requires a cell-network to work correctly.
         data_network = 1 << 2, ///< The provider requires a data-network to work correctly.
-        monetary_spending = 1 << 4 ///< Using the provider results in monetary cost.
+        monetary_spending = 1 << 3 ///< Using the provider results in monetary cost.
     };
 
     /**
@@ -149,11 +151,13 @@ public:
     struct Updates
     {
         /** Position updates. */
-        core::Property<Update<Position>> position;
+        core::Signal<Update<Position>> position;
         /** Heading updates. */
-        core::Property<Update<Heading>> heading;
+        core::Signal<Update<Heading>> heading;
         /** Velocity updates. */
-        core::Property<Update<Velocity>> velocity;
+        core::Signal<Update<Velocity>> velocity;
+        /** Space vehicle visibility updates. */
+        core::Signal<Update<std::vector<SpaceVehicle>>> svs;
     };
 
     virtual ~Provider() = default;
@@ -192,7 +196,7 @@ public:
      * @return true iff the provider satisfies the given criteria.
      */
     virtual bool matches_criteria(const Criteria& criteria);
-    
+
 protected:
     explicit Provider(
         const Features& features = Features::none,

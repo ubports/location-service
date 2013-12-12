@@ -18,6 +18,9 @@
 #include <com/ubuntu/location/engine.h>
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_selection_policy.h>
+
+#include <com/ubuntu/location/connectivity/manager.h>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -105,4 +108,19 @@ TEST(Engine, provider_selection_policy_is_invoked_when_matching_providers_to_cri
                         com::ubuntu::location::Provider::Ptr{}}));
 
     auto selection = engine.determine_provider_selection_for_criteria(com::ubuntu::location::Criteria {});
+}
+
+TEST(ConnectivityManager, default_implementation_available)
+{
+    auto manager = com::ubuntu::location::connectivity::platform_default_manager();
+
+    EXPECT_NO_THROW(
+    {
+        manager->visible_radio_cells().get();
+    });
+    EXPECT_NO_THROW(
+    {
+        for (const auto& wifi: manager->visible_wireless_networks().get())
+            std::cout << wifi << std::endl;
+    });
 }

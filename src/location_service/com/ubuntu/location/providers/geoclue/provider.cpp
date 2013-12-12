@@ -93,19 +93,19 @@ culpg::Provider::Provider(const culpg::Provider::Configuration& config)
                 [this](const org::freedesktop::Geoclue::Position::Signals::PositionChanged::ArgumentType& arg)
                 {
                     org::freedesktop::Geoclue::Position::FieldFlags flags{static_cast<unsigned long>(std::get<0>(arg))};
-                    cul::Update<cul::Position> update
+                    cul::Position pos
                     {
-                        {
-                            flags.test(org::freedesktop::Geoclue::Position::Field::latitude) ? 
-                                    cul::wgs84::Latitude{std::get<2>(arg)* cul::units::Degrees} : cul::wgs84::Latitude{},
-                            flags.test(org::freedesktop::Geoclue::Position::Field::longitude) ? 
-                                    cul::wgs84::Longitude{std::get<3>(arg)* cul::units::Degrees} : cul::wgs84::Longitude{},
-                            flags.test(org::freedesktop::Geoclue::Position::Field::altitude) ? 
-                                    cul::wgs84::Altitude{std::get<4>(arg)* cul::units::Meters} : cul::wgs84::Altitude{}
-                        },
-                        cul::Clock::now()
+                        flags.test(org::freedesktop::Geoclue::Position::Field::latitude) ?
+                                cul::wgs84::Latitude{std::get<2>(arg)* cul::units::Degrees} : cul::wgs84::Latitude{},
+                        flags.test(org::freedesktop::Geoclue::Position::Field::longitude) ?
+                                cul::wgs84::Longitude{std::get<3>(arg)* cul::units::Degrees} : cul::wgs84::Longitude{}
                     };
-                    this->mutable_updates().position = update;
+
+                    if (flags.test(org::freedesktop::Geoclue::Position::Field::altitude))
+                        pos.altitude = cul::wgs84::Altitude{std::get<4>(arg)* cul::units::Meters};
+
+                    cul::Update<cul::Position> update(pos);
+                    this->mutable_updates().position(update);
                 });
 
     d->velocity_updates_connection = 
@@ -122,7 +122,7 @@ culpg::Provider::Provider(const culpg::Provider::Configuration& config)
                             std::get<2>(arg) * cul::units::MetersPerSecond,
                             cul::Clock::now()
                         };
-                        this->mutable_updates().velocity = update;
+                        this->mutable_updates().velocity(update);
                     }
 
                     if (flags.test(org::freedesktop::Geoclue::Velocity::Field::direction))
@@ -133,7 +133,7 @@ culpg::Provider::Provider(const culpg::Provider::Configuration& config)
                             cul::Clock::now()
                         };
                             
-                        this->mutable_updates().heading = update;
+                        this->mutable_updates().heading(update);
                     }
                 });
 

@@ -15,10 +15,8 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_HEADING_H_
-#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_HEADING_H_
-
-#include <com/ubuntu/location/units/units.h>
+#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SATELLITE_BASED_POSITIONING_STATE_H_
+#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SATELLITE_BASED_POSITIONING_STATE_H_
 
 namespace com
 {
@@ -26,10 +24,17 @@ namespace ubuntu
 {
 namespace location
 {
-/** Heading is measured in ° deviation from true north. */
-typedef units::Quantity<units::PlaneAngle> Heading;
+/**
+ * @brief The SatelliteBasedPositioningState enum describes whether satellite
+ * assisted positioning is enabled or disabled.
+ */
+enum class SatelliteBasedPositioningState
+{
+    on, ///< Satellite assisted positioning is on.
+    off ///< Satellite assisted positioning is off.
+};
 }
 }
 }
 
-#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_HEADING_H_
+#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_SATELLITE_BASED_POSITIONING_STATE_H_

@@ -11,6 +11,10 @@ add_library(
   provider.cpp
   provider_factory.cpp
   proxy_provider.cpp
+  set_name_for_thread.cpp
+  velocity.cpp
+
+  connectivity/ofono_nm_connectivity_manager.cpp
 
   service/default_configuration.cpp
   service/default_permission_manager.cpp

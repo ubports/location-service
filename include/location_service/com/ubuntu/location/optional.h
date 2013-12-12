@@ -15,10 +15,10 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_HEADING_H_
-#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_HEADING_H_
+#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_OPTIONAL_H_
+#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_OPTIONAL_H_
 
-#include <com/ubuntu/location/units/units.h>
+#include <boost/optional.hpp>
 
 namespace com
 {
@@ -26,10 +26,10 @@ namespace ubuntu
 {
 namespace location
 {
-/** Heading is measured in ° deviation from true north. */
-typedef units::Quantity<units::PlaneAngle> Heading;
+template<typename T>
+using Optional = boost::optional<T>;
 }
 }
 }
 
-#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_HEADING_H_
+#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_OPTIONAL_H_

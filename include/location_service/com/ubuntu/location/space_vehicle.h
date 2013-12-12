@@ -45,9 +45,17 @@ struct SpaceVehicle
         compass, ///< People's Republic of China's global system, planned to be operational by 2020.
         irnss, ///< India's regional navigation system, planned to be operational by 2014, covering India and Northern Indian Ocean.
         qzss ///< Japanese regional system covering Asia and Oceania.
-    };
+    };    
 
-    bool operator==(const SpaceVehicle& rhs) const
+    inline bool operator<(const SpaceVehicle& rhs) const
+    {
+        if (type != rhs.type)
+            return type < rhs.type;
+
+        return id < rhs.id;
+    }
+
+    inline bool operator==(const SpaceVehicle& rhs) const
     {
         return type == rhs.type &&
                 snr == rhs.snr &&

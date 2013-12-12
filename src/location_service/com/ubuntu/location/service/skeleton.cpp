@@ -184,7 +184,7 @@ struct culs::Skeleton::Private : public SessionStore<SessionWrapper>, std::enabl
         {
             bus_is_online->value(value);
         });
-        visible_space_vehicles.changed().connect([this](const std::vector<cul::SpaceVehicle>& svs)
+        visible_space_vehicles.changed().connect([this](const std::set<cul::SpaceVehicle>& svs)
         {
             bus_visible_space_vehicles->value(svs);
         });
@@ -207,7 +207,7 @@ struct culs::Skeleton::Private : public SessionStore<SessionWrapper>, std::enabl
     core::Property<bool> does_satellite_based_positioning;
     core::Property<bool> does_report_cell_and_wifi_ids;
     core::Property<bool> is_online;
-    core::Property<std::vector<cul::SpaceVehicle>> visible_space_vehicles;
+    core::Property<std::set<cul::SpaceVehicle>> visible_space_vehicles;
     std::mutex guard;
     std::map<dbus::types::ObjectPath, std::shared_ptr<SessionWrapper>> session_store;
 };
@@ -299,7 +299,7 @@ core::Property<bool>& culs::Skeleton::is_online()
     return d->is_online;
 }
 
-core::Property<std::vector<cul::SpaceVehicle>>& culs::Skeleton::visible_space_vehicles()
+core::Property<std::set<cul::SpaceVehicle>>& culs::Skeleton::visible_space_vehicles()
 {
     return d->visible_space_vehicles;
 }

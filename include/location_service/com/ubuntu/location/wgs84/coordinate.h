@@ -39,12 +39,14 @@ struct CoordinateTraits
 };
 
 template<typename Tag, typename UnitType>
-struct Coordinate
+class Coordinate
 {
+public:
     typedef UnitType Unit;
     typedef units::Quantity<Unit> Quantity;
 
-    explicit Coordinate(const Quantity& value = Quantity()) : value(value)
+    explicit Coordinate(const Quantity& value = Quantity())
+        : value(value)
     {
         CoordinateTraits<Coordinate<Tag,UnitType>>::check_and_throw_if_invalid(value);
     }

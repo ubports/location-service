@@ -57,7 +57,7 @@ class ProviderFactory
     ProviderFactory& operator=(const ProviderFactory&) = delete;
 
     std::mutex guard;
-    std::map<std::string, Factory> factory_store;    
+    std::map<std::string, Factory> factory_store;
 };
 }
 }

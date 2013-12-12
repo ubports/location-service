@@ -22,6 +22,8 @@
 #include <com/ubuntu/location/wgs84/latitude.h>
 #include <com/ubuntu/location/wgs84/longitude.h>
 
+#include <com/ubuntu/location/optional.h>
+
 #include <bitset>
 #include <ostream>
 
@@ -31,54 +33,30 @@ namespace ubuntu
 {
 namespace location
 {
-class Position
+/**
+ * @brief The Position struct models a position in the wgs84 coordinate system.
+ */
+struct Position
 {
-  public:
-    enum Flag
-    {
-        latitude_flag = 0,
-        longitude_flag = 1,
-        altitude_flag = 2
-    };
-
-    typedef std::bitset<3> Flags;
-
-    Position();    
-    Position(
-        const wgs84::Latitude& latitude,
-        const wgs84::Longitude& longitude);
-    Position(
-        const wgs84::Latitude& latitude,
-        const wgs84::Longitude& longitude,
-        const wgs84::Altitude& altitude);
+    Position() = default;
+    Position(const wgs84::Latitude&, const wgs84::Longitude&);
+    Position(const wgs84::Latitude&, const wgs84::Longitude&, const wgs84::Altitude&);
 
     bool operator==(const Position& rhs) const;
     bool operator!=(const Position& rhs) const;
 
-    const Flags& flags() const;
+    wgs84::Latitude latitude = wgs84::Latitude{};
+    wgs84::Longitude longitude = wgs84::Longitude{};
+    Optional<wgs84::Altitude> altitude = Optional<wgs84::Altitude>{};
 
-    bool has_latitude() const;
-    Position& latitude(const wgs84::Latitude& lat);
-    const wgs84::Latitude& latitude() const;
-
-    bool has_longitude() const;
-    Position& longitude(const wgs84::Longitude& lon);
-    const wgs84::Longitude& longitude() const;
-
-    bool has_altitude() const;
-    Position& altitude(const wgs84::Altitude& alt);
-    const wgs84::Altitude& altitude() const;
-
-  private:
-    template<typename> friend struct Codec;
-    
-    struct
+    struct Accuracy
     {
-        Flags flags;
-        wgs84::Latitude latitude;
-        wgs84::Longitude longitude;
-        wgs84::Altitude altitude;
-    } fields;
+        typedef units::Quantity<units::Length> Horizontal;
+        typedef units::Quantity<units::Length> Vertical;
+
+        Optional<Horizontal> horizontal = Horizontal{};
+        Optional<Vertical> vertical = Optional<Vertical>{};
+    } accuracy = Accuracy{};
 };
 
 std::ostream& operator<<(std::ostream& out, const Position& position);

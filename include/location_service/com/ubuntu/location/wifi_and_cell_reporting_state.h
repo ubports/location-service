@@ -15,10 +15,8 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_HEADING_H_
-#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_HEADING_H_
-
-#include <com/ubuntu/location/units/units.h>
+#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_WIFI_AND_CELL_REPORTING_STATE_H_
+#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_WIFI_AND_CELL_REPORTING_STATE_H_
 
 namespace com
 {
@@ -26,10 +24,13 @@ namespace ubuntu
 {
 namespace location
 {
-/** Heading is measured in ° deviation from true north. */
-typedef units::Quantity<units::PlaneAngle> Heading;
+enum class WifiAndCellIdReportingState
+{
+    on, ///< Wifi and Cell Ids might be reported to online location services.
+    off ///< Wifi and Cell Ids are _not_ reported. This is the default value.
+};
 }
 }
 }
 
-#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_HEADING_H_
+#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_WIFI_AND_CELL_REPORTING_STATE_H_

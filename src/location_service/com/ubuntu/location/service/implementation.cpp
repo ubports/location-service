@@ -1,3 +1,20 @@
+/*
+ * Copyright © 2012-2013 Canonical Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Authored by: Thomas Voß <thomas.voss@canonical.com>
+ */
 #include <com/ubuntu/location/service/implementation.h>
 
 #include <com/ubuntu/location/service/session/implementation.h>
@@ -63,41 +80,41 @@ culs::Implementation::Implementation(
                 });
     does_report_cell_and_wifi_ids() =
             d->engine->configuration.wifi_and_cell_id_reporting_state ==
-            Engine::Configuration::WifiAndCellIdReportingState::on;
+            cul::WifiAndCellIdReportingState::on;
     does_report_cell_and_wifi_ids().changed().connect(
                 [this](bool value)
                 {
                     d->engine->configuration.wifi_and_cell_id_reporting_state
                             = value ?
-                                Engine::Configuration::WifiAndCellIdReportingState::on :
-                                Engine::Configuration::WifiAndCellIdReportingState::off;
+                                cul::WifiAndCellIdReportingState::on :
+                                cul::WifiAndCellIdReportingState::off;
                 });
     does_satellite_based_positioning() =
             d->engine->configuration.satellite_based_positioning_state ==
-            Engine::Configuration::SatelliteBasedPositioningState::on;
+            cul::SatelliteBasedPositioningState::on;
     does_satellite_based_positioning().changed().connect(
                 [this](bool value)
                 {
                     d->engine->configuration.satellite_based_positioning_state
                             = value ?
-                                Engine::Configuration::SatelliteBasedPositioningState::on :
-                                Engine::Configuration::SatelliteBasedPositioningState::off;
+                                cul::SatelliteBasedPositioningState::on :
+                                cul::SatelliteBasedPositioningState::off;
                 });
     engine->configuration.engine_state.changed().connect(
                 [this](Engine::Status status)
                 {
                     is_online() =
-                            d->engine->configuration.engine_state == Engine::Status::on ||
-                            d->engine->configuration.engine_state == Engine::Status::active;
+                            status == Engine::Status::on ||
+                            status == Engine::Status::active;
                 });
     engine->configuration.satellite_based_positioning_state.changed().connect(
-                [this](Engine::Configuration::SatelliteBasedPositioningState state)
+                [this](cul::SatelliteBasedPositioningState state)
                 {
                     does_satellite_based_positioning() =
-                            state == Engine::Configuration::SatelliteBasedPositioningState::on;
+                            state == cul::SatelliteBasedPositioningState::on;
                 });
     engine->configuration.visible_space_vehicles.changed().connect(
-                [this](const std::vector<cul::SpaceVehicle>&svs)
+                [this](const std::set<cul::SpaceVehicle>&svs)
                 {
                     visible_space_vehicles() = svs;
                 });

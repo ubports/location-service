@@ -18,7 +18,6 @@
 #include "cross_process_sync.h"
 #include "fork_and_run.h"
 
-#include <com/ubuntu/location/accuracy.h>
 #include <com/ubuntu/location/criteria.h>
 #include <com/ubuntu/location/clock.h>
 #include <com/ubuntu/location/engine.h>
@@ -81,17 +80,17 @@ public:
 
     void inject_update(const cul::Update<cul::Position>& update)
     {
-        mutable_updates().position = update;
+        mutable_updates().position(update);
     }
 
     void inject_update(const cul::Update<cul::Velocity>& update)
     {
-        mutable_updates().velocity = update;
+        mutable_updates().velocity(update);
     }
 
     void inject_update(const cul::Update<cul::Heading>& update)
     {
-        mutable_updates().heading = update;
+        mutable_updates().heading(update);
     }
 
     bool matches_criteria(const cul::Criteria& /*criteria*/)
@@ -186,6 +185,8 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
             cul::service::Stub>(bus);
         
         auto s1 = location_service->create_session_for_criteria(cul::Criteria{});
+
+        std::cout << "Successfully created session" << std::endl;
 
         cul::Update<cul::Position> position;
         auto c1 = s1->updates().position.changed().connect(
@@ -291,7 +292,7 @@ TEST(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjuste
         cul::service::DefaultConfiguration config;
         auto engine = config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy());
         engine->configuration.satellite_based_positioning_state.set(
-                    cul::Engine::Configuration::SatelliteBasedPositioningState::on);
+                    cul::SatelliteBasedPositioningState::on);
         auto permission_manager = config.the_permission_manager();
         cul::service::Implementation service(
                     bus,
@@ -382,7 +383,7 @@ TEST(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
     cul::SpaceVehicle sv;
     sv.type = cul::SpaceVehicle::Type::gps;
     sv.has_ephimeris_data = true;
-    static const std::vector<cul::SpaceVehicle> visible_space_vehicles{sv};
+    static const std::set<cul::SpaceVehicle> visible_space_vehicles{sv};
 
     auto server = [&sync_start]()
     {

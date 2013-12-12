@@ -22,7 +22,9 @@
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_selection_policy.h>
 #include <com/ubuntu/location/reporter.h>
+#include <com/ubuntu/location/satellite_based_positioning_state.h>
 #include <com/ubuntu/location/space_vehicle.h>
+#include <com/ubuntu/location/wifi_and_cell_reporting_state.h>
 #include <com/ubuntu/location/units/units.h>
 
 #include <core/property.h>
@@ -72,22 +74,7 @@ public:
      * @brief The Configuration struct summarizes the state of the engine.
      */
     struct Configuration
-    {        
-        /**
-         * @brief The SatelliteBasedPositioningState enum describes whether satellite assisted positioning is enabled or disabled.
-         */
-        enum class SatelliteBasedPositioningState
-        {
-            on, ///< Satellite assisted positioning is on.
-            off ///< Satellite assisted positioning is off.
-        };
-
-        enum class WifiAndCellIdReportingState
-        {
-            on, ///< Wifi and Cell Ids might be reported to online location services.
-            off ///< Wifi and Cell Ids are _not_ reported. This is the default value.
-        };
-
+    {
         /** Setable/getable/observable property for the satellite based positioning state. */
         core::Property<SatelliteBasedPositioningState> satellite_based_positioning_state;
         /** Setable/getable/observable property for the satellite based positioning state. */
@@ -97,7 +84,7 @@ public:
         /** The current best known reference location */
         core::Property<Update<LastKnownReferenceLocation>> reference_location;
         /** The current set of visible SpaceVehicles. */
-        core::Property<std::vector<SpaceVehicle>> visible_space_vehicles;
+        core::Property<std::set<SpaceVehicle>> visible_space_vehicles;
     };
 
     Engine(const std::set<Provider::Ptr>& initial_providers,

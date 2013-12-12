@@ -47,13 +47,22 @@ static void on_location_update(UHardwareGpsLocation* location, void* context)
     {
         VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_LAT_LONG";
 
-        cul::Position pos;
-        pos.latitude(cul::wgs84::Latitude{location->latitude * cul::units::Degrees});
-        pos.longitude(cul::wgs84::Longitude{location->longitude * cul::units::Degrees});
+        cul::Position pos
+        {
+            cul::wgs84::Latitude{location->latitude * cul::units::Degrees},
+            cul::wgs84::Longitude{location->longitude * cul::units::Degrees}
+        };
+
+        if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_ACCURACY)
+            pos.accuracy.horizontal = location->accuracy * cul::units::Meters;
+
         if(location->flags & U_HARDWARE_GPS_LOCATION_HAS_ALTITUDE)
-            pos.altitude(cul::wgs84::Altitude{location->altitude * cul::units::Meters});
+            pos.altitude = cul::wgs84::Altitude{location->altitude * cul::units::Meters};
         
-        thiz->mutable_updates().position = cul::Update<cul::Position>{pos, cul::Clock::now()};
+        // The Android HAL does not provide us with accuracy information for
+        // altitude measurements. We just leave out that field.
+
+        thiz->mutable_updates().position(cul::Update<cul::Position>(pos));
     }
     
     if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_SPEED)
@@ -61,7 +70,7 @@ static void on_location_update(UHardwareGpsLocation* location, void* context)
         VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_SPEED";
         
         cul::Velocity v{location->speed * cul::units::MetersPerSecond};
-        thiz->mutable_updates().velocity = cul::Update<cul::Velocity>{v, cul::Clock::now()};
+        thiz->mutable_updates().velocity(cul::Update<cul::Velocity>{v, cul::Clock::now()});
     }
 
     if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_BEARING)
@@ -69,7 +78,7 @@ static void on_location_update(UHardwareGpsLocation* location, void* context)
         VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_BEARING";
         
         cul::Heading h{location->bearing * cul::units::Degrees};
-        thiz->mutable_updates().heading = cul::Update<cul::Heading>{h, cul::Clock::now()};
+        thiz->mutable_updates().heading(cul::Update<cul::Heading>{h, cul::Clock::now()});
     }
 }
 

@@ -29,8 +29,8 @@ cul::Engine::Engine(const std::set<cul::Provider::Ptr>& initial_providers,
     if (!provider_selection_policy)
         std::runtime_error("Cannot construct an engine given a null ProviderSelectionPolicy");
 
-    configuration.satellite_based_positioning_state = Engine::Configuration::SatelliteBasedPositioningState::on;
-    configuration.wifi_and_cell_id_reporting_state = Engine::Configuration::WifiAndCellIdReportingState::off;
+    configuration.satellite_based_positioning_state = cul::SatelliteBasedPositioningState::on;
+    configuration.wifi_and_cell_id_reporting_state = cul::WifiAndCellIdReportingState::off;
     configuration.engine_state = Engine::Status::on;
 }
 

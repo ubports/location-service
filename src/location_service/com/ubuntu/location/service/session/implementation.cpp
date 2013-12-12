@@ -41,17 +41,17 @@ culss::Implementation::Implementation(
                 provider,
                 Private::Connections
                 {
-                    provider->updates().position.changed().connect(
+                    provider->updates().position.connect(
                         [this](const Update<Position>& update)
                         {
                             updates().position = update;
                         }),
-                    provider->updates().heading.changed().connect(
+                    provider->updates().heading.connect(
                         [this](const Update<Heading>& update)
                         {
                             updates().heading = update;
                         }),
-                    provider->updates().velocity.changed().connect(
+                    provider->updates().velocity.connect(
                         [this](const Update<Velocity>& update)
                         {
                             updates().velocity = update;

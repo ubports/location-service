@@ -19,62 +19,44 @@
 
 #include <gtest/gtest.h>
 
+namespace cul = com::ubuntu::location;
+
 TEST(Position, AllFieldsAreInvalidForDefaultConstructor)
 {
-    com::ubuntu::location::Position p;
-    EXPECT_FALSE(p.has_latitude());
-    EXPECT_FALSE(p.has_longitude());
-    EXPECT_FALSE(p.has_altitude());
-    EXPECT_EQ(0, p.flags().to_ulong());
+    cul::Position p;
+    EXPECT_FALSE(p.altitude);
+    EXPECT_FALSE(p.accuracy.vertical);
 }
 
 TEST(Position, InitWithLatLonGivesValidFieldsForLatLon)
 {
-    com::ubuntu::location::Position p{com::ubuntu::location::wgs84::Latitude{}, com::ubuntu::location::wgs84::Longitude{}};
-    EXPECT_TRUE(p.has_latitude());
-    EXPECT_TRUE(p.has_longitude());
-    EXPECT_FALSE(p.has_altitude());
-    EXPECT_EQ(3, p.flags().to_ulong());
+    cul::Position p{cul::wgs84::Latitude{}, cul::wgs84::Longitude{}};
+    EXPECT_FALSE(p.altitude);
 }
 
 TEST(Position, InitWithLatLonAltGivesValidFieldsForLatLonAlt)
 {
-    com::ubuntu::location::Position p{
-        com::ubuntu::location::wgs84::Latitude{}, 
-        com::ubuntu::location::wgs84::Longitude{},
-        com::ubuntu::location::wgs84::Altitude{}};
-    EXPECT_TRUE(p.has_latitude());
-    EXPECT_TRUE(p.has_longitude());
-    EXPECT_TRUE(p.has_altitude());
-    EXPECT_EQ(7, p.flags().to_ulong());
-}
-
-TEST(Position, MutatorsAdjustFieldFlags)
-{
-    com::ubuntu::location::Position p;
-    EXPECT_FALSE(p.has_latitude());
-    EXPECT_FALSE(p.has_longitude());
-    EXPECT_FALSE(p.has_altitude());
-    p.latitude(com::ubuntu::location::wgs84::Latitude{});
-    EXPECT_TRUE(p.has_latitude());
-    EXPECT_FALSE(p.has_longitude());
-    EXPECT_FALSE(p.has_altitude());
-    p.longitude(com::ubuntu::location::wgs84::Longitude{});
-    EXPECT_TRUE(p.has_latitude());
-    EXPECT_TRUE(p.has_longitude());
-    EXPECT_FALSE(p.has_altitude());
-    p.altitude(com::ubuntu::location::wgs84::Altitude{});
-    EXPECT_TRUE(p.has_latitude());
-    EXPECT_TRUE(p.has_longitude());
-    EXPECT_TRUE(p.has_altitude());
+    cul::Position p{
+        cul::wgs84::Latitude{},
+        cul::wgs84::Longitude{},
+        cul::wgs84::Altitude{}};
+    EXPECT_TRUE(p.altitude);
 }
 
 #include <com/ubuntu/location/codec.h>
-
 #include <org/freedesktop/dbus/message.h>
 
 TEST(Position, EncodingAndDecodingGivesSameResults)
 {
+    cul::Position p
+    {
+        cul::wgs84::Latitude{9. * cul::units::Degrees},
+        cul::wgs84::Longitude{53. * cul::units::Degrees},
+        cul::wgs84::Altitude{-2. * cul::units::Meters}
+    };
+
+    p.accuracy.horizontal =  cul::Position::Accuracy::Horizontal{300*cul::units::Meters};
+    p.accuracy.vertical = cul::Position::Accuracy::Vertical{100*cul::units::Meters};
 
     auto msg = org::freedesktop::dbus::Message::make_method_call(
         "org.freedesktop.DBus",
@@ -83,20 +65,11 @@ TEST(Position, EncodingAndDecodingGivesSameResults)
         "ListNames");
 
     {
-        com::ubuntu::location::Position p{
-            com::ubuntu::location::wgs84::Latitude{9. * com::ubuntu::location::units::Degrees},
-            com::ubuntu::location::wgs84::Longitude{53. * com::ubuntu::location::units::Degrees},
-            com::ubuntu::location::wgs84::Altitude{-2. * com::ubuntu::location::units::Meters}};
-
         msg->writer() << p;
     }
 
     {
-        com::ubuntu::location::Position p; msg->reader() >> p;
-        com::ubuntu::location::Position p_ref{
-            com::ubuntu::location::wgs84::Latitude{9. * com::ubuntu::location::units::Degrees},
-            com::ubuntu::location::wgs84::Longitude{53. * com::ubuntu::location::units::Degrees},
-            com::ubuntu::location::wgs84::Altitude{-2. * com::ubuntu::location::units::Meters}};
-        EXPECT_EQ(p_ref, p);
+        cul::Position pp; msg->reader() >> pp;
+        EXPECT_EQ(p, pp);
     }
 }
