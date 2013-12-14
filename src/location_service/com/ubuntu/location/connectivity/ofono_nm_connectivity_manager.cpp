@@ -662,7 +662,10 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Gsm::LAC{lac},
                         connectivity::RadioCell::Gsm::ID{cell_id},
                         connectivity::RadioCell::Gsm::RSS{-113},
-                        connectivity::RadioCell::Gsm::ASU{0 + 31 * (strength / 127.)},
+                        connectivity::RadioCell::Gsm::ASU
+                        {
+                            static_cast<int>(0 + 31 * (strength / 127.))
+                        },
                         connectivity::RadioCell::Gsm::TA{0}
                     };
                     cells.emplace_back(gsm);
@@ -678,7 +681,10 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Lte::ID{cell_id},
                         connectivity::RadioCell::Lte::PID{0},
                         connectivity::RadioCell::Lte::RSS{-113},
-                        connectivity::RadioCell::Lte::ASU{0 + 31 * (strength / 127.)},
+                        connectivity::RadioCell::Lte::ASU
+                        {
+                            static_cast<int>(0 + 31 * (strength / 127.))
+                        },
                         connectivity::RadioCell::Lte::TA{0}
                     };
                     cells.emplace_back(lte);
@@ -693,7 +699,10 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Umts::LAC{lac},
                         connectivity::RadioCell::Umts::ID{cell_id},
                         connectivity::RadioCell::Umts::RSS{-113},
-                        connectivity::RadioCell::Umts::ASU{0 + 31 * (strength / 127.)}
+                        connectivity::RadioCell::Umts::ASU
+                        {
+                            static_cast<int>(0 + 31 * (strength / 127.))
+                        }
                     };
                     cells.emplace_back(umts);
                     break;
@@ -707,11 +716,15 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Cdma::LAC{lac},
                         connectivity::RadioCell::Cdma::ID{cell_id},
                         connectivity::RadioCell::Cdma::RSS{-113},
-                        connectivity::RadioCell::Cdma::ASU{0 + 31 * (strength / 127.)}
+                        connectivity::RadioCell::Cdma::ASU
+                        {
+                            static_cast<int>(0 + 31 * (strength / 127.))
+                        }
                     };
                     cells.emplace_back(cdma);
                     break;
                 }
+                default: break; // By default, we do not add a cell.
                 }
             });
 

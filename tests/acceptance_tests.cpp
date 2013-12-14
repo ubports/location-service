@@ -48,7 +48,6 @@
 #include <set>
 #include <stdexcept>
 
-namespace cuc = com::ubuntu::connectivity;
 namespace cul = com::ubuntu::location;
 namespace culss = com::ubuntu::location::service::session;
 namespace dbus = org::freedesktop::dbus;

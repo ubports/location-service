@@ -35,7 +35,11 @@ cul::Engine::Ptr culs::DefaultConfiguration::the_engine(
     const std::set<cul::Provider::Ptr>& provider_set,
     const cul::ProviderSelectionPolicy::Ptr& provider_selection_policy)
 {
-    return Engine::Ptr {new Engine{provider_set, provider_selection_policy}};
+    auto engine = std::make_shared<cul::Engine>(provider_selection_policy);
+    for (const auto& provider : provider_set)
+        engine->add_provider(provider);
+
+    return engine;
 }
 
 cul::ProviderSelectionPolicy::Ptr culs::DefaultConfiguration::the_provider_selection_policy()

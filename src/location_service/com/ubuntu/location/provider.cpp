@@ -133,6 +133,14 @@ cul::Provider::Updates& cul::Provider::mutable_updates()
     return d.updates;
 }
 
+void cul::Provider::on_wifi_and_cell_reporting_state_changed(cul::WifiAndCellIdReportingState)
+{
+}
+
+void cul::Provider::on_reference_location_updated(const cul::Update<cul::Position>&)
+{
+}
+
 void cul::Provider::start_position_updates() {}
 void cul::Provider::stop_position_updates() {}
 void cul::Provider::start_heading_updates() {}

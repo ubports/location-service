@@ -274,6 +274,7 @@ public:
         case Type::cdma: detail.cdma = rhs.detail.cdma; break;
         case Type::umts: detail.umts = rhs.detail.umts; break;
         case Type::lte: detail.lte = rhs.detail.lte; break;
+        case Type::unknown: break;
         }
     }
 
@@ -286,6 +287,7 @@ public:
         case Type::cdma: detail.cdma = rhs.detail.cdma; break;
         case Type::umts: detail.umts = rhs.detail.umts; break;
         case Type::lte: detail.lte = rhs.detail.lte; break;
+        case Type::unknown: break;
         }
 
         return *this;
@@ -302,6 +304,7 @@ public:
         case Type::cdma: return detail.cdma == rhs.detail.cdma;
         case Type::umts: return detail.umts == rhs.detail.umts;
         case Type::lte: return detail.lte == rhs.detail.lte;
+        default: return true;
         }
 
         return false;

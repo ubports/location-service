@@ -17,14 +17,14 @@
  */
 #include <com/ubuntu/location/engine.h>
 
+#include <com/ubuntu/location/provider_selection_policy.h>
+
 #include <stdexcept>
 
 namespace cul = com::ubuntu::location;
 
-cul::Engine::Engine(const std::set<cul::Provider::Ptr>& initial_providers,
-                    const cul::ProviderSelectionPolicy::Ptr& provider_selection_policy)
-        : providers(initial_providers),
-          provider_selection_policy(provider_selection_policy)
+cul::Engine::Engine(const std::shared_ptr<cul::ProviderSelectionPolicy>& provider_selection_policy)
+          : provider_selection_policy(provider_selection_policy)
 {
     if (!provider_selection_policy)
         std::runtime_error("Cannot construct an engine given a null ProviderSelectionPolicy");
@@ -36,7 +36,7 @@ cul::Engine::Engine(const std::set<cul::Provider::Ptr>& initial_providers,
 
 cul::ProviderSelection cul::Engine::determine_provider_selection_for_criteria(const cul::Criteria& criteria)
 {
-    return provider_selection_policy->determine_provider_selection_from_set_for_criteria(criteria, providers);
+    return provider_selection_policy->determine_provider_selection_for_criteria(criteria, *this);
 }
 
 bool cul::Engine::has_provider(const cul::Provider::Ptr& provider) noexcept
@@ -49,28 +49,53 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
     if (!provider)
         throw std::runtime_error("Cannot add null provider");
 
-    providers.insert(provider);
+    // We wire up changes in the engine's configuration to the respective slots
+    // of the provider.
+    auto c1 = configuration.reference_location.changed().connect([provider](const cul::Update<cul::Position>& pos)
+    {
+        provider->on_reference_location_updated(pos);
+    });
+
+    auto c2 = configuration.wifi_and_cell_id_reporting_state.changed().connect([provider](cul::WifiAndCellIdReportingState state)
+    {
+        provider->on_wifi_and_cell_reporting_state_changed(state);
+    });
+
+    // And do the reverse: Satellite visibility updates are funneled via the engine's configuration.
+    auto c3 = provider->updates().svs.connect([this](const cul::Update<std::set<cul::SpaceVehicle>>& src)
+    {
+        configuration.visible_space_vehicles.update([src](std::set<cul::SpaceVehicle>& dest)
+        {
+            for(auto& sv : src.value)
+            {
+                // TODO: This is incredibly ugly and we should switch to a
+                // std::map asap.
+                dest.erase(sv);
+                dest.insert(sv);
+            }
+
+            return true;
+        });
+    });
+
+    providers.insert(std::make_pair(provider, ProviderConnections{c1, c2, c3}));
 }
 
 void cul::Engine::remove_provider(const cul::Provider::Ptr& provider) noexcept
 {
-    providers.erase(provider);
+    auto it = providers.find(provider);
+    if (it != providers.end())
+    {
+        it->second.reference_location_updates.disconnect();
+        it->second.wifi_and_cell_id_reporting_state_updates.disconnect();
+        it->second.space_vehicle_visibility_updates.disconnect();
+
+        providers.erase(it);
+    }
 }
 
-bool cul::Engine::has_reporter(const cul::Reporter::Ptr& reporter) noexcept
+void cul::Engine::for_each_provider(const std::function<void(const Provider::Ptr&)>& enumerator) const noexcept
 {
-    return reporters.count(reporter) > 0;
-}
-
-void cul::Engine::add_reporter(const cul::Reporter::Ptr& reporter)
-{
-    if (!reporter)
-        throw std::runtime_error("Cannot add null reporter");
-
-    reporters.insert(reporter);
-}
-
-void cul::Engine::remove_reporter(const cul::Reporter::Ptr& reporter) noexcept
-{
-    reporters.erase(reporter);
+    for (const auto& provider : providers)
+        enumerator(provider.first);
 }

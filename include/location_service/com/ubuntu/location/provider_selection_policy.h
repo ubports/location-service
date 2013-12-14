@@ -18,7 +18,8 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_PROVIDER_SELECTION_POLICY_H_
 #define LOCATION_SERVICE_COM_UBUNTU_PROVIDER_SELECTION_POLICY_H_
 
-#include <com/ubuntu/location/provider.h>
+#include <com/ubuntu/location/provider_enumerator.h>
+#include <com/ubuntu/location/provider_selection.h>
 
 #include <memory>
 
@@ -29,56 +30,23 @@ namespace ubuntu
 namespace location
 {
 struct Criteria;
-
-struct ProviderSelection
-{
-    ProviderSelection(const Provider::Ptr position = Provider::Ptr{},
-                      const Provider::Ptr heading = Provider::Ptr{},
-                      const Provider::Ptr velocity = Provider::Ptr{}) : position_updates_provider(position),
-                                                      heading_updates_provider(heading),
-                                                      velocity_updates_provider(velocity)
-    {
-    }
-    
-    Provider::Features to_feature_flags() const
-    {
-        Provider::Features flags = Provider::Features::none;
-
-        if (position_updates_provider)
-            flags = flags | Provider::Features::position;
-        if (heading_updates_provider)
-            flags = flags | Provider::Features::heading;
-        if(velocity_updates_provider)
-            flags = flags | Provider::Features::velocity;
-
-        return flags;
-    }
-
-    Provider::Ptr position_updates_provider;
-    Provider::Ptr heading_updates_provider;
-    Provider::Ptr velocity_updates_provider;
-};
-
-inline bool operator==(const ProviderSelection& lhs, const ProviderSelection& rhs)
-{
-    return lhs.position_updates_provider == rhs.position_updates_provider &&
-            lhs.heading_updates_provider == rhs.heading_updates_provider &&
-            lhs.velocity_updates_provider == rhs.velocity_updates_provider;
-}
+class Engine;
 
 class ProviderSelectionPolicy
 {
 public:
     typedef std::shared_ptr<ProviderSelectionPolicy> Ptr;
 
-    virtual ~ProviderSelectionPolicy() = default;
-
-    virtual ProviderSelection determine_provider_selection_from_set_for_criteria(const Criteria& criteria, const std::set<Provider::Ptr>& providers) = 0;
-protected:
-    ProviderSelectionPolicy() = default;
-private:
     ProviderSelectionPolicy(const ProviderSelectionPolicy&) = delete;
     ProviderSelectionPolicy& operator=(const ProviderSelectionPolicy&) = delete;
+    virtual ~ProviderSelectionPolicy() = default;
+
+    virtual ProviderSelection determine_provider_selection_for_criteria(
+            const Criteria& criteria,
+            const ProviderEnumerator& enumerator) = 0;
+
+protected:
+    ProviderSelectionPolicy() = default;
 };
 }
 }

@@ -7,6 +7,22 @@ namespace cul = com::ubuntu::location;
 
 namespace
 {
+struct ProviderSetEnumerator : public cul::ProviderEnumerator
+{
+    ProviderSetEnumerator(const std::set<std::shared_ptr<cul::Provider>>& providers)
+        : providers(providers)
+    {
+    }
+
+    void for_each_provider(const std::function<void(const std::shared_ptr<cul::Provider>&)>& f) const
+    {
+        for (const auto& provider : providers)
+            f(provider);
+    }
+
+    std::set<std::shared_ptr<cul::Provider>> providers;
+};
+
 class DummyProvider : public cul::Provider
 {
 public:
@@ -48,14 +64,22 @@ TEST(DefaultProviderSelectionPolicy, if_no_provider_matches_criteria_null_is_ret
     providers.insert(cul::Provider::Ptr{&provider1, [](cul::Provider*){}});
     providers.insert(cul::Provider::Ptr{&provider2, [](cul::Provider*){}});
 
+    ProviderSetEnumerator enumerator{providers};
+
     EXPECT_EQ(cul::Provider::Ptr{}, 
-              policy.determine_position_updates_provider(cul::Criteria{}, providers));
+              policy.determine_position_updates_provider(cul::Criteria{}, enumerator));
     EXPECT_EQ(cul::Provider::Ptr{}, 
-              policy.determine_heading_updates_provider(cul::Criteria{}, providers));
+              policy.determine_heading_updates_provider(cul::Criteria{}, enumerator));
     EXPECT_EQ(cul::Provider::Ptr{}, 
-              policy.determine_velocity_updates_provider(cul::Criteria{}, providers));
-    EXPECT_EQ(cul::ProviderSelection{},
-              policy.determine_provider_selection_from_set_for_criteria(cul::Criteria{}, providers));
+              policy.determine_velocity_updates_provider(cul::Criteria{}, enumerator));
+    cul::ProviderSelection empty_selection
+    {
+        cul::Provider::Ptr{},
+        cul::Provider::Ptr{},
+        cul::Provider::Ptr{}
+    };
+    EXPECT_EQ(empty_selection,
+              policy.determine_provider_selection_for_criteria(cul::Criteria{}, enumerator));
 }
 
 TEST(DefaultProviderSelectionPolicy, an_already_running_provider_is_preferred)
@@ -76,13 +100,15 @@ TEST(DefaultProviderSelectionPolicy, an_already_running_provider_is_preferred)
     cul::Provider::Ptr p2{&provider2, [](cul::Provider*){}};
     
     std::set<cul::Provider::Ptr> providers{{p1, p2}};
+    ProviderSetEnumerator enumerator{providers};
 
     EXPECT_EQ(p1,
-              policy.determine_position_updates_provider(cul::Criteria{}, providers));
+              policy.determine_position_updates_provider(cul::Criteria{}, enumerator));
     EXPECT_EQ(p1,
-              policy.determine_heading_updates_provider(cul::Criteria{}, providers));
+              policy.determine_heading_updates_provider(cul::Criteria{}, enumerator));
     EXPECT_EQ(p1,
-              policy.determine_velocity_updates_provider(cul::Criteria{}, providers));
-    EXPECT_EQ(cul::ProviderSelection(p1, p1, p1),
-              policy.determine_provider_selection_from_set_for_criteria(cul::Criteria{}, providers));
+              policy.determine_velocity_updates_provider(cul::Criteria{}, enumerator));
+    cul::ProviderSelection ps{p1, p1, p1};
+    EXPECT_EQ(ps,
+              policy.determine_provider_selection_for_criteria(cul::Criteria{}, enumerator));
 }

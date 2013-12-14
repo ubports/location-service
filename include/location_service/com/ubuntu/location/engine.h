@@ -18,14 +18,12 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_ENGINE_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_ENGINE_H_
 
-#include <com/ubuntu/location/criteria.h>
 #include <com/ubuntu/location/provider.h>
-#include <com/ubuntu/location/provider_selection_policy.h>
-#include <com/ubuntu/location/reporter.h>
+#include <com/ubuntu/location/provider_enumerator.h>
+#include <com/ubuntu/location/provider_selection.h>
 #include <com/ubuntu/location/satellite_based_positioning_state.h>
 #include <com/ubuntu/location/space_vehicle.h>
 #include <com/ubuntu/location/wifi_and_cell_reporting_state.h>
-#include <com/ubuntu/location/units/units.h>
 
 #include <core/property.h>
 
@@ -37,28 +35,16 @@ namespace ubuntu
 {
 namespace location
 {
+struct Criteria;
+class ProviderSelectionPolicy;
 /**
  * @brief The Engine class encapsulates a positioning engine, relying on a set
  * of providers and reporters to acquire and publish location information.
  */
-class Engine
+class Engine : public ProviderEnumerator
 {
 public:
     typedef std::shared_ptr<Engine> Ptr;
-
-    /**
-     * @brief The LastKnownReferenceLocation struct contains the best, last known fix.
-     */
-    struct LastKnownReferenceLocation
-    {        
-        bool operator==(const LastKnownReferenceLocation&) const
-        {
-            return false;
-        }
-
-        Position position = Position(); ///< The actual location.
-        units::Quantity<units::Length> accuracy = 1E10* units::Meters; ///< The accuracy of the fix.
-    };
 
     /**
      * @brief The State enum models the current state of the engine
@@ -67,7 +53,7 @@ public:
     {
         off, ///< The engine is currently offline.
         on, ///< The engine and providers are powered on but not navigating.
-        active ///< The engine and providers are powerd on and navigating.
+        active ///< The engine and providers are powered on and navigating.
     };
 
     /**
@@ -76,19 +62,27 @@ public:
     struct Configuration
     {
         /** Setable/getable/observable property for the satellite based positioning state. */
-        core::Property<SatelliteBasedPositioningState> satellite_based_positioning_state;
+        core::Property<SatelliteBasedPositioningState> satellite_based_positioning_state
+        {
+            SatelliteBasedPositioningState::on
+        };
         /** Setable/getable/observable property for the satellite based positioning state. */
-        core::Property<WifiAndCellIdReportingState> wifi_and_cell_id_reporting_state;
+        core::Property<WifiAndCellIdReportingState> wifi_and_cell_id_reporting_state
+        {
+            WifiAndCellIdReportingState::off
+        };
         /** Setable/getable/observable property for the overall engine state. */
-        core::Property<Engine::Status> engine_state;
+        core::Property<Engine::Status> engine_state
+        {
+            Engine::Status::on
+        };
         /** The current best known reference location */
-        core::Property<Update<LastKnownReferenceLocation>> reference_location;
+        core::Property<Update<Position>> reference_location{};
         /** The current set of visible SpaceVehicles. */
-        core::Property<std::set<SpaceVehicle>> visible_space_vehicles;
+        core::Property<std::set<SpaceVehicle>> visible_space_vehicles{};
     };
 
-    Engine(const std::set<Provider::Ptr>& initial_providers,
-           const ProviderSelectionPolicy::Ptr& provider_selection_policy);
+    Engine(const std::shared_ptr<ProviderSelectionPolicy>& provider_selection_policy);
     Engine(const Engine&) = delete;
     Engine& operator=(const Engine&) = delete;
     virtual ~Engine() = default;
@@ -119,30 +113,24 @@ public:
     virtual void remove_provider(const Provider::Ptr& provider) noexcept;
 
     /**
-     * @brief Checks if the engine knows about a specific reporter.
-     * @return True iff the engine knows about the reporter.
+     * @brief Iterates all known providers and invokes the provided enumerator for each of them.
+     * @param enumerator The functor to be invoked for each provider.
      */
-    virtual bool has_reporter(const Reporter::Ptr& reporter) noexcept;
-
-    /**
-     * @brief Makes a reporter known to the engine.
-     * @param reporter The new reporter.
-     */
-    virtual void add_reporter(const Reporter::Ptr& reporter);
-
-    /**
-     * @brief Removes a reporter from the engine.
-     * @param reporter The reporter to be removed.
-     */
-    virtual void remove_reporter(const Reporter::Ptr& reporter) noexcept;
+    virtual void for_each_provider(const std::function<void(const Provider::Ptr&)>& enumerator) const noexcept;
 
     /** The engine's configuration. */
     Configuration configuration;
 
 private:
-    std::set<Provider::Ptr> providers;
-    std::set<Reporter::Ptr> reporters;
-    ProviderSelectionPolicy::Ptr provider_selection_policy;
+    struct ProviderConnections
+    {
+        core::Connection reference_location_updates;
+        core::Connection wifi_and_cell_id_reporting_state_updates;
+        core::Connection space_vehicle_visibility_updates;
+    };
+
+    std::map<Provider::Ptr, ProviderConnections> providers;
+    std::shared_ptr<ProviderSelectionPolicy> provider_selection_policy;
 };
 }
 }

@@ -25,11 +25,11 @@ static LoggingInitializer logging_initializer;
 
 void cul::init(int* argc, char*** argv)
 {
-	static const bool remove_parsed_flags = true;
-	google::ParseCommandLineFlags(argc, argv, remove_parsed_flags);
+    static const bool remove_parsed_flags = true;
+    google::ParseCommandLineFlags(argc, argv, remove_parsed_flags);
 }
 
 void cul::shutdown()
 {
-	google::ShutDownCommandLineFlags();
+    google::ShutDownCommandLineFlags();
 }

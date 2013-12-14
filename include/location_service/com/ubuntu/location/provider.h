@@ -25,6 +25,7 @@
 #include <com/ubuntu/location/space_vehicle.h>
 #include <com/ubuntu/location/update.h>
 #include <com/ubuntu/location/velocity.h>
+#include <com/ubuntu/location/wifi_and_cell_reporting_state.h>
 
 #include <core/property.h>
 #include <core/signal.h>
@@ -157,7 +158,7 @@ public:
         /** Velocity updates. */
         core::Signal<Update<Velocity>> velocity;
         /** Space vehicle visibility updates. */
-        core::Signal<Update<std::vector<SpaceVehicle>>> svs;
+        core::Signal<Update<std::set<SpaceVehicle>>> svs;
     };
 
     virtual ~Provider() = default;
@@ -196,6 +197,18 @@ public:
      * @return true iff the provider satisfies the given criteria.
      */
     virtual bool matches_criteria(const Criteria& criteria);
+
+    /**
+     * @brief Called by the engine whenever the wifi and cell ID reporting state changes.
+     * @param state The new state.
+     */
+    virtual void on_wifi_and_cell_reporting_state_changed(WifiAndCellIdReportingState state);
+
+    /**
+     * @brief Called by the engine whenever the reference location changed.
+     * @param position The new reference location.
+     */
+    virtual void on_reference_location_updated(const Update<Position>& position);
 
 protected:
     explicit Provider(

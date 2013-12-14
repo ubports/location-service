@@ -32,21 +32,21 @@ public:
     DefaultProviderSelectionPolicy();
     ~DefaultProviderSelectionPolicy() noexcept;
     
-    ProviderSelection determine_provider_selection_from_set_for_criteria(
+    ProviderSelection determine_provider_selection_for_criteria(
         const Criteria& criteria,
-        const std::set<Provider::Ptr>& providers);
+        const ProviderEnumerator& enumerator);
 
     Provider::Ptr determine_position_updates_provider(
         const Criteria& criteria,
-        const std::set<Provider::Ptr>& providers);
+        const ProviderEnumerator& enumerator);
 
     Provider::Ptr determine_heading_updates_provider(
         const Criteria& criteria,
-        const std::set<Provider::Ptr>& providers);
+        const ProviderEnumerator& enumerator);
 
     Provider::Ptr determine_velocity_updates_provider(
         const Criteria& criteria,
-        const std::set<Provider::Ptr>& providers);
+        const ProviderEnumerator& enumerator);
 };
 }
 }

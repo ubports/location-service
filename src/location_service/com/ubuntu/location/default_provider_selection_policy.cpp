@@ -17,6 +17,8 @@
  */
 #include <com/ubuntu/location/default_provider_selection_policy.h>
 
+#include <com/ubuntu/location/engine.h>
+
 namespace cul = com::ubuntu::location;
 
 cul::DefaultProviderSelectionPolicy::DefaultProviderSelectionPolicy()
@@ -28,15 +30,15 @@ cul::DefaultProviderSelectionPolicy::~DefaultProviderSelectionPolicy() noexcept
 }
 
 cul::ProviderSelection 
-cul::DefaultProviderSelectionPolicy::determine_provider_selection_from_set_for_criteria(
+cul::DefaultProviderSelectionPolicy::determine_provider_selection_for_criteria(
     const cul::Criteria& criteria,
-    const std::set<cul::Provider::Ptr>& providers)
+    const cul::ProviderEnumerator& enumerator)
 {
     ProviderSelection selection
     {
-        determine_position_updates_provider(criteria, providers),
-        determine_heading_updates_provider(criteria, providers),
-        determine_velocity_updates_provider(criteria, providers),
+        determine_position_updates_provider(criteria, enumerator),
+        determine_heading_updates_provider(criteria, enumerator),
+        determine_velocity_updates_provider(criteria, enumerator)
     };
     
     return selection;
@@ -45,7 +47,7 @@ cul::DefaultProviderSelectionPolicy::determine_provider_selection_from_set_for_c
 cul::Provider::Ptr 
 cul::DefaultProviderSelectionPolicy::determine_position_updates_provider(
     const cul::Criteria& criteria,
-    const std::set<cul::Provider::Ptr>& providers)
+    const cul::ProviderEnumerator& enumerator)
 {
     auto less = 
             [](const Provider::Ptr& lhs, const Provider::Ptr& rhs)
@@ -55,12 +57,10 @@ cul::DefaultProviderSelectionPolicy::determine_position_updates_provider(
             };
 
     std::set<
-        Provider::Ptr, 
+        Provider::Ptr,
         std::function<bool(const Provider::Ptr&, const Provider::Ptr&)>> matching_providers(less);
 
-    std::for_each(
-        providers.begin(), 
-        providers.end(), 
+    enumerator.for_each_provider(
         [&](const Provider::Ptr& provider)
         {
             if (provider->matches_criteria(criteria))
@@ -72,7 +72,7 @@ cul::DefaultProviderSelectionPolicy::determine_position_updates_provider(
 
 cul::Provider::Ptr cul::DefaultProviderSelectionPolicy::determine_heading_updates_provider(
     const cul::Criteria& criteria,
-    const std::set<cul::Provider::Ptr>& providers)
+    const cul::ProviderEnumerator& enumerator)
 {
     auto less = 
             [](const Provider::Ptr& lhs, const Provider::Ptr& rhs)
@@ -84,9 +84,7 @@ cul::Provider::Ptr cul::DefaultProviderSelectionPolicy::determine_heading_update
         Provider::Ptr, 
         std::function<bool(const Provider::Ptr&, const Provider::Ptr&)>> matching_providers(less);
 
-    std::for_each(
-        providers.begin(), 
-        providers.end(), 
+    enumerator.for_each_provider(
         [&](const Provider::Ptr& provider)
         {
             if (provider->matches_criteria(criteria))
@@ -98,7 +96,7 @@ cul::Provider::Ptr cul::DefaultProviderSelectionPolicy::determine_heading_update
 
 cul::Provider::Ptr cul::DefaultProviderSelectionPolicy::determine_velocity_updates_provider(
     const cul::Criteria& criteria,
-    const std::set<cul::Provider::Ptr>& providers)
+    const cul::ProviderEnumerator& enumerator)
 {
     auto less = 
             [](const Provider::Ptr& lhs, const Provider::Ptr& rhs)
@@ -110,9 +108,7 @@ cul::Provider::Ptr cul::DefaultProviderSelectionPolicy::determine_velocity_updat
         Provider::Ptr, 
         std::function<bool(const Provider::Ptr&, const Provider::Ptr&)>> matching_providers(less);
 
-    std::for_each(
-        providers.begin(), 
-        providers.end(), 
+    enumerator.for_each_provider(
         [&](const Provider::Ptr& provider)
         {
             if (provider->matches_criteria(criteria))

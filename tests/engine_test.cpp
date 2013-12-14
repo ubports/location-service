@@ -24,37 +24,43 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-namespace cuc = com::ubuntu::connectivity;
-namespace cul = com::ubuntu::location;
+namespace location = com::ubuntu::location;
 
 namespace
 {
-struct DummyProvider : public com::ubuntu::location::Provider
+struct MockProvider : public location::Provider
 {
-    DummyProvider() : cul::Provider()
+    MockProvider() : location::Provider()
     {
     }
+
+    MOCK_METHOD1(on_wifi_and_cell_reporting_state_changed,
+                 void(location::WifiAndCellIdReportingState));
+    MOCK_METHOD1(on_reference_location_updated,
+                 void(const location::Update<location::Position>&));
 };
 
-struct NullProviderSelectionPolicy : public com::ubuntu::location::ProviderSelectionPolicy
+struct NullProviderSelectionPolicy : public location::ProviderSelectionPolicy
 {
-    com::ubuntu::location::ProviderSelection
-    determine_provider_selection_from_set_for_criteria(const com::ubuntu::location::Criteria&, const std::set<com::ubuntu::location::Provider::Ptr>&)
+    location::ProviderSelection
+    determine_provider_selection_for_criteria(
+            const location::Criteria&,
+            const location::ProviderEnumerator&)
     {
-        return com::ubuntu::location::ProviderSelection {
-            com::ubuntu::location::Provider::Ptr{}, 
-            com::ubuntu::location::Provider::Ptr{}, 
-            com::ubuntu::location::Provider::Ptr{}};
+        return location::ProviderSelection {
+            location::Provider::Ptr{},
+            location::Provider::Ptr{},
+            location::Provider::Ptr{}};
     }
 };
 }
 
 TEST(Engine, adding_and_removing_providers_inserts_and_erases_from_underlying_collection)
 {
-    com::ubuntu::location::Engine engine {std::set<com::ubuntu::location::Provider::Ptr>{}, std::make_shared<NullProviderSelectionPolicy>()};
+    location::Engine engine {std::make_shared<NullProviderSelectionPolicy>()};
 
-    auto provider1 = std::make_shared<DummyProvider>();
-    auto provider2 = std::make_shared<DummyProvider>();
+    auto provider1 = std::make_shared<::testing::NiceMock<MockProvider>>();
+    auto provider2 = std::make_shared<::testing::NiceMock<MockProvider>>();
 
     engine.add_provider(provider1);
     EXPECT_TRUE(engine.has_provider(provider1));
@@ -71,21 +77,23 @@ TEST(Engine, adding_and_removing_providers_inserts_and_erases_from_underlying_co
 
 TEST(Engine, adding_a_null_provider_throws)
 {
-    com::ubuntu::location::Engine engine {std::set<com::ubuntu::location::Provider::Ptr>{}, std::make_shared<NullProviderSelectionPolicy>()};
+    location::Engine engine {std::make_shared<NullProviderSelectionPolicy>()};
 
-    EXPECT_ANY_THROW(engine.add_provider(com::ubuntu::location::Provider::Ptr {}););
+    EXPECT_ANY_THROW(engine.add_provider(location::Provider::Ptr {}););
 }
 
 namespace
 {
-struct MockProviderSelectionPolicy : public com::ubuntu::location::ProviderSelectionPolicy
+struct MockProviderSelectionPolicy : public location::ProviderSelectionPolicy
 {
     ~MockProviderSelectionPolicy() noexcept
     {
     }
 
-    MOCK_METHOD2(determine_provider_selection_from_set_for_criteria,
-                 com::ubuntu::location::ProviderSelection(const com::ubuntu::location::Criteria&, const std::set<com::ubuntu::location::Provider::Ptr>&));
+    MOCK_METHOD2(determine_provider_selection_for_criteria,
+                 location::ProviderSelection(
+                     const location::Criteria&,
+                     const location::ProviderEnumerator&));
 };
 }
 
@@ -94,25 +102,44 @@ TEST(Engine, provider_selection_policy_is_invoked_when_matching_providers_to_cri
     using namespace ::testing;
 
     MockProviderSelectionPolicy policy;
-    com::ubuntu::location::Engine engine
+    location::Engine engine
     {
-        std::set<com::ubuntu::location::Provider::Ptr>{},
-                com::ubuntu::location::ProviderSelectionPolicy::Ptr{&policy, [](com::ubuntu::location::ProviderSelectionPolicy*) {}}
+        location::ProviderSelectionPolicy::Ptr
+        {
+            &policy,
+            [](location::ProviderSelectionPolicy*) {}
+        }
     };
 
-    EXPECT_CALL(policy, determine_provider_selection_from_set_for_criteria(_,_))
+    EXPECT_CALL(policy, determine_provider_selection_for_criteria(_,_))
             .Times(1)
-            .WillOnce(Return(com::ubuntu::location::ProviderSelection {
-                        com::ubuntu::location::Provider::Ptr{}, 
-                        com::ubuntu::location::Provider::Ptr{}, 
-                        com::ubuntu::location::Provider::Ptr{}}));
+            .WillOnce(Return(location::ProviderSelection {
+                        location::Provider::Ptr{},
+                        location::Provider::Ptr{},
+                        location::Provider::Ptr{}}));
 
-    auto selection = engine.determine_provider_selection_for_criteria(com::ubuntu::location::Criteria {});
+    auto selection = engine.determine_provider_selection_for_criteria(location::Criteria {});
+}
+
+TEST(Engine, adding_a_provider_creates_connections_to_engine_configuration_properties)
+{
+    using namespace ::testing;
+    auto provider = std::make_shared<NiceMock<MockProvider>>();
+    auto selection_policy = std::make_shared<NiceMock<MockProviderSelectionPolicy>>();
+    location::Engine engine{selection_policy};
+    engine.add_provider(provider);
+
+    EXPECT_CALL(*provider, on_wifi_and_cell_reporting_state_changed(_)).Times(1);
+
+    EXPECT_CALL(*provider, on_reference_location_updated(_)).Times(1);
+
+    engine.configuration.wifi_and_cell_id_reporting_state = location::WifiAndCellIdReportingState::on;
+    engine.configuration.reference_location = location::Update<location::Position>{};
 }
 
 TEST(ConnectivityManager, default_implementation_available)
 {
-    auto manager = com::ubuntu::location::connectivity::platform_default_manager();
+    auto manager = location::connectivity::platform_default_manager();
 
     EXPECT_NO_THROW(
     {
