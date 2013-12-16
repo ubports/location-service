@@ -58,13 +58,15 @@ install(
 add_executable(
   ubuntu-location-serviced
 
-  service/main.cpp
+  service/daemon.cpp
+  service/daemon_main.cpp
 )
 
 add_executable(
   ubuntu-location-serviced-cli
 
-  service/cli.cpp
+  service/daemon.cpp
+  service/daemon_cli_main.cpp
 )
 
 target_link_libraries(
