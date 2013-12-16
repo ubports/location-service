@@ -42,11 +42,9 @@ struct culg::Provider::Private
 static void on_location_update(UHardwareGpsLocation* location, void* context)
 {
     auto thiz = static_cast<culg::Provider*>(context);
-        
+    auto now = cul::Clock::now();
     if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_LAT_LONG)
     {
-        VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_LAT_LONG";
-
         cul::Position pos
         {
             cul::wgs84::Latitude{location->latitude * cul::units::Degrees},
@@ -62,23 +60,23 @@ static void on_location_update(UHardwareGpsLocation* location, void* context)
         // The Android HAL does not provide us with accuracy information for
         // altitude measurements. We just leave out that field.
 
-        thiz->mutable_updates().position(cul::Update<cul::Position>(pos));
+        thiz->mutable_updates().position(cul::Update<cul::Position>{pos, now});
+
+        VLOG(1) << pos;
     }
     
     if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_SPEED)
     {
-        VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_SPEED";
-        
         cul::Velocity v{location->speed * cul::units::MetersPerSecond};
-        thiz->mutable_updates().velocity(cul::Update<cul::Velocity>{v, cul::Clock::now()});
+        thiz->mutable_updates().velocity(cul::Update<cul::Velocity>{v, now});
+        VLOG(1) << v;
     }
 
     if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_BEARING)
     {
-        VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_BEARING";
-        
         cul::Heading h{location->bearing * cul::units::Degrees};
-        thiz->mutable_updates().heading(cul::Update<cul::Heading>{h, cul::Clock::now()});
+        thiz->mutable_updates().heading(cul::Update<cul::Heading>{h, now});
+        VLOG(1) << h;
     }
 }
 
@@ -87,9 +85,28 @@ static void on_status_update(uint16_t status, void* /*context*/)
     SYSLOG(INFO) << "Status = " << status_lut.at(status);
 }
 
-static void on_sv_status_update(UHardwareGpsSvStatus* sv_info, void* /*context*/)
+static void on_sv_status_update(UHardwareGpsSvStatus* sv_info, void* context)
 {
-    SYSLOG_EVERY_N(INFO, 20) << "SV status update: [#svs: " << sv_info->num_svs << "]";
+    auto thiz = static_cast<culg::Provider*>(context);
+
+    std::set<cul::SpaceVehicle> svs;
+
+    for (int i = 0; i < sv_info->num_svs; i++)
+    {
+        cul::SpaceVehicle sv;
+
+        sv.type = cul::SpaceVehicle::Type::gps;
+        sv.id = sv_info->sv_list[i].prn;
+        sv.snr = sv_info->sv_list[i].snr;
+        sv.has_almanac_data = sv_info->almanac_mask & (1 << i);
+        sv.has_ephimeris_data = sv_info->ephemeris_mask & (1 << i);
+        sv.azimuth = sv_info->sv_list[i].elevation * cul::units::Degrees;
+        sv.elevation = sv_info->sv_list[i].azimuth * cul::units::Degrees;
+
+        svs.insert(sv);
+    }
+
+    thiz->mutable_updates().svs(svs);
 }
     
 static void on_nmea_update(int64_t /*timestamp*/, const char* /*nmea*/, int /*length*/, void* /*context*/)
@@ -191,8 +208,7 @@ culg::Provider::Provider()
                 U_HARDWARE_GPS_POSITION_RECURRENCE_PERIODIC,
                 minimum_interval.count(),
                 preferred_accuracy,
-                preferred_time_to_first_fix
-                );
+                preferred_time_to_first_fix);
 }
 
 culg::Provider::~Provider() noexcept

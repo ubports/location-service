@@ -12,7 +12,6 @@ add_library(
   provider_factory.cpp
   proxy_provider.cpp
   set_name_for_thread.cpp
-  velocity.cpp
 
   connectivity/ofono_nm_connectivity_manager.cpp
 
@@ -62,6 +61,12 @@ add_executable(
   service/main.cpp
 )
 
+add_executable(
+  ubuntu-location-serviced-cli
+
+  service/cli.cpp
+)
+
 target_link_libraries(
   ubuntu-location-serviced
 
@@ -75,8 +80,26 @@ target_link_libraries(
   ${GFlags_LIBRARY}
 )
 
+target_link_libraries(
+  ubuntu-location-serviced-cli
+
+  ubuntu-location-service
+
+  ${ENABLED_PROVIDER_TARGETS}
+
+  ${Boost_LIBRARIES}
+  ${DBUS_LIBRARIES}
+  ${GLog_LIBRARY}
+  ${GFlags_LIBRARY}
+)
+
 install(
   TARGETS ubuntu-location-serviced
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(
+  TARGETS ubuntu-location-serviced-cli
   DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 

@@ -19,6 +19,8 @@
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
 
+#include <org/freedesktop/dbus/well_known_bus.h>
+
 #include <functional>
 #include <iostream>
 
@@ -28,8 +30,21 @@ namespace location {
 
 struct ProgramOptions
 {
+    struct Errors
+    {
+        struct OptionNotSet {};
+    };
+
+    struct Options
+    {
+        static const char* bus() { return "bus"; }
+    };
+
     ProgramOptions(bool do_allow_unregistered = true) : allow_unregistered(do_allow_unregistered)
     {
+        add(Options::bus(),
+            "The well-known bus to connect to the service upon",
+            std::string{"session"});
     }
 
     ProgramOptions& add(const char* name, const char* desc)
@@ -84,6 +99,17 @@ struct ProgramOptions
         }
 
         return true;
+    }
+
+    org::freedesktop::dbus::WellKnownBus bus()
+    {
+        static const std::map<std::string, org::freedesktop::dbus::WellKnownBus> lut =
+        {
+            {"session", org::freedesktop::dbus::WellKnownBus::session},
+            {"system", org::freedesktop::dbus::WellKnownBus::system},
+        };
+
+        return lut.at(value_for_key<std::string>(Options::bus()));
     }
 
     template<typename T>
