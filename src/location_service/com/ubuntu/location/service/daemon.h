@@ -52,7 +52,7 @@ struct Daemon
          * @param argv Array of arguments.
          * @return EXIT_SUCCESS or EXIT_FAILURE.
          */
-        static int main(int argc, char** argv);
+        static int main(int argc, char const** argv);
     };
 
     Daemon() = delete;
@@ -68,7 +68,7 @@ struct Daemon
      * @param argv Array of arguments.
      * @return EXIT_SUCCESS or EXIT_FAILURE.
      */
-    static int main(int argc, char** argv);
+    static int main(int argc, char const** argv);
 };
 }
 }

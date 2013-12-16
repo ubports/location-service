@@ -80,7 +80,7 @@ struct ProgramOptions
         return *this;
     }
 
-    bool parse_from_command_line_args(int argc, char** argv)
+    bool parse_from_command_line_args(int argc, char const** argv)
     {
         try
         {

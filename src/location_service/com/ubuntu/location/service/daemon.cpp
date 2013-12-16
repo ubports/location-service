@@ -53,14 +53,15 @@ const std::map<std::string, Command> known_commands =
 };
 }
 
-int location::service::Daemon::main(int argc, char** argv)
+int location::service::Daemon::main(int argc, const char** argv)
 {
     location::ProgramOptions options;
 
     options.add("help", "Produces this help message");
+    options.add("testing", "Enables running the service without providers");
     options.add_composed<std::vector<std::string>>(
-        "provider",
-        "The providers that should be added to the engine");
+                                                      "provider",
+                                                      "The providers that should be added to the engine");
 
     if (!options.parse_from_command_line_args(argc, argv))
         return EXIT_FAILURE;
@@ -71,27 +72,29 @@ int location::service::Daemon::main(int argc, char** argv)
         return EXIT_SUCCESS;
     }
 
-    if (options.value_count_for_key("provider") == 0)
+    std::set<location::Provider::Ptr> instantiated_providers;
+
+    if (options.value_count_for_key("testing") == 0 &&
+        options.value_count_for_key("provider") == 0)
     {
         std::cout << "A set of providers need to be specified. The following providers are known:" << std::endl;
         location::ProviderFactory::instance().enumerate(
-            [](const std::string& name, const location::ProviderFactory::Factory&)
-            {
-                std::cout << "\t" << name << std::endl;
-            });
+                    [](const std::string& name, const location::ProviderFactory::Factory&)
+        {
+            std::cout << "\t" << name << std::endl;
+        });
         return EXIT_FAILURE;
-    }
-
-    auto selected_providers = options.value_for_key<std::vector<std::string>>("provider");
-
-    std::map<std::string, location::ProviderFactory::Configuration> config_lut;
-    std::set<location::Provider::Ptr> instantiated_providers;
-
-    for (const std::string& provider : selected_providers)
+    } else if(options.value_count_for_key("provider") > 0)
     {
-        std::cout << "Instantiating and configuring: " << provider << std::endl;
-        options.enumerate_unrecognized_options(
-            [&config_lut, provider](const std::string& s)
+        auto selected_providers = options.value_for_key<std::vector<std::string>>("provider");
+
+        std::map<std::string, location::ProviderFactory::Configuration> config_lut;
+
+        for (const std::string& provider : selected_providers)
+        {
+            std::cout << "Instantiating and configuring: " << provider << std::endl;
+            options.enumerate_unrecognized_options(
+                        [&config_lut, provider](const std::string& s)
             {
                 std::stringstream in(s);
                 std::string key, value;
@@ -113,45 +116,40 @@ int location::service::Daemon::main(int argc, char** argv)
                 config_lut[provider].put(key, value);
             });
 
-        try
-        {
-            auto p = location::ProviderFactory::instance().create_provider_for_name_with_config(
-                provider,
-                config_lut[provider]);
+            try
+            {
+                auto p = location::ProviderFactory::instance().create_provider_for_name_with_config(
+                            provider,
+                            config_lut[provider]);
 
-            if (p)
-                instantiated_providers.insert(p);
-            else
-                throw std::runtime_error("Problem instantiating provider");
+                if (p)
+                    instantiated_providers.insert(p);
+                else
+                    throw std::runtime_error("Problem instantiating provider");
 
-        } catch(const std::runtime_error& e)
-        {
-            std::cerr << "Exception instantiating provider: " << e.what() << " ... Aborting now." << std::endl;
-            return EXIT_FAILURE;
+            } catch(const std::runtime_error& e)
+            {
+                std::cerr << "Exception instantiating provider: " << e.what() << " ... Aborting now." << std::endl;
+                return EXIT_FAILURE;
+            }
         }
     }
 
-    static const std::map<std::string, dbus::WellKnownBus> lut =
-    {
-        {"session", dbus::WellKnownBus::session},
-        {"system", dbus::WellKnownBus::system},
-    };
-
     dbus::Bus::Ptr bus
     {
-        new dbus::Bus{lut.at(options.value_for_key<std::string>("bus"))}
+        new dbus::Bus{options.bus()}
     };
 
     bus->install_executor(
-        dbus::Executor::Ptr(
-            new dbus::asio::Executor{bus}));
+                dbus::Executor::Ptr(
+                    new dbus::asio::Executor{bus}));
 
     location::service::DefaultConfiguration config;
 
     auto location_service =
             dbus::announce_service_on_bus<
-                location::service::Interface,
-                location::service::Implementation
+            location::service::Interface,
+            location::service::Implementation
             >(
                 bus,
                 config.the_engine(
@@ -167,7 +165,7 @@ int location::service::Daemon::main(int argc, char** argv)
     return EXIT_SUCCESS;
 }
 
-int location::service::Daemon::Cli::main(int argc, char** argv)
+int location::service::Daemon::Cli::main(int argc, const char** argv)
 {
     location::ProgramOptions options;
 
@@ -177,7 +175,8 @@ int location::service::Daemon::Cli::main(int argc, char** argv)
                 "   is_online\n"
                 "   does_satellite_based_positioning\n"
                 "   does_report_wifi_and_cell_ids\n"
-                "   visible_space_vehicles");
+                "   visible_space_vehicles",
+                std::string("is_online"));
 
     if (!options.parse_from_command_line_args(argc, argv))
         return EXIT_FAILURE;

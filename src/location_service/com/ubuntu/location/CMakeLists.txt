@@ -55,24 +55,34 @@ install(
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
+add_library(
+  ubuntu-location-service-daemon
+
+  service/daemon
+)
+
 add_executable(
   ubuntu-location-serviced
 
-  service/daemon.cpp
   service/daemon_main.cpp
 )
 
 add_executable(
   ubuntu-location-serviced-cli
 
-  service/daemon.cpp
   service/daemon_cli_main.cpp
+)
+
+target_link_libraries(
+  ubuntu-location-service-daemon
+
+  ubuntu-location-service
 )
 
 target_link_libraries(
   ubuntu-location-serviced
 
-  ubuntu-location-service
+  ubuntu-location-service-daemon
 
   ${ENABLED_PROVIDER_TARGETS}
 
@@ -85,7 +95,7 @@ target_link_libraries(
 target_link_libraries(
   ubuntu-location-serviced-cli
 
-  ubuntu-location-service
+  ubuntu-location-service-daemon
 
   ${ENABLED_PROVIDER_TARGETS}
 

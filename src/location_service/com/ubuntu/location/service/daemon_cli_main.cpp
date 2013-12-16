@@ -20,5 +20,5 @@
 
 int main(int argc, char** argv)
 {
-    return com::ubuntu::location::service::Daemon::Cli::main(argc, argv);
+    return com::ubuntu::location::service::Daemon::Cli::main(argc, (char const**)argv);
 }

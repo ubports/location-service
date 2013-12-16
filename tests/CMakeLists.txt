@@ -17,7 +17,10 @@ set (GMOCK_SOURCE_DIR "/usr/src/gmock" CACHE PATH "gmock source directory")
 set (GTEST_INCLUDE_DIR "${GMOCK_SOURCE_DIR}/gtest/include" CACHE PATH "gtest source include directory")
 
 add_subdirectory(${GMOCK_SOURCE_DIR} "${CMAKE_CURRENT_BINARY_DIR}/gmock")
+
 include_directories (
+  ${CMAKE_SOURCE_DIR}/src/location_service
+
   ${GMOCK_INCLUDE_DIR}
   ${GTEST_INCLUDE_DIR}
 )
@@ -31,6 +34,12 @@ add_executable(
 add_executable(
     controller_test
     controller_test.cpp
+    test_main.cpp
+)
+
+add_executable(
+    daemon_and_cli_tests
+    daemon_and_cli_tests.cpp
     test_main.cpp
 )
 
@@ -85,6 +94,18 @@ target_link_libraries(
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
     
+    gtest
+)
+
+target_link_libraries(
+    daemon_and_cli_tests
+
+    ubuntu-location-service-daemon
+
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${Boost_LIBRARIES}
+    ${DBUS_LIBRARIES}
+
     gtest
 )
 
@@ -231,6 +252,7 @@ else (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
   add_test(acceptance_tests ${CMAKE_CURRENT_BINARY_DIR}/acceptance_tests)
 endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
 
+add_test(daemon_and_cli_tests daemon_and_cli_tests)
 add_test(provider_test provider_test)
 add_test(controller_test controller_test)
 add_test(default_permission_manager_test default_permission_manager_test)
