@@ -23,6 +23,8 @@
 
 #include <gtest/gtest.h>
 
+#include <ctime>
+
 #include <thread>
 
 namespace location = com::ubuntu::location;
@@ -49,7 +51,8 @@ std::function<void()> querying_cli_for_property(const std::string& property)
     return [property]()
     {
         // We need to wait some time to make sure that the service is up and running
-        std::this_thread::sleep_for(std::chrono::milliseconds{500});
+        timespec ts = { 0, 500 * 1000 * 1000 };
+        ::nanosleep(&ts, nullptr);
 
         char const* argv[] =
         {

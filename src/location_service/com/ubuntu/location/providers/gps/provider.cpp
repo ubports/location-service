@@ -18,6 +18,7 @@
 #include <com/ubuntu/location/providers/gps/provider.h>
 
 #include <com/ubuntu/location/logging.h>
+#include <com/ubuntu/location/connectivity/manager.h>
 
 #include <ubuntu/hardware/gps.h>
 
@@ -118,9 +119,19 @@ static void on_set_capabilities(uint32_t capabilities, void* /*context*/)
     VLOG(1) << __PRETTY_FUNCTION__ << ": " << capabilities;
 }
 
-static void on_request_utc_time(void* /*context*/)
+static void on_request_utc_time(void* context)
 {
-    VLOG(1) << __PRETTY_FUNCTION__;
+    auto now = cul::Clock::now().time_since_epoch();
+
+    auto thiz = static_cast<culg::Provider*>(context);
+
+    static const int zero_uncertainty = 0;
+
+    u_hardware_gps_inject_time(
+        thiz->d->gps_handle,
+        now.count(),
+        now.count(),
+        zero_uncertainty);
 }
 
 static void on_agps_status_update(UHardwareGpsAGpsStatus* /*status*/, void* /*context*/)
@@ -138,9 +149,49 @@ static void on_agps_ril_request_set_id(uint32_t /*flags*/, void* /*context*/)
     VLOG(1) << __PRETTY_FUNCTION__;
 }
 
-static void on_agps_ril_request_ref_lock(uint32_t /*flags*/, void* /*context*/)
+static void on_agps_ril_request_ref_location(uint32_t /*flags*/, void* /*context*/)
 {
-    VLOG(1) << __PRETTY_FUNCTION__;
+    /*
+    auto thiz = static_cast<culg::Provider*>(context);
+    auto connectivity_manager = cul::connectivity::platform_default_manager();
+
+    if (connectivity_manager)
+    {
+        auto visible_cells = connectivity_manager->visible_radio_cells().get();
+
+        if (!visible_cells.empty())
+        {
+            const auto& cell = visible_cells.front();
+            UHardwareGpsAGpsRefLocation ref_loc;
+            switch (cell.type)
+            {
+            case cul::connectivity::RadioCell::Type::gsm:
+                ref_loc.type = AGPS_REF_LOCATION_TYPE_GSM_CELLID;
+                ref_loc.u.cellID.mcc = cell.gsm().mobile_country_code.get();
+                ref_loc.u.cellID.mnc = cell.gsm().mobile_network_code.get();
+                ref_loc.u.cellID.lac = cell.gsm().location_area_code.get();
+                ref_loc.u.cellID.cid = cell.gsm().id.get();
+                u_hardware_gps_agps_inject_reference_location(&ref_loc, sizeof(ref_loc));
+                break;
+            case cul::connectivity::RadioCell::Type::umts:
+                ref_loc.type = ref_loc.type = AGPS_REF_LOCATION_TYPE_UMTS_CELLID;
+                ref_loc.type = AGPS_REF_LOCATION_TYPE_GSM_CELLID;
+                ref_loc.u.cellID.mcc = cell.umts().mobile_country_code.get();
+                ref_loc.u.cellID.mnc = cell.umts().mobile_network_code.get();
+                ref_loc.u.cellID.lac = cell.umts().location_area_code.get();
+                ref_loc.u.cellID.cid = cell.umts().id.get();
+                u_hardware_gps_agps_inject_reference_location(
+                            thiz->d->gps_handle,
+                            &ref_loc,
+                            sizeof(ref_loc));
+                break;
+            default:
+                LOG(WARNING) << "The Android GPS HAL only supports gsm and umts cell ids.";
+                break;
+            }
+        }
+    }
+    */
 }
 
     static void on_gps_xtra_download_request(void*)
@@ -187,13 +238,11 @@ culg::Provider::Provider()
     d->gps_params.set_capabilities_cb = culg::Provider::Private::on_set_capabilities;
     d->gps_params.request_utc_time_cb = culg::Provider::Private::on_request_utc_time;
     d->gps_params.xtra_download_request_cb = culg::Provider::Private::on_gps_xtra_download_request;
-    
     d->gps_params.agps_status_cb = culg::Provider::Private::on_agps_status_update;
-    
     d->gps_params.gps_ni_notify_cb = culg::Provider::Private::on_gps_ni_notification;
     
     d->gps_params.request_setid_cb = culg::Provider::Private::on_agps_ril_request_set_id;
-    d->gps_params.request_refloc_cb = culg::Provider::Private::on_agps_ril_request_ref_lock;
+    d->gps_params.request_refloc_cb = culg::Provider::Private::on_agps_ril_request_ref_location;
     d->gps_params.context = this;
     
     d->gps_handle = u_hardware_gps_new(std::addressof(d->gps_params));

@@ -59,8 +59,8 @@ TEST(Engine, adding_and_removing_providers_inserts_and_erases_from_underlying_co
 {
     location::Engine engine {std::make_shared<NullProviderSelectionPolicy>()};
 
-    auto provider1 = std::make_shared<::testing::NiceMock<MockProvider>>();
-    auto provider2 = std::make_shared<::testing::NiceMock<MockProvider>>();
+    auto provider1 = std::make_shared<testing::NiceMock<MockProvider>>();
+    auto provider2 = std::make_shared<testing::NiceMock<MockProvider>>();
 
     engine.add_provider(provider1);
     EXPECT_TRUE(engine.has_provider(provider1));

@@ -248,11 +248,12 @@ endif (LOCATION_SERVICE_ENABLE_GEOCLUE_PROVIDERS)
 
 if (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
   add_test(acceptance_tests ${DBUS_TEST_RUNNER_EXECUTABLE} --task=${CMAKE_CURRENT_BINARY_DIR}/acceptance_tests)
+  add_test(daemon_and_cli_tests ${DBUS_TEST_RUNNER_EXECUTABLE} --task=${CMAKE_CURRENT_BINARY_DIR}/daemon_and_cli_tests)
 else (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
   add_test(acceptance_tests ${CMAKE_CURRENT_BINARY_DIR}/acceptance_tests)
+  add_test(daemon_and_cli_tests ${CMAKE_CURRENT_BINARY_DIR}/daemon_and_cli_tests)
 endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
 
-add_test(daemon_and_cli_tests daemon_and_cli_tests)
 add_test(provider_test provider_test)
 add_test(controller_test controller_test)
 add_test(default_permission_manager_test default_permission_manager_test)

@@ -31,6 +31,9 @@ namespace location
  */
 struct Clock
 {
+    /** @brief The underlying clock we are assuming for all time-stamping purposes. */
+    typedef std::chrono::high_resolution_clock Type;
+
     /**
      * @brief Duration type of the location service clock.
      */
