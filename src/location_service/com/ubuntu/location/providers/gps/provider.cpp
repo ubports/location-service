@@ -40,118 +40,118 @@ static const std::map<uint16_t, std::string> status_lut =
 struct culg::Provider::Private
 {
 
-static void on_location_update(UHardwareGpsLocation* location, void* context)
-{
-    auto thiz = static_cast<culg::Provider*>(context);
-    auto now = cul::Clock::now();
-    if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_LAT_LONG)
+    static void on_location_update(UHardwareGpsLocation* location, void* context)
     {
-        cul::Position pos
+        auto thiz = static_cast<culg::Provider*>(context);
+        auto now = cul::Clock::now();
+        if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_LAT_LONG)
         {
-            cul::wgs84::Latitude{location->latitude * cul::units::Degrees},
-            cul::wgs84::Longitude{location->longitude * cul::units::Degrees}
-        };
+            cul::Position pos
+            {
+                cul::wgs84::Latitude{location->latitude * cul::units::Degrees},
+                cul::wgs84::Longitude{location->longitude * cul::units::Degrees}
+            };
 
-        if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_ACCURACY)
-            pos.accuracy.horizontal = location->accuracy * cul::units::Meters;
+            if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_ACCURACY)
+                pos.accuracy.horizontal = location->accuracy * cul::units::Meters;
 
-        if(location->flags & U_HARDWARE_GPS_LOCATION_HAS_ALTITUDE)
-            pos.altitude = cul::wgs84::Altitude{location->altitude * cul::units::Meters};
-        
-        // The Android HAL does not provide us with accuracy information for
-        // altitude measurements. We just leave out that field.
+            if(location->flags & U_HARDWARE_GPS_LOCATION_HAS_ALTITUDE)
+                pos.altitude = cul::wgs84::Altitude{location->altitude * cul::units::Meters};
 
-        thiz->mutable_updates().position(cul::Update<cul::Position>{pos, now});
+            // The Android HAL does not provide us with accuracy information for
+            // altitude measurements. We just leave out that field.
 
-        VLOG(1) << pos;
+            thiz->mutable_updates().position(cul::Update<cul::Position>{pos, now});
+
+            VLOG(1) << pos;
+        }
+
+        if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_SPEED)
+        {
+            cul::Velocity v{location->speed * cul::units::MetersPerSecond};
+            thiz->mutable_updates().velocity(cul::Update<cul::Velocity>{v, now});
+            VLOG(1) << v;
+        }
+
+        if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_BEARING)
+        {
+            cul::Heading h{location->bearing * cul::units::Degrees};
+            thiz->mutable_updates().heading(cul::Update<cul::Heading>{h, now});
+            VLOG(1) << h;
+        }
+    }
+
+    static void on_status_update(uint16_t status, void* /*context*/)
+    {
+        SYSLOG(INFO) << "Status = " << status_lut.at(status);
+    }
+
+    static void on_sv_status_update(UHardwareGpsSvStatus* sv_info, void* context)
+    {
+        auto thiz = static_cast<culg::Provider*>(context);
+
+        std::set<cul::SpaceVehicle> svs;
+
+        for (int i = 0; i < sv_info->num_svs; i++)
+        {
+            cul::SpaceVehicle sv;
+
+            sv.type = cul::SpaceVehicle::Type::gps;
+            sv.id = sv_info->sv_list[i].prn;
+            sv.snr = sv_info->sv_list[i].snr;
+            sv.has_almanac_data = sv_info->almanac_mask & (1 << i);
+            sv.has_ephimeris_data = sv_info->ephemeris_mask & (1 << i);
+            sv.azimuth = sv_info->sv_list[i].elevation * cul::units::Degrees;
+            sv.elevation = sv_info->sv_list[i].azimuth * cul::units::Degrees;
+
+            svs.insert(sv);
+        }
+
+        thiz->mutable_updates().svs(svs);
     }
     
-    if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_SPEED)
+    static void on_nmea_update(int64_t /*timestamp*/, const char* /*nmea*/, int /*length*/, void* /*context*/)
     {
-        cul::Velocity v{location->speed * cul::units::MetersPerSecond};
-        thiz->mutable_updates().velocity(cul::Update<cul::Velocity>{v, now});
-        VLOG(1) << v;
     }
 
-    if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_BEARING)
+    static void on_set_capabilities(uint32_t capabilities, void* /*context*/)
     {
-        cul::Heading h{location->bearing * cul::units::Degrees};
-        thiz->mutable_updates().heading(cul::Update<cul::Heading>{h, now});
-        VLOG(1) << h;
-    }
-}
-
-static void on_status_update(uint16_t status, void* /*context*/)
-{
-    SYSLOG(INFO) << "Status = " << status_lut.at(status);
-}
-
-static void on_sv_status_update(UHardwareGpsSvStatus* sv_info, void* context)
-{
-    auto thiz = static_cast<culg::Provider*>(context);
-
-    std::set<cul::SpaceVehicle> svs;
-
-    for (int i = 0; i < sv_info->num_svs; i++)
-    {
-        cul::SpaceVehicle sv;
-
-        sv.type = cul::SpaceVehicle::Type::gps;
-        sv.id = sv_info->sv_list[i].prn;
-        sv.snr = sv_info->sv_list[i].snr;
-        sv.has_almanac_data = sv_info->almanac_mask & (1 << i);
-        sv.has_ephimeris_data = sv_info->ephemeris_mask & (1 << i);
-        sv.azimuth = sv_info->sv_list[i].elevation * cul::units::Degrees;
-        sv.elevation = sv_info->sv_list[i].azimuth * cul::units::Degrees;
-
-        svs.insert(sv);
+        VLOG(1) << __PRETTY_FUNCTION__ << ": " << capabilities;
     }
 
-    thiz->mutable_updates().svs(svs);
-}
+    static void on_request_utc_time(void* context)
+    {
+        auto now = cul::Clock::now().time_since_epoch();
+
+        auto thiz = static_cast<culg::Provider*>(context);
+
+        static const int zero_uncertainty = 0;
+
+        u_hardware_gps_inject_time(
+                    thiz->d->gps_handle,
+                    now.count(),
+                    now.count(),
+                    zero_uncertainty);
+    }
+
+    static void on_agps_status_update(UHardwareGpsAGpsStatus* /*status*/, void* /*context*/)
+    {
+        VLOG(1) << __PRETTY_FUNCTION__;
+    }
+
+    static void on_gps_ni_notification(UHardwareGpsNiNotification* /*notification*/, void* /*context*/)
+    {
+        VLOG(1) << __PRETTY_FUNCTION__;
+    }
     
-static void on_nmea_update(int64_t /*timestamp*/, const char* /*nmea*/, int /*length*/, void* /*context*/)
-{
-}
+    static void on_agps_ril_request_set_id(uint32_t /*flags*/, void* /*context*/)
+    {
+        VLOG(1) << __PRETTY_FUNCTION__;
+    }
 
-static void on_set_capabilities(uint32_t capabilities, void* /*context*/)
-{
-    VLOG(1) << __PRETTY_FUNCTION__ << ": " << capabilities;
-}
-
-static void on_request_utc_time(void* context)
-{
-    auto now = cul::Clock::now().time_since_epoch();
-
-    auto thiz = static_cast<culg::Provider*>(context);
-
-    static const int zero_uncertainty = 0;
-
-    u_hardware_gps_inject_time(
-        thiz->d->gps_handle,
-        now.count(),
-        now.count(),
-        zero_uncertainty);
-}
-
-static void on_agps_status_update(UHardwareGpsAGpsStatus* /*status*/, void* /*context*/)
-{
-    VLOG(1) << __PRETTY_FUNCTION__;
-}
-
-static void on_gps_ni_notification(UHardwareGpsNiNotification* /*notification*/, void* /*context*/)
-{
-    VLOG(1) << __PRETTY_FUNCTION__;
-}
-    
-static void on_agps_ril_request_set_id(uint32_t /*flags*/, void* /*context*/)
-{
-    VLOG(1) << __PRETTY_FUNCTION__;
-}
-
-static void on_agps_ril_request_ref_location(uint32_t /*flags*/, void* /*context*/)
-{
-    /*
+    static void on_agps_ril_request_ref_location(uint32_t /*flags*/, void* /*context*/)
+    {
+        /*
     auto thiz = static_cast<culg::Provider*>(context);
     auto connectivity_manager = cul::connectivity::platform_default_manager();
 
@@ -192,20 +192,20 @@ static void on_agps_ril_request_ref_location(uint32_t /*flags*/, void* /*context
         }
     }
     */
-}
+    }
 
     static void on_gps_xtra_download_request(void*)
     {
         VLOG(1) << __PRETTY_FUNCTION__;
     }
 
-    void start() 
-    { 
+    void start()
+    {
         u_hardware_gps_start(gps_handle);
     }
     
-    void stop() 
-    { 
+    void stop()
+    {
         u_hardware_gps_stop(gps_handle);
     }
 
@@ -226,10 +226,10 @@ cul::Provider::Ptr culg::Provider::create_instance(const cul::ProviderFactory::C
 }
 
 culg::Provider::Provider()
-        : cul::Provider(
-              cul::Provider::Features::position | cul::Provider::Features::velocity | cul::Provider::Features::heading,
-              cul::Provider::Requirements::satellites),
-          d(new Private())
+    : cul::Provider(
+          cul::Provider::Features::position | cul::Provider::Features::velocity | cul::Provider::Features::heading,
+          cul::Provider::Requirements::satellites),
+      d(new Private())
 {
     d->gps_params.location_cb = culg::Provider::Private::on_location_update;
     d->gps_params.status_cb = culg::Provider::Private::on_status_update;

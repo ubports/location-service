@@ -62,6 +62,7 @@ struct Daemon
      *
      *   --bus arg (=session)  The well-known bus to connect to the service upon
      *   --help                Produces this help message
+     *   --testing             Enables executing the service without selected providers
      *   --provider arg        The providers that should be added to the engine
      *
      * @param argc Size of the arguments array.
