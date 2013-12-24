@@ -34,10 +34,10 @@
 #include <com/ubuntu/location/service/implementation.h>
 #include <com/ubuntu/location/service/stub.h>
 
-#include <org/freedesktop/dbus/announcer.h>
-#include <org/freedesktop/dbus/resolver.h>
+#include <core/dbus/announcer.h>
+#include <core/dbus/resolver.h>
 
-#include <org/freedesktop/dbus/asio/executor.h>
+#include <core/dbus/asio/executor.h>
 
 #include <gtest/gtest.h>
 
@@ -50,7 +50,7 @@
 
 namespace cul = com::ubuntu::location;
 namespace culss = com::ubuntu::location::service::session;
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 namespace
 {
@@ -143,7 +143,7 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
     {
         SCOPED_TRACE("Server");
         auto bus = the_session_bus();
-        bus->install_executor(dbus::Executor::Ptr(new dbus::asio::Executor{bus}));
+        bus->install_executor(dbus::asio::make_executor(bus));
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
         cul::service::DefaultConfiguration config;
@@ -177,7 +177,7 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
         sync_start.wait_for_signal_ready();
 
         auto bus = the_session_bus();
-        bus->install_executor(dbus::Executor::Ptr(new dbus::asio::Executor{bus}));
+        bus->install_executor(dbus::asio::make_executor(bus));
         std::thread t{[bus](){bus->run();}};
         auto location_service = dbus::resolve_service_on_bus<
             cul::service::Interface,
@@ -232,9 +232,7 @@ TEST(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
     {
         SCOPED_TRACE("Server");
         auto bus = the_session_bus();
-        bus->install_executor(
-                    dbus::Executor::Ptr(
-                        new dbus::asio::Executor{bus}));
+        bus->install_executor(dbus::asio::make_executor(bus));
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
         cul::service::DefaultConfiguration config;
@@ -283,9 +281,7 @@ TEST(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjuste
     {
         SCOPED_TRACE("Server");
         auto bus = the_session_bus();
-        bus->install_executor(
-                    dbus::Executor::Ptr(
-                        new dbus::asio::Executor{bus}));
+        bus->install_executor(dbus::asio::make_executor(bus));
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
         cul::service::DefaultConfiguration config;
@@ -333,9 +329,7 @@ TEST(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdust
     {
         SCOPED_TRACE("Server");
         auto bus = the_session_bus();
-        bus->install_executor(
-                    dbus::Executor::Ptr(
-                        new dbus::asio::Executor{bus}));
+        bus->install_executor(dbus::asio::make_executor(bus));
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
         cul::service::DefaultConfiguration config;
@@ -388,9 +382,7 @@ TEST(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
     {
         SCOPED_TRACE("Server");
         auto bus = the_session_bus();
-        bus->install_executor(
-                    dbus::Executor::Ptr(
-                        new dbus::asio::Executor{bus}));
+        bus->install_executor(dbus::asio::make_executor(bus));
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
         cul::service::DefaultConfiguration config;

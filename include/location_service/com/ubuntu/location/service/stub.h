@@ -21,7 +21,7 @@
 #include <com/ubuntu/location/service/interface.h>
 #include <com/ubuntu/location/service/session/interface.h>
 
-#include <org/freedesktop/dbus/stub.h>
+#include <core/dbus/stub.h>
 
 namespace com
 {
@@ -31,7 +31,7 @@ namespace location
 {
 namespace service
 {
-class Stub : public org::freedesktop::dbus::Stub<Interface>
+class Stub : public core::dbus::Stub<Interface>
 {
   public:
     Stub(const dbus::Bus::Ptr& connection);

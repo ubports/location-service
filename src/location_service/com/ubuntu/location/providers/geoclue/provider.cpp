@@ -19,12 +19,15 @@
 
 #include <com/ubuntu/location/providers/geoclue/geoclue.h>
 
+#include <core/dbus/object.h>
+#include <core/dbus/signal.h>
+
 #include <thread>
 
 namespace cul = com::ubuntu::location;
 namespace culpg = com::ubuntu::location::providers::geoclue;
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 namespace
 {
@@ -37,6 +40,16 @@ dbus::Bus::Ptr the_session_bus()
 
 struct culpg::Provider::Private
 {
+    typedef dbus::Signal<
+        org::freedesktop::Geoclue::Position::Signals::PositionChanged,
+        org::freedesktop::Geoclue::Position::Signals::PositionChanged::ArgumentType
+    > PositionChanged;
+
+    typedef dbus::Signal<
+        org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged,
+        org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged::ArgumentType
+    > VelocityChanged;
+
     Private(const culpg::Provider::Configuration& config) 
             : bus(the_session_bus()),
               service(dbus::Service::use_service(bus, config.name)),
@@ -62,16 +75,10 @@ struct culpg::Provider::Private
     dbus::Bus::Ptr bus;
     dbus::Service::Ptr service;
     dbus::Object::Ptr object;
-    dbus::Signal<
-        org::freedesktop::Geoclue::Position::Signals::PositionChanged, 
-        org::freedesktop::Geoclue::Position::Signals::PositionChanged::ArgumentType
-        >::Ptr signal_position_changed;
-    dbus::Signal<
-        org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged, 
-        org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged::ArgumentType
-        >::Ptr signal_velocity_changed;
-    dbus::signals::ScopedConnection position_updates_connection;
-    dbus::signals::ScopedConnection velocity_updates_connection;
+    PositionChanged::Ptr signal_position_changed;
+    VelocityChanged::Ptr signal_velocity_changed;
+    PositionChanged::SubscriptionToken position_updates_connection;
+    VelocityChanged::SubscriptionToken velocity_updates_connection;
 
     std::thread worker;
 };

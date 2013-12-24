@@ -19,15 +19,15 @@
 
 #include <com/ubuntu/location/service/stub.h>
 
-#include <org/freedesktop/dbus/resolver.h>
-#include <org/freedesktop/dbus/asio/executor.h>
+#include <core/dbus/resolver.h>
+#include <core/dbus/asio/executor.h>
 
 #include <thread>
 
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 namespace culss = com::ubuntu::location::service::session;
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 int main(int argc, char** argv)
 {
@@ -58,9 +58,7 @@ int main(int argc, char** argv)
     {
         new dbus::Bus{lut.at(options.value_for_key<std::string>("bus"))}
     };
-    bus->install_executor(
-        dbus::Executor::Ptr(
-            new dbus::asio::Executor{bus}));
+    bus->install_executor(dbus::asio::make_executor(bus));
     std::thread t{[bus](){bus->run();}};
     
     auto location_service = 

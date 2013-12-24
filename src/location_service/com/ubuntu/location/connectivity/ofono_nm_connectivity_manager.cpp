@@ -18,21 +18,23 @@
 
 #include <com/ubuntu/location/connectivity/manager.h>
 
-#include <org/freedesktop/dbus/bus.h>
-#include <org/freedesktop/dbus/service.h>
-#include <org/freedesktop/dbus/types/object_path.h>
-#include <org/freedesktop/dbus/types/stl/string.h>
-#include <org/freedesktop/dbus/types/stl/tuple.h>
-#include <org/freedesktop/dbus/types/stl/vector.h>
+#include <core/dbus/bus.h>
+#include <core/dbus/object.h>
+#include <core/dbus/property.h>
+#include <core/dbus/service.h>
+#include <core/dbus/types/object_path.h>
+#include <core/dbus/types/stl/string.h>
+#include <core/dbus/types/stl/tuple.h>
+#include <core/dbus/types/stl/vector.h>
 
-#include <org/freedesktop/dbus/asio/executor.h>
+#include <core/dbus/asio/executor.h>
 
 #include "../set_name_for_thread.h"
 
 #include <chrono>
 
 namespace connectivity = com::ubuntu::location::connectivity;
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 namespace
 {
@@ -75,7 +77,7 @@ const std::shared_ptr<dbus::Bus>& system_bus()
 
     std::call_once(once,[]
     {
-        auto executor = std::shared_ptr<dbus::asio::Executor>(new dbus::asio::Executor(instance));
+        auto executor = dbus::asio::make_executor(instance);
         instance->install_executor(executor);
         state.worker = std::move(std::thread([]()
         {
@@ -241,7 +243,7 @@ struct NetworkManager
 
         Type type() const
         {
-            return static_cast<Type>(device_type->value());
+            return static_cast<Type>(device_type->get());
         }
 
         std::vector<AccessPoint> get_access_points() const
@@ -250,7 +252,7 @@ struct NetworkManager
             auto result = object->invoke_method_synchronously<Wireless::GetAccessPoints, ResultType>();
 
             if (result.is_error())
-                throw std::runtime_error(result.error());
+                throw std::runtime_error(result.error().print());
 
             std::vector<AccessPoint> aps;
 
@@ -301,7 +303,7 @@ struct NetworkManager
                     std::vector<dbus::types::ObjectPath>>();
 
         if (result.is_error())
-            throw std::runtime_error(result.error());
+            throw std::runtime_error(result.error().print());
 
         std::vector<Device> devices;
         for (const auto& path : result.value())
@@ -539,7 +541,7 @@ struct Ofono
             auto result = object->invoke_method_synchronously<GetModems, GetModems::ResultType>();
 
             if (result.is_error())
-                throw std::runtime_error(result.error());
+                throw std::runtime_error(result.error().print());
 
             for (const auto& element : result.value())
             {
@@ -600,9 +602,9 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                     for(auto const& ap : aps)
                     {
                         connectivity::WirelessNetwork wifi;
-                        wifi.bssid = ap.hw_address->value();
-                        wifi.frequency.set(ap.frequency->value());
-                        wifi.snr = ap.strength->value() / 127.;
+                        wifi.bssid = ap.hw_address->get();
+                        wifi.frequency.set(ap.frequency->get());
+                        wifi.snr = ap.strength->get() / 127.;
 
                         wifis.push_back(wifi);
                     }
@@ -642,13 +644,13 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                     {std::string(), connectivity::RadioCell::Type::unknown}
                 };
 
-                auto radio_type = type_lut.at(modem.network_registration.technology->value());
-                auto lac = modem.network_registration.lac->value();
-                auto cell_id = modem.network_registration.cell_id->value();
-                auto strength = modem.network_registration.strength->value();
-                std::stringstream ssmcc{modem.network_registration.mcc->value()};
+                auto radio_type = type_lut.at(modem.network_registration.technology->get());
+                auto lac = modem.network_registration.lac->get();
+                auto cell_id = modem.network_registration.cell_id->get();
+                auto strength = modem.network_registration.strength->get();
+                std::stringstream ssmcc{modem.network_registration.mcc->get()};
                 int mcc; ssmcc >> mcc;
-                std::stringstream ssmnc{modem.network_registration.mnc->value()};
+                std::stringstream ssmnc{modem.network_registration.mnc->get()};
                 int mnc; ssmnc >> mnc;
 
                 switch(radio_type)

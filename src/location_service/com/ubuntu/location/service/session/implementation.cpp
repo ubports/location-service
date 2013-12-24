@@ -8,7 +8,7 @@ namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 namespace culss = com::ubuntu::location::service::session;
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 struct culss::Implementation::Private
 {

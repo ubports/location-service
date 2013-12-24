@@ -27,9 +27,9 @@
 
 #include <core/property.h>
 
-#include <org/freedesktop/dbus/codec.h>
-#include <org/freedesktop/dbus/traits/service.h>
-#include <org/freedesktop/dbus/types/object_path.h>
+#include <core/dbus/codec.h>
+#include <core/dbus/traits/service.h>
+#include <core/dbus/types/object_path.h>
 
 namespace com
 {
@@ -279,7 +279,7 @@ public:
     virtual ~Interface() noexcept;
     Interface& operator=(const Interface&) = delete;
 
-    virtual const org::freedesktop::dbus::types::ObjectPath& path() const = 0;
+    virtual const core::dbus::types::ObjectPath& path() const = 0;
 
     /**
      * @brief Provides access to the updates delivered for this session.
@@ -299,9 +299,7 @@ private:
 }
 }
 }
-namespace org
-{
-namespace freedesktop
+namespace core
 {
 namespace dbus
 {
@@ -319,7 +317,6 @@ struct Service<com::ubuntu::location::service::session::Interface>
         return s;
     }
 };
-}
 }
 }
 }

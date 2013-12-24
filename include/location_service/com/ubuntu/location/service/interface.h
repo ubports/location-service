@@ -22,14 +22,14 @@
 
 #include <com/ubuntu/location/space_vehicle.h>
 
-#include <org/freedesktop/dbus/service.h>
-#include <org/freedesktop/dbus/traits/service.h>
-#include <org/freedesktop/dbus/types/object_path.h>
+#include <core/dbus/service.h>
+#include <core/dbus/traits/service.h>
+#include <core/dbus/types/object_path.h>
 
 #include <chrono>
 #include <functional>
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 namespace com
 {
@@ -216,9 +216,7 @@ class Interface
 }
 }
 
-namespace org
-{
-namespace freedesktop
+namespace core
 {
 namespace dbus
 {
@@ -236,7 +234,6 @@ struct Service<com::ubuntu::location::service::Interface>
         return s;
     }
 };
-}
 }
 }
 }

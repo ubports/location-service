@@ -24,14 +24,14 @@
 #include "program_options.h"
 #include "daemon.h"
 
-#include <org/freedesktop/dbus/announcer.h>
-#include <org/freedesktop/dbus/resolver.h>
-#include <org/freedesktop/dbus/asio/executor.h>
+#include <core/dbus/announcer.h>
+#include <core/dbus/resolver.h>
+#include <core/dbus/asio/executor.h>
 
 #include <thread>
 
 namespace location = com::ubuntu::location;
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 namespace
 {
@@ -140,9 +140,7 @@ int location::service::Daemon::main(int argc, const char** argv)
         new dbus::Bus{options.bus()}
     };
 
-    bus->install_executor(
-                dbus::Executor::Ptr(
-                    new dbus::asio::Executor{bus}));
+    bus->install_executor(dbus::asio::make_executor(bus));
 
     location::service::DefaultConfiguration config;
 

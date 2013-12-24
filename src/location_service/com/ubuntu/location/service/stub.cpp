@@ -20,11 +20,13 @@
 
 #include <com/ubuntu/location/logging.h>
 
+#include <core/dbus/property.h>
+
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 namespace culss = com::ubuntu::location::service::session;
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 namespace
 {
@@ -41,13 +43,14 @@ struct MappedProperty : public core::Property<typename PropertyType::ValueType>
 
     void set(const typename PropertyType::ValueType& value)
     {
-        dbus_property->value(value);
+        dbus_property->set(value);
         Super::set(value);
     }
 
     const typename PropertyType::ValueType& get() const
     {
-        return Super::mutable_get() = dbus_property->value();
+        std::cout << __PRETTY_FUNCTION__ << ": " << dbus_property << std::endl;
+        return Super::mutable_get() = dbus_property->get();
     }
 
     std::shared_ptr<dbus::Property<PropertyType>> dbus_property;
@@ -75,17 +78,17 @@ struct culs::Stub::Private
         does_satellite_based_positioning.changed().connect(
                     [this](bool value)
                     {
-                       remote.does_satellite_based_positioning->value(value);
+                       remote.does_satellite_based_positioning->set(value);
                     });
         does_report_cell_and_wifi_ids.changed().connect(
                     [this](bool value)
                     {
-                        remote.does_report_cell_and_wifi_ids->value(value);
+                        remote.does_report_cell_and_wifi_ids->set(value);
                     });
         is_online.changed().connect(
                     [this](bool value)
                     {
-                        remote.is_online->value(value);
+                        remote.is_online->set(value);
                     });
     }
 
@@ -121,7 +124,7 @@ culss::Interface::Ptr culs::Stub::create_session_for_criteria(const cul::Criteri
             >(criteria);
 
     if (op.is_error())
-        throw std::runtime_error(op.error());
+        throw std::runtime_error(op.error().print());
 
     return culss::Interface::Ptr(new culss::Stub{d->bus, op.value()});
 }

@@ -46,6 +46,7 @@ target_link_libraries(
 
   ${Boost_LIBRARIES}
   ${DBUS_LIBRARIES}
+  ${DBUS_CPP_LIBRARIES}
   ${GLog_LIBRARY}
   ${GFlags_LIBRARY}
 )
@@ -88,6 +89,7 @@ target_link_libraries(
 
   ${Boost_LIBRARIES}
   ${DBUS_LIBRARIES}
+  ${DBUS_CPP_LIBRARIES}
   ${GLog_LIBRARY}
   ${GFlags_LIBRARY}
 )
@@ -101,6 +103,7 @@ target_link_libraries(
 
   ${Boost_LIBRARIES}
   ${DBUS_LIBRARIES}
+  ${DBUS_CPP_LIBRARIES}
   ${GLog_LIBRARY}
   ${GFlags_LIBRARY}
 )

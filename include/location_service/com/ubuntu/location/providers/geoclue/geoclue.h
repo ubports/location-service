@@ -18,14 +18,14 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GEOCLUE_GEOCLUE_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GEOCLUE_GEOCLUE_H_
 
-#include <org/freedesktop/dbus/service.h>
-#include <org/freedesktop/dbus/traits/service.h>
-#include <org/freedesktop/dbus/types/struct.h>
-#include <org/freedesktop/dbus/types/stl/tuple.h>
+#include <core/dbus/service.h>
+#include <core/dbus/traits/service.h>
+#include <core/dbus/types/struct.h>
+#include <core/dbus/types/stl/tuple.h>
 
 #include <string>
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 namespace org
 {
@@ -205,9 +205,7 @@ struct Geoclue
 }
 }
 
-namespace org
-{
-namespace freedesktop
+namespace core
 {
 namespace dbus
 {
@@ -252,7 +250,6 @@ struct Service<org::freedesktop::Geoclue::Velocity>
         return s;
     }
 };
-}
 }
 }
 }

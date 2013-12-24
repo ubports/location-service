@@ -39,7 +39,6 @@ static const std::map<uint16_t, std::string> status_lut =
 
 struct culg::Provider::Private
 {
-
     static void on_location_update(UHardwareGpsLocation* location, void* context)
     {
         auto thiz = static_cast<culg::Provider*>(context);

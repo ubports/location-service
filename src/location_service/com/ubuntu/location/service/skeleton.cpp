@@ -19,15 +19,17 @@
 
 #include <com/ubuntu/location/logging.h>
 
-#include <org/freedesktop/dbus/dbus.h>
-#include <org/freedesktop/dbus/skeleton.h>
-#include <org/freedesktop/dbus/types/object_path.h>
+#include <core/dbus/dbus.h>
+#include <core/dbus/property.h>
+#include <core/dbus/object.h>
+#include <core/dbus/skeleton.h>
+#include <core/dbus/types/object_path.h>
 
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 namespace culss = com::ubuntu::location::service::session;
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 namespace
 {
@@ -51,8 +53,8 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
 
     SessionWrapper(const SessionStore<SessionWrapper>::Ptr& session_store,
                    const culss::Interface::Ptr& session,
-                   org::freedesktop::dbus::Service::Ptr service,
-                   org::freedesktop::dbus::Object::Ptr object)
+                   core::dbus::Service::Ptr service,
+                   core::dbus::Object::Ptr object)
         : session_store(session_store),
           session{session},
           remote(service, object)
@@ -76,7 +78,7 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
                         std::placeholders::_1));
     }
 
-    const org::freedesktop::dbus::types::ObjectPath& path() const
+    const core::dbus::types::ObjectPath& path() const
     {
         return session->path();
     }
@@ -166,34 +168,33 @@ struct culs::Skeleton::Private : public SessionStore<SessionWrapper>, std::enabl
           bus_is_online(object->get_property<culs::Interface::Properties::IsOnline>()),
           bus_visible_space_vehicles(object->get_property<culs::Interface::Properties::VisibleSpaceVehicles>())
     {
-        object->install_method_handler<culs::Interface::CreateSessionForCriteria>(
-                    std::bind(
-                        &culs::Skeleton::Private::handle_create_session_for_criteria,
-                        this,
-                        std::placeholders::_1));
+        object->install_method_handler<culs::Interface::CreateSessionForCriteria>([this](const dbus::Message::Ptr& msg)
+        {
+            handle_create_session_for_criteria(msg);
+        });
 
         does_satellite_based_positioning.changed().connect([this](bool value)
         {
-            bus_does_satellite_based_positioning->value(value);
+            bus_does_satellite_based_positioning->set(value);
         });
         does_report_cell_and_wifi_ids.changed().connect([this](bool value)
         {
-            bus_does_report_cell_and_wifi_ids->value(value);
+            bus_does_report_cell_and_wifi_ids->set(value);
         });
         is_online.changed().connect([this](bool value)
         {
-            bus_is_online->value(value);
+            bus_is_online->set(value);
         });
         visible_space_vehicles.changed().connect([this](const std::set<cul::SpaceVehicle>& svs)
         {
-            bus_visible_space_vehicles->value(svs);
+            bus_visible_space_vehicles->set(svs);
         });
         // TODO: we should make dbus properties observable
     }
 
     ~Private() noexcept {}
 
-    void handle_create_session_for_criteria(DBusMessage* msg);
+    void handle_create_session_for_criteria(const dbus::Message::Ptr& msg);
     void remove_session(const std::shared_ptr<SessionWrapper>& session);
 
     Skeleton* parent;
@@ -224,9 +225,8 @@ culs::Skeleton::~Skeleton() noexcept
 {
 }
 
-void culs::Skeleton::Private::handle_create_session_for_criteria(DBusMessage* msg)
+void culs::Skeleton::Private::handle_create_session_for_criteria(const dbus::Message::Ptr& in)
 {
-    auto in = dbus::Message::from_raw_message(msg);
     auto sender = in->sender();
 
     try
@@ -237,7 +237,7 @@ void culs::Skeleton::Private::handle_create_session_for_criteria(DBusMessage* ms
         Credentials credentials
         {
             static_cast<pid_t>(daemon.get_connection_unix_process_id(sender)),
-                    static_cast<uid_t>(daemon.get_connection_unix_user(sender))
+            static_cast<uid_t>(daemon.get_connection_unix_user(sender))
         };
 
         if (PermissionManager::Result::rejected == permission_manager->check_permission_for_credentials(criteria, credentials))
@@ -245,7 +245,10 @@ void culs::Skeleton::Private::handle_create_session_for_criteria(DBusMessage* ms
 
         auto session = parent->create_session_for_criteria(criteria);
 
-        auto service = dbus::Service::use_service(parent->access_bus(), dbus_message_get_sender(msg));
+        auto service = dbus::Service::use_service(
+                    parent->access_bus(),
+                    in->sender());
+
         auto object = service->object_for_path(session->path());
 
         {
@@ -253,9 +256,9 @@ void culs::Skeleton::Private::handle_create_session_for_criteria(DBusMessage* ms
 
             auto wrapper = SessionWrapper::Ptr{new SessionWrapper{shared_from_this(), session, service, object}};
 
-            auto reply = dbus::Message::make_method_return(msg);
+            auto reply = dbus::Message::make_method_return(in);
             reply->writer() << session->path();
-            parent->access_bus()->send(reply->get());
+            parent->access_bus()->send(reply);
 
             bool inserted = false;
             std::tie(std::ignore, inserted) = session_store.insert(std::make_pair(session->path(), wrapper));
@@ -268,9 +271,9 @@ void culs::Skeleton::Private::handle_create_session_for_criteria(DBusMessage* ms
     {
         parent->access_bus()->send(
                     dbus::Message::make_error(
-                        msg,
+                        in,
                         culs::Interface::Errors::CreatingSession::name(),
-                        e.what())->get());
+                        e.what()));
 
         LOG(ERROR) << "Error creating session: " << e.what();
     }

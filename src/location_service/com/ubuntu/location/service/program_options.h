@@ -19,7 +19,7 @@
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
 
-#include <org/freedesktop/dbus/well_known_bus.h>
+#include <core/dbus/well_known_bus.h>
 
 #include <functional>
 #include <iostream>
@@ -101,12 +101,12 @@ struct ProgramOptions
         return true;
     }
 
-    org::freedesktop::dbus::WellKnownBus bus()
+    core::dbus::WellKnownBus bus()
     {
-        static const std::map<std::string, org::freedesktop::dbus::WellKnownBus> lut =
+        static const std::map<std::string, core::dbus::WellKnownBus> lut =
         {
-            {"session", org::freedesktop::dbus::WellKnownBus::session},
-            {"system", org::freedesktop::dbus::WellKnownBus::system},
+            {"session", core::dbus::WellKnownBus::session},
+            {"system", core::dbus::WellKnownBus::system},
         };
 
         return lut.at(value_for_key<std::string>(Options::bus()));

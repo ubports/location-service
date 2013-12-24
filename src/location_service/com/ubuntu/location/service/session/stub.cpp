@@ -20,7 +20,7 @@
 
 #include <com/ubuntu/location/logging.h>
 
-#include <org/freedesktop/dbus/stub.h>
+#include <core/dbus/stub.h>
 
 #include <functional>
 
@@ -28,13 +28,13 @@ namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 namespace culss = com::ubuntu::location::service::session;
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 struct culss::Stub::Private
 {
-    void update_heading(DBusMessage* msg);
-    void update_position(DBusMessage* msg);
-    void update_velocity(DBusMessage* msg);
+    void update_heading(const dbus::Message::Ptr& msg);
+    void update_position(const dbus::Message::Ptr& msg);
+    void update_velocity(const dbus::Message::Ptr& msg);
 
     Stub* parent;
     dbus::types::ObjectPath session_path;
@@ -74,7 +74,7 @@ void culss::Stub::start_position_updates()
     auto result = d->object->invoke_method_synchronously<Interface::StartPositionUpdates,void>();
 
     if (result.is_error())
-        throw std::runtime_error(result.error());
+        throw std::runtime_error(result.error().print());
 }
 
 void culss::Stub::stop_position_updates() noexcept
@@ -95,7 +95,7 @@ void culss::Stub::start_velocity_updates()
     auto result = d->object->invoke_method_synchronously<Interface::StartVelocityUpdates,void>();
 
     if (result.is_error())
-        throw std::runtime_error(result.error());
+        throw std::runtime_error(result.error().print());
 }
 
 void culss::Stub::stop_velocity_updates() noexcept
@@ -116,7 +116,7 @@ void culss::Stub::start_heading_updates()
     auto result = d->object->invoke_method_synchronously<Interface::StartHeadingUpdates,void>();
 
     if (result.is_error())
-        throw std::runtime_error(result.error());
+        throw std::runtime_error(result.error().print());
 }
 
 void culss::Stub::stop_heading_updates() noexcept
@@ -132,44 +132,53 @@ void culss::Stub::stop_heading_updates() noexcept
     }
 }
 
-void culss::Stub::Private::update_heading(DBusMessage* msg)
+void culss::Stub::Private::update_heading(const dbus::Message::Ptr& incoming)
 {
-    auto incoming = dbus::Message::from_raw_message(msg);
     try
     {
         Update<Heading> update; incoming->reader() >> update;
         parent->updates().heading = update;
-        parent->access_bus()->send(dbus::Message::make_method_return(msg)->get());
+        parent->access_bus()->send(dbus::Message::make_method_return(incoming));
     } catch(const std::runtime_error& e)
     {
-        parent->access_bus()->send(dbus::Message::make_error(msg, Interface::Errors::ErrorParsingUpdate::name(), e.what())->get());
+        parent->access_bus()->send(
+                    dbus::Message::make_error(
+                        incoming,
+                        Interface::Errors::ErrorParsingUpdate::name(),
+                        e.what()));
     }
 }
 
-void culss::Stub::Private::update_position(DBusMessage* msg)
+void culss::Stub::Private::update_position(const dbus::Message::Ptr& incoming)
 {
-    auto incoming = dbus::Message::from_raw_message(msg);
     try
     {
         Update<Position> update; incoming->reader() >> update;
         parent->updates().position = update;
-        parent->access_bus()->send(dbus::Message::make_method_return(msg)->get());
+        parent->access_bus()->send(dbus::Message::make_method_return(incoming));
     } catch(const std::runtime_error& e)
     {
-        parent->access_bus()->send(dbus::Message::make_error(msg, Interface::Errors::ErrorParsingUpdate::name(), e.what())->get());
+        parent->access_bus()->send(
+                    dbus::Message::make_error(
+                        incoming,
+                        Interface::Errors::ErrorParsingUpdate::name(),
+                        e.what()));
     }
 }
 
-void culss::Stub::Private::update_velocity(DBusMessage* msg)
+void culss::Stub::Private::update_velocity(const dbus::Message::Ptr& incoming)
 {
-    auto incoming = dbus::Message::from_raw_message(msg);
     try
     {
         Update<Velocity> update; incoming->reader() >> update;
         parent->updates().velocity = update;
-        parent->access_bus()->send(dbus::Message::make_method_return(msg)->get());
+        parent->access_bus()->send(dbus::Message::make_method_return(incoming));
     } catch(const std::runtime_error& e)
     {
-        parent->access_bus()->send(dbus::Message::make_error(msg, Interface::Errors::ErrorParsingUpdate::name(), e.what())->get());
+        parent->access_bus()->send(
+                    dbus::Message::make_error(
+                        incoming,
+                        Interface::Errors::ErrorParsingUpdate::name(),
+                        e.what()));
     }
 }

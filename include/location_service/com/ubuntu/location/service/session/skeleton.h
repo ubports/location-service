@@ -27,8 +27,8 @@
 #include <com/ubuntu/location/update.h>
 #include <com/ubuntu/location/velocity.h>
 
-#include <org/freedesktop/dbus/message.h>
-#include <org/freedesktop/dbus/skeleton.h>
+#include <core/dbus/message.h>
+#include <core/dbus/skeleton.h>
 
 #include <functional>
 
@@ -42,17 +42,17 @@ namespace service
 {
 namespace session
 {
-class Skeleton : public org::freedesktop::dbus::Skeleton<Interface>
+class Skeleton : public core::dbus::Skeleton<Interface>
 {
   public:
     Skeleton(
-        const org::freedesktop::dbus::Bus::Ptr& bus,
-        const org::freedesktop::dbus::types::ObjectPath& session_path);
+        const core::dbus::Bus::Ptr& bus,
+        const core::dbus::types::ObjectPath& session_path);
     Skeleton(const Skeleton&) = delete;
     virtual ~Skeleton() noexcept;
     Skeleton& operator=(const Skeleton&) = delete;
 
-    virtual const org::freedesktop::dbus::types::ObjectPath& path() const;
+    virtual const core::dbus::types::ObjectPath& path() const;
 
   private:
     struct Private;

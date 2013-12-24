@@ -23,7 +23,7 @@
 
 #include <memory>
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 namespace com
 {
@@ -39,7 +39,7 @@ class Implementation : public Skeleton
     typedef std::shared_ptr<Implementation> Ptr;
 
     Implementation(
-        const org::freedesktop::dbus::Bus::Ptr& bus,
+        const core::dbus::Bus::Ptr& bus,
         const Engine::Ptr& engine,
         const PermissionManager::Ptr& permission_manager);
     Implementation(const Implementation&) = delete;
