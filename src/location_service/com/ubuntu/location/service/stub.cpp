@@ -28,83 +28,25 @@ namespace culss = com::ubuntu::location::service::session;
 
 namespace dbus = core::dbus;
 
-namespace
-{
-template<typename PropertyType>
-struct MappedProperty : public core::Property<typename PropertyType::ValueType>
-{
-    typedef core::Property<typename PropertyType::ValueType> Super;
-
-    MappedProperty(const std::shared_ptr<dbus::Property<PropertyType>>& dbus_property)
-        : dbus_property(dbus_property)
-    {
-
-    }
-
-    void set(const typename PropertyType::ValueType& value)
-    {
-        dbus_property->set(value);
-        Super::set(value);
-    }
-
-    const typename PropertyType::ValueType& get() const
-    {
-        std::cout << __PRETTY_FUNCTION__ << ": " << dbus_property << std::endl;
-        return Super::mutable_get() = dbus_property->get();
-    }
-
-    std::shared_ptr<dbus::Property<PropertyType>> dbus_property;
-};
-}
-
 struct culs::Stub::Private
 {
     Private(const dbus::Bus::Ptr& connection,
             const dbus::Object::Ptr& object)
         : bus(connection),
-          remote
-          {
-              object,
-              object->get_property<culs::Interface::Properties::DoesSatelliteBasedPositioning>(),
-              object->get_property<culs::Interface::Properties::DoesReportCellAndWifiIds>(),
-              object->get_property<culs::Interface::Properties::IsOnline>(),
-              object->get_property<culs::Interface::Properties::VisibleSpaceVehicles>()
-          },
-          does_satellite_based_positioning(remote.does_satellite_based_positioning),
-          does_report_cell_and_wifi_ids(remote.does_report_cell_and_wifi_ids),
-          is_online(remote.is_online),
-          visible_space_vehicles(remote.visible_space_vehicles)
+          object(object),
+          does_satellite_based_positioning(object->get_property<culs::Interface::Properties::DoesSatelliteBasedPositioning>()),
+          does_report_cell_and_wifi_ids(object->get_property<culs::Interface::Properties::DoesReportCellAndWifiIds>()),
+          is_online(object->get_property<culs::Interface::Properties::IsOnline>()),
+          visible_space_vehicles(object->get_property<culs::Interface::Properties::VisibleSpaceVehicles>())
     {
-        does_satellite_based_positioning.changed().connect(
-                    [this](bool value)
-                    {
-                       remote.does_satellite_based_positioning->set(value);
-                    });
-        does_report_cell_and_wifi_ids.changed().connect(
-                    [this](bool value)
-                    {
-                        remote.does_report_cell_and_wifi_ids->set(value);
-                    });
-        is_online.changed().connect(
-                    [this](bool value)
-                    {
-                        remote.is_online->set(value);
-                    });
     }
 
     dbus::Bus::Ptr bus;
-    struct
-    {
-        dbus::Object::Ptr object;
-        std::shared_ptr<dbus::Property<culs::Interface::Properties::DoesSatelliteBasedPositioning>> does_satellite_based_positioning;
-        std::shared_ptr<dbus::Property<culs::Interface::Properties::DoesReportCellAndWifiIds>> does_report_cell_and_wifi_ids;
-        std::shared_ptr<dbus::Property<culs::Interface::Properties::IsOnline>> is_online;
-        std::shared_ptr<dbus::Property<culs::Interface::Properties::VisibleSpaceVehicles>> visible_space_vehicles;
-    } remote;
-    MappedProperty<culs::Interface::Properties::DoesSatelliteBasedPositioning> does_satellite_based_positioning;
-    MappedProperty<culs::Interface::Properties::DoesReportCellAndWifiIds> does_report_cell_and_wifi_ids;
-    MappedProperty<culs::Interface::Properties::IsOnline> is_online;
-    MappedProperty<culs::Interface::Properties::VisibleSpaceVehicles> visible_space_vehicles;
+    dbus::Object::Ptr object;
+    std::shared_ptr<dbus::Property<culs::Interface::Properties::DoesSatelliteBasedPositioning>> does_satellite_based_positioning;
+    std::shared_ptr<dbus::Property<culs::Interface::Properties::DoesReportCellAndWifiIds>> does_report_cell_and_wifi_ids;
+    std::shared_ptr<dbus::Property<culs::Interface::Properties::IsOnline>> is_online;
+    std::shared_ptr<dbus::Property<culs::Interface::Properties::VisibleSpaceVehicles>> visible_space_vehicles;
 };
 
 culs::Stub::Stub(const dbus::Bus::Ptr& connection) : dbus::Stub<culs::Interface>(connection),
@@ -118,7 +60,7 @@ culs::Stub::~Stub() noexcept
 
 culss::Interface::Ptr culs::Stub::create_session_for_criteria(const cul::Criteria& criteria)
 {
-    auto op = d->remote.object->invoke_method_synchronously<
+    auto op = d->object->invoke_method_synchronously<
             culs::Interface::CreateSessionForCriteria,
             culs::Interface::CreateSessionForCriteria::ResultType
             >(criteria);
@@ -131,20 +73,20 @@ culss::Interface::Ptr culs::Stub::create_session_for_criteria(const cul::Criteri
 
 core::Property<bool>& culs::Stub::does_satellite_based_positioning()
 {
-    return d->does_satellite_based_positioning;
+    return *d->does_satellite_based_positioning;
 }
 
 core::Property<bool>& culs::Stub::does_report_cell_and_wifi_ids()
 {
-    return d->does_report_cell_and_wifi_ids;
+    return *d->does_report_cell_and_wifi_ids;
 }
 
 core::Property<bool>& culs::Stub::is_online()
 {
-    return d->is_online;
+    return *d->is_online;
 }
 
 core::Property<std::set<cul::SpaceVehicle>>& culs::Stub::visible_space_vehicles()
 {
-    return d->visible_space_vehicles;
+    return *d->visible_space_vehicles;
 }

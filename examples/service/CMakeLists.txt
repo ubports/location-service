@@ -34,7 +34,6 @@ target_link_libraries(
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
     ${DBUS_CPP_LIBRARIES}
-    dbus-cpp
 )
 
 target_link_libraries(
@@ -46,7 +45,6 @@ target_link_libraries(
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
     ${DBUS_CPP_LIBRARIES}
-    dbus-cpp
 )
 
 add_custom_command(
