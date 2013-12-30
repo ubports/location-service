@@ -145,14 +145,15 @@ struct Codec<com::ubuntu::location::Position>
     }
 };
 
+
 namespace helper
 {
-template<typename T>
-struct TypeMapper<std::set<T>>
+template<>
+struct TypeMapper<com::ubuntu::location::SpaceVehicle::Key>
 {
     constexpr static ArgumentType type_value()
     {
-        return ArgumentType::array;
+        return ArgumentType::structure;
     }
     constexpr static bool is_basic_type()
     {
@@ -165,36 +166,12 @@ struct TypeMapper<std::set<T>>
 
     static std::string signature()
     {
-        static const std::string s = DBUS_TYPE_ARRAY_AS_STRING + TypeMapper<typename std::decay<T>::type>::signature();
+        static const std::string s =
+                helper::TypeMapper<std::uint32_t>::signature() +
+                helper::TypeMapper<std::uint32_t>::signature();
         return s;
     }
 };
-}
-template<typename T>
-struct Codec<std::set<T>>
-{
-    static void encode_argument(Message::Writer& writer, const std::set<T>& arg)
-    {
-        auto sub = writer.open_array(types::Signature(helper::TypeMapper<T>::signature()));
-        for(const auto& element : arg)
-            Codec<T>::encode_argument(sub, element);
-        writer.close_array(std::move(sub));
-    }
-
-    static void decode_argument(Message::Reader& reader, std::set<T>& out)
-    {
-        auto sub = reader.pop_array();
-        while (sub.type() != ArgumentType::invalid)
-        {
-            std::cout << __PRETTY_FUNCTION__ << std::endl;
-            T value;
-            Codec<T>::decode_argument(sub, value);
-            out.insert(value);
-        }
-    }
-};
-namespace helper
-{
 template<>
 struct TypeMapper<com::ubuntu::location::SpaceVehicle>
 {
@@ -215,8 +192,7 @@ struct TypeMapper<com::ubuntu::location::SpaceVehicle>
     {
         static const std::string s =
             DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
-                helper::TypeMapper<std::uint32_t>::signature() +
-                helper::TypeMapper<std::uint32_t>::signature() +
+                helper::TypeMapper<com::ubuntu::location::SpaceVehicle::Key>::signature() +
                 helper::TypeMapper<float>::signature() +
                 helper::TypeMapper<bool>::signature() +
                 helper::TypeMapper<bool>::signature() +
@@ -227,6 +203,23 @@ struct TypeMapper<com::ubuntu::location::SpaceVehicle>
     }
 };
 }
+
+template<>
+struct Codec<com::ubuntu::location::SpaceVehicle::Key>
+{
+    static void encode_argument(Message::Writer& writer, const com::ubuntu::location::SpaceVehicle::Key& in)
+    {
+        writer.push_uint32(static_cast<std::uint32_t>(in.type));
+        writer.push_uint32(in.id);
+    }
+
+    static void decode_argument(Message::Reader& reader, com::ubuntu::location::SpaceVehicle::Key& in)
+    {
+        in.type = static_cast<com::ubuntu::location::SpaceVehicle::Type>(reader.pop_uint32());
+        in.id = reader.pop_uint32();
+    }
+};
+
 template<>
 struct Codec<com::ubuntu::location::SpaceVehicle>
 {
@@ -234,8 +227,7 @@ struct Codec<com::ubuntu::location::SpaceVehicle>
     {
         auto sub = writer.open_structure();
 
-        sub.push_uint32(static_cast<std::uint32_t>(in.type));
-        sub.push_uint32(in.id);
+        Codec<com::ubuntu::location::SpaceVehicle::Key>::encode_argument(sub, in.key);
         sub.push_floating_point(in.snr);
         sub.push_boolean(in.has_almanac_data);
         sub.push_boolean(in.has_ephimeris_data);
@@ -249,13 +241,69 @@ struct Codec<com::ubuntu::location::SpaceVehicle>
     {
         auto sub = reader.pop_structure();
 
-        in.type = static_cast<com::ubuntu::location::SpaceVehicle::Type>(sub.pop_uint32());
-        in.id = sub.pop_uint32();
+        Codec<com::ubuntu::location::SpaceVehicle::Key>::decode_argument(sub, in.key);
         in.snr = sub.pop_floating_point();
         in.has_almanac_data = sub.pop_boolean();
         in.has_ephimeris_data = sub.pop_boolean();
         Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::decode_argument(sub, in.azimuth);
         Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::decode_argument(sub, in.elevation);
+    }
+};
+
+namespace helper
+{
+template<>
+struct TypeMapper<std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle>>
+{
+    constexpr static ArgumentType type_value()
+    {
+        return ArgumentType::array;
+    }
+    constexpr static bool is_basic_type()
+    {
+        return false;
+    }
+    constexpr static bool requires_signature()
+    {
+        return true;
+    }
+
+    static std::string signature()
+    {
+        static const std::string s = DBUS_TYPE_ARRAY_AS_STRING + TypeMapper<com::ubuntu::location::SpaceVehicle>::signature();
+        return s;
+    }
+};
+}
+template<>
+struct Codec<std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle>>
+{
+    static void encode_argument(Message::Writer& writer, const std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle>& arg)
+    {
+        auto sub = writer.open_array(
+                    types::Signature(
+                        helper::TypeMapper<
+                            std::map<
+                                com::ubuntu::location::SpaceVehicle::Key,
+                                com::ubuntu::location::SpaceVehicle
+                            >
+                        >::signature()));
+        for(const auto& element : arg)
+        {
+            Codec<com::ubuntu::location::SpaceVehicle>::encode_argument(sub, element.second);
+        }
+        writer.close_array(std::move(sub));
+    }
+
+    static void decode_argument(Message::Reader& reader, std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle>& out)
+    {
+        auto sub = reader.pop_array();
+        while (sub.type() != ArgumentType::invalid)
+        {
+            com::ubuntu::location::SpaceVehicle sv;
+            Codec<com::ubuntu::location::SpaceVehicle>::decode_argument(sub, sv);
+            out.insert(std::make_pair(sv.key, sv));
+        }
     }
 };
 

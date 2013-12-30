@@ -33,7 +33,7 @@ namespace location
 struct SpaceVehicle
 {
     /** @brief Numeric Id of an individual SpaceVehicle. */
-    typedef std::size_t Id;
+    typedef std::uint32_t Id;
 
     enum class Type
     {
@@ -47,27 +47,40 @@ struct SpaceVehicle
         qzss ///< Japanese regional system covering Asia and Oceania.
     };    
 
-    inline bool operator<(const SpaceVehicle& rhs) const
+    struct Key
     {
-        if (type != rhs.type)
-            return type < rhs.type;
+        Type type = Type::unknown; ///< The positioning system this vehicle belongs to.
+        Id id = 0; ///< Unique id of the space vehicle.
 
-        return id < rhs.id;
-    }
+        inline bool operator==(const SpaceVehicle::Key& rhs) const
+        {
+            return type == rhs.type && id == rhs.id;
+        }
+
+        inline bool operator<(const SpaceVehicle::Key& rhs) const
+        {
+            if (type != rhs.type)
+                return type < rhs.type;
+
+            return id < rhs.id;
+        }
+    };
 
     inline bool operator==(const SpaceVehicle& rhs) const
     {
-        return type == rhs.type &&
-                snr == rhs.snr &&
+        return key == rhs.key &&
                 has_almanac_data == rhs.has_almanac_data &&
                 has_ephimeris_data == rhs.has_ephimeris_data &&
                 units::roughly_equals(azimuth, rhs.azimuth) &&
                 units::roughly_equals(elevation, rhs.elevation);
     }
 
+    inline bool operator<(const SpaceVehicle& rhs) const
+    {
+        return key < rhs.key;
+    }
 
-    Type type = Type::unknown; ///< The positioning system this vehicle belongs to.
-    Id id = 0; ///< Unique id of the space vehicle.
+    Key key; ///< Unique key identifying an instance.
     float snr = -std::numeric_limits<float>::max(); ///< Signal to noise ratio;
     bool has_almanac_data = false; ///< Almanac data available for this vehicle.
     bool has_ephimeris_data = false; ///< Ephimeris data is available for this vehicle.
@@ -89,7 +102,7 @@ inline std::ostream& operator<<(std::ostream& out, const SpaceVehicle& sv)
         {SpaceVehicle::Type::qzss, "qzss" }
     };
     return out << "("
-               << "type: " << lut.at(sv.type) << ", "
+               << "type: " << lut.at(sv.key.type) << ", "
                << "snr: " << sv.snr << ", "
                << "has_almanac_data: " << sv.has_almanac_data << ", "
                << "has_ephimeris_data: " << sv.has_ephimeris_data << ", "

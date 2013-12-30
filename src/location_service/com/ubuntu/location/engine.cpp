@@ -32,6 +32,25 @@ cul::Engine::Engine(const std::shared_ptr<cul::ProviderSelectionPolicy>& provide
     configuration.satellite_based_positioning_state = cul::SatelliteBasedPositioningState::on;
     configuration.wifi_and_cell_id_reporting_state = cul::WifiAndCellIdReportingState::off;
     configuration.engine_state = Engine::Status::on;
+
+    // Setup behavior in case of configuration changes.
+    configuration.engine_state.changed().connect([this](const Engine::Status& status)
+    {
+        switch (status)
+        {
+        case Engine::Status::off:
+            for (const auto& provider : providers)
+            {
+                provider.first->state_controller()->stop_position_updates();
+                provider.first->state_controller()->stop_heading_updates();
+                provider.first->state_controller()->stop_velocity_updates();
+            }
+            break;
+        default:
+            break;
+        }
+    });
+
 }
 
 cul::ProviderSelection cul::Engine::determine_provider_selection_for_criteria(const cul::Criteria& criteria)
@@ -51,34 +70,41 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
 
     // We wire up changes in the engine's configuration to the respective slots
     // of the provider.
-    auto c1 = configuration.reference_location.changed().connect([provider](const cul::Update<cul::Position>& pos)
+    auto cp = updates.reference_location.changed().connect([provider](const cul::Update<cul::Position>& pos)
     {
         provider->on_reference_location_updated(pos);
     });
 
-    auto c2 = configuration.wifi_and_cell_id_reporting_state.changed().connect([provider](cul::WifiAndCellIdReportingState state)
+    auto cv = updates.reference_velocity.changed().connect([provider](const cul::Update<cul::Velocity>& velocity)
+    {
+        provider->on_reference_velocity_updated(velocity);
+    });
+
+    auto ch = updates.reference_heading.changed().connect([provider](const cul::Update<cul::Heading>& heading)
+    {
+        provider->on_reference_heading_updated(heading);
+    });
+
+    auto cr = configuration.wifi_and_cell_id_reporting_state.changed().connect([provider](cul::WifiAndCellIdReportingState state)
     {
         provider->on_wifi_and_cell_reporting_state_changed(state);
     });
 
     // And do the reverse: Satellite visibility updates are funneled via the engine's configuration.
-    auto c3 = provider->updates().svs.connect([this](const cul::Update<std::set<cul::SpaceVehicle>>& src)
+    auto cs = provider->updates().svs.connect([this](const cul::Update<std::set<cul::SpaceVehicle>>& src)
     {
-        configuration.visible_space_vehicles.update([src](std::set<cul::SpaceVehicle>& dest)
+        updates.visible_space_vehicles.update([src](std::map<cul::SpaceVehicle::Key, cul::SpaceVehicle>& dest)
         {
             for(auto& sv : src.value)
             {
-                // TODO: This is incredibly ugly and we should switch to a
-                // std::map asap.
-                dest.erase(sv);
-                dest.insert(sv);
+                dest[sv.key] = sv;
             }
 
             return true;
         });
     });
 
-    providers.insert(std::make_pair(provider, ProviderConnections{c1, c2, c3}));
+    providers.insert(std::make_pair(provider, ProviderConnections{cp, ch, cv, cr, cs}));
 }
 
 void cul::Engine::remove_provider(const cul::Provider::Ptr& provider) noexcept

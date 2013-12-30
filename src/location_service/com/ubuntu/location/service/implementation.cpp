@@ -39,15 +39,6 @@ namespace dbus = core::dbus;
 
 struct culs::Implementation::Private
 {
-    dbus::types::ObjectPath make_session_path()
-    {
-        static std::size_t counter{0};
-        std::stringstream ss; ss << "/sessions/" << counter;
-        counter++;
-
-        return dbus::types::ObjectPath{ss.str()};
-    }
-
     dbus::Bus::Ptr bus;
     cul::Engine::Ptr engine;
     culs::PermissionManager::Ptr permission_manager;
@@ -113,8 +104,8 @@ culs::Implementation::Implementation(
                     does_satellite_based_positioning() =
                             state == cul::SatelliteBasedPositioningState::on;
                 });
-    engine->configuration.visible_space_vehicles.changed().connect(
-                [this](const std::set<cul::SpaceVehicle>&svs)
+    engine->updates.visible_space_vehicles.changed().connect(
+                [this](const std::map<cul::SpaceVehicle::Key, cul::SpaceVehicle>&svs)
                 {
                     visible_space_vehicles() = svs;
                 });
@@ -133,5 +124,5 @@ culs::session::Interface::Ptr culs::Implementation::create_session_for_criteria(
                 new ProxyProvider{provider_selection}
             };
     
-    return session::Interface::Ptr{new session::Implementation(d->bus, d->make_session_path(), proxy_provider)};
+    return session::Interface::Ptr{new session::Implementation(proxy_provider)};
 }

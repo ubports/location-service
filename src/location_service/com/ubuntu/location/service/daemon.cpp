@@ -232,7 +232,7 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
         auto svs = location_service->visible_space_vehicles().get();
         std::cout << "Visible space vehicles:" << std::endl;
         for (const auto& sv : svs)
-            std::cout << "\t" << sv << std::endl;
+            std::cout << "\t" << sv.second << std::endl;
         break;
     }
     case Command::unknown:

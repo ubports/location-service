@@ -18,10 +18,7 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_PERMISSION_MANAGER_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_PERMISSION_MANAGER_H_
 
-#include <com/ubuntu/location/channel.h>
-#include <com/ubuntu/location/provider_selection_policy.h>
-
-#include <functional>
+#include <memory>
 
 namespace com
 {
@@ -29,6 +26,7 @@ namespace ubuntu
 {
 namespace location
 {
+struct Criteria;
 namespace service
 {
 /**

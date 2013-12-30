@@ -17,6 +17,8 @@
  */
 #include <com/ubuntu/location/service/session/skeleton.h>
 
+#include "interface_p.h"
+
 #include <core/dbus/message.h>
 #include <core/dbus/object.h>
 #include <core/dbus/skeleton.h>
@@ -31,57 +33,135 @@ namespace dbus = core::dbus;
 
 struct culss::Skeleton::Private
 {
-    void handle_start_position_updates(const dbus::Message::Ptr& ptr);
-    void handle_stop_position_updates(const dbus::Message::Ptr& ptr);
-
-    void handle_start_velocity_updates(const dbus::Message::Ptr& ptr);
-    void handle_stop_velocity_updates(const dbus::Message::Ptr& ptr);
-
-    void handle_start_heading_updates(const dbus::Message::Ptr& ptr);
-    void handle_stop_heading_updates(const dbus::Message::Ptr& ptr);
-
-    Skeleton* parent;
+    culss::Interface::Ptr instance;
     dbus::Bus::Ptr bus;
     dbus::types::ObjectPath session_path;
     dbus::Object::Ptr object;
+
+    struct
+    {
+        dbus::Service::Ptr service;
+        dbus::Object::Ptr session;
+    } remote;
 };
 
 culss::Skeleton::Skeleton(
-    const dbus::Bus::Ptr& bus,
-    const dbus::types::ObjectPath& session_path)
+        const culss::Interface::Ptr& instance,
+        const dbus::Bus::Ptr& bus,
+        const dbus::Service::Ptr& service,
+        const dbus::Object::Ptr& session,
+        const dbus::types::ObjectPath& session_path)
         : dbus::Skeleton<Interface>{bus},
     d(new Private
       {
-          this,
+          instance,
           bus,
           session_path,
-          access_service()->add_object_for_path(session_path)
+          access_service()->add_object_for_path(session_path),
+          { service, session }
       })
 {
-    d->object->install_method_handler<Interface::StartPositionUpdates>(
-        std::bind(&Skeleton::Private::handle_start_position_updates,
-                  std::ref(d),
-                  std::placeholders::_1));
-    d->object->install_method_handler<Interface::StopPositionUpdates>(
-        std::bind(&Skeleton::Private::handle_stop_position_updates,
-                  std::ref(d),
-                  std::placeholders::_1));
-    d->object->install_method_handler<Interface::StartVelocityUpdates>(
-        std::bind(&Skeleton::Private::handle_start_velocity_updates,
-                  std::ref(d),
-                  std::placeholders::_1));
-    d->object->install_method_handler<Interface::StopVelocityUpdates>(
-        std::bind(&Skeleton::Private::handle_stop_velocity_updates,
-                  std::ref(d),
-                  std::placeholders::_1));
-    d->object->install_method_handler<Interface::StartHeadingUpdates>(
-        std::bind(&Skeleton::Private::handle_start_heading_updates,
-                  std::ref(d),
-                  std::placeholders::_1));
-    d->object->install_method_handler<Interface::StopHeadingUpdates>(
-        std::bind(&Skeleton::Private::handle_stop_heading_updates,
-                  std::ref(d),
-                  std::placeholders::_1));
+    d->object->install_method_handler<Interface::StartPositionUpdates>([this, bus](const dbus::Message::Ptr& msg)
+    {
+        try
+        {
+            d->instance->updates().position_status = culss::Interface::Updates::Status::enabled;
+            auto reply = dbus::Message::make_method_return(msg);
+            bus->send(reply);
+        } catch(const std::runtime_error& e)
+        {
+            auto error = core::dbus::Message::make_error(msg, Interface::Errors::ErrorStartingUpdate::name(), e.what());
+            bus->send(error);
+        }
+    });
+
+    d->object->install_method_handler<Interface::StopPositionUpdates>([this, bus](const dbus::Message::Ptr& msg)
+    {
+        d->instance->updates().position_status = culss::Interface::Updates::Status::disabled;
+        auto reply = core::dbus::Message::make_method_return(msg);
+        bus->send(reply);
+    });
+
+    d->object->install_method_handler<Interface::StartVelocityUpdates>([this, bus](const dbus::Message::Ptr& msg)
+    {
+        try
+        {
+            d->instance->updates().velocity_status = culss::Interface::Updates::Status::enabled;
+            auto reply = dbus::Message::make_method_return(msg);
+            bus->send(reply);
+        } catch(const std::runtime_error& e)
+        {
+            auto error = core::dbus::Message::make_error(msg, Interface::Errors::ErrorStartingUpdate::name(), e.what());
+            bus->send(error);
+        }
+    });
+
+    d->object->install_method_handler<Interface::StopVelocityUpdates>([this, bus](const dbus::Message::Ptr& msg)
+    {
+        d->instance->updates().velocity_status = culss::Interface::Updates::Status::disabled;
+        auto reply = core::dbus::Message::make_method_return(msg);
+        bus->send(reply);
+    });
+
+    d->object->install_method_handler<Interface::StartHeadingUpdates>([this, bus](const dbus::Message::Ptr& msg)
+    {
+        try
+        {
+            d->instance->updates().heading_status = culss::Interface::Updates::Status::enabled;
+            auto reply = dbus::Message::make_method_return(msg);
+            bus->send(reply);
+        } catch(const std::runtime_error& e)
+        {
+            auto error = core::dbus::Message::make_error(msg, Interface::Errors::ErrorStartingUpdate::name(), e.what());
+            bus->send(error);
+        }
+    });
+
+    d->object->install_method_handler<Interface::StopHeadingUpdates>([this, bus](const dbus::Message::Ptr& msg)
+    {
+        d->instance->updates().heading_status = culss::Interface::Updates::Status::disabled;
+        auto reply = core::dbus::Message::make_method_return(msg);
+        bus->send(reply);
+    });
+
+    instance->updates().position.changed().connect([this](const cul::Update<cul::Position>& position)
+    {
+        try
+        {
+            d->remote.session->invoke_method_synchronously<culs::session::Interface::UpdatePosition, void>(position);
+        } catch(const std::runtime_error&)
+        {
+            // We consider the session to be dead once we hit an exception here.
+            // We thus remove it from the central and end its lifetime.
+            // on_session_died();
+        }
+    });
+
+    instance->updates().heading.changed().connect([this](const cul::Update<cul::Heading>& heading)
+    {
+        try
+        {
+            d->remote.session->invoke_method_synchronously<culs::session::Interface::UpdateHeading, void>(heading);
+        } catch(const std::runtime_error&)
+        {
+            // We consider the session to be dead once we hit an exception here.
+            // We thus remove it from the central and end its lifetime.
+            //on_session_died();
+        }
+    });
+
+    instance->updates().velocity.changed().connect([this](const cul::Update<cul::Velocity>& velocity)
+    {
+        try
+        {
+            d->remote.session->invoke_method_synchronously<culs::session::Interface::UpdateVelocity, void>(velocity);
+        } catch(const std::runtime_error&)
+        {
+            // We consider the session to be dead once we hit an exception here.
+            // We thus remove it from the central and end its lifetime.
+            // on_session_died();
+        }
+    });
 }
 
 culss::Skeleton::~Skeleton() noexcept
@@ -97,67 +177,4 @@ culss::Skeleton::~Skeleton() noexcept
 const dbus::types::ObjectPath& culss::Skeleton::path() const
 {
     return d->session_path;
-}
-
-void culss::Skeleton::Private::handle_start_position_updates(const dbus::Message::Ptr& msg)
-{
-    try
-    {
-        parent->updates().position_status = culss::Interface::Updates::Status::enabled;
-        auto reply = dbus::Message::make_method_return(msg);
-        bus->send(reply);
-    } catch(const std::runtime_error& e)
-    {
-        auto error = core::dbus::Message::make_error(msg, Interface::Errors::ErrorStartingUpdate::name(), e.what());
-        bus->send(error);
-    }
-}
-
-void culss::Skeleton::Private::handle_stop_position_updates(const dbus::Message::Ptr& msg)
-{
-    parent->updates().position_status = culss::Interface::Updates::Status::disabled;
-    auto reply = core::dbus::Message::make_method_return(msg);
-    bus->send(reply);
-}
-
-void culss::Skeleton::Private::handle_start_velocity_updates(const dbus::Message::Ptr& msg)
-{
-    try
-    {
-        parent->updates().velocity_status = culss::Interface::Updates::Status::enabled;
-        auto reply = core::dbus::Message::make_method_return(msg);
-        bus->send(reply);
-    } catch(const std::runtime_error& e)
-    {
-        auto error = core::dbus::Message::make_error(msg, Interface::Errors::ErrorStartingUpdate::name(), e.what());
-        bus->send(error);
-    }
-}
-
-void culss::Skeleton::Private::handle_stop_velocity_updates(const dbus::Message::Ptr& msg)
-{
-    parent->updates().velocity_status = culss::Interface::Updates::Status::disabled;
-    auto reply = core::dbus::Message::make_method_return(msg);
-    bus->send(reply);
-}
-
-void culss::Skeleton::Private::handle_start_heading_updates(const dbus::Message::Ptr& msg)
-{
-    try
-    {
-        parent->updates().heading_status = culss::Interface::Updates::Status::enabled;
-        auto reply = core::dbus::Message::make_method_return(msg);
-        bus->send(reply);
-    } catch(const std::runtime_error& e)
-    {
-        auto error = core::dbus::Message::make_error(msg, Interface::Errors::ErrorStartingUpdate::name(), e.what());
-        bus->send(error);
-    }
-}
-
-void culss::Skeleton::Private::handle_stop_heading_updates(const dbus::Message::Ptr& msg)
-{
-    parent->updates().heading_status = culss::Interface::Updates::Status::disabled;
-    auto reply = core::dbus::Message::make_method_return(msg);
-    bus->send(reply);
 }

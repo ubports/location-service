@@ -17,6 +17,8 @@
  */
 #include <com/ubuntu/location/service/default_permission_manager.h>
 
+#include <com/ubuntu/location/criteria.h>
+
 #include <gtest/gtest.h>
 
 TEST(DefaultPermissionManager, for_now_only_local_sessions_are_accepted)

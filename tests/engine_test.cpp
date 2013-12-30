@@ -34,10 +34,19 @@ struct MockProvider : public location::Provider
     {
     }
 
+    MOCK_METHOD0(stop_position_updates, void());
+    MOCK_METHOD0(stop_velocity_updates, void());
+    MOCK_METHOD0(stop_heading_updates, void());
+
     MOCK_METHOD1(on_wifi_and_cell_reporting_state_changed,
                  void(location::WifiAndCellIdReportingState));
     MOCK_METHOD1(on_reference_location_updated,
                  void(const location::Update<location::Position>&));
+    MOCK_METHOD1(on_reference_heading_updated,
+                 void(const location::Update<location::Heading>&));
+    MOCK_METHOD1(on_reference_velocity_updated,
+                 void(const location::Update<location::Velocity>&));
+
 };
 
 struct NullProviderSelectionPolicy : public location::ProviderSelectionPolicy
@@ -132,9 +141,33 @@ TEST(Engine, adding_a_provider_creates_connections_to_engine_configuration_prope
     EXPECT_CALL(*provider, on_wifi_and_cell_reporting_state_changed(_)).Times(1);
 
     EXPECT_CALL(*provider, on_reference_location_updated(_)).Times(1);
+    EXPECT_CALL(*provider, on_reference_heading_updated(_)).Times(1);
+    EXPECT_CALL(*provider, on_reference_velocity_updated(_)).Times(1);
 
     engine.configuration.wifi_and_cell_id_reporting_state = location::WifiAndCellIdReportingState::on;
-    engine.configuration.reference_location = location::Update<location::Position>{};
+    engine.updates.reference_location = location::Update<location::Position>{};
+    engine.updates.reference_heading = location::Update<location::Heading>{};
+    engine.updates.reference_velocity = location::Update<location::Velocity>{};
+}
+
+TEST(Engine, switching_the_engine_off_results_in_updates_being_stopped)
+{
+    using namespace ::testing;
+
+    auto provider = std::make_shared<NiceMock<MockProvider>>();
+    provider->state_controller()->start_position_updates();
+    provider->state_controller()->start_heading_updates();
+    provider->state_controller()->start_velocity_updates();
+
+    auto selection_policy = std::make_shared<NiceMock<MockProviderSelectionPolicy>>();
+    location::Engine engine{selection_policy};
+    engine.add_provider(provider);
+
+    EXPECT_CALL(*provider, stop_position_updates()).Times(1);
+    EXPECT_CALL(*provider, stop_velocity_updates()).Times(1);
+    EXPECT_CALL(*provider, stop_heading_updates()).Times(1);
+
+    engine.configuration.engine_state = location::Engine::Status::off;
 }
 
 TEST(ConnectivityManager, default_implementation_available)

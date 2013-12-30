@@ -25,6 +25,7 @@ find_package(GLog)
 find_package(GFlags)
 pkg_check_modules(DBUS dbus-1 REQUIRED)
 pkg_check_modules(DBUS_CPP dbus-cpp REQUIRED)
+pkg_check_modules(PROCESS_CPP process-cpp REQUIRED)
 pkg_check_modules(PROPERTIES_CPP properties-cpp REQUIRED)
 #####################################################################
 # Enable code coverage calculation with gcov/gcovr/lcov
@@ -43,14 +44,15 @@ ENDIF(CMAKE_BUILD_TYPE MATCHES [cC][oO][vV][eE][rR][aA][gG][eE])
 
 option (DISABLE_ERROR_ON_LOCAL_TYPEDEFS_WARNINGS "Disable errors when local typedefs are unused" ON)
 if (DISABLE_ERROR_ON_LOCAL_TYPEDEFS_WARNINGS)
-	SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=unused-local-typedefs")
+    SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=unused-local-typedefs")
 endif (DISABLE_ERROR_ON_LOCAL_TYPEDEFS_WARNINGS)
 
 include_directories(
   ${Boost_INCLUDE_DIRS}
   ${DBUS_INCLUDE_DIRS}
-  ${DBUS_CPP_INCLUDE_DIRS}/dbus
+  ${DBUS_CPP_INCLUDE_DIRS}
   ${PROPERTIES_CPP_INCLUDE_DIRS}
+  ${PROCESS_CPP_INCLUDE_DIRS}
   ${GLog_INCLUDE_DIR}
   ${GFlags_INCLUDE_DIR}
   include/location_service

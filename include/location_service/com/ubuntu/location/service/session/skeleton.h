@@ -20,7 +20,6 @@
 
 #include <com/ubuntu/location/service/session/interface.h>
 
-#include <com/ubuntu/location/channel.h>
 #include <com/ubuntu/location/heading.h>
 #include <com/ubuntu/location/position.h>
 #include <com/ubuntu/location/provider.h>
@@ -28,9 +27,10 @@
 #include <com/ubuntu/location/velocity.h>
 
 #include <core/dbus/message.h>
+#include <core/dbus/object.h>
 #include <core/dbus/skeleton.h>
 
-#include <functional>
+#include <memory>
 
 namespace com
 {
@@ -45,9 +45,11 @@ namespace session
 class Skeleton : public core::dbus::Skeleton<Interface>
 {
   public:
-    Skeleton(
-        const core::dbus::Bus::Ptr& bus,
-        const core::dbus::types::ObjectPath& session_path);
+    Skeleton(const Interface::Ptr& instance,
+             const core::dbus::Bus::Ptr& bus,
+             const core::dbus::Service::Ptr& service,
+             const core::dbus::Object::Ptr& session,
+             const core::dbus::types::ObjectPath& session_path);
     Skeleton(const Skeleton&) = delete;
     virtual ~Skeleton() noexcept;
     Skeleton& operator=(const Skeleton&) = delete;
@@ -56,7 +58,7 @@ class Skeleton : public core::dbus::Skeleton<Interface>
 
   private:
     struct Private;
-    std::unique_ptr<Private> d;
+    std::shared_ptr<Private> d;
 };
 }
 }

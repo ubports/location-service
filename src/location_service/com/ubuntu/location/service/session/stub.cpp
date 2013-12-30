@@ -18,6 +18,8 @@
 
 #include <com/ubuntu/location/service/session/stub.h>
 
+#include "interface_p.h"
+
 #include <com/ubuntu/location/logging.h>
 
 #include <core/dbus/stub.h>
@@ -32,6 +34,21 @@ namespace dbus = core::dbus;
 
 struct culss::Stub::Private
 {
+    Private(Stub* parent,
+            const dbus::types::ObjectPath& path,
+            const dbus::Object::Ptr& object,
+            const core::Connection& position,
+            const core::Connection& velocity,
+            const core::Connection& heading)
+        : parent(parent),
+          session_path(path),
+          object(object),
+          position(position),
+          velocity(velocity),
+          heading(heading)
+    {
+    }
+
     void update_heading(const dbus::Message::Ptr& msg);
     void update_position(const dbus::Message::Ptr& msg);
     void update_velocity(const dbus::Message::Ptr& msg);
@@ -39,14 +56,43 @@ struct culss::Stub::Private
     Stub* parent;
     dbus::types::ObjectPath session_path;
     dbus::Object::Ptr object;
+    core::ScopedConnection position;
+    core::ScopedConnection velocity;
+    core::ScopedConnection heading;
+
 };
 
 culss::Stub::Stub(const dbus::Bus::Ptr& bus,
                   const dbus::types::ObjectPath& session_path)
         : dbus::Stub<culss::Interface>(bus),
-        d(new Private{this,
-                        session_path,
-                        access_service()->add_object_for_path(session_path)})
+        d(new Private(this,
+                      session_path,
+                      access_service()->add_object_for_path(session_path),
+                      updates().position_status.changed().connect([this](const Interface::Updates::Status& status)
+                      {
+                          switch(status)
+                          {
+                          case Interface::Updates::Status::enabled: start_position_updates(); break;
+                          case Interface::Updates::Status::disabled: stop_position_updates(); break;
+                          }
+                      }),
+                      updates().velocity_status.changed().connect([this](const Interface::Updates::Status& status)
+                      {
+                          switch(status)
+                          {
+                          case Interface::Updates::Status::enabled: start_velocity_updates(); break;
+                          case Interface::Updates::Status::disabled: stop_velocity_updates(); break;
+                          }
+                      }),
+                      updates().heading_status.changed().connect([this](const Interface::Updates::Status& status)
+                      {
+                          switch(status)
+                          {
+                          case Interface::Updates::Status::enabled: start_heading_updates(); break;
+                          case Interface::Updates::Status::disabled: stop_heading_updates(); break;
+                          }
+                      })
+                      ))
 {
     d->object->install_method_handler<culss::Interface::UpdatePosition>(
         std::bind(&Stub::Private::update_position,
@@ -79,7 +125,8 @@ void culss::Stub::start_position_updates()
 
 void culss::Stub::stop_position_updates() noexcept
 {
-    try {
+    try
+    {
         auto result = d->object->invoke_method_synchronously<Interface::StopPositionUpdates,void>();
 
         if (result.is_error())

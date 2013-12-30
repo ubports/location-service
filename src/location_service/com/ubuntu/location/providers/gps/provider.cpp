@@ -95,8 +95,8 @@ struct culg::Provider::Private
         {
             cul::SpaceVehicle sv;
 
-            sv.type = cul::SpaceVehicle::Type::gps;
-            sv.id = sv_info->sv_list[i].prn;
+            sv.key.type = cul::SpaceVehicle::Type::gps;
+            sv.key.id = sv_info->sv_list[i].prn;
             sv.snr = sv_info->sv_list[i].snr;
             sv.has_almanac_data = sv_info->almanac_mask & (1 << i);
             sv.has_ephimeris_data = sv_info->ephemeris_mask & (1 << i);

@@ -128,9 +128,20 @@ struct MockProvider : public com::ubuntu::location::Provider
     {
     }
 
-    MOCK_METHOD1(subscribe_to_position_updates, cul::ChannelConnection (std::function<void(const cul::Update<cul::Position>&)>));
-    MOCK_METHOD1(subscribe_to_heading_updates, cul::ChannelConnection (std::function<void(const cul::Update<cul::Heading>&)>));
-    MOCK_METHOD1(subscribe_to_velocity_updates, cul::ChannelConnection (std::function<void(const cul::Update<cul::Velocity>&)> f));
+    void inject_update(const cul::Update<cul::Position>& update)
+    {
+        mutable_updates().position(update);
+    }
+
+    void inject_update(const cul::Update<cul::Velocity>& update)
+    {
+        mutable_updates().velocity(update);
+    }
+
+    void inject_update(const cul::Update<cul::Heading>& update)
+    {
+        mutable_updates().heading(update);
+    }
 
     MOCK_METHOD0(start_position_updates, void());
     MOCK_METHOD0(stop_position_updates, void());
@@ -222,14 +233,18 @@ TEST(ProxyProvider, start_and_stop_of_updates_propagates_to_correct_providers)
     pp.stop_velocity_updates();
 }
 
+struct MockEventConsumer
+{
+    MOCK_METHOD1(on_new_position, void(const cul::Update<cul::Position>&));
+    MOCK_METHOD1(on_new_velocity, void(const cul::Update<cul::Velocity>&));
+    MOCK_METHOD1(on_new_heading, void(const cul::Update<cul::Heading>&));
+};
+
 TEST(ProxyProvider, update_signals_are_routed_from_correct_providers)
 {
     using namespace ::testing;
     
     NiceMock<MockProvider> mp1, mp2, mp3;
-    EXPECT_CALL(mp1, subscribe_to_position_updates(_)).Times(Exactly(1)).WillRepeatedly(Return(cul::ChannelConnection{}));
-    EXPECT_CALL(mp2, subscribe_to_heading_updates(_)).Times(Exactly(1)).WillRepeatedly(Return(cul::ChannelConnection{}));
-    EXPECT_CALL(mp3, subscribe_to_velocity_updates(_)).Times(Exactly(1)).WillRepeatedly(Return(cul::ChannelConnection{}));
 
     cul::Provider::Ptr p1{std::addressof(mp1), [](cul::Provider*){}};
     cul::Provider::Ptr p2{std::addressof(mp2), [](cul::Provider*){}};
@@ -239,7 +254,16 @@ TEST(ProxyProvider, update_signals_are_routed_from_correct_providers)
 
     cul::ProxyProvider pp{selection};
 
-    mp1.subscribe_to_position_updates([](const cul::Update<cul::Position>&){});
-    mp2.subscribe_to_heading_updates([](const cul::Update<cul::Heading>&){});
-    mp3.subscribe_to_velocity_updates([](const cul::Update<cul::Velocity>&){});
+    NiceMock<MockEventConsumer> mec;
+    EXPECT_CALL(mec, on_new_position(_)).Times(1);
+    EXPECT_CALL(mec, on_new_velocity(_)).Times(1);
+    EXPECT_CALL(mec, on_new_heading(_)).Times(1);
+
+    pp.updates().position.connect([&mec](const cul::Update<cul::Position>& p){mec.on_new_position(p);});
+    pp.updates().heading.connect([&mec](const cul::Update<cul::Heading>& h){mec.on_new_heading(h);});
+    pp.updates().velocity.connect([&mec](const cul::Update<cul::Velocity>& v){mec.on_new_velocity(v);});
+
+    mp1.inject_update(cul::Update<cul::Position>());
+    mp2.inject_update(cul::Update<cul::Heading>());
+    mp3.inject_update(cul::Update<cul::Velocity>());
 }

@@ -18,8 +18,8 @@
 
 #include <com/ubuntu/location/service/daemon.h>
 
-#include "cross_process_sync.h"
-#include "fork_and_run.h"
+#include <core/testing/cross_process_sync.h>
+#include <core/testing/fork_and_run.h>
 
 #include <gtest/gtest.h>
 
@@ -44,9 +44,11 @@ auto testing_daemon = []()
     auto result = location::service::Daemon::main(3, argv);
 
     EXPECT_EQ(EXIT_SUCCESS, result);
+
+    return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
 };
 
-std::function<void()> querying_cli_for_property(const std::string& property)
+std::function<core::posix::exit::Status ()> querying_cli_for_property(const std::string& property)
 {
     return [property]()
     {
@@ -67,6 +69,8 @@ std::function<void()> querying_cli_for_property(const std::string& property)
         auto result = location::service::Daemon::Cli::main(3, argv);
 
         EXPECT_EQ(EXIT_SUCCESS, result);
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
 }
 }
@@ -74,7 +78,7 @@ std::function<void()> querying_cli_for_property(const std::string& property)
 TEST(DaemonAndCli, QueryingIsOnlinePropertyWorks)
 {
     EXPECT_NO_FATAL_FAILURE(
-                test::fork_and_run(
+                core::testing::fork_and_run(
                     testing_daemon,
                     querying_cli_for_property("is_online")));
 }
@@ -82,7 +86,7 @@ TEST(DaemonAndCli, QueryingIsOnlinePropertyWorks)
 TEST(DaemonAndCli, QueryingDoesSatelliteBasedPositionPropertyWorks)
 {
     EXPECT_NO_FATAL_FAILURE(
-                test::fork_and_run(
+                core::testing::fork_and_run(
                     testing_daemon,
                     querying_cli_for_property("does_satellite_based_positioning")));
 }
@@ -90,7 +94,7 @@ TEST(DaemonAndCli, QueryingDoesSatelliteBasedPositionPropertyWorks)
 TEST(DaemonAndCli, QueryingDoesReportWifiAndCellIdsPropertyWorks)
 {
     EXPECT_NO_FATAL_FAILURE(
-                test::fork_and_run(
+                core::testing::fork_and_run(
                     testing_daemon,
                     querying_cli_for_property("does_report_wifi_and_cell_ids")));
 }
@@ -98,7 +102,7 @@ TEST(DaemonAndCli, QueryingDoesReportWifiAndCellIdsPropertyWorks)
 TEST(DaemonAndCli, QueryingVisibleSpaceVehiclesPropertyWorks)
 {
     EXPECT_NO_FATAL_FAILURE(
-                test::fork_and_run(
+                core::testing::fork_and_run(
                     testing_daemon,
                     querying_cli_for_property("visible_space_vehicles")));
 }

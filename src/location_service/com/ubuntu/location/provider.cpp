@@ -141,6 +141,14 @@ void cul::Provider::on_reference_location_updated(const cul::Update<cul::Positio
 {
 }
 
+void cul::Provider::on_reference_velocity_updated(const cul::Update<cul::Velocity>&)
+{
+}
+
+void cul::Provider::on_reference_heading_updated(const cul::Update<cul::Heading>&)
+{
+}
+
 void cul::Provider::start_position_updates() {}
 void cul::Provider::stop_position_updates() {}
 void cul::Provider::start_heading_updates() {}

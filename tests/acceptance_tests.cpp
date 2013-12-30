@@ -15,8 +15,6 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "cross_process_sync.h"
-#include "fork_and_run.h"
 
 #include <com/ubuntu/location/criteria.h>
 #include <com/ubuntu/location/clock.h>
@@ -38,6 +36,9 @@
 #include <core/dbus/resolver.h>
 
 #include <core/dbus/asio/executor.h>
+
+#include <core/testing/cross_process_sync.h>
+#include <core/testing/fork_and_run.h>
 
 #include <gtest/gtest.h>
 
@@ -136,8 +137,8 @@ cul::Update<cul::Heading> reference_heading_update
 
 TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
 {
-    test::CrossProcessSync sync_start;
-    test::CrossProcessSync sync_session_created;
+    core::testing::CrossProcessSync sync_start;
+    core::testing::CrossProcessSync sync_session_created;
 
     auto server = [&sync_start, &sync_session_created]()
     {
@@ -156,11 +157,11 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
                     config.the_permission_manager());
 
 
-        sync_start.signal_ready();
+        sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
         std::thread t{[bus](){bus->run();}};
 
-        sync_session_created.wait_for_signal_ready();
+        EXPECT_EQ(1, sync_session_created.wait_for_signal_ready_for(std::chrono::milliseconds{500}));
 
         dummy->inject_update(reference_position_update);
         dummy->inject_update(reference_velocity_update);
@@ -168,13 +169,15 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
 
         if (t.joinable())
             t.join();
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
 
     auto client = [&sync_start, &sync_session_created]()
     {
         SCOPED_TRACE("Client");
 
-        sync_start.wait_for_signal_ready();
+        EXPECT_EQ(1, sync_start.wait_for_signal_ready_for(std::chrono::milliseconds{500}));
 
         auto bus = the_session_bus();
         bus->install_executor(dbus::asio::make_executor(bus));
@@ -207,11 +210,15 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
                 bus->stop();
             });
         
+        std::cout << "Created event connections, starting updates...";
+
         s1->updates().position_status = culss::Interface::Updates::Status::enabled;
         s1->updates().heading_status = culss::Interface::Updates::Status::enabled;
         s1->updates().velocity_status = culss::Interface::Updates::Status::enabled;
         
-        sync_session_created.signal_ready();
+        std::cout << "done" << std::endl;
+
+        sync_session_created.try_signal_ready_for(std::chrono::milliseconds{500});
 
         if (t.joinable())
             t.join();
@@ -219,14 +226,16 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
         EXPECT_EQ(reference_position_update, position);
         EXPECT_EQ(reference_velocity_update, velocity);
         EXPECT_EQ(reference_heading_update, heading);
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
 
-    EXPECT_NO_FATAL_FAILURE(test::fork_and_run(server, client));
+    EXPECT_NO_FATAL_FAILURE(core::testing::fork_and_run(server, client));
 }
 
 TEST(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
 {
-    test::CrossProcessSync sync_start;
+    core::testing::CrossProcessSync sync_start;
 
     auto server = [&sync_start]()
     {
@@ -246,19 +255,21 @@ TEST(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
                     engine,
                     permission_manager);
 
-        sync_start.signal_ready();
+        sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
         std::thread t{[bus](){bus->run();}};
 
         if (t.joinable())
             t.join();
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
 
     auto client = [&sync_start]()
     {
         SCOPED_TRACE("Client");
 
-        sync_start.wait_for_signal_ready();
+        EXPECT_EQ(1, sync_start.wait_for_signal_ready_for(std::chrono::milliseconds{500}));
 
         auto bus = the_session_bus();
         auto location_service = dbus::resolve_service_on_bus<
@@ -268,14 +279,16 @@ TEST(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
         EXPECT_TRUE(location_service->is_online());
         location_service->is_online() = false;
         EXPECT_FALSE(location_service->is_online());
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
 
-    EXPECT_NO_FATAL_FAILURE(test::fork_and_run(server, client));
+    EXPECT_NO_FATAL_FAILURE(core::testing::fork_and_run(server, client));
 }
 
 TEST(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjusted)
 {
-    test::CrossProcessSync sync_start;
+    core::testing::CrossProcessSync sync_start;
 
     auto server = [&sync_start]()
     {
@@ -294,19 +307,21 @@ TEST(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjuste
                     engine,
                     permission_manager);
 
-        sync_start.signal_ready();
+        sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
         std::thread t{[bus](){bus->run();}};
 
         if (t.joinable())
             t.join();
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
 
     auto client = [&sync_start]()
     {
         SCOPED_TRACE("Client");
 
-        sync_start.wait_for_signal_ready();
+        EXPECT_EQ(1, sync_start.wait_for_signal_ready_for(std::chrono::milliseconds{500}));
 
         auto bus = the_session_bus();
         auto location_service = dbus::resolve_service_on_bus<
@@ -316,14 +331,16 @@ TEST(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjuste
         EXPECT_TRUE(location_service->does_satellite_based_positioning());
         location_service->does_satellite_based_positioning() = false;
         EXPECT_FALSE(location_service->does_satellite_based_positioning());
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
 
-    EXPECT_NO_FATAL_FAILURE(test::fork_and_run(server, client));
+    EXPECT_NO_FATAL_FAILURE(core::testing::fork_and_run(server, client));
 }
 
 TEST(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdusted)
 {
-    test::CrossProcessSync sync_start;
+    core::testing::CrossProcessSync sync_start;
 
     auto server = [&sync_start]()
     {
@@ -342,19 +359,21 @@ TEST(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdust
                     engine,
                     permission_manager);
 
-        sync_start.signal_ready();
+        sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
         std::thread t{[bus](){bus->run();}};
 
         if (t.joinable())
             t.join();
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
 
     auto client = [&sync_start]()
     {
         SCOPED_TRACE("Client");
 
-        sync_start.wait_for_signal_ready();
+        EXPECT_EQ(1, sync_start.wait_for_signal_ready_for(std::chrono::milliseconds{500}));
 
         auto bus = the_session_bus();
         auto location_service = dbus::resolve_service_on_bus<
@@ -364,19 +383,24 @@ TEST(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdust
         EXPECT_FALSE(location_service->does_report_cell_and_wifi_ids());
         location_service->does_report_cell_and_wifi_ids() = true;
         EXPECT_TRUE(location_service->does_report_cell_and_wifi_ids());
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
 
-    EXPECT_NO_FATAL_FAILURE(test::fork_and_run(server, client));
+    EXPECT_NO_FATAL_FAILURE(core::testing::fork_and_run(server, client));
 }
 
 TEST(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
 {
-    test::CrossProcessSync sync_start;
+    core::testing::CrossProcessSync sync_start;
 
     cul::SpaceVehicle sv;
-    sv.type = cul::SpaceVehicle::Type::gps;
+    sv.key.type = cul::SpaceVehicle::Type::gps;
     sv.has_ephimeris_data = true;
-    static const std::set<cul::SpaceVehicle> visible_space_vehicles{sv};
+    static const std::map<cul::SpaceVehicle::Key, cul::SpaceVehicle> visible_space_vehicles
+    {
+        {sv.key, sv}
+    };
 
     auto server = [&sync_start]()
     {
@@ -394,21 +418,23 @@ TEST(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
                     bus,
                     engine,
                     permission_manager);
-        engine->configuration.visible_space_vehicles.set(visible_space_vehicles);
-
-        sync_start.signal_ready();
+        engine->updates.visible_space_vehicles.set(visible_space_vehicles);
 
         std::thread t{[bus](){bus->run();}};
 
+        sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
+
         if (t.joinable())
             t.join();
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
 
     auto client = [&sync_start]()
     {
         SCOPED_TRACE("Client");
 
-        sync_start.wait_for_signal_ready();
+        EXPECT_EQ(1, sync_start.wait_for_signal_ready_for(std::chrono::milliseconds{500}));
 
         auto bus = the_session_bus();
         auto location_service = dbus::resolve_service_on_bus<
@@ -418,7 +444,9 @@ TEST(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
         auto svs = location_service->visible_space_vehicles().get();
 
         EXPECT_EQ(visible_space_vehicles, svs);
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
 
-    EXPECT_NO_FATAL_FAILURE(test::fork_and_run(server, client));
+    EXPECT_NO_FATAL_FAILURE(core::testing::fork_and_run(server, client));
 }

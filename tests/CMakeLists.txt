@@ -92,7 +92,6 @@ target_link_libraries(
 
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
     
     gtest
 )
@@ -104,7 +103,7 @@ target_link_libraries(
 
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
+    ${PROCESS_CPP_LIBRARIES}
 
     gtest
 )
@@ -116,8 +115,8 @@ target_link_libraries(
 
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
-    
+    ${PROCESS_CPP_LIBRARIES}
+
     gmock
     gtest
 )
@@ -129,7 +128,7 @@ target_link_libraries(
     
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
+    ${PROCESS_CPP_LIBRARIES}
     
     gtest
 )
@@ -141,8 +140,8 @@ target_link_libraries(
     
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
-    
+    ${PROCESS_CPP_LIBRARIES}
+
     gmock
     gtest
 )
@@ -154,8 +153,8 @@ target_link_libraries(
 
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
-    
+    ${PROCESS_CPP_LIBRARIES}
+
     gtest
 )
 
@@ -166,8 +165,8 @@ target_link_libraries(
 
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
-    
+    ${PROCESS_CPP_LIBRARIES}
+
     gmock
     gtest
 )
@@ -179,8 +178,8 @@ target_link_libraries(
 
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
-    
+    ${PROCESS_CPP_LIBRARIES}
+
     gmock
     gtest
 )
@@ -192,7 +191,8 @@ target_link_libraries(
 
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
+    ${PROCESS_CPP_LIBRARIES}
+
     gtest
 )
 
@@ -203,7 +203,7 @@ target_link_libraries(
 
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
+    ${PROCESS_CPP_LIBRARIES}
 
     gmock
     gtest
@@ -218,7 +218,8 @@ if (LOCATION_SERVICE_ENABLE_GPS_PROVIDERS)
 
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
+    ${PROCESS_CPP_LIBRARIES}
+
     ubuntu_application_api
     gtest
     gtest_main
@@ -235,7 +236,8 @@ if (LOCATION_SERVICE_ENABLE_GEOCLUE_PROVIDERS)
 
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
-    ${DBUS_LIBRARIES}
+    ${PROCESS_CPP_LIBRARIES}
+
     gtest
     gtest_main
   )

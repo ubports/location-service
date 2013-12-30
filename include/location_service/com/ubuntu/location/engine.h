@@ -76,10 +76,18 @@ public:
         {
             Engine::Status::on
         };
+    };
+
+    struct Updates
+    {
         /** The current best known reference location */
         core::Property<Update<Position>> reference_location{};
+        /** The current best known velocity estimate. */
+        core::Property<Update<Velocity>> reference_velocity{};
+        /** The current best known heading estimate. */
+        core::Property<Update<Heading>> reference_heading{};
         /** The current set of visible SpaceVehicles. */
-        core::Property<std::set<SpaceVehicle>> visible_space_vehicles{};
+        core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>> visible_space_vehicles{};
     };
 
     Engine(const std::shared_ptr<ProviderSelectionPolicy>& provider_selection_policy);
@@ -121,10 +129,15 @@ public:
     /** The engine's configuration. */
     Configuration configuration;
 
+    /** All updates distributed via the engine. */
+    Updates updates;
+
 private:
     struct ProviderConnections
     {
         core::Connection reference_location_updates;
+        core::Connection reference_velocity_updates;
+        core::Connection reference_heading_updates;
         core::Connection wifi_and_cell_id_reporting_state_updates;
         core::Connection space_vehicle_visibility_updates;
     };

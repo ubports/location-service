@@ -20,7 +20,6 @@
 
 #include <com/ubuntu/location/service/session/interface.h>
 
-#include <com/ubuntu/location/channel.h>
 #include <com/ubuntu/location/heading.h>
 #include <com/ubuntu/location/position.h>
 #include <com/ubuntu/location/provider.h>

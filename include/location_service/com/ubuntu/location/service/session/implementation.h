@@ -34,13 +34,10 @@ namespace service
 {
 namespace session
 {
-class Implementation : public Skeleton
+class Implementation : public Interface
 {
   public:
-    Implementation(
-        const core::dbus::Bus::Ptr& bus,
-        const core::dbus::types::ObjectPath& session_path,
-        const Provider::Ptr& provider);
+    Implementation(const Provider::Ptr& provider);
     Implementation(const Implementation&) = delete;
     virtual ~Implementation() noexcept;
     Implementation& operator=(const Implementation&) = delete;

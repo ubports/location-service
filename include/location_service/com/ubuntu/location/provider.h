@@ -18,7 +18,6 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDER_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDER_H_
 
-#include <com/ubuntu/location/channel.h>
 #include <com/ubuntu/location/criteria.h>
 #include <com/ubuntu/location/heading.h>
 #include <com/ubuntu/location/position.h>
@@ -209,6 +208,18 @@ public:
      * @param position The new reference location.
      */
     virtual void on_reference_location_updated(const Update<Position>& position);
+
+    /**
+     * @brief Called by the engine whenever the reference velocity changed.
+     * @param velocity The new reference velocity.
+     */
+    virtual void on_reference_velocity_updated(const Update<Velocity>& velocity);
+
+    /**
+     * @brief Called by the engine whenever the reference heading changed.
+     * @param heading The new reference heading.
+     */
+    virtual void on_reference_heading_updated(const Update<Heading>& heading);
 
 protected:
     explicit Provider(

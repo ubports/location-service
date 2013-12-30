@@ -31,11 +31,8 @@ struct culss::Implementation::Private
     } connections;
 };
 
-culss::Implementation::Implementation(
-    const dbus::Bus::Ptr& bus,
-    const dbus::types::ObjectPath& session_path,
-    const cul::Provider::Ptr& provider)
-        : Skeleton(bus, session_path),
+culss::Implementation::Implementation(const cul::Provider::Ptr& provider)
+        : Interface(),
           d(new Private
             {
                 provider,

@@ -86,7 +86,7 @@ core::Property<bool>& culs::Stub::is_online()
     return *d->is_online;
 }
 
-core::Property<std::set<cul::SpaceVehicle>>& culs::Stub::visible_space_vehicles()
+core::Property<std::map<cul::SpaceVehicle::Key, cul::SpaceVehicle>>& culs::Stub::visible_space_vehicles()
 {
     return *d->visible_space_vehicles;
 }

@@ -150,7 +150,7 @@ class Interface
             }
 
             typedef com::ubuntu::location::service::Interface Interface;
-            typedef std::set<com::ubuntu::location::SpaceVehicle> ValueType;
+            typedef std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle> ValueType;
 
             static const bool readable = true;
             static const bool writable = false;
@@ -201,7 +201,7 @@ class Interface
     /**
       * @brief All space vehicles currently visible.
       */
-    virtual core::Property<std::set<SpaceVehicle>>& visible_space_vehicles() = 0;
+    virtual core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles() = 0;
 
     /**
      * @brief Starts a new session for the given criteria
