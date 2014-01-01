@@ -27,6 +27,7 @@
 
 #include <core/property.h>
 
+#include <mutex>
 #include <set>
 
 namespace com
@@ -135,13 +136,14 @@ public:
 private:
     struct ProviderConnections
     {
-        core::Connection reference_location_updates;
-        core::Connection reference_velocity_updates;
-        core::Connection reference_heading_updates;
-        core::Connection wifi_and_cell_id_reporting_state_updates;
-        core::Connection space_vehicle_visibility_updates;
+        core::ScopedConnection reference_location_updates;
+        core::ScopedConnection reference_velocity_updates;
+        core::ScopedConnection reference_heading_updates;
+        core::ScopedConnection wifi_and_cell_id_reporting_state_updates;
+        core::ScopedConnection space_vehicle_visibility_updates;
     };
 
+    mutable std::mutex guard;
     std::map<Provider::Ptr, ProviderConnections> providers;
     std::shared_ptr<ProviderSelectionPolicy> provider_selection_policy;
 };

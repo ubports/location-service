@@ -29,22 +29,18 @@ cul::Engine::Engine(const std::shared_ptr<cul::ProviderSelectionPolicy>& provide
     if (!provider_selection_policy)
         std::runtime_error("Cannot construct an engine given a null ProviderSelectionPolicy");
 
-    configuration.satellite_based_positioning_state = cul::SatelliteBasedPositioningState::on;
-    configuration.wifi_and_cell_id_reporting_state = cul::WifiAndCellIdReportingState::off;
-    configuration.engine_state = Engine::Status::on;
-
     // Setup behavior in case of configuration changes.
     configuration.engine_state.changed().connect([this](const Engine::Status& status)
     {
         switch (status)
         {
         case Engine::Status::off:
-            for (const auto& provider : providers)
+            for_each_provider([](const Provider::Ptr& provider)
             {
-                provider.first->state_controller()->stop_position_updates();
-                provider.first->state_controller()->stop_heading_updates();
-                provider.first->state_controller()->stop_velocity_updates();
-            }
+                provider->state_controller()->stop_position_updates();
+                provider->state_controller()->stop_heading_updates();
+                provider->state_controller()->stop_velocity_updates();
+            });
             break;
         default:
             break;
@@ -104,24 +100,24 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
         });
     });
 
-    providers.insert(std::make_pair(provider, ProviderConnections{cp, ch, cv, cr, cs}));
+    std::lock_guard<std::mutex> lg(guard);
+    providers.emplace(provider, std::move(ProviderConnections{cp, ch, cv, cr, cs}));
 }
 
 void cul::Engine::remove_provider(const cul::Provider::Ptr& provider) noexcept
 {
+    std::lock_guard<std::mutex> lg(guard);
+
     auto it = providers.find(provider);
     if (it != providers.end())
     {
-        it->second.reference_location_updates.disconnect();
-        it->second.wifi_and_cell_id_reporting_state_updates.disconnect();
-        it->second.space_vehicle_visibility_updates.disconnect();
-
         providers.erase(it);
     }
 }
 
 void cul::Engine::for_each_provider(const std::function<void(const Provider::Ptr&)>& enumerator) const noexcept
 {
+    std::lock_guard<std::mutex> lg(guard);
     for (const auto& provider : providers)
         enumerator(provider.first);
 }
