@@ -101,7 +101,7 @@ struct Codec<com::ubuntu::location::units::Quantity<T>>
         typename com::ubuntu::location::units::Quantity<T>::value_type value;
         Codec<typename com::ubuntu::location::units::Quantity<T>::value_type>::decode_argument(reader, value);
         in = com::ubuntu::location::units::Quantity<T>::from_value(value);
-    }    
+    }
 };
 
 template<typename T, typename U>
@@ -115,7 +115,7 @@ struct Codec<com::ubuntu::location::wgs84::Coordinate<T,U>>
     static void decode_argument(Message::Reader& reader, com::ubuntu::location::wgs84::Coordinate<T, U>& in)
     {
         Codec<com::ubuntu::location::units::Quantity<U>>::decode_argument(reader, in.value);
-    }    
+    }
 };
 
 template<>

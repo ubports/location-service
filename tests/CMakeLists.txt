@@ -96,6 +96,11 @@ target_link_libraries(
     gtest
 )
 
+install(
+  TARGETS default_permission_manager_test
+  DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
+)
+
 target_link_libraries(
     daemon_and_cli_tests
 
@@ -106,6 +111,11 @@ target_link_libraries(
     ${PROCESS_CPP_LIBRARIES}
 
     gtest
+)
+
+install(
+  TARGETS daemon_and_cli_tests
+  DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
 )
 
 target_link_libraries(
@@ -121,6 +131,11 @@ target_link_libraries(
     gtest
 )
 
+install(
+  TARGETS engine_test
+  DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
+)
+
 target_link_libraries(
     position_test
 
@@ -131,6 +146,11 @@ target_link_libraries(
     ${PROCESS_CPP_LIBRARIES}
     
     gtest
+)
+
+install(
+  TARGETS position_test
+  DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
 )
 
 target_link_libraries(
@@ -146,6 +166,11 @@ target_link_libraries(
     gtest
 )
 
+install(
+  TARGETS provider_selection_policy_test
+  DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
+)
+
 target_link_libraries(
     wgs84_test
 
@@ -156,6 +181,11 @@ target_link_libraries(
     ${PROCESS_CPP_LIBRARIES}
 
     gtest
+)
+
+install(
+  TARGETS wgs84_test
+  DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
 )
 
 target_link_libraries(
@@ -171,6 +201,11 @@ target_link_libraries(
     gtest
 )
 
+install(
+  TARGETS provider_test
+  DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
+)
+
 target_link_libraries(
     provider_factory_test
 
@@ -182,6 +217,11 @@ target_link_libraries(
 
     gmock
     gtest
+)
+
+install(
+  TARGETS provider_factory_test
+  DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
 )
 
 target_link_libraries(
@@ -196,6 +236,11 @@ target_link_libraries(
     gtest
 )
 
+install(
+  TARGETS acceptance_tests
+  DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
+)
+
 target_link_libraries(
     controller_test
 
@@ -207,6 +252,11 @@ target_link_libraries(
 
     gmock
     gtest
+)
+
+install(
+  TARGETS controller_test
+  DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
 )
 
 if (LOCATION_SERVICE_ENABLE_GPS_PROVIDERS)
@@ -223,6 +273,10 @@ if (LOCATION_SERVICE_ENABLE_GPS_PROVIDERS)
     ubuntu_application_api
     gtest
     gtest_main
+  )
+  install(
+    TARGETS controller_test
+    DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
   )
   add_test(gps_provider_test gps_provider_test)
 endif(LOCATION_SERVICE_ENABLE_GPS_PROVIDERS)

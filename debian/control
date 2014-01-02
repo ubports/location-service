@@ -24,6 +24,8 @@ Build-Depends: cmake,
                libiw-dev,
                libplatform-hardware-api-headers,
                libplatform-hardware-api1-dev,
+               libprocess-cpp-dev,
+               libproperties-cpp-dev	       
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/location-service
 # If you aren't a member of ~phablet-team but need to upload packaging changes,
@@ -56,6 +58,15 @@ Description: location service aggregating position/velocity/heading
  .
  Contains header files required to develop clients talking to the ubuntu
  location service.
+
+Package: ubuntu-location-service-tests
+Architecture: any
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains all test executables
 
 Package: ubuntu-location-service-bin
 Architecture: any

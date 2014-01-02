@@ -115,14 +115,51 @@ culs::Implementation::~Implementation() noexcept
 {
 }
 
+namespace
+{
+struct Session : public culs::session::Interface
+{
+    Session(const cul::ProxyProvider::Ptr& proxy_provider)
+        : proxy_provider(proxy_provider),
+          connections
+          {
+              proxy_provider->updates().position.connect(
+              [this](const cul::Update<cul::Position>& update)
+              {
+                  updates().position = update;
+              }),
+              proxy_provider->updates().heading.connect(
+              [this](const cul::Update<cul::Heading>& update)
+              {
+                  updates().heading = update;
+              }),
+              proxy_provider->updates().velocity.connect(
+              [this](const cul::Update<cul::Velocity>& update)
+              {
+                  updates().velocity = update;
+              })
+          }
+    {
+    }
+
+    cul::ProxyProvider::Ptr proxy_provider;
+    struct Connections
+    {
+        core::ScopedConnection position_updates;
+        core::ScopedConnection heading_updates;
+        core::ScopedConnection velocity_updates;
+    } connections;
+};
+}
+
 culs::session::Interface::Ptr culs::Implementation::create_session_for_criteria(const cul::Criteria& criteria)
 {
     auto provider_selection
             = d->engine->determine_provider_selection_for_criteria(criteria);
     auto proxy_provider = ProxyProvider::Ptr
-            {
-                new ProxyProvider{provider_selection}
-            };
-    
-    return session::Interface::Ptr{new session::Implementation(proxy_provider)};
+    {
+        new ProxyProvider{provider_selection}
+    };
+
+    return session::Interface::Ptr{new Session(proxy_provider)};
 }
