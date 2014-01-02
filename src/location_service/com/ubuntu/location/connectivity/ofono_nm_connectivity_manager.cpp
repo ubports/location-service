@@ -93,10 +93,11 @@ const std::shared_ptr<dbus::Bus>& system_bus()
 
 State::~State()
 {
-    system_bus()->stop();
-
     if (worker.joinable())
+    {
+        system_bus()->stop();
         worker.join();
+    }
 }
 }
 
