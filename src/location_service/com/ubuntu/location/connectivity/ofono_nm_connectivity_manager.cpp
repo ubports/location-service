@@ -18,11 +18,16 @@
 
 #include <com/ubuntu/location/connectivity/manager.h>
 
+#include "nm.h"
+#include "ofono.h"
+
 #include <core/dbus/bus.h>
 #include <core/dbus/object.h>
 #include <core/dbus/property.h>
 #include <core/dbus/service.h>
 #include <core/dbus/types/object_path.h>
+#include <core/dbus/types/struct.h>
+#include <core/dbus/types/stl/map.h>
 #include <core/dbus/types/stl/string.h>
 #include <core/dbus/types/stl/tuple.h>
 #include <core/dbus/types/stl/vector.h>
@@ -101,490 +106,6 @@ State::~State()
 }
 }
 
-namespace org
-{
-namespace freedesktop
-{
-struct NetworkManager
-{
-    struct AccessPoint
-    {
-        static const std::string& name()
-        {
-            static const std::string s{"org.freedesktop.NetworkManager.AccessPoint"};
-            return s;
-        }
-
-        struct Frequency
-        {
-            static const std::string& name()
-            {
-                static const std::string s{"Frequency"};
-                return s;
-            }
-
-            typedef AccessPoint Interface;
-            typedef std::uint32_t ValueType;
-            static const bool readable = true;
-            static const bool writable = false;
-        };
-
-        struct HwAddress
-        {
-            static const std::string& name()
-            {
-                static const std::string s{"HwAddress"};
-                return s;
-            }
-
-            typedef AccessPoint Interface;
-            typedef std::string ValueType;
-            static const bool readable = true;
-            static const bool writable = false;
-        };
-
-        struct Strength
-        {
-            static const std::string& name()
-            {
-                static const std::string s{"Strength"};
-                return s;
-            }
-
-            typedef AccessPoint Interface;
-            typedef std::int8_t ValueType;
-            static const bool readable = true;
-            static const bool writable = false;
-        };
-
-        AccessPoint(const std::shared_ptr<dbus::Object>& object)
-            : frequency(object->get_property<Frequency>()),
-              hw_address(object->get_property<HwAddress>()),
-              strength(object->get_property<Strength>())
-        {
-        }
-
-        std::shared_ptr<dbus::Property<Frequency>> frequency;
-        std::shared_ptr<dbus::Property<HwAddress>> hw_address;
-        std::shared_ptr<dbus::Property<Strength>> strength;
-    };
-
-    struct Device
-    {
-        static const std::string& name()
-        {
-            static const std::string s{"org.freedesktop.NetworkManager.Device"};
-            return s;
-        }
-
-        enum class Type
-        {
-            unknown = 0,
-            ethernet = 1,
-            wifi = 2,
-            unused_1 = 3,
-            unused_2 = 4,
-            bluetooth = 5,
-            olpc_mesh = 6,
-            wimax = 7,
-            modem = 8,
-            infiniband = 9,
-            bond = 10,
-            vlan = 11,
-            adsl = 12,
-            bridge = 13
-        };
-
-        struct Wireless
-        {
-            static const std::string& name()
-            {
-                static const std::string s{"org.freedesktop.NetworkManager.Device.Wireless"};
-                return s;
-            }
-
-            struct GetAccessPoints
-            {
-                static const std::string& name()
-                {
-                    static const std::string s{"GetAccessPoints"};
-                    return s;
-                }
-
-                typedef Wireless Interface;
-
-                static std::chrono::milliseconds default_timeout()
-                {
-                    return std::chrono::seconds{1};
-                }
-            };
-        };
-
-        struct DeviceType
-        {
-            static const std::string& name()
-            {
-                static const std::string s{"DeviceType"};
-                return s;
-            }
-
-            typedef Device Interface;
-            typedef std::uint32_t ValueType;
-            static const bool readable = true;
-            static const bool writable = false;
-        };
-
-        Device(const std::shared_ptr<dbus::Service>& service,
-               const std::shared_ptr<dbus::Object>& object)
-            : service(service),
-              object(object),
-              device_type(object->get_property<DeviceType>())
-        {
-        }
-
-        Type type() const
-        {
-            return static_cast<Type>(device_type->get());
-        }
-
-        std::vector<AccessPoint> get_access_points() const
-        {
-            typedef std::vector<dbus::types::ObjectPath> ResultType;
-            auto result = object->invoke_method_synchronously<Wireless::GetAccessPoints, ResultType>();
-
-            if (result.is_error())
-                throw std::runtime_error(result.error().print());
-
-            std::vector<AccessPoint> aps;
-
-            for (const auto& path : result.value())
-                aps.push_back(AccessPoint(service->object_for_path(path)));
-
-            return aps;
-        }
-
-        std::shared_ptr<dbus::Service> service;
-        std::shared_ptr<dbus::Object> object;
-        std::shared_ptr<dbus::Property<DeviceType>> device_type;
-    };
-
-    static const std::string& name()
-    {
-        static const std::string s{"org.freedesktop.NetworkManager"};
-        return s;
-    }
-
-    struct GetDevices
-    {
-        static const std::string& name()
-        {
-            static const std::string s{"GetDevices"};
-            return s;
-        }
-
-        typedef NetworkManager Interface;
-
-        static std::chrono::milliseconds default_timeout()
-        {
-            return std::chrono::seconds{1};
-        }
-    };
-
-    NetworkManager()
-        : service(dbus::Service::use_service<NetworkManager>(system_bus())),
-          object(service->object_for_path(dbus::types::ObjectPath("/org/freedesktop/NetworkManager")))
-    {
-    }
-
-    std::vector<Device> get_devices()
-    {
-        auto result =
-                object->invoke_method_synchronously<
-                    NetworkManager::GetDevices,
-                    std::vector<dbus::types::ObjectPath>>();
-
-        if (result.is_error())
-            throw std::runtime_error(result.error().print());
-
-        std::vector<Device> devices;
-        for (const auto& path : result.value())
-        {
-            devices.emplace_back(
-                        Device(
-                            service,
-                            service->object_for_path(path)));
-        }
-
-        return devices;
-    }
-
-    std::shared_ptr<dbus::Service> service;
-    std::shared_ptr<dbus::Object> object;
-};
-}
-struct Ofono
-{
-    static const std::string& name()
-    {
-        static const std::string s{"org.ofono"};
-        return s;
-    }
-
-    struct Manager
-    {
-        static const std::string& name()
-        {
-            static const std::string s{"org.ofono.Manager"};
-            return s;
-        }
-
-        struct GetModems
-        {
-            static const std::string& name()
-            {
-                static const std::string s{"GetModems"};
-                return s;
-            }
-
-            typedef Manager Interface;
-            typedef std::vector<std::tuple<dbus::types::ObjectPath, std::map<std::string, std::string>>> ResultType;
-
-            static std::chrono::milliseconds default_timeout()
-            {
-                return std::chrono::seconds{1};
-            }
-        };
-
-        struct ModemAdded
-        {
-            static const std::string& name()
-            {
-                static const std::string s{"ModemAdded"};
-                return s;
-            }
-
-            typedef Manager Interface;
-            typedef std::tuple<dbus::types::ObjectPath, std::map<std::string, std::string>> ArgumentType;
-        };
-
-        struct ModemRemoved
-        {
-            static const std::string& name()
-            {
-                static const std::string s{"ModemRemoved"};
-                return s;
-            }
-
-            typedef Manager Interface;
-            typedef dbus::types::ObjectPath ArgumentType;
-        };
-
-        struct Modem
-        {
-            struct NetworkRegistration
-            {
-                static const std::string& name()
-                {
-                    static const std::string s{"org.ofono.NetworkRegistration"};
-                    return s;
-                }
-
-                struct Mode
-                {
-                    static const char* unregistered() { return "unregistered"; }
-                    static const char* registered() { return "registered"; }
-                    static const char* searching() { return "searching"; }
-                    static const char* denied() { return "denied"; }
-                    static const char* unknown() { return "unknown"; }
-                    static const char* roaming() { return "roaming"; }
-
-                    static const std::string& name()
-                    {
-                        static const std::string s{"Mode"};
-                        return s;
-                    }
-
-                    typedef NetworkRegistration Interface;
-                    typedef std::string ValueType;
-                    static const bool readable = true;
-                    static const bool writable = false;
-                };
-
-                struct LocationAreaCode
-                {
-                    static const std::string& name()
-                    {
-                        static const std::string s{"LocationAreaCode"};
-                        return s;
-                    }
-
-                    typedef NetworkRegistration Interface;
-                    typedef std::uint16_t ValueType;
-                    static const bool readable = true;
-                    static const bool writable = false;
-                };
-
-                struct CellId
-                {
-                    static const std::string& name()
-                    {
-                        static const std::string s{"CellId"};
-                        return s;
-                    }
-
-                    typedef NetworkRegistration Interface;
-                    typedef std::uint32_t ValueType;
-                    static const bool readable = true;
-                    static const bool writable = false;
-                };
-
-                struct MobileCountryCode
-                {
-                    static const std::string& name()
-                    {
-                        static const std::string s{"MobileCountryCode"};
-                        return s;
-                    }
-
-                    typedef NetworkRegistration Interface;
-                    typedef std::string ValueType;
-                    static const bool readable = true;
-                    static const bool writable = false;
-                };
-
-                struct MobileNetworkCode
-                {
-                    static const std::string& name()
-                    {
-                        static const std::string s{"MobileNetworkCode"};
-                        return s;
-                    }
-
-                    typedef NetworkRegistration Interface;
-                    typedef std::string ValueType;
-                    static const bool readable = true;
-                    static const bool writable = false;
-                };
-
-                struct Technology
-                {
-                    static const char* gsm() { return "gsm"; }
-                    static const char* edge() { return "edge"; }
-                    static const char* umts() { return "umts"; }
-                    static const char* hspa() { return "hspa"; }
-                    static const char* lte() { return "lte"; }
-
-                    static const std::string& name()
-                    {
-                        static const std::string s{"Technology"};
-                        return s;
-                    }
-
-                    typedef NetworkRegistration Interface;
-                    typedef std::string ValueType;
-                    static const bool readable = true;
-                    static const bool writable = false;
-                };
-
-                struct Strength
-                {
-                    static const std::string& name()
-                    {
-                        static const std::string s{"Strength"};
-                        return s;
-                    }
-
-                    typedef NetworkRegistration Interface;
-                    typedef std::int8_t ValueType;
-                    static const bool readable = true;
-                    static const bool writable = false;
-                };
-
-                std::shared_ptr<dbus::Property<Mode>> mode;
-                std::shared_ptr<dbus::Property<LocationAreaCode>> lac;
-                std::shared_ptr<dbus::Property<CellId>> cell_id;
-                std::shared_ptr<dbus::Property<MobileCountryCode>> mcc;
-                std::shared_ptr<dbus::Property<MobileNetworkCode>> mnc;
-                std::shared_ptr<dbus::Property<Technology>> technology;
-                std::shared_ptr<dbus::Property<Strength>> strength;
-            };
-
-            Modem() = default;
-
-            Modem(const std::shared_ptr<dbus::Service>& service,
-                  const std::shared_ptr<dbus::Object>& object)
-                : service(service),
-                  object(object),
-                  network_registration
-                  {
-                      object->get_property<NetworkRegistration::Mode>(),
-                      object->get_property<NetworkRegistration::LocationAreaCode>(),
-                      object->get_property<NetworkRegistration::CellId>(),
-                      object->get_property<NetworkRegistration::MobileCountryCode>(),
-                      object->get_property<NetworkRegistration::MobileNetworkCode>(),
-                      object->get_property<NetworkRegistration::Technology>(),
-                      object->get_property<NetworkRegistration::Strength>()
-                  }
-            {
-            }
-
-            std::shared_ptr<dbus::Service> service;
-            std::shared_ptr<dbus::Object> object;
-            NetworkRegistration network_registration;
-        };
-
-        Manager()
-            : service(dbus::Service::use_service<Ofono>(system_bus())),
-              object(service->object_for_path(dbus::types::ObjectPath("/"))),
-              modem_added(object->get_signal<ModemAdded>()),
-              modem_removed(object->get_signal<ModemRemoved>())
-        {
-            auto result = object->invoke_method_synchronously<GetModems, GetModems::ResultType>();
-
-            if (result.is_error())
-                throw std::runtime_error(result.error().print());
-
-            for (const auto& element : result.value())
-            {
-                modems[std::get<0>(element)] = Modem{
-                        service,
-                        service->object_for_path(std::get<0>(element))};
-            }
-
-            modem_added->connect([this](const ModemAdded::ArgumentType& arg)
-            {
-                std::lock_guard<std::mutex> lg(guard);
-                modems[std::get<0>(arg)] = Modem{
-                        service,
-                        service->object_for_path(std::get<0>(arg))};
-            });
-
-            modem_removed->connect([this](const ModemRemoved::ArgumentType& arg)
-            {
-                std::lock_guard<std::mutex> lg(guard);
-                modems.erase(arg);
-            });
-        }
-
-        void for_each_modem(const std::function<void(const Modem&)>& functor) const
-        {
-            std::lock_guard<std::mutex> lg(guard);
-            for (const auto& modem : modems)
-            {
-                functor(modem.second);
-            }
-        }
-
-        std::shared_ptr<dbus::Service> service;
-        std::shared_ptr<dbus::Object> object;
-        std::shared_ptr<dbus::Signal<ModemAdded, ModemAdded::ArgumentType>> modem_added;
-        std::shared_ptr<dbus::Signal<ModemRemoved, ModemRemoved::ArgumentType>> modem_removed;
-        mutable std::mutex guard;
-        std::map<dbus::types::ObjectPath, Modem> modems;
-    };
-};
-}
-
 namespace
 {
 struct OfonoNmConnectivityManager : public connectivity::Manager
@@ -645,14 +166,42 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                     {std::string(), connectivity::RadioCell::Type::unknown}
                 };
 
-                auto radio_type = type_lut.at(modem.network_registration.technology->get());
-                auto lac = modem.network_registration.lac->get();
-                auto cell_id = modem.network_registration.cell_id->get();
-                auto strength = modem.network_registration.strength->get();
-                std::stringstream ssmcc{modem.network_registration.mcc->get()};
+                auto radio_type = type_lut.at(
+                            modem.network_registration.get<
+                                org::Ofono::Manager::Modem::NetworkRegistration::Technology
+                            >());
+                std::cout << "Successfully queried radio type." << std::endl;
+                auto lac =
+                        modem.network_registration.get<
+                            org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode
+                        >();
+                std::cout << "Successfully queried lac." << std::endl;
+                auto cell_id =
+                        modem.network_registration.get<
+                            org::Ofono::Manager::Modem::NetworkRegistration::CellId
+                        >();
+                std::cout << "Successfully queried cell_id." << std::endl;
+                auto strength =
+                        modem.network_registration.get<
+                            org::Ofono::Manager::Modem::NetworkRegistration::Strength
+                        >();
+                std::cout << "Successfully queried strength." << std::endl;
+                std::stringstream ssmcc
+                {
+                    modem.network_registration.get<
+                        org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode
+                    >()
+                };
                 int mcc; ssmcc >> mcc;
-                std::stringstream ssmnc{modem.network_registration.mnc->get()};
+                std::cout << "Successfully queried mcc." << std::endl;
+                std::stringstream ssmnc
+                {
+                    modem.network_registration.get<
+                        org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode
+                    >()
+                };
                 int mnc; ssmnc >> mnc;
+                std::cout << "Successfully queried mnc." << std::endl;
 
                 switch(radio_type)
                 {
@@ -731,6 +280,8 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                 }
             });
 
+            std::cout << __PRETTY_FUNCTION__ << ": " << cells.size() << std::endl;
+
             return cells;
         };
     }
@@ -745,8 +296,14 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
         return d.visible_radio_cells;
     }
 
-    struct
+    struct Private
     {
+        Private()
+            : network_manager(system_bus()),
+              modem_manager(system_bus())
+        {
+        }
+
         org::freedesktop::NetworkManager network_manager;
         org::Ofono::Manager modem_manager;
         DispatchedProperty<std::vector<connectivity::WirelessNetwork>> visible_wireless_networks;

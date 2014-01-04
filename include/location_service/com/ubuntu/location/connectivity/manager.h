@@ -80,6 +80,11 @@ public:
         value = new_value;
     }
 
+    inline friend std::ostream& operator<<(std::ostream& out, const BoundedInteger<min, max, domain>& bi)
+    {
+        return out << bi.value;
+    }
+
 private:
     int value;
 };
@@ -146,6 +151,20 @@ public:
                     timing_advance == rhs.timing_advance;
         }
 
+        inline friend std::ostream& operator<<(std::ostream& out, const Gsm& gsm)
+        {
+            out << "("
+                << "mcc: " << gsm.mobile_country_code << ", "
+                << "mnc: " << gsm.mobile_network_code << ", "
+                << "lac: " << gsm.location_area_code << ", "
+                << "id: " << gsm.id << ", "
+                << "rss: " << gsm.received_signal_strength << ", "
+                << "asu: " << gsm.arbitrary_strength_unit << ", "
+                << "ta: " << gsm.timing_advance << ", ";
+
+            return out;
+        }
+
         MCC mobile_country_code;
         MNC mobile_network_code;
         LAC location_area_code;
@@ -174,6 +193,18 @@ public:
                     arbitrary_strength_unit == rhs.arbitrary_strength_unit;
         }
 
+        inline friend std::ostream& operator<<(std::ostream& out, const Umts& umts)
+        {
+            out << "("
+                << "mcc: " << umts.mobile_country_code << ", "
+                << "mnc: " << umts.mobile_network_code << ", "
+                << "lac: " << umts.location_area_code << ", "
+                << "id: " << umts.id << ", "
+                << "rss: " << umts.received_signal_strength << ", "
+                << "asu: " << umts.arbitrary_strength_unit << ", ";
+
+            return out;
+        }
         MCC mobile_country_code;
         MNC mobile_network_code;
         LAC location_area_code;
@@ -199,6 +230,19 @@ public:
                     id == rhs.id &&
                     received_signal_strength == rhs.received_signal_strength &&
                     arbitrary_strength_unit == rhs.arbitrary_strength_unit;
+        }
+
+        inline friend std::ostream& operator<<(std::ostream& out, const Cdma& cdma)
+        {
+            out << "("
+                << "mcc: " << cdma.mobile_country_code << ", "
+                << "mnc: " << cdma.mobile_network_code << ", "
+                << "lac: " << cdma.location_area_code << ", "
+                << "id: " << cdma.id << ", "
+                << "rss: " << cdma.received_signal_strength << ", "
+                << "asu: " << cdma.arbitrary_strength_unit << ", ";
+
+            return out;
         }
 
         MCC mobile_country_code;
@@ -230,6 +274,21 @@ public:
                     received_signal_strength == rhs.received_signal_strength &&
                     arbitrary_strength_unit == rhs.arbitrary_strength_unit &&
                     timing_advance == rhs.timing_advance;
+        }
+
+        inline friend std::ostream& operator<<(std::ostream& out, const Lte& lte)
+        {
+            out << "("
+                << "mcc: " << lte.mobile_country_code << ", "
+                << "mnc: " << lte.mobile_network_code << ", "
+                << "lac: " << lte.location_area_code << ", "
+                << "id: " << lte.id << ", "
+                << "id: " << lte.physical_id << ", "
+                << "rss: " << lte.received_signal_strength << ", "
+                << "asu: " << lte.arbitrary_strength_unit << ", "
+                << "ta: " << lte.timing_advance << ", ";
+
+            return out;
         }
 
         MCC mobile_country_code;
@@ -345,6 +404,19 @@ public:
             throw std::runtime_error("Bad access to unset network type.");
 
         return detail.lte;
+    }
+
+    inline friend std::ostream& operator<<(std::ostream& out, const RadioCell& cell)
+    {
+        switch (cell.radio_type)
+        {
+        case RadioCell::Type::gsm: out << cell.detail.gsm; break;
+        case RadioCell::Type::cdma: out << cell.detail.cdma; break;
+        case RadioCell::Type::umts: out << cell.detail.umts; break;
+        case RadioCell::Type::lte: out << cell.detail.lte; break;
+        }
+
+        return out;
     }
 
 private:
