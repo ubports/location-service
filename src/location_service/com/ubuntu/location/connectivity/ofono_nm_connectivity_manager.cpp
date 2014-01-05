@@ -170,38 +170,35 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                             modem.network_registration.get<
                                 org::Ofono::Manager::Modem::NetworkRegistration::Technology
                             >());
-                std::cout << "Successfully queried radio type." << std::endl;
                 auto lac =
                         modem.network_registration.get<
                             org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode
                         >();
-                std::cout << "Successfully queried lac." << std::endl;
+
                 auto cell_id =
                         modem.network_registration.get<
                             org::Ofono::Manager::Modem::NetworkRegistration::CellId
-                        >();
-                std::cout << "Successfully queried cell_id." << std::endl;
+                        >(0);
+
                 auto strength =
                         modem.network_registration.get<
                             org::Ofono::Manager::Modem::NetworkRegistration::Strength
-                        >();
-                std::cout << "Successfully queried strength." << std::endl;
+                        >(0);
+
                 std::stringstream ssmcc
                 {
                     modem.network_registration.get<
                         org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode
                     >()
                 };
-                int mcc; ssmcc >> mcc;
-                std::cout << "Successfully queried mcc." << std::endl;
+                int mcc{0}; ssmcc >> mcc;
                 std::stringstream ssmnc
                 {
                     modem.network_registration.get<
                         org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode
                     >()
                 };
-                int mnc; ssmnc >> mnc;
-                std::cout << "Successfully queried mnc." << std::endl;
+                int mnc{0}; ssmnc >> mnc;
 
                 switch(radio_type)
                 {
@@ -213,10 +210,14 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Gsm::MNC{mnc},
                         connectivity::RadioCell::Gsm::LAC{lac},
                         connectivity::RadioCell::Gsm::ID{cell_id},
-                        connectivity::RadioCell::Gsm::RSS{-113},
+                        connectivity::RadioCell::Gsm::RSS
+                        {
+                            connectivity::RadioCell::Gsm::RSS::minimum() +
+                                    strength/127. * connectivity::RadioCell::Gsm::RSS::range()
+                        },
                         connectivity::RadioCell::Gsm::ASU
                         {
-                            static_cast<int>(0 + 31 * (strength / 127.))
+                            0.5 * (strength/127. * connectivity::RadioCell::Gsm::RSS::range())
                         },
                         connectivity::RadioCell::Gsm::TA{0}
                     };
@@ -232,10 +233,15 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Lte::LAC{lac},
                         connectivity::RadioCell::Lte::ID{cell_id},
                         connectivity::RadioCell::Lte::PID{0},
-                        connectivity::RadioCell::Lte::RSS{-113},
+                        connectivity::RadioCell::Lte::RSS
+                        {
+                            connectivity::RadioCell::Lte::RSS::minimum() +
+                                    strength/127. * connectivity::RadioCell::Lte::RSS::range()
+                        },
                         connectivity::RadioCell::Lte::ASU
                         {
-                            static_cast<int>(0 + 31 * (strength / 127.))
+                            140 + connectivity::RadioCell::Lte::RSS::minimum() +
+                                    strength/127. * connectivity::RadioCell::Lte::RSS::range()
                         },
                         connectivity::RadioCell::Lte::TA{0}
                     };
@@ -250,10 +256,15 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Umts::MNC{mnc},
                         connectivity::RadioCell::Umts::LAC{lac},
                         connectivity::RadioCell::Umts::ID{cell_id},
-                        connectivity::RadioCell::Umts::RSS{-113},
+                        connectivity::RadioCell::Umts::RSS
+                        {
+                            connectivity::RadioCell::Umts::RSS::minimum() +
+                                    strength/127. * connectivity::RadioCell::Umts::RSS::range()
+                        },
                         connectivity::RadioCell::Umts::ASU
                         {
-                            static_cast<int>(0 + 31 * (strength / 127.))
+                            116 + connectivity::RadioCell::Umts::RSS::minimum() +
+                                    strength/127. * connectivity::RadioCell::Umts::RSS::range()
                         }
                     };
                     cells.emplace_back(umts);
@@ -267,10 +278,19 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Cdma::MNC{mnc},
                         connectivity::RadioCell::Cdma::LAC{lac},
                         connectivity::RadioCell::Cdma::ID{cell_id},
-                        connectivity::RadioCell::Cdma::RSS{-113},
+                        connectivity::RadioCell::Cdma::RSS
+                        {
+                            connectivity::RadioCell::Cdma::RSS::minimum() +
+                                    strength/127. * connectivity::RadioCell::Cdma::RSS::range()
+                        },
                         connectivity::RadioCell::Cdma::ASU
                         {
-                            static_cast<int>(0 + 31 * (strength / 127.))
+                            // TODO(tvoss):
+                            // RSSI [dBm] >= -75: ASU = 16,
+                            // RSSI [dBm] >= -82: ASU = 8,
+                            // RSSI [dBm] >= -90: ASU = 4,
+                            // RSSI [dBm] >= -95: ASU = 2,
+                            // RSSI [dBm] >= -100: ASU = 1.
                         }
                     };
                     cells.emplace_back(cdma);
@@ -279,8 +299,6 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                 default: break; // By default, we do not add a cell.
                 }
             });
-
-            std::cout << __PRETTY_FUNCTION__ << ": " << cells.size() << std::endl;
 
             return cells;
         };

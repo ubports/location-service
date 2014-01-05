@@ -18,6 +18,8 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_CONNECTIVITY_MANAGER_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_CONNECTIVITY_MANAGER_H_
 
+#include <com/ubuntu/location/connectivity/bounded_integer.h>
+
 #include <core/property.h>
 
 #include <string>
@@ -31,64 +33,6 @@ namespace location
 {
 namespace connectivity
 {
-template<int min, int max, int domain = 0>
-class BoundedInteger
-{
-public:
-    static_assert(min < max, "min >= max");
-
-    explicit BoundedInteger(int value = (min + (max-min)/2)) : value(value)
-    {
-        if (value < min || value > max)
-            throw std::runtime_error(
-                    std::to_string(value) + " is not in " + "[" +
-                    std::to_string(min) + ", " + std::to_string(max) + "]");
-    }
-
-    BoundedInteger(const BoundedInteger<min, max, domain>& rhs) : value(rhs.value)
-    {
-    }
-
-    BoundedInteger<min, max, domain>& operator=(const BoundedInteger<min, max, domain>& rhs)
-    {
-        value = rhs.value;
-        return *this;
-    }
-
-    bool operator==(const BoundedInteger<min, max, domain>& rhs) const
-    {
-        return value == rhs.value;
-    }
-
-    inline operator int() const
-    {
-        return value;
-    }
-
-    inline int get() const
-    {
-        return value;
-    }
-
-    inline void set(int new_value)
-    {
-        if (new_value < min || new_value > max)
-            throw std::runtime_error(
-                    std::to_string(new_value) + " is not in " + "[" +
-                    std::to_string(min) + ", " + std::to_string(max) + "]");
-
-        value = new_value;
-    }
-
-    inline friend std::ostream& operator<<(std::ostream& out, const BoundedInteger<min, max, domain>& bi)
-    {
-        return out << bi.value;
-    }
-
-private:
-    int value;
-};
-
 class RadioCell
 {
 public:
@@ -160,7 +104,7 @@ public:
                 << "id: " << gsm.id << ", "
                 << "rss: " << gsm.received_signal_strength << ", "
                 << "asu: " << gsm.arbitrary_strength_unit << ", "
-                << "ta: " << gsm.timing_advance << ", ";
+                << "ta: " << gsm.timing_advance << ")";
 
             return out;
         }
@@ -201,7 +145,7 @@ public:
                 << "lac: " << umts.location_area_code << ", "
                 << "id: " << umts.id << ", "
                 << "rss: " << umts.received_signal_strength << ", "
-                << "asu: " << umts.arbitrary_strength_unit << ", ";
+                << "asu: " << umts.arbitrary_strength_unit << ")";
 
             return out;
         }
@@ -240,7 +184,7 @@ public:
                 << "lac: " << cdma.location_area_code << ", "
                 << "id: " << cdma.id << ", "
                 << "rss: " << cdma.received_signal_strength << ", "
-                << "asu: " << cdma.arbitrary_strength_unit << ", ";
+                << "asu: " << cdma.arbitrary_strength_unit << ")";
 
             return out;
         }
@@ -286,7 +230,7 @@ public:
                 << "id: " << lte.physical_id << ", "
                 << "rss: " << lte.received_signal_strength << ", "
                 << "asu: " << lte.arbitrary_strength_unit << ", "
-                << "ta: " << lte.timing_advance << ", ";
+                << "ta: " << lte.timing_advance << ")";
 
             return out;
         }
@@ -473,7 +417,11 @@ struct WirelessNetwork
 
     friend std::ostream& operator<<(std::ostream& out, const WirelessNetwork& wifi)
     {
-        return out << "(" << wifi.bssid << ", " << wifi.frequency << ", " << wifi.channel << ", " << wifi.snr << ")";
+        return out << "("
+                   << "bssid: " << wifi.bssid << ", "
+                   << "frequency: " << wifi.frequency << ", "
+                   << "channel: " << wifi.channel << ", "
+                   << "snr: " << wifi.snr << ")";
     }
 
     std::string bssid; ///< The BSSID of the network.

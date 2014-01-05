@@ -35,7 +35,7 @@ struct Ofono
 {
 static const std::string& name()
 {
-    static const std::string s{"org.ofono.Manager"};
+    static const std::string s{"org.ofono"};
     return s;
 }
 struct Manager
@@ -241,12 +241,20 @@ struct Manager
             }
 
             template<typename Property>
-            typename Property::ValueType get() const
+            typename Property::ValueType get(
+                    const typename Property::ValueType& default_value = typename Property::ValueType{}) const
             {
-                core::dbus::types::Any value = properties.at(Property::name()).get();
-                typename Property::ValueType result; value.message()->reader() >> result;
+                try
+                {
+                    core::dbus::types::Any value = properties.at(Property::name()).get();
+                    typename Property::ValueType result; value.reader() >> result;
 
-                return result;
+                    return result;
+                } catch(...)
+                {
+                }
+
+                return default_value;
             }
 
             std::shared_ptr<core::dbus::Object> object;
