@@ -33,6 +33,13 @@ namespace location
  */
 struct Criteria
 {
+    /**
+     * @brief satisfies checks whether this instance also satisfies another criteria instance.
+     * @param rhs The other criteria instance
+     * @return true iff this instance also satisfies the other instance, else false.
+     */
+    bool satisfies(const Criteria& rhs) const;
+
     struct Requires
     {
         bool position = true; ///< The client needs position measurements.
@@ -49,6 +56,11 @@ struct Criteria
         Optional<units::Quantity<units::PlaneAngle>> heading; ///< The client requires measurements of at least this heading accuracy.
     } accuracy = Accuracy{};
 };
+
+/**
+ * @brief operator + merges lhs and rhs such that satisfying the new criteria satisfies lhs and rhs.
+ */
+Criteria operator+(const Criteria& lhs, const Criteria& rhs);
 }
 }
 }

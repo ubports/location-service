@@ -175,7 +175,7 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                             org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode
                         >();
 
-                auto cell_id =
+                int cell_id =
                         modem.network_registration.get<
                             org::Ofono::Manager::Modem::NetworkRegistration::CellId
                         >(0);
@@ -272,26 +272,27 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                 }
                 case connectivity::RadioCell::Type::cdma:
                 {
+                    connectivity::RadioCell::Cdma::RSS rss
+                    {
+                        connectivity::RadioCell::Cdma::RSS::minimum() +
+                                strength/127. * connectivity::RadioCell::Cdma::RSS::range()
+                    };
+
+                    connectivity::RadioCell::Cdma::ASU asu{};
+                    if (rss >= -75) asu.set(1 << 4);
+                    else if (rss >= -82) asu.set(1 << 3);
+                    else if (rss >= -90) asu.set(1 << 2);
+                    else if (rss >= -95) asu.set(1 << 1);
+                    else if (rss >= -100) asu.set(1);
+
                     connectivity::RadioCell::Cdma cdma
                     {
                         connectivity::RadioCell::Cdma::MCC{mcc},
                         connectivity::RadioCell::Cdma::MNC{mnc},
                         connectivity::RadioCell::Cdma::LAC{lac},
                         connectivity::RadioCell::Cdma::ID{cell_id},
-                        connectivity::RadioCell::Cdma::RSS
-                        {
-                            connectivity::RadioCell::Cdma::RSS::minimum() +
-                                    strength/127. * connectivity::RadioCell::Cdma::RSS::range()
-                        },
-                        connectivity::RadioCell::Cdma::ASU
-                        {
-                            // TODO(tvoss):
-                            // RSSI [dBm] >= -75: ASU = 16,
-                            // RSSI [dBm] >= -82: ASU = 8,
-                            // RSSI [dBm] >= -90: ASU = 4,
-                            // RSSI [dBm] >= -95: ASU = 2,
-                            // RSSI [dBm] >= -100: ASU = 1.
-                        }
+                        rss,
+                        asu
                     };
                     cells.emplace_back(cdma);
                     break;

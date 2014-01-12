@@ -38,6 +38,11 @@ add_executable(
 )
 
 add_executable(
+    criteria_test
+    criteria_test.cpp
+)
+
+add_executable(
     daemon_and_cli_tests
     daemon_and_cli_tests.cpp
     test_main.cpp
@@ -98,6 +103,23 @@ target_link_libraries(
 
 install(
   TARGETS default_permission_manager_test
+  DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
+)
+
+target_link_libraries(
+    criteria_test
+
+    ubuntu-location-service
+
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${Boost_LIBRARIES}
+
+    gtest
+    gtest_main
+)
+
+install(
+  TARGETS criteria_test
   DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
 )
 

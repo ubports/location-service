@@ -5,6 +5,7 @@ add_library(
 
   default_provider_selection_policy.cpp
   
+  criteria.cpp
   engine.cpp
   init_and_shutdown.cpp
   position.cpp

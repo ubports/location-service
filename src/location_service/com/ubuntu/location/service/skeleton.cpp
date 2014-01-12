@@ -96,8 +96,10 @@ void culs::Skeleton::Private::handle_create_session_for_criteria(const dbus::Mes
         if (PermissionManager::Result::rejected == permission_manager->check_permission_for_credentials(criteria, credentials))
             throw std::runtime_error("Client lacks permissions to access the service with the given criteria");
 
+        // TODO(tvoss): Factor session path creation out into its own interface.
         std::stringstream ss; ss << "/sessions/" << credentials.pid;
         dbus::types::ObjectPath path{ss.str()};
+
         auto session = parent->create_session_for_criteria(criteria);
 
         auto service = dbus::Service::use_service(
