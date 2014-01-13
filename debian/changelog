@@ -1,3 +1,9 @@
+location-service (0.0.2+13.10.20131016.1-0ubuntu3) UNRELEASED; urgency=medium
+
+  * Version bump 
+
+ -- Thomas Voß <thomas.voss@canonical.com>  Mon, 13 Jan 2014 16:18:15 +0100
+
 location-service (0.0.2+13.10.20131016.1-0ubuntu2) trusty; urgency=low
 
   * No change rebuild for Boost 1.54 transition.
