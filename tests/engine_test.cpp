@@ -19,8 +19,6 @@
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_selection_policy.h>
 
-#include <com/ubuntu/location/connectivity/manager.h>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -168,18 +166,4 @@ TEST(Engine, switching_the_engine_off_results_in_updates_being_stopped)
     EXPECT_CALL(*provider, stop_heading_updates()).Times(1);
 
     engine.configuration.engine_state = location::Engine::Status::off;
-}
-
-TEST(ConnectivityManager, default_implementation_available)
-{
-    auto manager = location::connectivity::platform_default_manager();
-
-    for (const auto& cell : manager->visible_radio_cells().get())
-            std::cout << cell << std::endl;
-
-    EXPECT_NO_THROW(
-    {
-        for (const auto& wifi: manager->visible_wireless_networks().get())
-            std::cout << wifi << std::endl;
-    });
 }

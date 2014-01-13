@@ -15,36 +15,28 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include <com/ubuntu/location/criteria.h>
+
+#include <com/ubuntu/location/connectivity/manager.h>
 
 #include <gtest/gtest.h>
 
 namespace location = com::ubuntu::location;
 
-TEST(Criteria, SatisfiesReturnsFalseForNonSatisfyingCriteria)
+TEST(ConnectivityManager, default_implementation_is_queryable_for_wifis_and_radio_cells)
 {
-    location::Criteria c1, c2;
-    c2.requires.altitude = true;
+    try
+    {
+        auto manager = location::connectivity::platform_default_manager();
 
-    EXPECT_FALSE(c1.satisfies(c2));
-}
+        for (const auto& cell : manager->visible_radio_cells().get())
+            std::cout << cell << std::endl;
 
-TEST(Criteria, AddedUpCriteriaSatisfiesAllIndividualCriteria)
-{
-    location::Criteria c1, c2, c3;
-
-    c2.requires.altitude = true;
-    c2.requires.velocity = true;
-
-    c3.accuracy.horizontal = 20 * location::units::Meters;
-
-    // We make sure that the trivial case is not true.
-    EXPECT_FALSE(c1.satisfies(c2));
-    EXPECT_FALSE(c1.satisfies(c3));
-
-    auto added_up_criteria = c1 + c2 + c3;
-
-    // EXPECT_TRUE(added_up_criteria.satisfies(c1));
-    // EXPECT_TRUE(added_up_criteria.satisfies(c2));
-    // EXPECT_TRUE(added_up_criteria.satisfies(c3));
+        EXPECT_NO_THROW(
+        {
+            for (const auto& wifi: manager->visible_wireless_networks().get())
+                std::cout << wifi << std::endl;
+        });
+    } catch(...)
+    {
+    }
 }
