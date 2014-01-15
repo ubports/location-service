@@ -28,14 +28,60 @@
 #include <core/dbus/resolver.h>
 #include <core/dbus/asio/executor.h>
 
+#include <system_error>
 #include <thread>
+
+#include <signal.h>
+#include <sys/signalfd.h>
 
 namespace location = com::ubuntu::location;
 namespace dbus = core::dbus;
 
+namespace core
+{
+struct SigTermCatcher
+{
+    inline SigTermCatcher()
+    {
+        sigemptyset(&signal_mask);
+
+        if (-1 == sigaddset(&signal_mask, SIGTERM))
+            throw std::system_error(errno, std::system_category());
+
+        if (-1 == sigprocmask(SIG_BLOCK, &signal_mask, NULL))
+            throw std::system_error(errno, std::system_category());
+
+        if (-1 == (signal_fd = signalfd(-1, &signal_mask, 0)))
+            throw std::system_error(errno, std::system_category());
+    }
+
+    inline ~SigTermCatcher()
+    {
+        ::close(signal_fd);
+    }
+
+    inline void wait_for_signal()
+    {
+        signalfd_siginfo siginfo;
+        if (-1 == ::read(signal_fd, &siginfo, sizeof(siginfo)))
+            throw std::system_error(errno, std::system_category());
+    }
+
+    sigset_t signal_mask;
+    int signal_fd = -1;
+};
+}
+
 namespace
 {
 enum class Command
+{
+    unknown,
+    get,
+    set
+};
+
+enum class Property
 {
     unknown,
     is_online,
@@ -44,24 +90,25 @@ enum class Command
     visible_space_vehicles
 };
 
-const std::map<std::string, Command> known_commands =
+const std::map<std::string, Property> known_properties =
 {
-    {"is_online", Command::is_online},
-    {"does_satellite_based_positioning", Command::does_satellite_based_positioning},
-    {"does_report_wifi_and_cell_ids", Command::does_report_wifi_and_cell_ids},
-    {"visible_space_vehicles", Command::visible_space_vehicles}
+    {"is_online", Property::is_online},
+    {"does_satellite_based_positioning", Property::does_satellite_based_positioning},
+    {"does_report_wifi_and_cell_ids", Property::does_report_wifi_and_cell_ids},
+    {"visible_space_vehicles", Property::visible_space_vehicles}
 };
 }
 
 int location::service::Daemon::main(int argc, const char** argv)
 {
+    core::SigTermCatcher sc;
+
     location::ProgramOptions options;
 
     options.add("help", "Produces this help message");
     options.add("testing", "Enables running the service without providers");
-    options.add_composed<std::vector<std::string>>(
-                                                      "provider",
-                                                      "The providers that should be added to the engine");
+    options.add_composed<std::vector<std::string>>("provider",
+                                                   "The providers that should be added to the engine");
 
     if (!options.parse_from_command_line_args(argc, argv))
         return EXIT_FAILURE;
@@ -157,6 +204,10 @@ int location::service::Daemon::main(int argc, const char** argv)
 
     std::thread t{[bus](){bus->run();}};
 
+    sc.wait_for_signal();
+
+    bus->stop();
+
     if (t.joinable())
         t.join();
 
@@ -168,16 +219,21 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
     location::ProgramOptions options;
 
     options.add("help", "Produces this help message");
-    options.add("command",
-                "Command to execute against a running service, known commands are:\n"
-                "   is_online\n"
-                "   does_satellite_based_positioning\n"
-                "   does_report_wifi_and_cell_ids\n"
-                "   visible_space_vehicles",
+    options.add("property",
+                "Property to set/get from a running service, known properties are:\n"
+                "   is_online [get/set]\n"
+                "   does_satellite_based_positioning [get/set]\n"
+                "   does_report_wifi_and_cell_ids [get/set]\n"
+                "   visible_space_vehicles [get]",
                 std::string("is_online"));
+    options.add<std::string>("set", "Adjust the value of the property.");
+    options.add("get", "Query the value of the property.");
 
     if (!options.parse_from_command_line_args(argc, argv))
+    {
+        options.print_help(std::cout);
         return EXIT_FAILURE;
+    }
 
     if (options.value_count_for_key("help") > 0)
     {
@@ -185,23 +241,39 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
         return EXIT_SUCCESS;
     }
 
-    if (options.value_count_for_key("command") == 0)
+    if (options.value_count_for_key("property") == 0)
     {
+        options.print_help(std::cout);
+        return EXIT_FAILURE;
+    }
+
+    if (options.value_count_for_key("get") > 0 && options.value_count_for_key("set") > 0)
+    {
+        options.print_help(std::cout);
+        return EXIT_FAILURE;
+    }
+
+    auto property = Property::unknown;
+
+    try
+    {
+        property = known_properties.at(options.value_for_key<std::string>("property"));
+    } catch(const std::runtime_error& e)
+    {
+        std::cout << "Unknown property, aborting now." << std::endl;
         options.print_help(std::cout);
         return EXIT_FAILURE;
     }
 
     auto command = Command::unknown;
 
-    try
-    {
-        command = known_commands.at(options.value_for_key<std::string>("command"));
-    } catch(const std::runtime_error& e)
-    {
-        std::cout << "Unknown command, aborting now." << std::endl;
-        options.print_help(std::cout);
-        return EXIT_FAILURE;
-    }
+    std::cout << "get: " << options.value_count_for_key("get") << ", "
+              << "set: " << options.value_count_for_key("set") << std::endl;
+
+    if (options.value_count_for_key("get") > 0)
+        command = Command::get;
+    else if (options.value_count_for_key("set") > 0)
+        command = Command::set;
 
     dbus::Bus::Ptr bus
     {
@@ -211,32 +283,118 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
     auto location_service =
             dbus::resolve_service_on_bus<location::service::Interface, location::service::Stub>(bus);
 
-    switch(command)
+    switch (property)
     {
-    case Command::is_online:
-        std::cout << std::boolalpha << "Location service is "
-                  << (location_service->is_online() ? "online" : "offline") << std::endl;
+    case Property::is_online:
+        switch (command)
+        {
+        case Command::get:
+            std::cout << std::boolalpha << "Location service is "
+                      << (location_service->is_online() ? "online" : "offline") << std::endl;
+            break;
+        case Command::set:
+        {
+            auto set_value = options.value_for_key<std::string>("set");
+
+            std::stringstream ss(set_value);
+            bool flag = location_service->is_online();
+            ss >> std::boolalpha >> flag;
+
+            std::cout << "Adjusting is_online property to value: " << set_value << " -> ";
+
+            location_service->is_online() = flag;
+
+            if (location_service->is_online() != flag)
+            {
+                std::cout << "failed" << std::endl;
+                return EXIT_FAILURE;
+            }
+            std::cout << "succeeded" << std::endl;
+            break;
+        }
+        case Command::unknown: break;
+        }
         break;
-    case Command::does_report_wifi_and_cell_ids:
-        std::cout << std::boolalpha << "Location service "
-                  << (location_service->does_report_cell_and_wifi_ids() ? "does" : "does not")
-                  << " report cell and wifi ids." << std::endl;
+    case Property::does_report_wifi_and_cell_ids:
+        switch (command)
+        {
+        case Command::get:
+            std::cout << std::boolalpha << "Location service "
+                      << (location_service->does_report_cell_and_wifi_ids() ? "does" : "does not")
+                      << " report cell and wifi ids." << std::endl;
+            break;
+        case Command::set:
+        {
+            auto set_value = options.value_for_key<std::string>("set");
+            std::stringstream ss(set_value);
+            bool flag = location_service->does_report_cell_and_wifi_ids();
+            ss >> std::boolalpha >> flag;
+
+            std::cout << "Adjusting does_report_cell_and_wifi_ids property to value: "
+                      << std::boolalpha << flag << " -> ";
+            location_service->does_report_cell_and_wifi_ids() = flag;
+            if (location_service->does_report_cell_and_wifi_ids() != flag)
+            {
+                std::cout << "failed" << std::endl;
+                return EXIT_FAILURE;
+            }
+            std::cout << "succeeded" << std::endl;
+            break;
+        }
+        case Command::unknown: break;
+        }
         break;
-    case Command::does_satellite_based_positioning:
-        std::cout << std::boolalpha << "Location service "
-                  << (location_service->does_satellite_based_positioning() ? "does" : "does not")
-                  << " satellite based positioning." << std::endl;
+    case Property::does_satellite_based_positioning:
+        switch (command)
+        {
+        case Command::get:
+            std::cout << std::boolalpha << "Location service "
+                      << (location_service->does_satellite_based_positioning() ? "does" : "does not")
+                      << " satellite based positioning." << std::endl;
+            break;
+        case Command::set:
+        {
+            auto set_value = options.value_for_key<std::string>("set");
+            std::stringstream ss(set_value);
+            bool flag = location_service->does_satellite_based_positioning();
+            ss >> std::boolalpha >> flag;
+
+            std::cout << "Adjusting does_report_cell_and_wifi_ids property to value: "
+                      << std::boolalpha << flag << " -> ";
+            location_service->does_satellite_based_positioning() = flag;
+            if (location_service->does_satellite_based_positioning() != flag)
+            {
+                std::cout << "failed" << std::endl;
+                return EXIT_FAILURE;
+            }
+            std::cout << "succeeded" << std::endl;
+            break;
+        }
+        case Command::unknown: break;
+        }
         break;
-    case Command::visible_space_vehicles:
+    case Property::visible_space_vehicles:
     {
-        auto svs = location_service->visible_space_vehicles().get();
-        std::cout << "Visible space vehicles:" << std::endl;
-        for (const auto& sv : svs)
-            std::cout << "\t" << sv.second << std::endl;
+        switch (command)
+        {
+        case Command::get:
+        {
+            auto svs = location_service->visible_space_vehicles().get();
+            std::cout << "Visible space vehicles:" << std::endl;
+            for (const auto& sv : svs)
+                std::cout << "\t" << sv.second << std::endl;
+            break;
+        }
+        case Command::set:
+            std::cout << "Property visible_space_vehicles is not set-able, aborting now." << std::endl;
+            options.print_help(std::cout);
+            return EXIT_FAILURE;
+        case Command::unknown: break;
+        }
         break;
     }
-    case Command::unknown:
-        std::cout << "Unknown command, aborting now." << std::endl;
+    case Property::unknown:
+        std::cout << "Unknown property, aborting now." << std::endl;
         options.print_help(std::cout);
         return EXIT_FAILURE;
     }

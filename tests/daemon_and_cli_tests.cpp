@@ -61,12 +61,47 @@ std::function<core::posix::exit::Status ()> querying_cli_for_property(const std:
             "Cli",
             "--bus=session",
             nullptr,
+            "--get",
             nullptr
         };
 
-        argv[2] = property.c_str();
+        auto arg = std::string("--property=") + property;
+        argv[2] = arg.c_str();
 
-        auto result = location::service::Daemon::Cli::main(3, argv);
+        auto result = location::service::Daemon::Cli::main(4, argv);
+
+        EXPECT_EQ(EXIT_SUCCESS, result);
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
+    };
+}
+
+template<typename T>
+std::function<core::posix::exit::Status ()> adjusting_cli_for_property(const std::string& property, const T& value)
+{
+    return [property, value]()
+    {
+        // We need to wait some time to make sure that the service is up and running
+        timespec ts = { 0, 500 * 1000 * 1000 };
+        ::nanosleep(&ts, nullptr);
+
+        char const* argv[] =
+        {
+            "Cli",
+            "--bus=session",
+            nullptr,
+            nullptr,
+            nullptr
+        };
+
+        auto property_arg = std::string("--property=") + property;
+        argv[2] = property_arg.c_str();
+
+        std::stringstream ss; ss << "--set=" << std::boolalpha << value;
+        auto set_arg = ss.str();
+        argv[3] = set_arg.c_str();
+
+        auto result = location::service::Daemon::Cli::main(4, argv);
 
         EXPECT_EQ(EXIT_SUCCESS, result);
 
@@ -77,18 +112,34 @@ std::function<core::posix::exit::Status ()> querying_cli_for_property(const std:
 
 TEST(DaemonAndCli, QueryingIsOnlinePropertyWorks)
 {
-    EXPECT_NO_FATAL_FAILURE(
-                core::testing::fork_and_run(
-                    testing_daemon,
-                    querying_cli_for_property("is_online")));
+    EXPECT_EQ(core::testing::ForkAndRunResult::empty,
+              core::testing::fork_and_run(
+                  testing_daemon,
+                  querying_cli_for_property("is_online")));
+}
+
+TEST(DaemonAndCli, AdjustingIsOnlinePropertyWorks)
+{
+    EXPECT_EQ(core::testing::ForkAndRunResult::empty,
+              core::testing::fork_and_run(
+                  testing_daemon,
+                  adjusting_cli_for_property("is_online", false)));
 }
 
 TEST(DaemonAndCli, QueryingDoesSatelliteBasedPositionPropertyWorks)
 {
-    EXPECT_NO_FATAL_FAILURE(
-                core::testing::fork_and_run(
-                    testing_daemon,
-                    querying_cli_for_property("does_satellite_based_positioning")));
+    EXPECT_EQ(core::testing::ForkAndRunResult::empty,
+              core::testing::fork_and_run(
+                  testing_daemon,
+                  querying_cli_for_property("does_satellite_based_positioning")));
+}
+
+TEST(DaemonAndCli, AdjustingDoesSatelliteBasedPositionPropertyWorks)
+{
+    EXPECT_EQ(core::testing::ForkAndRunResult::empty,
+              core::testing::fork_and_run(
+                  testing_daemon,
+                  adjusting_cli_for_property("does_satellite_based_positioning", false)));
 }
 
 TEST(DaemonAndCli, QueryingDoesReportWifiAndCellIdsPropertyWorks)
@@ -99,10 +150,26 @@ TEST(DaemonAndCli, QueryingDoesReportWifiAndCellIdsPropertyWorks)
                     querying_cli_for_property("does_report_wifi_and_cell_ids")));
 }
 
-TEST(DaemonAndCli, QueryingVisibleSpaceVehiclesPropertyWorks)
+TEST(DaemonAndCli, AdjustingDoesReportWifiAndCellIdsPropertyWorks)
 {
     EXPECT_NO_FATAL_FAILURE(
                 core::testing::fork_and_run(
                     testing_daemon,
-                    querying_cli_for_property("visible_space_vehicles")));
+                    adjusting_cli_for_property("does_report_wifi_and_cell_ids", true)));
+}
+
+TEST(DaemonAndCli, QueryingVisibleSpaceVehiclesPropertyWorks)
+{
+    EXPECT_EQ(core::testing::ForkAndRunResult::empty,
+              core::testing::fork_and_run(
+                  testing_daemon,
+                  querying_cli_for_property("visible_space_vehicles")));
+}
+
+TEST(DaemonAndCli, AdjustingVisibleSpaceVehiclesPropertyDoesNotWork)
+{
+    EXPECT_EQ(core::testing::ForkAndRunResult::client_failed,
+              core::testing::fork_and_run(
+                  testing_daemon,
+                  adjusting_cli_for_property("visible_space_vehicles", 0)));
 }
