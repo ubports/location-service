@@ -267,9 +267,6 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
 
     auto command = Command::unknown;
 
-    std::cout << "get: " << options.value_count_for_key("get") << ", "
-              << "set: " << options.value_count_for_key("set") << std::endl;
-
     if (options.value_count_for_key("get") > 0)
         command = Command::get;
     else if (options.value_count_for_key("set") > 0)
@@ -359,7 +356,7 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
             bool flag = location_service->does_satellite_based_positioning();
             ss >> std::boolalpha >> flag;
 
-            std::cout << "Adjusting does_report_cell_and_wifi_ids property to value: "
+            std::cout << "Adjusting does_satellite_based_positioning property to value: "
                       << std::boolalpha << flag << " -> ";
             location_service->does_satellite_based_positioning() = flag;
             if (location_service->does_satellite_based_positioning() != flag)

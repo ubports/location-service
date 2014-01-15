@@ -104,6 +104,8 @@ std::function<core::posix::exit::Status ()> adjusting_cli_for_property(const std
         auto result = location::service::Daemon::Cli::main(4, argv);
 
         EXPECT_EQ(EXIT_SUCCESS, result);
+        EXPECT_EQ(core::posix::exit::Status::success, querying_cli_for_property(property)());
+
 
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
