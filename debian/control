@@ -90,14 +90,14 @@ Description: location service aggregating position/velocity/heading
  .
  Contains example service and client.
 
-#Package: ubuntu-location-service-doc
-#Section: doc
-#Architecture: all
-#Multi-Arch: foreign
-#Depends: ${misc:Depends},
-#         ${shlibs:Depends},
-#Recommends: ubuntu-location-service-examples,
-#Description: location service aggregating position/velocity/heading
-# updates and exporting them over dbus.
-# .
-# Contains documentation for service and client.
+Package: ubuntu-location-service-doc
+Section: doc
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Recommends: ubuntu-location-service-examples,
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains documentation for service and client.
