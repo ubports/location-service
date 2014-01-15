@@ -53,7 +53,7 @@ std::function<core::posix::exit::Status ()> querying_cli_for_property(const std:
     return [property]()
     {
         // We need to wait some time to make sure that the service is up and running
-        timespec ts = { 0, 500 * 1000 * 1000 };
+        timespec ts = { 1, 0 };
         ::nanosleep(&ts, nullptr);
 
         char const* argv[] =
@@ -82,7 +82,7 @@ std::function<core::posix::exit::Status ()> adjusting_cli_for_property(const std
     return [property, value]()
     {
         // We need to wait some time to make sure that the service is up and running
-        timespec ts = { 0, 500 * 1000 * 1000 };
+        timespec ts = { 1, 0 };
         ::nanosleep(&ts, nullptr);
 
         char const* argv[] =

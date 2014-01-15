@@ -1,4 +1,5 @@
 #include <com/ubuntu/location/service/session/implementation.h>
+#include <com/ubuntu/location/logging.h>
 
 #include <functional>
 #include <memory>
@@ -25,9 +26,9 @@ struct culss::Implementation::Private
         {
         }
 
-        core::Connection position_updates;
-        core::Connection velocity_updates;
-        core::Connection heading_updates;
+        core::ScopedConnection position_updates;
+        core::ScopedConnection velocity_updates;
+        core::ScopedConnection heading_updates;
     } connections;
 };
 
@@ -56,6 +57,30 @@ culss::Implementation::Implementation(const cul::Provider::Ptr& provider)
                 }
             })
 {
+    updates().position_status.changed().connect([this](const Interface::Updates::Status& status)
+    {
+        switch(status)
+        {
+        case Interface::Updates::Status::enabled: start_position_updates(); break;
+        case Interface::Updates::Status::disabled: stop_position_updates(); break;
+        }
+    });
+    updates().velocity_status.changed().connect([this](const Interface::Updates::Status& status)
+    {
+        switch(status)
+        {
+        case Interface::Updates::Status::enabled: start_velocity_updates(); break;
+        case Interface::Updates::Status::disabled: stop_velocity_updates(); break;
+        }
+    });
+    updates().heading_status.changed().connect([this](const Interface::Updates::Status& status)
+    {
+        switch(status)
+        {
+        case Interface::Updates::Status::enabled: start_heading_updates(); break;
+        case Interface::Updates::Status::disabled: stop_heading_updates(); break;
+        }
+    });
 }
 
 culss::Implementation::~Implementation() noexcept

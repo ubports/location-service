@@ -12,6 +12,7 @@ struct LoggingInitializer
     LoggingInitializer()
     {
         google::InitGoogleLogging("com.ubuntu.location");
+        FLAGS_v = 10;
     }
 
     ~LoggingInitializer()

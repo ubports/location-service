@@ -65,7 +65,12 @@ std::ostream& cul::operator<<(std::ostream& out, const cul::Position& position)
     else
         out << "n/a";
     out << ", ";
-    out << "hor.acc.: " << position.accuracy.horizontal << ", ";
+    out << "hor.acc.: ";
+    if (position.accuracy.horizontal)
+        out << *position.accuracy.horizontal;
+    else
+        out << "n/a";
+    out << ", ";
     out << "ver.acc.: ";
     if (position.accuracy.vertical)
         out << *position.accuracy.vertical;

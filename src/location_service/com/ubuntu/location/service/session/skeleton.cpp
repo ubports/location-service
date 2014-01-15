@@ -16,6 +16,7 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 #include <com/ubuntu/location/service/session/skeleton.h>
+#include <com/ubuntu/location/logging.h>
 
 #include "interface_p.h"
 
@@ -63,6 +64,8 @@ culss::Skeleton::Skeleton(
 {
     d->object->install_method_handler<Interface::StartPositionUpdates>([this, bus](const dbus::Message::Ptr& msg)
     {
+        VLOG(1) << __PRETTY_FUNCTION__;
+
         try
         {
             d->instance->updates().position_status = culss::Interface::Updates::Status::enabled;
@@ -77,6 +80,8 @@ culss::Skeleton::Skeleton(
 
     d->object->install_method_handler<Interface::StopPositionUpdates>([this, bus](const dbus::Message::Ptr& msg)
     {
+        VLOG(1) << __PRETTY_FUNCTION__;
+
         d->instance->updates().position_status = culss::Interface::Updates::Status::disabled;
         auto reply = core::dbus::Message::make_method_return(msg);
         bus->send(reply);
@@ -84,6 +89,8 @@ culss::Skeleton::Skeleton(
 
     d->object->install_method_handler<Interface::StartVelocityUpdates>([this, bus](const dbus::Message::Ptr& msg)
     {
+        VLOG(1) << __PRETTY_FUNCTION__;
+
         try
         {
             d->instance->updates().velocity_status = culss::Interface::Updates::Status::enabled;
@@ -98,6 +105,8 @@ culss::Skeleton::Skeleton(
 
     d->object->install_method_handler<Interface::StopVelocityUpdates>([this, bus](const dbus::Message::Ptr& msg)
     {
+        VLOG(1) << __PRETTY_FUNCTION__;
+
         d->instance->updates().velocity_status = culss::Interface::Updates::Status::disabled;
         auto reply = core::dbus::Message::make_method_return(msg);
         bus->send(reply);
@@ -105,6 +114,8 @@ culss::Skeleton::Skeleton(
 
     d->object->install_method_handler<Interface::StartHeadingUpdates>([this, bus](const dbus::Message::Ptr& msg)
     {
+        VLOG(1) << __PRETTY_FUNCTION__;
+
         try
         {
             d->instance->updates().heading_status = culss::Interface::Updates::Status::enabled;
@@ -119,6 +130,8 @@ culss::Skeleton::Skeleton(
 
     d->object->install_method_handler<Interface::StopHeadingUpdates>([this, bus](const dbus::Message::Ptr& msg)
     {
+        VLOG(1) << __PRETTY_FUNCTION__;
+
         d->instance->updates().heading_status = culss::Interface::Updates::Status::disabled;
         auto reply = core::dbus::Message::make_method_return(msg);
         bus->send(reply);
@@ -126,6 +139,8 @@ culss::Skeleton::Skeleton(
 
     instance->updates().position.changed().connect([this](const cul::Update<cul::Position>& position)
     {
+        VLOG(1) << __PRETTY_FUNCTION__;
+
         try
         {
             d->remote.session->invoke_method_synchronously<culs::session::Interface::UpdatePosition, void>(position);
@@ -139,6 +154,8 @@ culss::Skeleton::Skeleton(
 
     instance->updates().heading.changed().connect([this](const cul::Update<cul::Heading>& heading)
     {
+        VLOG(1) << __PRETTY_FUNCTION__;
+
         try
         {
             d->remote.session->invoke_method_synchronously<culs::session::Interface::UpdateHeading, void>(heading);
@@ -152,6 +169,8 @@ culss::Skeleton::Skeleton(
 
     instance->updates().velocity.changed().connect([this](const cul::Update<cul::Velocity>& velocity)
     {
+        VLOG(1) << __PRETTY_FUNCTION__;
+
         try
         {
             d->remote.session->invoke_method_synchronously<culs::session::Interface::UpdateVelocity, void>(velocity);

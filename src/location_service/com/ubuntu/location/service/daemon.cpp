@@ -50,25 +50,15 @@ struct SigTermCatcher
 
         if (-1 == sigprocmask(SIG_BLOCK, &signal_mask, NULL))
             throw std::system_error(errno, std::system_category());
-
-        if (-1 == (signal_fd = signalfd(-1, &signal_mask, 0)))
-            throw std::system_error(errno, std::system_category());
-    }
-
-    inline ~SigTermCatcher()
-    {
-        ::close(signal_fd);
     }
 
     inline void wait_for_signal()
     {
-        signalfd_siginfo siginfo;
-        if (-1 == ::read(signal_fd, &siginfo, sizeof(siginfo)))
-            throw std::system_error(errno, std::system_category());
+        int signal = -1;
+        ::sigwait(&signal_mask, &signal);
     }
 
     sigset_t signal_mask;
-    int signal_fd = -1;
 };
 }
 
