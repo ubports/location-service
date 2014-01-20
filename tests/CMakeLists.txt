@@ -18,10 +18,10 @@ set (GTEST_INCLUDE_DIR "${GMOCK_SOURCE_DIR}/gtest/include" CACHE PATH "gtest sou
 
 add_subdirectory(${GMOCK_SOURCE_DIR} "${CMAKE_CURRENT_BINARY_DIR}/gmock")
 
-macro(LOCATION_SERVICE_ADD_TEST test_name)
+macro(LOCATION_SERVICE_ADD_TEST test_name src)
   add_executable(
     ${test_name}
-    ${ARGN})
+    ${src})
 
   target_link_libraries(
     ${test_name}
@@ -33,6 +33,8 @@ macro(LOCATION_SERVICE_ADD_TEST test_name)
     ${CMAKE_THREAD_LIBS_INIT}
     ${PROCESS_CPP_LIBRARIES}
 
+    ${ARGN}
+
     gmock
 
     gtest
@@ -41,9 +43,9 @@ macro(LOCATION_SERVICE_ADD_TEST test_name)
   add_test(${test_name} ${test_name})
 
   if (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
-    add_test(${test_name} ${DBUS_TEST_RUNNER_EXECUTABLE} --task=${CMAKE_CURRENT_BINARY_DIR}/${test_name})
+    add_test(${test_name} ${DBUS_TEST_RUNNER_EXECUTABLE} --task=${CMAKE_CURRENT_BINARY_DIR}/${test_name} --parameter=--gtest_filter=*-*requires_hardware)
   else (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
-    add_test(${test_name} ${CMAKE_CURRENT_BINARY_DIR}/${test_name})
+    add_test(${test_name} ${CMAKE_CURRENT_BINARY_DIR}/${test_name} --gtest_filter=*-*requires_hardware)
   endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
 
   install(
@@ -73,27 +75,10 @@ LOCATION_SERVICE_ADD_TEST(provider_test provider_test.cpp)
 LOCATION_SERVICE_ADD_TEST(wgs84_test wgs84_test.cpp)
 
 # Provider-specific test-cases go here.
-if (LOCATION_SERVICE_ENABLE_GPS_PROVIDERS)
-  add_executable(gps_provider_test gps_provider_test.cpp)
-  target_link_libraries(
-    gps_provider_test
-
-    ubuntu-location-service
-
-    ${CMAKE_THREAD_LIBS_INIT}
-    ${Boost_LIBRARIES}
-    ${PROCESS_CPP_LIBRARIES}
-
-    ubuntu_application_api
-    gtest
-    gtest_main
-  )
-  install(
-    TARGETS controller_test
-    DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
-  )
-  add_test(gps_provider_test gps_provider_test)
-endif(LOCATION_SERVICE_ENABLE_GPS_PROVIDERS)
+if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
+  include_directories(${CMAKE_SOURCE_DIR}/src/location_service)
+  LOCATION_SERVICE_ADD_TEST(gps_provider_test gps_provider_test.cpp ubuntu_application_api)
+endif(LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
 
 if (LOCATION_SERVICE_ENABLE_GEOCLUE_PROVIDERS)
   add_executable(geoclue_provider_test geoclue_provider_test.cpp)

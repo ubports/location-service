@@ -13,7 +13,14 @@ if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
   if (UBUNTU_HARDWARE_GPS_H)
     message(STATUS "Enabling GPS location provider")
 
-    add_library(gps provider.cpp)
+    add_library(
+        gps
+
+        hardware_abstraction_layer.h
+        hardware_abstraction_layer.cpp
+
+        provider.h
+        provider.cpp)
 
     target_link_libraries(gps ubuntu_platform_hardware_api.so)
   

@@ -42,7 +42,7 @@ static FactoryInjector geoclue_injector
 #endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GEOCLUE
 
 #if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GPS)
-#include <com/ubuntu/location/providers/gps/provider.h>
+#include "gps/provider.h"
 static FactoryInjector gps_injector
 {
     "gps::Provider", 

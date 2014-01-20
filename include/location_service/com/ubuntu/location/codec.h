@@ -44,6 +44,7 @@ struct TypeMapper<com::ubuntu::location::units::Quantity<T>>
     {
         return ArgumentType::floating_point;
     }
+
     constexpr static bool is_basic_type()
     {
         return true;
@@ -188,12 +189,13 @@ struct TypeMapper<com::ubuntu::location::SpaceVehicle>
         return true;
     }
 
-    static std::string signature()
+    inline static std::string signature()
     {
-        static const std::string s =
+        std::string s =
             DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
                 helper::TypeMapper<com::ubuntu::location::SpaceVehicle::Key>::signature() +
                 helper::TypeMapper<float>::signature() +
+                helper::TypeMapper<bool>::signature() +
                 helper::TypeMapper<bool>::signature() +
                 helper::TypeMapper<bool>::signature() +
                 helper::TypeMapper<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::signature() +
@@ -223,7 +225,7 @@ struct Codec<com::ubuntu::location::SpaceVehicle::Key>
 template<>
 struct Codec<com::ubuntu::location::SpaceVehicle>
 {
-    static void encode_argument(Message::Writer& writer, const com::ubuntu::location::SpaceVehicle& in)
+    inline static void encode_argument(Message::Writer& writer, const com::ubuntu::location::SpaceVehicle& in)
     {
         auto sub = writer.open_structure();
 
@@ -231,13 +233,14 @@ struct Codec<com::ubuntu::location::SpaceVehicle>
         sub.push_floating_point(in.snr);
         sub.push_boolean(in.has_almanac_data);
         sub.push_boolean(in.has_ephimeris_data);
+        sub.push_boolean(in.used_in_fix);
         Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::encode_argument(sub, in.azimuth);
         Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::encode_argument(sub, in.elevation);
 
         writer.close_structure(std::move(sub));
     }
 
-    static void decode_argument(Message::Reader& reader, com::ubuntu::location::SpaceVehicle& in)
+    inline static void decode_argument(Message::Reader& reader, com::ubuntu::location::SpaceVehicle& in)
     {
         auto sub = reader.pop_structure();
 
@@ -245,6 +248,7 @@ struct Codec<com::ubuntu::location::SpaceVehicle>
         in.snr = sub.pop_floating_point();
         in.has_almanac_data = sub.pop_boolean();
         in.has_ephimeris_data = sub.pop_boolean();
+        in.used_in_fix = sub.pop_boolean();
         Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::decode_argument(sub, in.azimuth);
         Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::decode_argument(sub, in.elevation);
     }
@@ -278,24 +282,20 @@ struct TypeMapper<std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu
 template<>
 struct Codec<std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle>>
 {
-    static void encode_argument(Message::Writer& writer, const std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle>& arg)
+    inline static void encode_argument(Message::Writer& writer, const std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle>& arg)
     {
-        auto sub = writer.open_array(
-                    types::Signature(
-                        helper::TypeMapper<
-                            std::map<
-                                com::ubuntu::location::SpaceVehicle::Key,
-                                com::ubuntu::location::SpaceVehicle
-                            >
-                        >::signature()));
+        types::Signature signature(helper::TypeMapper<com::ubuntu::location::SpaceVehicle>::signature());
+        auto sub = writer.open_array(signature);
+
         for(const auto& element : arg)
         {
             Codec<com::ubuntu::location::SpaceVehicle>::encode_argument(sub, element.second);
         }
+
         writer.close_array(std::move(sub));
     }
 
-    static void decode_argument(Message::Reader& reader, std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle>& out)
+    inline static void decode_argument(Message::Reader& reader, std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle>& out)
     {
         auto sub = reader.pop_array();
         while (sub.type() != ArgumentType::invalid)

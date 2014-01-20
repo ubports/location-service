@@ -18,6 +18,11 @@
 
 #include <com/ubuntu/location/service/daemon.h>
 
+#include <com/ubuntu/location/space_vehicle.h>
+
+#include <core/dbus/dbus.h>
+#include <core/dbus/message.h>
+
 #include <core/testing/cross_process_sync.h>
 #include <core/testing/fork_and_run.h>
 

@@ -72,6 +72,7 @@ culs::Skeleton::Skeleton(
     : dbus::Skeleton<culs::Interface>(connection),
       d{new Private{this, connection, permission_manager}}
 {
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 }
 
 culs::Skeleton::~Skeleton() noexcept

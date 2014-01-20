@@ -22,7 +22,7 @@
 
 namespace location = com::ubuntu::location;
 
-TEST(ConnectivityManager, default_implementation_is_queryable_for_wifis_and_radio_cells)
+TEST(ConnectivityManager, default_implementation_is_queryable_for_wifis_and_radio_cells_requires_hardware)
 {
     try
     {

@@ -112,7 +112,7 @@ TEST(Controller, controller_starts_and_stops_updates_on_provider)
     EXPECT_FALSE(controller->are_heading_updates_running());
 }
 
-TEST(Controller, controller_starts_and_stops_updates_on_provider_only_once)
+TEST(Controller, controller_starts_and_stops_updates_on_provider_only_once_requires_hardware)
 {
     using namespace ::testing;
 

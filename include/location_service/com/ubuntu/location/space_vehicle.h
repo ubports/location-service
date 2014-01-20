@@ -71,6 +71,7 @@ struct SpaceVehicle
         return key == rhs.key &&
                 has_almanac_data == rhs.has_almanac_data &&
                 has_ephimeris_data == rhs.has_ephimeris_data &&
+                used_in_fix == rhs.used_in_fix &&
                 units::roughly_equals(azimuth, rhs.azimuth) &&
                 units::roughly_equals(elevation, rhs.elevation);
     }
@@ -84,6 +85,7 @@ struct SpaceVehicle
     float snr = -std::numeric_limits<float>::max(); ///< Signal to noise ratio;
     bool has_almanac_data = false; ///< Almanac data available for this vehicle.
     bool has_ephimeris_data = false; ///< Ephimeris data is available for this vehicle.
+    bool used_in_fix = false;  ///< This vehicle has been used to obtain a fix.
     units::Quantity<units::PlaneAngle> azimuth; ///< Azimuth of SV.
     units::Quantity<units::PlaneAngle> elevation; ///< Elevation of SV.
 };
@@ -103,9 +105,11 @@ inline std::ostream& operator<<(std::ostream& out, const SpaceVehicle& sv)
     };
     return out << "("
                << "type: " << lut.at(sv.key.type) << ", "
+               << "prn: " << sv.key.id << ", "
                << "snr: " << sv.snr << ", "
                << "has_almanac_data: " << sv.has_almanac_data << ", "
                << "has_ephimeris_data: " << sv.has_ephimeris_data << ", "
+               << "used_in_fix: " << sv.used_in_fix << ", "
                << "azimuth: " << sv.azimuth << ", "
                << "elevation: " << sv.elevation
                << ")";

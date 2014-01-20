@@ -21,6 +21,8 @@
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_factory.h>
 
+#include "hardware_abstraction_layer.h"
+
 namespace com
 {
 namespace ubuntu
@@ -31,27 +33,31 @@ namespace providers
 {
 namespace gps
 {
+
 class Provider : public com::ubuntu::location::Provider
 {
   public:
+    // For integration with the Provider factory.
     static std::string class_name();
     static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
 
-    Provider();
+    Provider(const std::shared_ptr<HardwareAbstractionLayer>& hal = HardwareAbstractionLayer::create_default_instance());
     Provider(const Provider&) = delete;
     Provider& operator=(const Provider&) = delete;
     ~Provider() noexcept;
 
-    virtual bool matches_criteria(const Criteria&);
+    bool matches_criteria(const Criteria&);
 
-    virtual void start_position_updates();
-    virtual void stop_position_updates();
+    void start_position_updates();
+    void stop_position_updates();
 
-    virtual void start_velocity_updates();
-    virtual void stop_velocity_updates();
+    void start_velocity_updates();
+    void stop_velocity_updates();
 
-    virtual void start_heading_updates();
-    virtual void stop_heading_updates();
+    void start_heading_updates();
+    void stop_heading_updates();
+
+    void on_reference_location_updated(const Update<Position>& position);
 
   private:
     struct Private;
