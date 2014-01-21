@@ -34,11 +34,9 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
 {
     struct SuplAssistant : public gps::HardwareAbstractionLayer::SuplAssistant
     {
-        struct
+        SuplAssistant(impl::HardwareAbstractionLayer& hal) : impl(hal)
         {
-            core::Property<gps::HardwareAbstractionLayer::SuplAssistant::Status> status;
-            core::Property<gps::HardwareAbstractionLayer::SuplAssistant::IpV4Address> server_ip;
-        } impl;
+        }
 
         const core::Property<Status>& status() const
         {
@@ -62,22 +60,43 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
 
         virtual void set_server(const std::string& host_name, std::uint16_t port)
         {
-            (void) host_name;
-            (void) port;
+            u_hardware_gps_agps_set_server_for_type(
+                        impl.hal.impl.gps_handle,
+                        U_HARDWARE_GPS_AGPS_TYPE_SUPL,
+                        host_name.c_str(),
+                        port);
         }
 
         void notify_data_connection_open_via_apn(const std::string& name)
         {
-            (void) name;
+            u_hardware_gps_agps_notify_connection_is_open(
+                        impl.hal.impl.gps_handle,
+                        name.c_str());
         }
 
         void notify_data_connection_closed()
         {
+            u_hardware_gps_agps_notify_connection_is_closed(
+                        impl.hal.impl.gps_handle);
         }
 
         void notify_data_connection_not_available()
         {
+            u_hardware_gps_agps_notify_connection_not_available(
+                        impl.hal.impl.gps_handle);
         }
+
+        struct Impl
+        {
+            Impl(impl::HardwareAbstractionLayer& hal) : hal(hal)
+            {
+            }
+
+            impl::HardwareAbstractionLayer& hal;
+            core::Property<gps::HardwareAbstractionLayer::SuplAssistant::Status> status;
+            core::Property<gps::HardwareAbstractionLayer::SuplAssistant::IpV4Address> server_ip;
+        } impl;
+
     };
 
     static void on_nmea_update(int64_t timestamp, const char *nmea, int length, void *context)
@@ -115,7 +134,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
                 << "flags=" << flags << " "
                 << "context=" << context;
 
-        /*auto thiz = static_cast<impl::HardwareAbstractionLayer*>(context);
+        auto thiz = static_cast<impl::HardwareAbstractionLayer*>(context);
 
         auto connectivity_manager = location::connectivity::platform_default_manager();
 
@@ -125,27 +144,33 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
 
             if (!visible_cells.empty())
             {
+                VLOG(1) << "We are considering " << visible_cells.size() << " radio cells.";
+
                 const auto& cell = visible_cells.front();
+                VLOG(1) << "\t" << cell;
+
                 UHardwareGpsAGpsRefLocation ref_loc;
-                switch (cell.type)
+                switch (cell.type())
                 {
-                case cul::connectivity::RadioCell::Type::gsm:
-                    ref_loc.type = AGPS_REF_LOCATION_TYPE_GSM_CELLID;
+                case location::connectivity::RadioCell::Type::gsm:
+                    ref_loc.type = U_HARDWARE_GPS_AGPS_REF_LOCATION_TYPE_GSM_CELLID;
                     ref_loc.u.cellID.mcc = cell.gsm().mobile_country_code.get();
                     ref_loc.u.cellID.mnc = cell.gsm().mobile_network_code.get();
                     ref_loc.u.cellID.lac = cell.gsm().location_area_code.get();
                     ref_loc.u.cellID.cid = cell.gsm().id.get();
-                    u_hardware_gps_agps_inject_reference_location(&ref_loc, sizeof(ref_loc));
+                    u_hardware_gps_agps_set_reference_location(
+                                thiz->impl.gps_handle,
+                                &ref_loc,
+                                sizeof(ref_loc));
                     break;
-                case cul::connectivity::RadioCell::Type::umts:
-                    ref_loc.type = ref_loc.type = AGPS_REF_LOCATION_TYPE_UMTS_CELLID;
-                    ref_loc.type = AGPS_REF_LOCATION_TYPE_GSM_CELLID;
+                case location::connectivity::RadioCell::Type::umts:
+                    ref_loc.type = U_HARDWARE_GPS_AGPS_REF_LOCATION_TYPE_UMTS_CELLID;
                     ref_loc.u.cellID.mcc = cell.umts().mobile_country_code.get();
                     ref_loc.u.cellID.mnc = cell.umts().mobile_network_code.get();
                     ref_loc.u.cellID.lac = cell.umts().location_area_code.get();
                     ref_loc.u.cellID.cid = cell.umts().id.get();
-                    u_hardware_gps_agps_inject_reference_location(
-                                thiz->d->gps_handle,
+                    u_hardware_gps_agps_set_reference_location(
+                                thiz->impl.gps_handle,
                                 &ref_loc,
                                 sizeof(ref_loc));
                     break;
@@ -154,7 +179,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
                     break;
                 }
             }
-        }*/
+        }
     }
 
     static void on_location_update(UHardwareGpsLocation* location, void* context)
@@ -491,7 +516,8 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         Impl(HardwareAbstractionLayer* parent)
             : capabilities(0),
               assistance_mode(gps::AssistanceMode::standalone),
-              position_mode(gps::PositionMode::periodic)
+              position_mode(gps::PositionMode::periodic),
+              supl_assistant(*parent)
         {
             ::memset(&gps_params, 0, sizeof(gps_params));
 

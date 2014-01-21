@@ -404,6 +404,8 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         // by the system.
     }
 
+    hal->supl_assistant().notify_data_connection_open_via_apn("dummy-apn");
+
     // We wire up our state to position updates from the hal.
     hal->position_updates().connect([&state](const location::Position& pos)
     {
@@ -413,10 +415,11 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
     for (unsigned int i = 0; i < trials; i++)
     {
         std::cout << "Executing trial " << i << " of " << trials << " trials" << std::endl;
+
         // We want to force a cold start per trial.
         hal->delete_all_aiding_data();
-
         state.reset();
+
         auto start = std::chrono::duration_cast<std::chrono::microseconds>(location::Clock::now().time_since_epoch());
         {
             hal->start_positioning();
