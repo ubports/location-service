@@ -24,6 +24,7 @@
 #include <core/dbus/service.h>
 #include <core/dbus/types/object_path.h>
 #include <core/dbus/types/struct.h>
+#include <core/dbus/types/variant.h>
 #include <core/dbus/types/stl/map.h>
 #include <core/dbus/types/stl/string.h>
 #include <core/dbus/types/stl/tuple.h>
@@ -110,7 +111,7 @@ struct Manager
                 }
 
                 typedef NetworkRegistration Interface;
-                typedef std::map<std::string, core::dbus::types::Variant<>> ValueType;
+                typedef std::map<std::string, core::dbus::types::Variant> ValueType;
 
                 static std::chrono::milliseconds default_timeout()
                 {
@@ -246,10 +247,9 @@ struct Manager
             {
                 try
                 {
-                    core::dbus::types::Any value = properties.at(Property::name()).get();
-                    typename Property::ValueType result; value.reader() >> result;
+                    return properties.at(Property::name())
+                            .template as<typename Property::ValueType>();
 
-                    return result;
                 } catch(...)
                 {
                 }
