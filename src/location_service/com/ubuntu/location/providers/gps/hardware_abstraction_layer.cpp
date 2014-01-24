@@ -60,30 +60,34 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
 
         virtual void set_server(const std::string& host_name, std::uint16_t port)
         {
-            u_hardware_gps_agps_set_server_for_type(
+            // TODO(tvoss): Reenable this once the platform api HAL changes land.
+            /*u_hardware_gps_agps_set_server_for_type(
                         impl.hal.impl.gps_handle,
                         U_HARDWARE_GPS_AGPS_TYPE_SUPL,
                         host_name.c_str(),
-                        port);
+                        port);*/
         }
 
         void notify_data_connection_open_via_apn(const std::string& name)
         {
-            u_hardware_gps_agps_notify_connection_is_open(
+            // TODO(tvoss): Reenable this once the platform api HAL changes land.
+            /*u_hardware_gps_agps_notify_connection_is_open(
                         impl.hal.impl.gps_handle,
-                        name.c_str());
+                        name.c_str());*/
         }
 
         void notify_data_connection_closed()
         {
-            u_hardware_gps_agps_notify_connection_is_closed(
-                        impl.hal.impl.gps_handle);
+            // TODO(tvoss): Reenable this once the platform api HAL changes land.
+            /*u_hardware_gps_agps_notify_connection_is_closed(
+                        impl.hal.impl.gps_handle);*/
         }
 
         void notify_data_connection_not_available()
         {
-            u_hardware_gps_agps_notify_connection_not_available(
-                        impl.hal.impl.gps_handle);
+            // TODO(tvoss): Reenable this once the platform api HAL changes land.
+            /*u_hardware_gps_agps_notify_connection_not_available(
+                        impl.hal.impl.gps_handle);*/
         }
 
         struct Impl
@@ -134,6 +138,8 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
                 << "flags=" << flags << " "
                 << "context=" << context;
 
+        // TODO(tvoss): Reenable this once the platform api HAL changes land.
+        /*
         auto thiz = static_cast<impl::HardwareAbstractionLayer*>(context);
 
         auto connectivity_manager = location::connectivity::platform_default_manager();
@@ -180,6 +186,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
                 }
             }
         }
+        */
     }
 
     static void on_location_update(UHardwareGpsLocation* location, void* context)
@@ -488,11 +495,12 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
     {
         // TODO(tvoss): We should expose the int return type of the underyling
         //  Android HAL to capture errors here.
-        u_hardware_gps_inject_location(impl.gps_handle,
+        // TODO(tvoss): Reenable this once the platform api HAL changes land.
+        /*u_hardware_gps_inject_location(impl.gps_handle,
                                        position.latitude.value.value(),
                                        position.longitude.value.value(),
                                        position.accuracy.horizontal ?
-                                           position.accuracy.horizontal->value() : 0);
+                                           position.accuracy.horizontal->value() : 0);*/
         return true;
     }
 
