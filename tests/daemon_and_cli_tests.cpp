@@ -172,11 +172,3 @@ TEST(DaemonAndCli, QueryingVisibleSpaceVehiclesPropertyWorks)
                   testing_daemon,
                   querying_cli_for_property("visible_space_vehicles")));
 }
-
-TEST(DaemonAndCli, AdjustingVisibleSpaceVehiclesPropertyDoesNotWork)
-{
-    EXPECT_EQ(core::testing::ForkAndRunResult::client_failed,
-              core::testing::fork_and_run(
-                  testing_daemon,
-                  adjusting_cli_for_property("visible_space_vehicles", 0)));
-}
