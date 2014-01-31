@@ -196,7 +196,7 @@ void culs::Skeleton::Private::handle_create_session_for_criteria(const core::dbu
 	auto session = parent->create_session_for_criteria(criteria);
 
     auto service = dbus::Service::use_service(parent->access_bus(), in->sender());
-	auto object = service->object_for_path(session->path());
+    auto object = service->object_for_path(session->path());
 
     {
         std::lock_guard<std::mutex> lg(guard);
@@ -216,13 +216,13 @@ void culs::Skeleton::Private::handle_create_session_for_criteria(const core::dbu
 
     } catch(const std::runtime_error& e)
     {
-	parent->access_bus()->send(
-	    dbus::Message::make_error(
-        in,
-		culs::Interface::Errors::CreatingSession::name(),
-        e.what()));
+    parent->access_bus()->send(
+        dbus::Message::make_error(
+            in,
+            culs::Interface::Errors::CreatingSession::name(),
+            e.what()));
 
-	LOG(ERROR) << "Error creating session: " << e.what();
+    LOG(ERROR) << "Error creating session: " << e.what();
     }
 }
 
