@@ -22,7 +22,7 @@
 #include "com/ubuntu/location/service/permission_manager.h"
 #include "com/ubuntu/location/service/session/interface.h"
 
-#include <org/freedesktop/dbus/skeleton.h>
+#include <core/dbus/skeleton.h>
 
 namespace com
 {
@@ -32,7 +32,7 @@ namespace location
 {
 namespace service
 {
-class Skeleton : public org::freedesktop::dbus::Skeleton<com::ubuntu::location::service::Interface>,
+class Skeleton : public core::dbus::Skeleton<com::ubuntu::location::service::Interface>,
                  public std::enable_shared_from_this<Skeleton>
 {
   public:

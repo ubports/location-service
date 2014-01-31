@@ -71,14 +71,15 @@ TEST(Position, MutatorsAdjustFieldFlags)
 
 #include "com/ubuntu/location/codec.h"
 
-#include "org/freedesktop/dbus/message.h"
+#include "core/dbus/message.h"
+#include "core/dbus/message_streaming_operators.h"
 
 TEST(Position, EncodingAndDecodingGivesSameResults)
 {
 
-    auto msg = org::freedesktop::dbus::Message::make_method_call(
+    auto msg = core::dbus::Message::make_method_call(
         "org.freedesktop.DBus",
-        "/org/freedesktop/DBus",
+        core::dbus::types::ObjectPath("/core/DBus"),
         "org.freedesktop.DBus",
         "ListNames");
 

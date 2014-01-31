@@ -17,8 +17,9 @@
  */
 #include "com/ubuntu/location/service/session/skeleton.h"
 
-#include <org/freedesktop/dbus/message.h>
-#include <org/freedesktop/dbus/skeleton.h>
+#include <core/dbus/message.h>
+#include <core/dbus/object.h>
+#include <core/dbus/skeleton.h>
 
 #include <functional>
 
@@ -26,18 +27,18 @@ namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 namespace culss = com::ubuntu::location::service::session;
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 struct culss::Skeleton::Private
 {
-    void handle_start_position_updates(DBusMessage* msg);
-    void handle_stop_position_updates(DBusMessage* msg);
+    void handle_start_position_updates(const core::dbus::Message::Ptr& msg);
+    void handle_stop_position_updates(const core::dbus::Message::Ptr& msg);
 
-    void handle_start_velocity_updates(DBusMessage* msg);
-    void handle_stop_velocity_updates(DBusMessage* msg);
+    void handle_start_velocity_updates(const core::dbus::Message::Ptr& msg);
+    void handle_stop_velocity_updates(const core::dbus::Message::Ptr& msg);
 
-    void handle_start_heading_updates(DBusMessage* msg);
-    void handle_stop_heading_updates(DBusMessage* msg);
+    void handle_start_heading_updates(const core::dbus::Message::Ptr& msg);
+    void handle_stop_heading_updates(const core::dbus::Message::Ptr& msg);
 
     Skeleton* parent;
     dbus::Bus::Ptr bus;
@@ -98,65 +99,69 @@ const dbus::types::ObjectPath& culss::Skeleton::path() const
     return d->session_path;
 }
 
-void culss::Skeleton::Private::handle_start_position_updates(DBusMessage* msg)
+void culss::Skeleton::Private::handle_start_position_updates(const core::dbus::Message::Ptr& msg)
 {
     try
     {
         parent->start_position_updates();
         auto reply = dbus::Message::make_method_return(msg);
-        bus->send(reply->get());
+        bus->send(reply);
     } catch(const std::runtime_error& e)
     {
-        auto error = org::freedesktop::dbus::Message::make_error(msg, Interface::Errors::ErrorStartingUpdate::name(), e.what());
-        bus->send(error->get());
+        auto error = core::dbus::Message::make_error(
+                    msg,
+                    Interface::Errors::ErrorStartingUpdate::name(),
+                    e.what());
+
+        bus->send(error);
     }
 }
 
-void culss::Skeleton::Private::handle_stop_position_updates(DBusMessage* msg)
+void culss::Skeleton::Private::handle_stop_position_updates(const core::dbus::Message::Ptr& msg)
 {
     parent->stop_position_updates();
-    auto reply = org::freedesktop::dbus::Message::make_method_return(msg);
-    bus->send(reply->get());
+    auto reply = core::dbus::Message::make_method_return(msg);
+    bus->send(reply);
 }
 
-void culss::Skeleton::Private::handle_start_velocity_updates(DBusMessage* msg)
+void culss::Skeleton::Private::handle_start_velocity_updates(const core::dbus::Message::Ptr& msg)
 {
     try
     {
         parent->start_velocity_updates();
-        auto reply = org::freedesktop::dbus::Message::make_method_return(msg);
-        bus->send(reply->get());
+        auto reply = core::dbus::Message::make_method_return(msg);
+        bus->send(reply);
     } catch(const std::runtime_error& e)
     {
-        auto error = org::freedesktop::dbus::Message::make_error(msg, Interface::Errors::ErrorStartingUpdate::name(), e.what());
-        bus->send(error->get());
+        auto error = core::dbus::Message::make_error(msg, Interface::Errors::ErrorStartingUpdate::name(), e.what());
+        bus->send(error);
     }
 }
 
-void culss::Skeleton::Private::handle_stop_velocity_updates(DBusMessage* msg)
+void culss::Skeleton::Private::handle_stop_velocity_updates(const core::dbus::Message::Ptr& msg)
 {
     parent->stop_velocity_updates();
-    auto reply = org::freedesktop::dbus::Message::make_method_return(msg);
-    bus->send(reply->get());
+    auto reply = core::dbus::Message::make_method_return(msg);
+    bus->send(reply);
 }
 
-void culss::Skeleton::Private::handle_start_heading_updates(DBusMessage* msg)
+void culss::Skeleton::Private::handle_start_heading_updates(const core::dbus::Message::Ptr& msg)
 {
     try
     {
         parent->start_heading_updates();
-        auto reply = org::freedesktop::dbus::Message::make_method_return(msg);
-        bus->send(reply->get());
+        auto reply = core::dbus::Message::make_method_return(msg);
+        bus->send(reply);
     } catch(const std::runtime_error& e)
     {
-        auto error = org::freedesktop::dbus::Message::make_error(msg, Interface::Errors::ErrorStartingUpdate::name(), e.what());
-        bus->send(error->get());
+        auto error = core::dbus::Message::make_error(msg, Interface::Errors::ErrorStartingUpdate::name(), e.what());
+        bus->send(error);
     }
 }
 
-void culss::Skeleton::Private::handle_stop_heading_updates(DBusMessage* msg)
+void culss::Skeleton::Private::handle_stop_heading_updates(const core::dbus::Message::Ptr& msg)
 {
     parent->stop_heading_updates();
-    auto reply = org::freedesktop::dbus::Message::make_method_return(msg);
-    bus->send(reply->get());
+    auto reply = core::dbus::Message::make_method_return(msg);
+    bus->send(reply);
 }

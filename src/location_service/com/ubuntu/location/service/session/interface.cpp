@@ -17,16 +17,16 @@
  */
 #include "com/ubuntu/location/service/session/interface.h"
 
-#include <org/freedesktop/dbus/codec.h>
-#include <org/freedesktop/dbus/service.h>
-#include <org/freedesktop/dbus/traits/service.h>
-#include <org/freedesktop/dbus/types/object_path.h>
+#include <core/dbus/codec.h>
+#include <core/dbus/service.h>
+#include <core/dbus/traits/service.h>
+#include <core/dbus/types/object_path.h>
 
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 namespace culss = com::ubuntu::location::service::session;
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 struct culss::Interface::Private
 {

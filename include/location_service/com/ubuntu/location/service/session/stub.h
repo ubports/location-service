@@ -27,7 +27,7 @@
 #include "com/ubuntu/location/update.h"
 #include "com/ubuntu/location/velocity.h"
 
-#include <org/freedesktop/dbus/stub.h>
+#include <core/dbus/stub.h>
 
 #include <memory>
 
@@ -41,17 +41,17 @@ namespace service
 {
 namespace session
 {
-class Stub : public org::freedesktop::dbus::Stub<Interface>
+class Stub : public core::dbus::Stub<Interface>
 {
   public:
     Stub(
-        const org::freedesktop::dbus::Bus::Ptr& bus,
-        const org::freedesktop::dbus::types::ObjectPath& session_path);
+        const core::dbus::Bus::Ptr& bus,
+        const core::dbus::types::ObjectPath& session_path);
     Stub(const Stub&) = delete;
     virtual ~Stub() noexcept;
     Stub& operator=(const Stub&) = delete;
 
-    virtual const org::freedesktop::dbus::types::ObjectPath& path() const;
+    virtual const core::dbus::types::ObjectPath& path() const;
 
     virtual void start_position_updates();
     virtual void stop_position_updates() noexcept;

@@ -35,10 +35,10 @@
 #include <com/ubuntu/location/service/implementation.h>
 #include <com/ubuntu/location/service/stub.h>
 
-#include <org/freedesktop/dbus/announcer.h>
-#include <org/freedesktop/dbus/resolver.h>
+#include <core/dbus/announcer.h>
+#include <core/dbus/resolver.h>
 
-#include <org/freedesktop/dbus/asio/executor.h>
+#include <core/dbus/asio/executor.h>
 
 #include <gtest/gtest.h>
 
@@ -52,10 +52,10 @@
 namespace
 {
 
-org::freedesktop::dbus::Bus::Ptr the_session_bus()
+core::dbus::Bus::Ptr the_session_bus()
 {
-    org::freedesktop::dbus::Bus::Ptr bus{
-        new org::freedesktop::dbus::Bus{org::freedesktop::dbus::WellKnownBus::session}};
+    core::dbus::Bus::Ptr bus{
+        new core::dbus::Bus{core::dbus::WellKnownBus::session}};
     return bus;
 }
 
@@ -135,7 +135,7 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
     {
         SCOPED_TRACE("Server");
         auto bus = the_session_bus();
-        bus->install_executor(org::freedesktop::dbus::Executor::Ptr(new org::freedesktop::dbus::asio::Executor{bus}));
+        bus->install_executor(core::dbus::asio::make_executor(bus));
         auto dummy = new DummyProvider();
         com::ubuntu::location::Provider::Ptr helper(dummy);
         com::ubuntu::location::service::DefaultConfiguration config;
@@ -166,9 +166,9 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
         sync_start.wait_for_signal_ready();
 
         auto bus = the_session_bus();
-        bus->install_executor(org::freedesktop::dbus::Executor::Ptr(new org::freedesktop::dbus::asio::Executor{bus}));
+        bus->install_executor(core::dbus::asio::make_executor(bus));
         std::thread t{[bus](){bus->run();}};
-        auto location_service = org::freedesktop::dbus::resolve_service_on_bus<
+        auto location_service = core::dbus::resolve_service_on_bus<
             com::ubuntu::location::service::Interface, 
             com::ubuntu::location::service::Stub>(bus);
         
