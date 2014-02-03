@@ -22,6 +22,9 @@
 #include <core/dbus/object.h>
 #include <core/dbus/signal.h>
 
+#include "core/dbus/object.h"
+#include "core/dbus/signal.h"
+
 #include <thread>
 
 namespace cul = com::ubuntu::location;

@@ -33,7 +33,7 @@ target_link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
-    ${DBUS_CPP_LIBRARIES}
+    ${DBUS_CPP_LDFLAGS}
 )
 
 target_link_libraries(
@@ -44,7 +44,7 @@ target_link_libraries(
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
     ${DBUS_LIBRARIES}
-    ${DBUS_CPP_LIBRARIES}
+    ${DBUS_CPP_LDFLAGS}
 )
 
 add_custom_command(

@@ -47,7 +47,7 @@ target_link_libraries(
 
   ${Boost_LIBRARIES}
   ${DBUS_LIBRARIES}
-  ${DBUS_CPP_LIBRARIES}
+  ${DBUS_CPP_LDFLAGS}
   ${GLog_LIBRARY}
   ${GFlags_LIBRARY}
 )
