@@ -1,3 +1,13 @@
+location-service (0.0.2+14.04.20140204-0ubuntu1) trusty; urgency=low
+
+  [ thomas-voss ]
+  * * Fix a race when a session is created while another one ends. *
+    Ensure a sensible minimum interval between consecutive location
+    updates in the GPS provider. (LP: #1240878)
+  * Adjust to changes in new dbus-cpp version.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 04 Feb 2014 12:36:02 +0000
+
 location-service (0.0.2+13.10.20131016.1-0ubuntu2) trusty; urgency=low
 
   * No change rebuild for Boost 1.54 transition.
