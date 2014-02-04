@@ -7,7 +7,7 @@ Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 XSBC-Original-Maintainer: Thomas Voß <thomas.voss@canonical.com>
 Build-Depends: cmake,
                curl,
-               dbus-cpp-dev,
+               libdbus-cpp-dev,
                dbus-test-runner,
                debhelper (>= 9),
                doxygen,
@@ -24,6 +24,7 @@ Build-Depends: cmake,
                libiw-dev,
                libplatform-hardware-api-headers,
                libplatform-hardware-api1-dev,
+               libproperties-cpp-dev,
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/location-service
 # If you aren't a member of ~phablet-team but need to upload packaging changes,

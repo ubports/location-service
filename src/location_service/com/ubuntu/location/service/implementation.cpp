@@ -6,10 +6,10 @@
 #include "com/ubuntu/location/engine.h"
 #include "com/ubuntu/location/proxy_provider.h"
 
-#include <org/freedesktop/dbus/bus.h>
-#include <org/freedesktop/dbus/service.h>
-#include <org/freedesktop/dbus/traits/service.h>
-#include <org/freedesktop/dbus/types/object_path.h>
+#include <core/dbus/bus.h>
+#include <core/dbus/service.h>
+#include <core/dbus/traits/service.h>
+#include <core/dbus/types/object_path.h>
 
 #include <chrono>
 #include <functional>
@@ -18,7 +18,7 @@
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 struct culs::Implementation::Private
 {

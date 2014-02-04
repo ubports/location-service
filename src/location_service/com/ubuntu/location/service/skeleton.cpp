@@ -19,15 +19,16 @@
 
 #include "com/ubuntu/location/logging.h"
 
-#include <org/freedesktop/dbus/dbus.h>
-#include <org/freedesktop/dbus/skeleton.h>
-#include <org/freedesktop/dbus/types/object_path.h>
+#include <core/dbus/dbus.h>
+#include <core/dbus/object.h>
+#include <core/dbus/skeleton.h>
+#include <core/dbus/types/object_path.h>
 
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 namespace culss = com::ubuntu::location::service::session;
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 namespace
 {
@@ -51,8 +52,8 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
 
     SessionWrapper(const SessionStore<SessionWrapper>::Ptr& session_store,
 		   const culss::Interface::Ptr& session,
-		   org::freedesktop::dbus::Service::Ptr service,
-		   org::freedesktop::dbus::Object::Ptr object)
+		   core::dbus::Service::Ptr service,
+		   core::dbus::Object::Ptr object)
 	    : session_store(session_store),
 	      session{session},
 	      remote(service, object)
@@ -62,7 +63,7 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
 	session->install_heading_updates_handler(std::bind(&SessionWrapper::on_heading_update, this, std::placeholders::_1));
     }
 
-    const org::freedesktop::dbus::types::ObjectPath& path() const
+    const core::dbus::types::ObjectPath& path() const
     {
 	return session->path();
     }
@@ -154,7 +155,7 @@ struct culs::Skeleton::Private : public SessionStore<SessionWrapper>, std::enabl
 
     ~Private() noexcept {}
 
-    void handle_create_session_for_criteria(DBusMessage* msg);
+    void handle_create_session_for_criteria(const core::dbus::Message::Ptr& in);
     void remove_session(const std::shared_ptr<SessionWrapper>& session);
 
     Skeleton* parent;
@@ -174,9 +175,8 @@ culs::Skeleton::~Skeleton() noexcept
 {
 }
 
-void culs::Skeleton::Private::handle_create_session_for_criteria(DBusMessage* msg)
+void culs::Skeleton::Private::handle_create_session_for_criteria(const core::dbus::Message::Ptr& in)
 {
-    auto in = dbus::Message::from_raw_message(msg);
     auto sender = in->sender();
 
     try
@@ -195,17 +195,17 @@ void culs::Skeleton::Private::handle_create_session_for_criteria(DBusMessage* ms
 
 	auto session = parent->create_session_for_criteria(criteria);
 
-	auto service = dbus::Service::use_service(parent->access_bus(), dbus_message_get_sender(msg));
-	auto object = service->object_for_path(session->path());
+    auto service = dbus::Service::use_service(parent->access_bus(), in->sender());
+    auto object = service->object_for_path(session->path());
 
     {
         std::lock_guard<std::mutex> lg(guard);
 
         auto wrapper = SessionWrapper::Ptr{new SessionWrapper{shared_from_this(), session, service, object}};
 
-        auto reply = dbus::Message::make_method_return(msg);
+        auto reply = dbus::Message::make_method_return(in);
         reply->writer() << session->path();
-        parent->access_bus()->send(reply->get());
+        parent->access_bus()->send(reply);
 
         bool inserted = false;
         std::tie(std::ignore, inserted) = session_store.insert(std::make_pair(session->path(), wrapper));
@@ -216,13 +216,13 @@ void culs::Skeleton::Private::handle_create_session_for_criteria(DBusMessage* ms
 
     } catch(const std::runtime_error& e)
     {
-	parent->access_bus()->send(
-	    dbus::Message::make_error(
-		msg,
-		culs::Interface::Errors::CreatingSession::name(),
-		e.what())->get());
+    parent->access_bus()->send(
+        dbus::Message::make_error(
+            in,
+            culs::Interface::Errors::CreatingSession::name(),
+            e.what()));
 
-	LOG(ERROR) << "Error creating session: " << e.what();
+    LOG(ERROR) << "Error creating session: " << e.what();
     }
 }
 

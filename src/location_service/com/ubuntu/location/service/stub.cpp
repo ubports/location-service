@@ -24,12 +24,12 @@ namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 namespace culss = com::ubuntu::location::service::session;
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 struct culs::Stub::Private
 {
-    org::freedesktop::dbus::Bus::Ptr bus;
-    org::freedesktop::dbus::Object::Ptr object;
+    core::dbus::Bus::Ptr bus;
+    core::dbus::Object::Ptr object;
 };
 
 culs::Stub::Stub(const dbus::Bus::Ptr& connection) : dbus::Stub<culs::Interface>(connection),
@@ -49,7 +49,7 @@ culss::Interface::Ptr culs::Stub::create_session_for_criteria(const cul::Criteri
     >(criteria);
 
     if (op.is_error())
-	throw std::runtime_error(op.error());
+        throw std::runtime_error(op.error().print());
 
     return culss::Interface::Ptr(new culss::Stub{d->bus, op.value()});
 }

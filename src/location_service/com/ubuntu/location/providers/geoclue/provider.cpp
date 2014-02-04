@@ -16,15 +16,17 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 #include "com/ubuntu/location/providers/geoclue/provider.h"
-
 #include "com/ubuntu/location/providers/geoclue/geoclue.h"
+
+#include "core/dbus/object.h"
+#include "core/dbus/signal.h"
 
 #include <thread>
 
 namespace cul = com::ubuntu::location;
 namespace culpg = com::ubuntu::location::providers::geoclue;
 
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 namespace
 {
@@ -70,8 +72,19 @@ struct culpg::Provider::Private
         org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged, 
         org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged::ArgumentType
         >::Ptr signal_velocity_changed;
-    dbus::signals::ScopedConnection position_updates_connection;
-    dbus::signals::ScopedConnection velocity_updates_connection;
+
+    typedef typename dbus::Signal<
+        org::freedesktop::Geoclue::Position::Signals::PositionChanged,
+        org::freedesktop::Geoclue::Position::Signals::PositionChanged::ArgumentType
+    >::SubscriptionToken SignalPositionChangedSubscription;
+
+    typedef typename dbus::Signal<
+        org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged,
+        org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged::ArgumentType
+    >::SubscriptionToken SignalVelocityChangedSubscription;
+
+    SignalPositionChangedSubscription position_updates_connection;
+    SignalVelocityChangedSubscription velocity_updates_connection;
 
     std::thread worker;
 };

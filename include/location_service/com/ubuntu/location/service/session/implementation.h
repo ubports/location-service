@@ -38,8 +38,8 @@ class Implementation : public Skeleton
 {
   public:
     Implementation(
-        const org::freedesktop::dbus::Bus::Ptr& bus,
-        const org::freedesktop::dbus::types::ObjectPath& session_path,
+        const core::dbus::Bus::Ptr& bus,
+        const core::dbus::types::ObjectPath& session_path,
         const Provider::Ptr& provider);
     Implementation(const Implementation&) = delete;
     virtual ~Implementation() noexcept;

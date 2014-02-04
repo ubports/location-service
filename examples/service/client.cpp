@@ -19,14 +19,14 @@
 
 #include "com/ubuntu/location/service/stub.h"
 
-#include <org/freedesktop/dbus/resolver.h>
-#include <org/freedesktop/dbus/asio/executor.h>
+#include <core/dbus/resolver.h>
+#include <core/dbus/asio/executor.h>
 
 #include <thread>
 
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
-namespace dbus = org::freedesktop::dbus;
+namespace dbus = core::dbus;
 
 int main(int argc, char** argv)
 {
@@ -53,17 +53,15 @@ int main(int argc, char** argv)
         {"system", dbus::WellKnownBus::system},
     };
 
-    org::freedesktop::dbus::Bus::Ptr bus
+    core::dbus::Bus::Ptr bus
     {
-        new org::freedesktop::dbus::Bus{lut.at(options.value_for_key<std::string>("bus"))}
+        new core::dbus::Bus{lut.at(options.value_for_key<std::string>("bus"))}
     };
-    bus->install_executor(
-        org::freedesktop::dbus::Executor::Ptr(
-            new org::freedesktop::dbus::asio::Executor{bus}));
+    bus->install_executor(core::dbus::asio::make_executor(bus));
     std::thread t{[bus](){bus->run();}};
     
     auto location_service = 
-            org::freedesktop::dbus::resolve_service_on_bus<culs::Interface, culs::Stub>(bus);
+            core::dbus::resolve_service_on_bus<culs::Interface, culs::Stub>(bus);
         
     auto s1 = location_service->create_session_for_criteria(com::ubuntu::location::Criteria{});
         

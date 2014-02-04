@@ -23,7 +23,7 @@
 TEST(GeoclueProvider, accessing_ubuntu_geo_ip_works)
 {
     const std::string name{"org.freedesktop.Geoclue.Providers.UbuntuGeoIP"};
-    const std::string path{"/org/freedesktop/Geoclue/Providers/UbuntuGeoIP"};
+    const std::string path{"/core/Geoclue/Providers/UbuntuGeoIP"};
     
     com::ubuntu::location::geoclue::Provider::Configuration config
     {
