@@ -1,3 +1,4 @@
+add_subdirectory(dummy)
 add_subdirectory(geoclue)
 add_subdirectory(gps)
 add_subdirectory(skyhook)
