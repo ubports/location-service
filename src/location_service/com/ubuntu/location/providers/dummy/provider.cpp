@@ -27,11 +27,21 @@ namespace dummy = com::ubuntu::location::providers::dummy;
 
 struct dummy::Provider::Private
 {
-    Private(const dummy::Configuration& configuration) : configuration(configuration)
+    enum class State
+    {
+        started,
+        stopping,
+        stopped
+    };
+
+    Private(const dummy::Configuration& configuration)
+        : configuration(configuration),
+          state(State::stopped)
     {
     }
 
     dummy::Configuration configuration;
+    std::atomic<State> state;
     bool stop_requested;
     std::thread worker{};
 };
@@ -85,20 +95,34 @@ bool dummy::Provider::matches_criteria(const location::Criteria&)
 
 void dummy::Provider::start_position_updates()
 {
+    if (d->state.load() != Private::State::stopped)
+        return;
+
     d->stop_requested = false;
 
     d->worker = std::move(std::thread([this]()
     {
+        d->state.store(Private::State::started);
+
+        timespec ts {0, d->configuration.update_period.count() * 1000 * 1000};
+
         while (!d->stop_requested)
         {
             deliver_position_updates(d->configuration.reference_position);
-            std::this_thread::sleep_for(d->configuration.update_period);
+            ::nanosleep(&ts, nullptr);
         }
     }));
+
+    d->state.store(Private::State::stopped);
 }
 
 void dummy::Provider::stop_position_updates()
 {
+    if (d->state.load() != Private::State::started)
+        return;
+
+    d->state.store(Private::State::stopping);
+
     if (d->worker.joinable())
     {
         d->stop_requested = true;
