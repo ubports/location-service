@@ -103,6 +103,7 @@ void dummy::Provider::start_position_updates()
     d->worker = std::move(std::thread([this]()
     {
         d->state.store(Private::State::started);
+        VLOG(1) << "dummy::Provider::start_position_updates: started";
 
         timespec ts {0, d->configuration.update_period.count() * 1000 * 1000};
 
@@ -114,6 +115,7 @@ void dummy::Provider::start_position_updates()
     }));
 
     d->state.store(Private::State::stopped);
+    VLOG(1) << "dummy::Provider::start_position_updates: stopped";
 }
 
 void dummy::Provider::stop_position_updates()
@@ -122,7 +124,7 @@ void dummy::Provider::stop_position_updates()
         return;
 
     d->state.store(Private::State::stopping);
-
+    VLOG(1) << "dummy::Provider::stop_position_updates: stopping";
     if (d->worker.joinable())
     {
         d->stop_requested = true;

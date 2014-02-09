@@ -41,12 +41,12 @@ struct Configuration
 
     inline static const char* key_reference_position_lat()
     {
-        return "dummy::ReferenceLocationLat";
+        return "ReferenceLocationLat";
     }
 
     inline static const char* key_reference_position_lon()
     {
-        return "dummy::ReferenceLocationLon";
+        return "ReferenceLocationLon";
     }
 
     std::chrono::milliseconds update_period{500};

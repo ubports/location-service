@@ -70,6 +70,7 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
 
     void on_session_died() noexcept
     {
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
 	VLOG(1) << "Session died, removing from store and stopping all updates.";
 
 	auto thiz = shared_from_this();
@@ -94,7 +95,7 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
 	{
 	    // We consider the session to be dead once we hit an exception here.
 	    // We thus remove it from the central and end its lifetime.
-	    on_session_died();
+        //on_session_died();
 	}
     }
 
@@ -107,7 +108,7 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
 	{
 	    // We consider the session to be dead once we hit an exception here.
 	    // We thus remove it from the central and end its lifetime.
-	    on_session_died();
+        //on_session_died();
 	}
     }
 
@@ -120,7 +121,7 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
 	{
 	    // We consider the session to be dead once we hit an exception here.
 	    // We thus remove it from the central and end its lifetime.
-	    on_session_died();
+        //on_session_died();
 	}
     }
 
@@ -203,12 +204,12 @@ void culs::Skeleton::Private::handle_create_session_for_criteria(const core::dbu
 
         auto wrapper = SessionWrapper::Ptr{new SessionWrapper{shared_from_this(), session, service, object}};
 
+        bool inserted = false;
+        std::tie(std::ignore, inserted) = session_store.insert(std::make_pair(session->path(), wrapper));
+
         auto reply = dbus::Message::make_method_return(in);
         reply->writer() << session->path();
         parent->access_bus()->send(reply);
-
-        bool inserted = false;
-        std::tie(std::ignore, inserted) = session_store.insert(std::make_pair(session->path(), wrapper));
 
         if (!inserted)
             throw std::runtime_error("Could not insert duplicate session into store.");
