@@ -105,11 +105,18 @@ void dummy::Provider::start_position_updates()
         d->state.store(Private::State::started);
         VLOG(1) << "dummy::Provider::start_position_updates: started";
 
+        location::Update<location::Position> update
+        {
+            d->configuration.reference_position,
+            location::Clock::now()
+        };
+
         timespec ts {0, d->configuration.update_period.count() * 1000 * 1000};
 
         while (!d->stop_requested)
         {
-            deliver_position_updates(d->configuration.reference_position);
+            update.when = location::Clock::now();
+            deliver_position_updates(update);
             ::nanosleep(&ts, nullptr);
         }
     }));
