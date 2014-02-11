@@ -1,3 +1,10 @@
+location-service (0.0.2+14.04.20140211-0ubuntu1) trusty; urgency=low
+
+  [ thomas-voss ]
+  * Backport dummy provider and accompanying tests.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 11 Feb 2014 19:26:26 +0000
+
 location-service (0.0.2+14.04.20140205.1-0ubuntu1) trusty; urgency=low
 
   [ thomas-voss ]
