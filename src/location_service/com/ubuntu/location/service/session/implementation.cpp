@@ -55,8 +55,6 @@ culss::Implementation::~Implementation() noexcept
 void culss::Implementation::start_position_updates()
 {
     d->provider->state_controller()->start_position_updates();
-    if (d->provider->state_controller()->cached_position_update().is_valid())
-        access_position_updates_channel()(d->provider->state_controller()->cached_position_update().value());
 }
 
 void culss::Implementation::stop_position_updates() noexcept
@@ -67,8 +65,6 @@ void culss::Implementation::stop_position_updates() noexcept
 void culss::Implementation::start_velocity_updates()
 {
     d->provider->state_controller()->start_velocity_updates();
-    if (d->provider->state_controller()->cached_velocity_update().is_valid())
-        access_velocity_updates_channel()(d->provider->state_controller()->cached_velocity_update().value());
 }
 
 void culss::Implementation::stop_velocity_updates() noexcept
@@ -79,8 +75,6 @@ void culss::Implementation::stop_velocity_updates() noexcept
 void culss::Implementation::start_heading_updates()
 {
     d->provider->state_controller()->start_heading_updates();
-    if (d->provider->state_controller()->cached_heading_update().is_valid())
-        access_heading_updates_channel()(d->provider->state_controller()->cached_heading_update().value());
 }
 
 void culss::Implementation::stop_heading_updates() noexcept
