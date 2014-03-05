@@ -90,12 +90,17 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
     {
 	try
 	{
-        remote.session->invoke_method_asynchronously<culs::session::Interface::UpdatePosition, void>(position);
+        auto result = remote.session->transact_method<culs::session::Interface::UpdatePosition, void>(position);
+        if (result.is_error())
+        {
+            LOG(ERROR) << result.error().print();
+            on_session_died();
+        }
 	} catch(const std::runtime_error& e)
 	{
 	    // We consider the session to be dead once we hit an exception here.
 	    // We thus remove it from the central and end its lifetime.
-        //on_session_died();
+        on_session_died();
 	}
     }
 
@@ -103,12 +108,17 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
     {
 	try
 	{
-        remote.session->invoke_method_asynchronously<culs::session::Interface::UpdateVelocity, void>(velocity);
+        auto result = remote.session->transact_method<culs::session::Interface::UpdateVelocity, void>(velocity);
+        if (result.is_error())
+        {
+            LOG(ERROR) << result.error().print();
+            on_session_died();
+        }
 	} catch(const std::runtime_error& e)
 	{
 	    // We consider the session to be dead once we hit an exception here.
 	    // We thus remove it from the central and end its lifetime.
-        //on_session_died();
+        on_session_died();
 	}
     }
 
@@ -116,12 +126,17 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
     {
 	try
 	{
-        remote.session->invoke_method_asynchronously<culs::session::Interface::UpdateHeading, void>(heading);
+        auto result = remote.session->transact_method<culs::session::Interface::UpdateHeading, void>(heading);
+        if (result.is_error())
+        {
+            LOG(ERROR) << result.error().print();
+            on_session_died();
+        }
 	} catch(const std::runtime_error& e)
 	{
 	    // We consider the session to be dead once we hit an exception here.
 	    // We thus remove it from the central and end its lifetime.
-        //on_session_died();
+        on_session_died();
 	}
     }
 
