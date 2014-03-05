@@ -57,7 +57,7 @@ public:
 
         typedef void ResultType;
 
-        inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
+        inline static const std::chrono::milliseconds default_timeout() { return std::chrono::milliseconds{250}; }
     };
 
     struct UpdateVelocity
@@ -75,7 +75,7 @@ public:
 
         typedef void ResultType;
 
-        inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
+        inline static const std::chrono::milliseconds default_timeout() { return std::chrono::milliseconds{250}; }
     };
 
     struct UpdateHeading
@@ -93,7 +93,7 @@ public:
 
         typedef void ResultType;
 
-        inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
+        inline static const std::chrono::milliseconds default_timeout() { return std::chrono::milliseconds{250}; }
     };
 
     struct StartPositionUpdates
@@ -208,6 +208,7 @@ public:
     {
         struct ErrorParsingUpdate { inline static std::string name() { return "com.ubuntu.location.Service.Session.ErrorParsingUpdate"; } };
         struct ErrorStartingUpdate { inline static std::string name() { return "com.ubuntu.location.Service.Session.ErrorStartingUpdate"; } };
+        struct ErrorStoppingUpdate { inline static std::string name() { return "com.ubuntu.location.Service.Session.ErrorStoppingUpdate"; } };
     };
 
     typedef std::shared_ptr<Interface> Ptr;

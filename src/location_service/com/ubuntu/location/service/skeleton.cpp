@@ -90,7 +90,7 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
     {
 	try
 	{
-	    remote.session->invoke_method_synchronously<culs::session::Interface::UpdatePosition, void>(position);
+        remote.session->invoke_method_asynchronously<culs::session::Interface::UpdatePosition, void>(position);
 	} catch(const std::runtime_error& e)
 	{
 	    // We consider the session to be dead once we hit an exception here.
@@ -103,7 +103,7 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
     {
 	try
 	{
-	    remote.session->invoke_method_synchronously<culs::session::Interface::UpdateVelocity, void>(velocity);
+        remote.session->invoke_method_asynchronously<culs::session::Interface::UpdateVelocity, void>(velocity);
 	} catch(const std::runtime_error& e)
 	{
 	    // We consider the session to be dead once we hit an exception here.
@@ -116,7 +116,7 @@ struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
     {
 	try
 	{
-	    remote.session->invoke_method_synchronously<culs::session::Interface::UpdateHeading, void>(heading);
+        remote.session->invoke_method_asynchronously<culs::session::Interface::UpdateHeading, void>(heading);
 	} catch(const std::runtime_error& e)
 	{
 	    // We consider the session to be dead once we hit an exception here.
