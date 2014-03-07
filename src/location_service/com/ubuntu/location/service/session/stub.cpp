@@ -71,7 +71,7 @@ const dbus::types::ObjectPath& culss::Stub::path() const
 
 void culss::Stub::start_position_updates()
 {
-    auto result = d->object->invoke_method_synchronously<Interface::StartPositionUpdates,void>();
+    auto result = d->object->transact_method<Interface::StartPositionUpdates,void>();
 
     if (result.is_error())
         throw std::runtime_error(result.error().print());
@@ -80,7 +80,7 @@ void culss::Stub::start_position_updates()
 void culss::Stub::stop_position_updates() noexcept
 {
     try {
-        auto result = d->object->invoke_method_synchronously<Interface::StopPositionUpdates,void>();
+        auto result = d->object->transact_method<Interface::StopPositionUpdates,void>();
 
         if (result.is_error())
             LOG(WARNING) << result.error();
@@ -92,7 +92,7 @@ void culss::Stub::stop_position_updates() noexcept
 
 void culss::Stub::start_velocity_updates()
 {
-    auto result = d->object->invoke_method_synchronously<Interface::StartVelocityUpdates,void>();
+    auto result = d->object->transact_method<Interface::StartVelocityUpdates,void>();
 
     if (result.is_error())
         throw std::runtime_error(result.error().print());
@@ -101,7 +101,7 @@ void culss::Stub::start_velocity_updates()
 void culss::Stub::stop_velocity_updates() noexcept
 {
     try {
-        auto result = d->object->invoke_method_synchronously<Interface::StopVelocityUpdates,void>();
+        auto result = d->object->transact_method<Interface::StopVelocityUpdates,void>();
 
         if (result.is_error())
             LOG(WARNING) << result.error();
@@ -113,7 +113,7 @@ void culss::Stub::stop_velocity_updates() noexcept
 
 void culss::Stub::start_heading_updates()
 {
-    auto result = d->object->invoke_method_synchronously<Interface::StartHeadingUpdates,void>();
+    auto result = d->object->transact_method<Interface::StartHeadingUpdates,void>();
 
     if (result.is_error())
         throw std::runtime_error(result.error().print());
@@ -122,7 +122,7 @@ void culss::Stub::start_heading_updates()
 void culss::Stub::stop_heading_updates() noexcept
 {
     try {
-        auto result = d->object->invoke_method_synchronously<Interface::StopHeadingUpdates,void>();
+        auto result = d->object->transact_method<Interface::StopHeadingUpdates,void>();
 
         if (result.is_error())
             LOG(WARNING) << result.error();

@@ -119,9 +119,20 @@ void culss::Skeleton::Private::handle_start_position_updates(const core::dbus::M
 
 void culss::Skeleton::Private::handle_stop_position_updates(const core::dbus::Message::Ptr& msg)
 {
-    parent->stop_position_updates();
-    auto reply = core::dbus::Message::make_method_return(msg);
-    bus->send(reply);
+    try
+    {
+        parent->stop_position_updates();
+        auto reply = core::dbus::Message::make_method_return(msg);
+        bus->send(reply);
+    } catch(const std::runtime_error& e)
+    {
+        auto error = core::dbus::Message::make_error(
+                    msg,
+                    Interface::Errors::ErrorStoppingUpdate::name(),
+                    e.what());
+
+        bus->send(error);
+    }
 }
 
 void culss::Skeleton::Private::handle_start_velocity_updates(const core::dbus::Message::Ptr& msg)
@@ -140,9 +151,20 @@ void culss::Skeleton::Private::handle_start_velocity_updates(const core::dbus::M
 
 void culss::Skeleton::Private::handle_stop_velocity_updates(const core::dbus::Message::Ptr& msg)
 {
-    parent->stop_velocity_updates();
-    auto reply = core::dbus::Message::make_method_return(msg);
-    bus->send(reply);
+    try
+    {
+        parent->stop_velocity_updates();
+        auto reply = core::dbus::Message::make_method_return(msg);
+        bus->send(reply);
+    } catch(const std::runtime_error& e)
+    {
+        auto error = core::dbus::Message::make_error(
+                    msg,
+                    Interface::Errors::ErrorStoppingUpdate::name(),
+                    e.what());
+
+        bus->send(error);
+    }
 }
 
 void culss::Skeleton::Private::handle_start_heading_updates(const core::dbus::Message::Ptr& msg)
@@ -161,7 +183,18 @@ void culss::Skeleton::Private::handle_start_heading_updates(const core::dbus::Me
 
 void culss::Skeleton::Private::handle_stop_heading_updates(const core::dbus::Message::Ptr& msg)
 {
-    parent->stop_heading_updates();
-    auto reply = core::dbus::Message::make_method_return(msg);
-    bus->send(reply);
+    try
+    {
+        parent->stop_heading_updates();
+        auto reply = core::dbus::Message::make_method_return(msg);
+        bus->send(reply);
+    } catch(const std::runtime_error& e)
+    {
+        auto error = core::dbus::Message::make_error(
+                    msg,
+                    Interface::Errors::ErrorStoppingUpdate::name(),
+                    e.what());
+
+        bus->send(error);
+    }
 }

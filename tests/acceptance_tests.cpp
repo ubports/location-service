@@ -172,6 +172,7 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
             com::ubuntu::location::service::Interface, 
             com::ubuntu::location::service::Stub>(bus);
         
+        std::cout << "Here" << std::endl;
         auto s1 = location_service->create_session_for_criteria(com::ubuntu::location::Criteria{});
         
         com::ubuntu::location::Update<com::ubuntu::location::Position> position;
@@ -210,3 +211,75 @@ TEST(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
 
     EXPECT_NO_FATAL_FAILURE(test::fork_and_run(server, client));
 }
+
+TEST(LocationServiceStandalone, AClientTimingOutDoesNotHarmTheService)
+{
+    test::CrossProcessSync sync_start;
+    test::CrossProcessSync sync_session_created;
+
+    auto server = [&sync_start, &sync_session_created]()
+    {
+        SCOPED_TRACE("Server");
+        auto bus = the_session_bus();
+        bus->install_executor(core::dbus::asio::make_executor(bus));
+        auto dummy = new DummyProvider();
+        com::ubuntu::location::Provider::Ptr helper(dummy);
+        com::ubuntu::location::service::DefaultConfiguration config;
+
+        com::ubuntu::location::service::Implementation service(bus,
+                                                               config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+                                                               config.the_permission_manager());
+
+
+        sync_start.signal_ready();
+
+        std::thread t{[bus](){bus->run();}};
+
+        sync_session_created.wait_for_signal_ready();
+
+        for (unsigned int i = 0; i < 1000; i++)
+            dummy->inject_update(reference_position_update);
+
+        if (t.joinable())
+            t.join();
+    };
+
+    auto client = [&sync_start, &sync_session_created]()
+    {
+        SCOPED_TRACE("Client");
+
+        sync_start.wait_for_signal_ready();
+
+        auto bus = the_session_bus();
+        bus->install_executor(core::dbus::asio::make_executor(bus));
+        std::thread t{[bus](){bus->run();}};
+        auto location_service = core::dbus::resolve_service_on_bus<
+            com::ubuntu::location::service::Interface,
+            com::ubuntu::location::service::Stub>(bus);
+
+        auto s1 = location_service->create_session_for_criteria(com::ubuntu::location::Criteria{});
+
+        static timespec two_seconds{ 2, 0 };
+
+        com::ubuntu::location::Update<com::ubuntu::location::Position> position;
+        s1->install_position_updates_handler(
+            [&](const com::ubuntu::location::Update<com::ubuntu::location::Position>& new_position) {
+                std::cout << "On position updated: " << new_position << std::endl;
+                ::nanosleep(&two_seconds, nullptr);
+
+                bus->stop();
+            });
+
+        s1->start_position_updates();
+        s1->start_velocity_updates();
+        s1->start_heading_updates();
+
+        sync_session_created.signal_ready();
+
+        if (t.joinable())
+            t.join();
+    };
+
+    EXPECT_NO_FATAL_FAILURE(test::fork_and_run(server, client));
+}
+

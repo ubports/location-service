@@ -43,7 +43,7 @@ culs::Stub::~Stub() noexcept
 
 culss::Interface::Ptr culs::Stub::create_session_for_criteria(const cul::Criteria& criteria)
 {
-    auto op = d->object->invoke_method_synchronously<
+    auto op = d->object->transact_method<
 	culs::Interface::CreateSessionForCriteria,
 	culs::Interface::CreateSessionForCriteria::ResultType
     >(criteria);
