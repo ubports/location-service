@@ -1,3 +1,13 @@
+location-service (0.0.2+14.04.20140307-0ubuntu1) trusty; urgency=low
+
+  [ thomas-voss ]
+  * Reenable onSessionDied().
+
+  [ Łukasz 'sil2100' Zemczak ]
+  * Bump the build-dependency on dbus-cpp due to the ABI change
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 07 Mar 2014 12:42:42 +0000
+
 location-service (0.0.2+14.04.20140211-0ubuntu1) trusty; urgency=low
 
   [ thomas-voss ]
