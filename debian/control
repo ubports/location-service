@@ -18,8 +18,8 @@ Build-Depends: cmake,
                libgoogle-glog-dev,
                libgtest-dev,
                libiw-dev,
-               libplatform-hardware-api-headers,
-               libplatform-hardware-api1-dev,
+               libplatform-hardware-api-headers (>=0.21),
+               libplatform-hardware-api1-dev (>=0.21),
                libproperties-cpp-dev,
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/location-service
