@@ -4,6 +4,12 @@ location-service (0.0.3-0ubuntu1) UNRELEASED; urgency=medium
 
  -- Thomas Voß <thomas.voss@canonical.com>  Mon, 05 May 2014 11:13:33 +0200
 
+location-service (0.0.2+14.04.20140307-0ubuntu2) utopic; urgency=high
+
+  * No change rebuild against boost1.55.
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Mon, 28 Apr 2014 02:59:37 +0100
+
 location-service (0.0.2+14.04.20140307-0ubuntu1) trusty; urgency=low
 
   [ thomas-voss ]
