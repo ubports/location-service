@@ -1,4 +1,4 @@
-location-service (0.0.3) UNRELEASED; urgency=medium
+location-service (0.0.3-0ubuntu1) UNRELEASED; urgency=medium
 
   * Patch version bump reflecting the toolchain switch.
 
