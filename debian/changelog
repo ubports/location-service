@@ -1,8 +1,9 @@
-location-service (0.0.3-0ubuntu1) UNRELEASED; urgency=medium
+location-service (0.0.3+14.10.20140512-0ubuntu1) utopic; urgency=medium
 
+  [ Thomas Voß ]
   * Patch version bump reflecting the toolchain switch.
 
- -- Thomas Voß <thomas.voss@canonical.com>  Mon, 05 May 2014 11:13:33 +0200
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 12 May 2014 21:02:13 +0000
 
 location-service (0.0.2+14.04.20140307-0ubuntu2) utopic; urgency=high
 
