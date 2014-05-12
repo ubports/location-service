@@ -28,7 +28,7 @@ TEST(ConnectivityManager, default_implementation_is_queryable_for_wifis_and_radi
     {
         auto manager = location::connectivity::platform_default_manager();
 
-        for (const auto& cell : manager->visible_radio_cells().get())
+        for (const auto& cell : manager->connected_radio_cells().get())
             std::cout << cell << std::endl;
 
         EXPECT_NO_THROW(

@@ -212,12 +212,18 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Gsm::ID{cell_id},
                         connectivity::RadioCell::Gsm::RSS
                         {
-                            connectivity::RadioCell::Gsm::RSS::minimum() +
-                                    strength/127. * connectivity::RadioCell::Gsm::RSS::range()
+                            static_cast<int>(
+                                std::round(
+                                    connectivity::RadioCell::Gsm::RSS::minimum() +
+                                        strength/127. * connectivity::RadioCell::Gsm::RSS::range())
+                            )
                         },
                         connectivity::RadioCell::Gsm::ASU
                         {
-                            0.5 * (strength/127. * connectivity::RadioCell::Gsm::RSS::range())
+                            static_cast<int>(
+                                std::round(
+                                    0.5 * (strength/127. * connectivity::RadioCell::Gsm::RSS::range()))
+                            )
                         },
                         connectivity::RadioCell::Gsm::TA{0}
                     };
@@ -235,13 +241,19 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Lte::PID{0},
                         connectivity::RadioCell::Lte::RSS
                         {
-                            connectivity::RadioCell::Lte::RSS::minimum() +
-                                    strength/127. * connectivity::RadioCell::Lte::RSS::range()
+                            static_cast<int>(
+                                std::round(
+                                    connectivity::RadioCell::Lte::RSS::minimum() +
+                                        strength/127. * connectivity::RadioCell::Lte::RSS::range())
+                            )
                         },
                         connectivity::RadioCell::Lte::ASU
                         {
-                            140 + connectivity::RadioCell::Lte::RSS::minimum() +
-                                    strength/127. * connectivity::RadioCell::Lte::RSS::range()
+                            static_cast<int>(
+                                std::round(
+                                    140 + connectivity::RadioCell::Lte::RSS::minimum() +
+                                        strength/127. * connectivity::RadioCell::Lte::RSS::range())
+                            )
                         },
                         connectivity::RadioCell::Lte::TA{0}
                     };
@@ -258,13 +270,16 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Umts::ID{cell_id},
                         connectivity::RadioCell::Umts::RSS
                         {
-                            connectivity::RadioCell::Umts::RSS::minimum() +
-                                    strength/127. * connectivity::RadioCell::Umts::RSS::range()
+                            static_cast<int>(
+                                std::round(connectivity::RadioCell::Umts::RSS::minimum() +
+                                    strength/127. * connectivity::RadioCell::Umts::RSS::range()))
                         },
                         connectivity::RadioCell::Umts::ASU
                         {
-                            116 + connectivity::RadioCell::Umts::RSS::minimum() +
-                                    strength/127. * connectivity::RadioCell::Umts::RSS::range()
+                            static_cast<int>(
+                                std::round(
+                                    116 + connectivity::RadioCell::Umts::RSS::minimum() +
+                                        strength/127. * connectivity::RadioCell::Umts::RSS::range()))
                         }
                     };
                     cells.emplace_back(umts);
@@ -274,8 +289,10 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                 {
                     connectivity::RadioCell::Cdma::RSS rss
                     {
-                        connectivity::RadioCell::Cdma::RSS::minimum() +
-                                strength/127. * connectivity::RadioCell::Cdma::RSS::range()
+                        static_cast<int>(
+                            std::round(
+                                connectivity::RadioCell::Cdma::RSS::minimum() +
+                                    strength/127. * connectivity::RadioCell::Cdma::RSS::range()))
                     };
 
                     connectivity::RadioCell::Cdma::ASU asu{};
@@ -305,12 +322,25 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
         };
     }
 
+    void request_scan_for_wireless_networks()
+    {
+        auto devices = d.network_manager.get_devices();
+
+        for(const auto& device : devices)
+        {
+            if (device.type() == org::freedesktop::NetworkManager::Device::Type::wifi)
+            {
+                device.request_scan();
+            }
+        }
+    }
+
     const core::Property<std::vector<connectivity::WirelessNetwork>>& visible_wireless_networks()
     {
         return d.visible_wireless_networks;
     }
 
-    const core::Property<std::vector<connectivity::RadioCell>>& visible_radio_cells()
+    const core::Property<std::vector<connectivity::RadioCell>>& connected_radio_cells()
     {
         return d.visible_radio_cells;
     }

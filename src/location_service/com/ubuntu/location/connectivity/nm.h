@@ -146,6 +146,22 @@ struct NetworkManager
                     return std::chrono::seconds{1};
                 }
             };
+
+            struct RequestScan
+            {
+                static const std::string& name()
+                {
+                    static const std::string s{"RequestScan"};
+                    return s;
+                }
+
+                typedef Wireless Interface;
+
+                static std::chrono::milliseconds default_timeout()
+                {
+                    return std::chrono::seconds{1};
+                }
+            };
         };
 
         struct DeviceType
@@ -189,6 +205,15 @@ struct NetworkManager
                 aps.push_back(AccessPoint(service->object_for_path(path)));
 
             return aps;
+        }
+
+        void request_scan() const
+        {
+            static const std::map<std::string, core::dbus::types::Variant> dictionary;
+            auto result = object->invoke_method_synchronously<Wireless::RequestScan, void>(dictionary);
+
+            if (result.is_error())
+                throw std::runtime_error(result.error().print());
         }
 
         std::shared_ptr<core::dbus::Service> service;

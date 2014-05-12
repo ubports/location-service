@@ -64,16 +64,42 @@ public:
     bool operator==(const Manager& rhs) const = delete;
 
     /**
+     * @brief request_scan_for_wireless_networks schedules a scan for visible wireless networks.
+     *
+     * Please note that the implementation is required to operate asynchronously. Results of the scan
+     * are reported via emitting the changed() signal on the visible_wireless_networks() property.
+     *
+     */
+    virtual void request_scan_for_wireless_networks() = 0;
+
+    /**
      * @brief All wireless networks visible to the device.
+     *
+     * If users would like to receive updates about visible wireless networks, they
+     * should connect to the Property's changed signal as in (all error handling omitted):
+     *
+     * auto connectivity_manager = com::ubuntu::location::connectivity::platform_default_manager();
+     *
+     * // Subscribe to visible wireless network updates.
+     * connectivity_manager->visible_wireless_networks().changed().connect([](const std::vector<WirelessNetwork>& networks)
+     * {
+     *     for (const auto& network : networks)
+     *         std::cout << network.ssid << std::endl;
+     * });
+     *
      * @return A getable/observable property carrying the visible wireless networks.
      */
     virtual const core::Property<std::vector<WirelessNetwork>>& visible_wireless_networks() = 0;
 
     /**
-     * @brief All radio cells visible to the device.
+     * @brief All radio cells that the device is connected to.
+     *
+     * In case of multiple sims, the size of connected radio cells is larger than 1.
+     * In case of no radio connection, the size of connected radio cells is 0.
+     *
      * @return A getable/observable property carrying the visible radio cells.
      */
-    virtual const core::Property<std::vector<RadioCell>>& visible_radio_cells() = 0;
+    virtual const core::Property<std::vector<RadioCell>>& connected_radio_cells() = 0;
 
 protected:
     Manager() = default;

@@ -32,20 +32,34 @@ namespace connectivity
 {
 struct WirelessNetwork
 {
+    enum class Mode
+    {
+        /** Mode is unknown. */
+        unknown = 0,
+        /** Indicates the object is part of an Ad-Hoc 802.11 network without a central coordinating access point. */
+        adhoc = 1,
+        /** The wireless device or access point is in infrastructure mode. */
+        infrastructure = 2
+    };
+
     enum class Domain
     {
         frequency,
-        channel
+        channel,
+        strength
     };
 
     typedef BoundedInteger<2412, 5825, static_cast<int>(Domain::frequency)> Frequency;
     typedef BoundedInteger<1, 165, static_cast<int>(Domain::channel)> Channel;
+    typedef BoundedInteger<0, 100, static_cast<int>(Domain::strength)> Strength;
 
     bool operator==(const WirelessNetwork& rhs) const
     {
         return bssid == rhs.bssid &&
+               ssid == rhs.ssid &&
                frequency == rhs.frequency &&
                channel == rhs.channel &&
+               strength == rhs.strength &&
                snr == rhs.snr;
     }
 
@@ -53,14 +67,18 @@ struct WirelessNetwork
     {
         return out << "("
                    << "bssid: " << wifi.bssid << ", "
+                   << "ssid: " << wifi.ssid << ", "
                    << "frequency: " << wifi.frequency << ", "
                    << "channel: " << wifi.channel << ", "
+                   << "strength: " << wifi.strength << ", "
                    << "snr: " << wifi.snr << ")";
     }
 
     std::string bssid; ///< The BSSID of the network.
+    std::string ssid; ///< The SSID of the network.
     Frequency frequency; ///< Frequency of the network/AP.
     Channel channel; ///< Channel of the network/AP.
+    Strength strength; ///< Signal quality of the network/AP in percent.
     float snr; ///< Signal-noise ratio of the specific network.
 };
 }
