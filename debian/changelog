@@ -1,3 +1,9 @@
+location-service (0.0.3-0ubuntu1) UNRELEASED; urgency=medium
+
+  * Patch version bump reflecting the toolchain switch.
+
+ -- Thomas Voß <thomas.voss@canonical.com>  Mon, 05 May 2014 11:13:33 +0200
+
 location-service (0.0.2+14.04.20140307-0ubuntu2) utopic; urgency=high
 
   * No change rebuild against boost1.55.
@@ -7,7 +13,7 @@ location-service (0.0.2+14.04.20140307-0ubuntu2) utopic; urgency=high
 location-service (0.0.2+14.04.20140307-0ubuntu1) trusty; urgency=low
 
   [ thomas-voss ]
-  * Reenable onSessionDied().
+  * Re-enable onSessionDied().
 
   [ Łukasz 'sil2100' Zemczak ]
   * Bump the build-dependency on dbus-cpp due to the ABI change
