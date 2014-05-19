@@ -210,22 +210,7 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Gsm::MNC{mnc},
                         connectivity::RadioCell::Gsm::LAC{lac},
                         connectivity::RadioCell::Gsm::ID{cell_id},
-                        connectivity::RadioCell::Gsm::RSS
-                        {
-                            static_cast<int>(
-                                std::round(
-                                    connectivity::RadioCell::Gsm::RSS::minimum() +
-                                        strength/127. * connectivity::RadioCell::Gsm::RSS::range())
-                            )
-                        },
-                        connectivity::RadioCell::Gsm::ASU
-                        {
-                            static_cast<int>(
-                                std::round(
-                                    0.5 * (strength/127. * connectivity::RadioCell::Gsm::RSS::range()))
-                            )
-                        },
-                        connectivity::RadioCell::Gsm::TA{0}
+                        connectivity::RadioCell::Gsm::SignalStrength::from_percent(strength/100.f)
                     };
                     cells.emplace_back(gsm);
                     break;
@@ -238,24 +223,8 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Lte::MNC{mnc},
                         connectivity::RadioCell::Lte::LAC{lac},
                         connectivity::RadioCell::Lte::ID{cell_id},
-                        connectivity::RadioCell::Lte::PID{0},
-                        connectivity::RadioCell::Lte::RSS
-                        {
-                            static_cast<int>(
-                                std::round(
-                                    connectivity::RadioCell::Lte::RSS::minimum() +
-                                        strength/127. * connectivity::RadioCell::Lte::RSS::range())
-                            )
-                        },
-                        connectivity::RadioCell::Lte::ASU
-                        {
-                            static_cast<int>(
-                                std::round(
-                                    140 + connectivity::RadioCell::Lte::RSS::minimum() +
-                                        strength/127. * connectivity::RadioCell::Lte::RSS::range())
-                            )
-                        },
-                        connectivity::RadioCell::Lte::TA{0}
+                        connectivity::RadioCell::Lte::PID{},
+                        connectivity::RadioCell::Lte::SignalStrength::from_percent(strength/100.f)
                     };
                     cells.emplace_back(lte);
                     break;
@@ -268,50 +237,10 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         connectivity::RadioCell::Umts::MNC{mnc},
                         connectivity::RadioCell::Umts::LAC{lac},
                         connectivity::RadioCell::Umts::ID{cell_id},
-                        connectivity::RadioCell::Umts::RSS
-                        {
-                            static_cast<int>(
-                                std::round(connectivity::RadioCell::Umts::RSS::minimum() +
-                                    strength/127. * connectivity::RadioCell::Umts::RSS::range()))
-                        },
-                        connectivity::RadioCell::Umts::ASU
-                        {
-                            static_cast<int>(
-                                std::round(
-                                    116 + connectivity::RadioCell::Umts::RSS::minimum() +
-                                        strength/127. * connectivity::RadioCell::Umts::RSS::range()))
-                        }
+                        connectivity::RadioCell::Umts::PSC{},
+                        connectivity::RadioCell::Umts::SignalStrength::from_percent(strength/100.f)
                     };
                     cells.emplace_back(umts);
-                    break;
-                }
-                case connectivity::RadioCell::Type::cdma:
-                {
-                    connectivity::RadioCell::Cdma::RSS rss
-                    {
-                        static_cast<int>(
-                            std::round(
-                                connectivity::RadioCell::Cdma::RSS::minimum() +
-                                    strength/127. * connectivity::RadioCell::Cdma::RSS::range()))
-                    };
-
-                    connectivity::RadioCell::Cdma::ASU asu{};
-                    if (rss >= -75) asu.set(1 << 4);
-                    else if (rss >= -82) asu.set(1 << 3);
-                    else if (rss >= -90) asu.set(1 << 2);
-                    else if (rss >= -95) asu.set(1 << 1);
-                    else if (rss >= -100) asu.set(1);
-
-                    connectivity::RadioCell::Cdma cdma
-                    {
-                        connectivity::RadioCell::Cdma::MCC{mcc},
-                        connectivity::RadioCell::Cdma::MNC{mnc},
-                        connectivity::RadioCell::Cdma::LAC{lac},
-                        connectivity::RadioCell::Cdma::ID{cell_id},
-                        rss,
-                        asu
-                    };
-                    cells.emplace_back(cdma);
                     break;
                 }
                 default: break; // By default, we do not add a cell.

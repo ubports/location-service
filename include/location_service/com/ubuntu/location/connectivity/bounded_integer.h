@@ -33,7 +33,7 @@ namespace connectivity
  * @brief A helper class to handle bounded integer values, with an optional domain
  * for tagging domain-specific types.
  */
-template<int min, int max, int domain = 0>
+template<typename Tag, int min, int max, int inv = min-1>
 class BoundedInteger
 {
 public:
@@ -44,7 +44,7 @@ public:
       */
     inline static int invalid()
     {
-        return min - 1;
+        return inv;
     }
 
     /**
@@ -71,6 +71,17 @@ public:
         return max - min;
     }
 
+    inline static BoundedInteger<Tag, min, max, inv> from_percent(float percent)
+    {
+        // Capping to [0,1]
+        percent = std::min<float>(1., std::max<float>(0., percent));
+
+        return BoundedInteger<Tag, min, max, inv>
+        {
+            static_cast<int>(minimum() + percent * range())
+        };
+    }
+
     /**
      * @brief Constructs an invalid instance.
      */
@@ -95,7 +106,7 @@ public:
      * @brief Copy c'tor.
      * @param rhs The instance to copy from.
      */
-    inline BoundedInteger(const BoundedInteger<min, max, domain>& rhs) : value(rhs.value)
+    inline BoundedInteger(const BoundedInteger<Tag, min, max, inv>& rhs) : value(rhs.value)
     {
     }
 
@@ -104,7 +115,7 @@ public:
      * @param rhs The instance to assign from.
      * @return A mutable reference to this instance.
      */
-    inline BoundedInteger<min, max, domain>& operator=(const BoundedInteger<min, max, domain>& rhs)
+    inline BoundedInteger<Tag, min, max, inv>& operator=(const BoundedInteger<Tag, min, max, inv>& rhs)
     {
         value = rhs.value;
         return *this;
@@ -115,7 +126,7 @@ public:
      * @param rhs The instance to compare to.
      * @return true iff both instances' value are equal.
      */
-    inline bool operator==(const BoundedInteger<min, max, domain>& rhs) const
+    inline bool operator==(const BoundedInteger<Tag, min, max, inv>& rhs) const
     {
         return value == rhs.value;
     }
@@ -144,8 +155,10 @@ public:
      */
     inline int get() const
     {
-        if (!is_valid())
-            throw std::runtime_error("BoundedInteger::get: Contained value is not valid.");
+        if (!is_valid()) throw std::runtime_error
+        {
+            "BoundedInteger::get: Contained value is not valid."
+        };
 
         return value;
     }
@@ -171,7 +184,7 @@ public:
      * @param bi The instance to print.
      * @return The stream that has been printed to.
      */
-    inline friend std::ostream& operator<<(std::ostream& out, const BoundedInteger<min, max, domain>& bi)
+    inline friend std::ostream& operator<<(std::ostream& out, const BoundedInteger<Tag, min, max, inv>& bi)
     {
         out << bi.value;
 

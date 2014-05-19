@@ -21,6 +21,7 @@ Build-Depends: cmake,
                libiw-dev,
                libplatform-hardware-api-headers (>=0.21),
                libplatform-hardware-api1-dev (>=0.21),
+               libprocess-cpp-dev,
                libproperties-cpp-dev,
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/location-service

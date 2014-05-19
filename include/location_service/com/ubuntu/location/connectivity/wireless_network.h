@@ -42,16 +42,34 @@ struct WirelessNetwork
         infrastructure = 2
     };
 
-    enum class Domain
+    struct Tag
     {
-        frequency,
-        channel,
-        strength
+        /** @brief Tags a frequency measurement for a wireless network. */
+        struct Frequency {};
+        /** @brief Tags the channel of a wireless network. */
+        struct Channel {};
+        /** @brief Tags the signal strength of a wireless network. */
+        struct Strength {};
     };
 
-    typedef BoundedInteger<2412, 5825, static_cast<int>(Domain::frequency)> Frequency;
-    typedef BoundedInteger<1, 165, static_cast<int>(Domain::channel)> Channel;
-    typedef BoundedInteger<0, 100, static_cast<int>(Domain::strength)> Strength;
+    typedef BoundedInteger
+    <
+        Tag::Frequency,
+        2412,
+        5825
+    > Frequency;
+    typedef BoundedInteger
+    <
+        Tag::Channel,
+        1,
+        165
+    > Channel;
+    typedef BoundedInteger
+    <
+        Tag::Strength,
+        0,
+        100
+    > Strength;
 
     bool operator==(const WirelessNetwork& rhs) const
     {
@@ -71,7 +89,8 @@ struct WirelessNetwork
                    << "frequency: " << wifi.frequency << ", "
                    << "channel: " << wifi.channel << ", "
                    << "strength: " << wifi.strength << ", "
-                   << "snr: " << wifi.snr << ")";
+                   << "snr: " << wifi.snr
+                   << ")";
     }
 
     std::string bssid; ///< The BSSID of the network.

@@ -20,6 +20,8 @@
 
 #include <com/ubuntu/location/connectivity/bounded_integer.h>
 
+#include <limits>
+
 namespace com
 {
 namespace ubuntu
@@ -31,53 +33,85 @@ namespace connectivity
 class RadioCell
 {
 public:
+
     enum class Type
     {
         unknown,
         gsm,
         umts,
-        cdma,
         lte
     };
 
-    enum class Domain
-    {
-        mcc,
-        mnc,
-        lac,
-        id,
-        pid,
-        rss,
-        asu,
-        ta
-    };
+    struct Mcc {};
+    struct Mnc {};
+    struct Lac {};
+    struct Tac {};
+    struct Id {};
+    struct Psc {};
+    struct Pid {};
+    struct Rss {};
+    struct Asu {};
+    struct Ta {};
 
-    template<int min, int max>
-    using MobileCountryCode = BoundedInteger<min, max, static_cast<int>(Domain::mcc)>;
-    template<int min, int max>
-    using MobileNetworkCode = BoundedInteger<min, max, static_cast<int>(Domain::mnc)>;
-    template<int min, int max>
-    using LocationAreaCode = BoundedInteger<min, max, static_cast<int>(Domain::lac)>;
-    template<int min, int max>
-    using CellId = BoundedInteger<min, max, static_cast<int>(Domain::id)>;
-    template<int min, int max>
-    using PhysicalId = BoundedInteger<min, max, static_cast<int>(Domain::pid)>;
-    template<int min, int max>
-    using ReceivedSignalStrength = BoundedInteger<min, max, static_cast<int>(Domain::rss)>;
-    template<int min, int max>
-    using ArbitraryStrengthUnit = BoundedInteger<min, max, static_cast<int>(Domain::asu)>;
-    template<int min, int max>
-    using TimingAdvance = BoundedInteger<min, max, static_cast<int>(Domain::ta)>;
+    template<int min, int max, int invalid = min-1>
+    using MobileCountryCode = BoundedInteger<Mcc, min, max, invalid>;
+    template<int min, int max, int invalid = min-1>
+    using MobileNetworkCode = BoundedInteger<Mnc, min, max, invalid>;
+    template<int min, int max, int invalid = min-1>
+    using LocationAreaCode = BoundedInteger<Lac, min, max, invalid>;
+    template<int min, int max, int invalid = min-1>
+    using TrackingAreaCode = BoundedInteger<Tac, min, max, invalid>;
+    template<int min, int max, int invalid = min-1>
+    using CellId = BoundedInteger<Id, min, max, invalid>;
+    template<int min, int max, int invalid = min-1>
+    using PrimaryScramblingCode = BoundedInteger<Psc, min, max, invalid>;
+    template<int min, int max, int invalid = min-1>
+    using PhysicalId = BoundedInteger<Pid, min, max, invalid>;
+    template<int min, int max, int invalid = min-1>
+    using ReceivedSignalStrength = BoundedInteger<Rss, min, max, invalid>;
+    template<int min, int max, int invalid = min-1>
+    using ArbitraryStrengthUnit = BoundedInteger<Asu, min, max, invalid>;
+    template<int min, int max, int invalid = min-1>
+    using TimingAdvance = BoundedInteger<Ta, min, max, invalid>;
 
     struct Gsm
     {
-        typedef MobileCountryCode<0,999> MCC;
-        typedef MobileNetworkCode<0,999> MNC;
-        typedef LocationAreaCode<0,65535> LAC;
-        typedef CellId<0,65535> ID;
-        typedef ReceivedSignalStrength<-113,-51> RSS;
-        typedef ArbitraryStrengthUnit<0,31> ASU;
-        typedef TimingAdvance<0,63> TA;
+        /** 3-digit Mobile Country Code, 0..999, INT_MAX if unknown */
+        typedef MobileCountryCode
+        <
+            0,
+            999,
+            std::numeric_limits<int>::max()
+        > MCC;
+        /** 2 or 3-digit Mobile Network Code, 0..999, INT_MAX if unknown */
+        typedef MobileNetworkCode
+        <
+            0,
+            999,
+            std::numeric_limits<int>::max()
+        > MNC;
+        /** 16-bit Location Area Code, 0..65535, INT_MAX if unknown  */
+        typedef LocationAreaCode
+        <
+            0,
+            65535,
+            std::numeric_limits<int>::max()
+        > LAC;
+        /** 16-bit GSM Cell Identity described in TS 27.007, 0..65535, INT_MAX if unknown  */
+        typedef CellId
+        <
+            0,
+            65535,
+            std::numeric_limits<int>::max()
+        > ID;
+
+        /** Valid values are (0-31, 99) as defined in TS 27.007 8.5 */
+        typedef ArbitraryStrengthUnit
+        <
+            0,
+            31,
+            99
+        > SignalStrength;
 
         bool operator==(const Gsm& rhs) const
         {
@@ -85,9 +119,7 @@ public:
                     mobile_network_code == rhs.mobile_network_code &&
                     location_area_code == rhs.location_area_code &&
                     id == rhs.id &&
-                    received_signal_strength == rhs.received_signal_strength &&
-                    arbitrary_strength_unit == rhs.arbitrary_strength_unit &&
-                    timing_advance == rhs.timing_advance;
+                    strength == rhs.strength;
         }
 
         inline friend std::ostream& operator<<(std::ostream& out, const Gsm& gsm)
@@ -97,9 +129,7 @@ public:
                 << "mnc: " << gsm.mobile_network_code << ", "
                 << "lac: " << gsm.location_area_code << ", "
                 << "id: " << gsm.id << ", "
-                << "rss: " << gsm.received_signal_strength << ", "
-                << "asu: " << gsm.arbitrary_strength_unit << ", "
-                << "ta: " << gsm.timing_advance << ")";
+                << "asu: " << gsm.strength << ")";
 
             return out;
         }
@@ -108,19 +138,53 @@ public:
         MNC mobile_network_code;
         LAC location_area_code;
         ID id;
-        RSS received_signal_strength;
-        ASU arbitrary_strength_unit;
-        TA timing_advance;
+        SignalStrength strength;
     };
 
     struct Umts
     {
-        typedef MobileCountryCode<0,999> MCC;
-        typedef MobileNetworkCode<0,999> MNC;
-        typedef LocationAreaCode<0,65535> LAC;
-        typedef CellId<0,268435455> ID;
-        typedef ReceivedSignalStrength<-121,-25> RSS;
-        typedef ArbitraryStrengthUnit<-5,91> ASU;
+        /** 3-digit Mobile Country Code, 0..999, INT_MAX if unknown */
+        typedef MobileCountryCode
+        <
+            0,
+            999,
+            std::numeric_limits<int>::max()
+        > MCC;
+        /** 2 or 3-digit Mobile Network Code, 0..999, INT_MAX if unknown */
+        typedef MobileNetworkCode
+        <
+            0,
+            999,
+            std::numeric_limits<int>::max()
+        > MNC;
+        /** 16-bit Location Area Code, 0..65535, INT_MAX if unknown  */
+        typedef LocationAreaCode
+        <
+            0,
+            65535,
+            std::numeric_limits<int>::max()
+        > LAC;
+        /** 28-bit UMTS Cell Identity described in TS 25.331, 0..268435455, INT_MAX if unknown  */
+        typedef CellId
+        <
+            0,
+            268435455,
+            std::numeric_limits<int>::max()
+        > ID;
+        /** 9-bit UMTS Primary Scrambling Code described in TS 25.331, 0..511, INT_MAX if unknown */
+        typedef PrimaryScramblingCode
+        <
+            0,
+            511,
+            std::numeric_limits<int>::max()
+        > PSC;
+        /** Valid values are (0-31, 99) as defined in TS 27.007 8.5 */
+        typedef ArbitraryStrengthUnit
+        <
+            0,
+            31,
+            99
+        > SignalStrength;
 
         bool operator==(const Umts& rhs) const
         {
@@ -128,8 +192,8 @@ public:
                     mobile_network_code == rhs.mobile_network_code &&
                     location_area_code == rhs.location_area_code &&
                     id == rhs.id &&
-                    received_signal_strength == rhs.received_signal_strength &&
-                    arbitrary_strength_unit == rhs.arbitrary_strength_unit;
+                    primary_scrambling_code == rhs.primary_scrambling_code &&
+                    strength == rhs.strength;
         }
 
         inline friend std::ostream& operator<<(std::ostream& out, const Umts& umts)
@@ -139,8 +203,8 @@ public:
                 << "mnc: " << umts.mobile_network_code << ", "
                 << "lac: " << umts.location_area_code << ", "
                 << "id: " << umts.id << ", "
-                << "rss: " << umts.received_signal_strength << ", "
-                << "asu: " << umts.arbitrary_strength_unit << ")";
+                << "psc: " << umts.primary_scrambling_code << ", "
+                << "asu: " << umts.strength << ")";
 
             return out;
         }
@@ -148,60 +212,54 @@ public:
         MNC mobile_network_code;
         LAC location_area_code;
         ID id;
-        RSS received_signal_strength;
-        ASU arbitrary_strength_unit;
-    };
-
-    struct Cdma
-    {
-        typedef MobileCountryCode<0,999> MCC;
-        typedef MobileNetworkCode<0,32767> MNC;
-        typedef LocationAreaCode<0,65535> LAC;
-        typedef CellId<0,65535> ID;
-        typedef ReceivedSignalStrength<-100,-75> RSS;
-        typedef ArbitraryStrengthUnit<1,16> ASU;
-
-        bool operator==(const Cdma& rhs) const
-        {
-            return mobile_country_code == rhs.mobile_country_code &&
-                    mobile_network_code == rhs.mobile_network_code &&
-                    location_area_code == rhs.location_area_code &&
-                    id == rhs.id &&
-                    received_signal_strength == rhs.received_signal_strength &&
-                    arbitrary_strength_unit == rhs.arbitrary_strength_unit;
-        }
-
-        inline friend std::ostream& operator<<(std::ostream& out, const Cdma& cdma)
-        {
-            out << "("
-                << "mcc: " << cdma.mobile_country_code << ", "
-                << "mnc: " << cdma.mobile_network_code << ", "
-                << "lac: " << cdma.location_area_code << ", "
-                << "id: " << cdma.id << ", "
-                << "rss: " << cdma.received_signal_strength << ", "
-                << "asu: " << cdma.arbitrary_strength_unit << ")";
-
-            return out;
-        }
-
-        MCC mobile_country_code;
-        MNC mobile_network_code;
-        LAC location_area_code;
-        ID id;
-        RSS received_signal_strength;
-        ASU arbitrary_strength_unit;
+        PSC primary_scrambling_code;
+        SignalStrength strength;
     };
 
     struct Lte
     {
-        typedef MobileCountryCode<0,999> MCC;
-        typedef MobileNetworkCode<0,32767> MNC;
-        typedef LocationAreaCode<0,65535> LAC;
-        typedef CellId<0,268435455> ID;
-        typedef PhysicalId<0,503> PID;
-        typedef ReceivedSignalStrength<-137,-45> RSS;
-        typedef ArbitraryStrengthUnit<0,95> ASU;
-        typedef TimingAdvance<0,63> TA;
+        /** 3-digit Mobile Country Code, 0..999, INT_MAX if unknown */
+        typedef MobileCountryCode
+        <
+            0,
+            999,
+            std::numeric_limits<int>::max()
+        > MCC;
+        /** 2 or 3-digit Mobile Network Code, 0..999, INT_MAX if unknown */
+        typedef MobileNetworkCode
+        <
+            0,
+            999,
+            std::numeric_limits<int>::max()
+        > MNC;
+        /** 16-bit Location Area Code, 0..65535, INT_MAX if unknown  */
+        typedef LocationAreaCode
+        <
+            0,
+            65535,
+            std::numeric_limits<int>::max()
+        > LAC;
+        /** 28-bit Cell Identity described in TS 25.331, 0..268435455, INT_MAX if unknown  */
+        typedef CellId
+        <
+            0,
+            268435455,
+            std::numeric_limits<int>::max()
+        > ID;
+        /** Physical cell id, 0..503, INT_MAX if unknown */
+        typedef PhysicalId
+        <
+            0,
+            503,
+            std::numeric_limits<int>::max()
+        > PID;
+        /** Valid values are (0-31, 99) as defined in TS 27.007 8.5 */
+        typedef ArbitraryStrengthUnit
+        <
+            0,
+            31,
+            99
+        > SignalStrength;
 
         bool operator==(const Lte& rhs) const
         {
@@ -210,9 +268,7 @@ public:
                     location_area_code == rhs.location_area_code &&
                     id == rhs.id &&
                     physical_id == rhs.physical_id &&
-                    received_signal_strength == rhs.received_signal_strength &&
-                    arbitrary_strength_unit == rhs.arbitrary_strength_unit &&
-                    timing_advance == rhs.timing_advance;
+                    strength == rhs.strength;
         }
 
         inline friend std::ostream& operator<<(std::ostream& out, const Lte& lte)
@@ -223,9 +279,7 @@ public:
                 << "lac: " << lte.location_area_code << ", "
                 << "id: " << lte.id << ", "
                 << "id: " << lte.physical_id << ", "
-                << "rss: " << lte.received_signal_strength << ", "
-                << "asu: " << lte.arbitrary_strength_unit << ", "
-                << "ta: " << lte.timing_advance << ")";
+                << "asu: " << lte.strength << ")";
 
             return out;
         }
@@ -235,9 +289,7 @@ public:
         LAC location_area_code;
         ID id;
         PID physical_id;
-        RSS received_signal_strength;
-        ASU arbitrary_strength_unit;
-        TA timing_advance;
+        SignalStrength strength;
     };
 
     RadioCell() : radio_type(Type::gsm), detail{Gsm()}
@@ -254,11 +306,6 @@ public:
     {
     }
 
-    explicit RadioCell(const Cdma& cdma)
-        : radio_type(Type::cdma), detail{cdma}
-    {
-    }
-
     explicit RadioCell(const Lte& lte)
         : radio_type(Type::lte), detail{lte}
     {
@@ -269,7 +316,6 @@ public:
         switch(radio_type)
         {
         case Type::gsm: detail.gsm = rhs.detail.gsm; break;
-        case Type::cdma: detail.cdma = rhs.detail.cdma; break;
         case Type::umts: detail.umts = rhs.detail.umts; break;
         case Type::lte: detail.lte = rhs.detail.lte; break;
         case Type::unknown: break;
@@ -282,7 +328,6 @@ public:
         switch(radio_type)
         {
         case Type::gsm: detail.gsm = rhs.detail.gsm; break;
-        case Type::cdma: detail.cdma = rhs.detail.cdma; break;
         case Type::umts: detail.umts = rhs.detail.umts; break;
         case Type::lte: detail.lte = rhs.detail.lte; break;
         case Type::unknown: break;
@@ -299,7 +344,6 @@ public:
         switch(radio_type)
         {
         case Type::gsm: return detail.gsm == rhs.detail.gsm;
-        case Type::cdma: return detail.cdma == rhs.detail.cdma;
         case Type::umts: return detail.umts == rhs.detail.umts;
         case Type::lte: return detail.lte == rhs.detail.lte;
         default: return true;
@@ -329,14 +373,6 @@ public:
         return detail.umts;
     }
 
-    const Cdma& cdma() const
-    {
-        if (radio_type != Type::cdma)
-            throw std::runtime_error("Bad access to unset network type.");
-
-        return detail.cdma;
-    }
-
     const Lte& lte() const
     {
         if (radio_type != Type::lte)
@@ -350,7 +386,6 @@ public:
         switch (cell.radio_type)
         {
         case RadioCell::Type::gsm: out << cell.detail.gsm; break;
-        case RadioCell::Type::cdma: out << cell.detail.cdma; break;
         case RadioCell::Type::umts: out << cell.detail.umts; break;
         case RadioCell::Type::lte: out << cell.detail.lte; break;
         case RadioCell::Type::unknown: break;
@@ -377,17 +412,12 @@ private:
         {
         }
 
-        inline explicit Detail(const Cdma& cdma) : cdma(cdma)
-        {
-        }
-
         inline explicit Detail(const Lte& lte) : lte(lte)
         {
         }
         None none;
         Gsm gsm;
         Umts umts;
-        Cdma cdma;
         Lte lte;
     } detail;
 };
