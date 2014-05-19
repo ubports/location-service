@@ -95,7 +95,7 @@ install(
 add_library(
   ubuntu-location-service-daemon
 
-  service/daemon
+  service/daemon.cpp
 )
 
 add_executable(

@@ -4,7 +4,7 @@ project(ubuntu-location-service)
 
 set(UBUNTU_LOCATION_SERVICE_VERSION_MAJOR 0)
 set(UBUNTU_LOCATION_SERVICE_VERSION_MINOR 0)
-set(UBUNTU_LOCATION_SERVICE_VERSION_PATCH 2)
+set(UBUNTU_LOCATION_SERVICE_VERSION_PATCH 3)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wextra -fPIC -pthread")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fno-strict-aliasing -pedantic -Wextra -fPIC -pthread")
@@ -55,7 +55,9 @@ include_directories(
   ${PROCESS_CPP_INCLUDE_DIRS}
   ${GLog_INCLUDE_DIR}
   ${GFlags_INCLUDE_DIR}
-  include/location_service
+
+  ${CMAKE_SOURCE_DIR}/include/location_service
+  ${CMAKE_SOURCE_DIR}/src/location_service
 )
 
 file(GLOB_RECURSE UBUNTU_LOCATION_SERVICE_PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR} *.h)

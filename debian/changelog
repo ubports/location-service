@@ -1,3 +1,50 @@
+location-service (0.0.3+14.10.20140512-0ubuntu1) utopic; urgency=medium
+
+  [ Thomas Voß ]
+  * Patch version bump reflecting the toolchain switch.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 12 May 2014 21:02:13 +0000
+
+location-service (0.0.2+14.04.20140307-0ubuntu2) utopic; urgency=high
+
+  * No change rebuild against boost1.55.
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Mon, 28 Apr 2014 02:59:37 +0100
+
+location-service (0.0.2+14.04.20140307-0ubuntu1) trusty; urgency=low
+
+  [ thomas-voss ]
+  * Re-enable onSessionDied().
+
+  [ Łukasz 'sil2100' Zemczak ]
+  * Bump the build-dependency on dbus-cpp due to the ABI change
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 07 Mar 2014 12:42:42 +0000
+
+location-service (0.0.2+14.04.20140211-0ubuntu1) trusty; urgency=low
+
+  [ thomas-voss ]
+  * Backport dummy provider and accompanying tests.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 11 Feb 2014 19:26:26 +0000
+
+location-service (0.0.2+14.04.20140205.1-0ubuntu1) trusty; urgency=low
+
+  [ thomas-voss ]
+  * Force compilation against gcc 4.7.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 05 Feb 2014 14:32:35 +0000
+
+location-service (0.0.2+14.04.20140204-0ubuntu1) trusty; urgency=low
+
+  [ thomas-voss ]
+  * * Fix a race when a session is created while another one ends. *
+    Ensure a sensible minimum interval between consecutive location
+    updates in the GPS provider. (LP: #1240878)
+  * Adjust to changes in new dbus-cpp version.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 04 Feb 2014 12:36:02 +0000
+
 location-service (0.0.2+13.10.20131016.1-0ubuntu3) UNRELEASED; urgency=medium
 
   * Version bump 

@@ -18,6 +18,8 @@
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_factory.h>
 
+#include "dummy/provider.h"
+
 #include <map>
 
 namespace cul = com::ubuntu::location;
@@ -32,6 +34,13 @@ struct FactoryInjector
     }
 };
 }
+
+static FactoryInjector dummy_injector
+{
+    "dummy::Provider",
+    com::ubuntu::location::providers::dummy::Provider::create_instance
+};
+
 #if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GEOCLUE)
 #include <com/ubuntu/location/providers/geoclue/provider.h>
 static FactoryInjector geoclue_injector
@@ -42,7 +51,7 @@ static FactoryInjector geoclue_injector
 #endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GEOCLUE
 
 #if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GPS)
-#include "gps/provider.h"
+#include <com/ubuntu/location/providers/gps/provider.h>
 static FactoryInjector gps_injector
 {
     "gps::Provider", 
