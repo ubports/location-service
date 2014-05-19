@@ -30,10 +30,12 @@ namespace location
 {
 namespace connectivity
 {
+/** @brief Models a radio cell that one of the modems in the system is connected to. */
 class RadioCell
 {
 public:
 
+    /** @brief Enumerates the known technologies. */
     enum class Type
     {
         unknown,
@@ -42,6 +44,7 @@ public:
         lte
     };
 
+    /** @cond */
     struct Mcc {};
     struct Mnc {};
     struct Lac {};
@@ -52,6 +55,7 @@ public:
     struct Rss {};
     struct Asu {};
     struct Ta {};
+    /** @endcond */
 
     template<int min, int max, int invalid = min-1>
     using MobileCountryCode = BoundedInteger<Mcc, min, max, invalid>;
@@ -74,6 +78,7 @@ public:
     template<int min, int max, int invalid = min-1>
     using TimingAdvance = BoundedInteger<Ta, min, max, invalid>;
 
+    /** @brief Models a GSM radio cell. */
     struct Gsm
     {
         /** 3-digit Mobile Country Code, 0..999, INT_MAX if unknown */
@@ -141,6 +146,7 @@ public:
         SignalStrength strength;
     };
 
+    /** @brief Models a UMTS radio cell. */
     struct Umts
     {
         /** 3-digit Mobile Country Code, 0..999, INT_MAX if unknown */
@@ -216,6 +222,7 @@ public:
         SignalStrength strength;
     };
 
+    /** @brief Models an LTE radio cell. */
     struct Lte
     {
         /** 3-digit Mobile Country Code, 0..999, INT_MAX if unknown */
@@ -336,6 +343,7 @@ public:
         return *this;
     }
 
+    /** @brief Returns true iff this instance equals rhs. */
     bool operator==(const RadioCell& rhs) const
     {
         if (radio_type != rhs.radio_type)
@@ -352,11 +360,13 @@ public:
         return false;
     }
 
+    /** @brief Returns the type of the radio cell. */
     Type type() const
     {
         return radio_type;
     }
 
+    /** @brief Returns GSM-specific details or throws std::runtime_error if this is not a GSM radiocell. */
     const Gsm& gsm() const
     {
         if (radio_type != Type::gsm)
@@ -365,6 +375,7 @@ public:
         return detail.gsm;
     }
 
+    /** @brief Returns UMTS-specific details or throws std::runtime_error if this is not a UMTS radiocell. */
     const Umts& umts() const
     {
         if (radio_type != Type::umts)
@@ -373,6 +384,7 @@ public:
         return detail.umts;
     }
 
+    /** @brief Returns LTE-specific details or throws std::runtime_error if this is not an LTE radiocell. */
     const Lte& lte() const
     {
         if (radio_type != Type::lte)
@@ -381,6 +393,7 @@ public:
         return detail.lte;
     }
 
+    /** @brief Pretty-prints the given cell to the given output stream. */
     inline friend std::ostream& operator<<(std::ostream& out, const RadioCell& cell)
     {
         switch (cell.radio_type)
