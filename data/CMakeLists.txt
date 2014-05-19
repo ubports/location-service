@@ -33,7 +33,7 @@ install(
 
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/ubuntu-location-service-connectivity.pc
-  DESTINATION §{CMAKE_INSTALL_LIBDIR}/pkgconfig
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
 )
 
 install(
