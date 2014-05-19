@@ -71,6 +71,9 @@ public:
         return max - min;
     }
 
+    /**
+     * @brief from_percent creates a new instance, mapping to the defined range of valid values.
+     */
     inline static BoundedInteger<Tag, min, max, inv> from_percent(float percent)
     {
         // Capping to [0,1]
