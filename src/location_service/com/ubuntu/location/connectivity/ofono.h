@@ -41,6 +41,8 @@ static const std::string& name()
 }
 struct Manager
 {
+    typedef std::shared_ptr<Manager> Ptr;
+
     static const std::string& name()
     {
         static const std::string s{"org.ofono.Manager"};

@@ -42,6 +42,18 @@ struct WirelessNetwork
         infrastructure = 2
     };
 
+    inline friend std::ostream& operator<<(std::ostream& out, Mode mode)
+    {
+        switch (mode)
+        {
+        case Mode::unknown: out << "Mode::unknown"; break;
+        case Mode::adhoc: out << "Mode::adhoc"; break;
+        case Mode::infrastructure: out << "Mode::infrastructure"; break;
+        }
+
+        return out;
+    }
+
     struct Tag
     {
         /** @brief Tags a frequency measurement for a wireless network. */
@@ -75,6 +87,7 @@ struct WirelessNetwork
     {
         return bssid == rhs.bssid &&
                ssid == rhs.ssid &&
+               mode == rhs.mode &&
                frequency == rhs.frequency &&
                channel == rhs.channel &&
                strength == rhs.strength &&
@@ -86,6 +99,7 @@ struct WirelessNetwork
         return out << "("
                    << "bssid: " << wifi.bssid << ", "
                    << "ssid: " << wifi.ssid << ", "
+                   << "mode: " << wifi.mode << ", "
                    << "frequency: " << wifi.frequency << ", "
                    << "channel: " << wifi.channel << ", "
                    << "strength: " << wifi.strength << ", "
@@ -95,6 +109,7 @@ struct WirelessNetwork
 
     std::string bssid; ///< The BSSID of the network.
     std::string ssid; ///< The SSID of the network.
+    Mode mode; ///< The mode of the network.
     Frequency frequency; ///< Frequency of the network/AP.
     Channel channel; ///< Channel of the network/AP.
     Strength strength; ///< Signal quality of the network/AP in percent.

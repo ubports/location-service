@@ -38,5 +38,6 @@ TEST(ConnectivityManager, default_implementation_is_queryable_for_wifis_and_radi
         });
     } catch(...)
     {
+        std::cout << "oops" << std::endl;
     }
 }

@@ -112,148 +112,172 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
 {
     OfonoNmConnectivityManager()
     {
-        d.visible_wireless_networks.getter = [this]()
+        if (d.network_manager)
         {
-            auto devices = d.network_manager.get_devices();
-            std::vector<connectivity::WirelessNetwork> wifis;
-            for(const auto& device : devices)
+            d.visible_wireless_networks.getter = [this]()
             {
-                if (device.type() == org::freedesktop::NetworkManager::Device::Type::wifi)
+                auto devices = d.network_manager->get_devices();
+                std::vector<connectivity::WirelessNetwork> wifis;
+                for(const auto& device : devices)
                 {
-                    auto aps = device.get_access_points();
-                    for(auto const& ap : aps)
+                    if (device.type() == org::freedesktop::NetworkManager::Device::Type::wifi)
                     {
-                        connectivity::WirelessNetwork wifi;
-                        wifi.bssid = ap.hw_address->get();
-                        wifi.frequency.set(ap.frequency->get());
-                        wifi.snr = ap.strength->get() / 127.;
+                        auto aps = device.get_access_points();
+                        for(auto const& ap : aps)
+                        {
+                            connectivity::WirelessNetwork wifi;
+                            wifi.bssid = ap.hw_address->get();
+                            auto ssid = ap.ssid->get();
+                            wifi.ssid = std::string(ssid.begin(), ssid.end());
 
-                        wifis.push_back(wifi);
+                            auto mode = ap.mode->get();
+
+                            switch (mode)
+                            {
+                            case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::unknown:
+                                wifi.mode = connectivity::WirelessNetwork::Mode::unknown;
+                                break;
+                            case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::adhoc:
+                                wifi.mode = connectivity::WirelessNetwork::Mode::adhoc;
+                                break;
+                            case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::infra:
+                                wifi.mode = connectivity::WirelessNetwork::Mode::infrastructure;
+                                break;
+                            }
+
+                            wifi.frequency.set(ap.frequency->get());
+                            wifi.snr = ap.strength->get() / 127.;
+
+                            wifis.push_back(wifi);
+                        }
                     }
                 }
-            }
-            return std::vector<connectivity::WirelessNetwork>(wifis);
-        };
+                return std::vector<connectivity::WirelessNetwork>(wifis);
+            };
+        }
 
-        d.visible_radio_cells.getter = [this]()
+        if (d.modem_manager)
         {
-            std::vector<connectivity::RadioCell> cells;
-
-            d.modem_manager.for_each_modem([&cells](const org::Ofono::Manager::Modem& modem)
+            d.visible_radio_cells.getter = [this]()
             {
-                static const std::map<std::string, connectivity::RadioCell::Type> type_lut =
-                {
-                    {
-                        org::Ofono::Manager::Modem::NetworkRegistration::Technology::gsm(),
-                        connectivity::RadioCell::Type::gsm
-                    },
-                    {
-                        org::Ofono::Manager::Modem::NetworkRegistration::Technology::lte(),
-                        connectivity::RadioCell::Type::lte
-                    },
-                    {
-                        org::Ofono::Manager::Modem::NetworkRegistration::Technology::umts(),
-                        connectivity::RadioCell::Type::umts
-                    },
-                    {
-                        org::Ofono::Manager::Modem::NetworkRegistration::Technology::edge(),
-                        connectivity::RadioCell::Type::unknown
-                    },
-                    {
-                        org::Ofono::Manager::Modem::NetworkRegistration::Technology::hspa(),
-                        connectivity::RadioCell::Type::unknown
-                    },
-                    {std::string(), connectivity::RadioCell::Type::unknown}
-                };
+                std::vector<connectivity::RadioCell> cells;
 
-                auto radio_type = type_lut.at(
-                            modem.network_registration.get<
+                d.modem_manager->for_each_modem([&cells](const org::Ofono::Manager::Modem& modem)
+                {
+                    static const std::map<std::string, connectivity::RadioCell::Type> type_lut =
+                    {
+                        {
+                            org::Ofono::Manager::Modem::NetworkRegistration::Technology::gsm(),
+                            connectivity::RadioCell::Type::gsm
+                        },
+                        {
+                            org::Ofono::Manager::Modem::NetworkRegistration::Technology::lte(),
+                            connectivity::RadioCell::Type::lte
+                        },
+                        {
+                            org::Ofono::Manager::Modem::NetworkRegistration::Technology::umts(),
+                            connectivity::RadioCell::Type::umts
+                        },
+                        {
+                            org::Ofono::Manager::Modem::NetworkRegistration::Technology::edge(),
+                            connectivity::RadioCell::Type::unknown
+                        },
+                        {
+                            org::Ofono::Manager::Modem::NetworkRegistration::Technology::hspa(),
+                            connectivity::RadioCell::Type::unknown
+                        },
+                        {std::string(), connectivity::RadioCell::Type::unknown}
+                    };
+
+                    auto radio_type = type_lut.at(
+                                modem.network_registration.get<
                                 org::Ofono::Manager::Modem::NetworkRegistration::Technology
-                            >());
-                auto lac =
-                        modem.network_registration.get<
+                                >());
+                    auto lac =
+                            modem.network_registration.get<
                             org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode
-                        >();
+                            >();
 
-                int cell_id =
-                        modem.network_registration.get<
+                    int cell_id =
+                            modem.network_registration.get<
                             org::Ofono::Manager::Modem::NetworkRegistration::CellId
-                        >(0);
+                            >(0);
 
-                auto strength =
-                        modem.network_registration.get<
+                    auto strength =
+                            modem.network_registration.get<
                             org::Ofono::Manager::Modem::NetworkRegistration::Strength
-                        >(0);
+                            >(0);
 
-                std::stringstream ssmcc
-                {
-                    modem.network_registration.get<
-                        org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode
-                    >()
-                };
-                int mcc{0}; ssmcc >> mcc;
-                std::stringstream ssmnc
-                {
-                    modem.network_registration.get<
-                        org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode
-                    >()
-                };
-                int mnc{0}; ssmnc >> mnc;
+                    std::stringstream ssmcc
+                    {
+                        modem.network_registration.get<
+                                org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode
+                                >()
+                    };
+                    int mcc{0}; ssmcc >> mcc;
+                    std::stringstream ssmnc
+                    {
+                        modem.network_registration.get<
+                                org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode
+                                >()
+                    };
+                    int mnc{0}; ssmnc >> mnc;
 
-                switch(radio_type)
-                {
-                case connectivity::RadioCell::Type::gsm:
-                {
-                    connectivity::RadioCell::Gsm gsm
+                    switch(radio_type)
                     {
-                        connectivity::RadioCell::Gsm::MCC{mcc},
-                        connectivity::RadioCell::Gsm::MNC{mnc},
-                        connectivity::RadioCell::Gsm::LAC{lac},
-                        connectivity::RadioCell::Gsm::ID{cell_id},
-                        connectivity::RadioCell::Gsm::SignalStrength::from_percent(strength/100.f)
-                    };
-                    cells.emplace_back(gsm);
-                    break;
-                }
-                case connectivity::RadioCell::Type::lte:
-                {
-                    connectivity::RadioCell::Lte lte
+                    case connectivity::RadioCell::Type::gsm:
                     {
-                        connectivity::RadioCell::Lte::MCC{mcc},
-                        connectivity::RadioCell::Lte::MNC{mnc},
-                        connectivity::RadioCell::Lte::LAC{lac},
-                        connectivity::RadioCell::Lte::ID{cell_id},
-                        connectivity::RadioCell::Lte::PID{},
-                        connectivity::RadioCell::Lte::SignalStrength::from_percent(strength/100.f)
-                    };
-                    cells.emplace_back(lte);
-                    break;
-                }
-                case connectivity::RadioCell::Type::umts:
-                {
-                    connectivity::RadioCell::Umts umts
+                        connectivity::RadioCell::Gsm gsm
+                        {
+                            connectivity::RadioCell::Gsm::MCC{mcc},
+                            connectivity::RadioCell::Gsm::MNC{mnc},
+                            connectivity::RadioCell::Gsm::LAC{lac},
+                            connectivity::RadioCell::Gsm::ID{cell_id},
+                            connectivity::RadioCell::Gsm::SignalStrength::from_percent(strength/100.f)
+                        };
+                        cells.emplace_back(gsm);
+                        break;
+                    }
+                    case connectivity::RadioCell::Type::lte:
                     {
-                        connectivity::RadioCell::Umts::MCC{mcc},
-                        connectivity::RadioCell::Umts::MNC{mnc},
-                        connectivity::RadioCell::Umts::LAC{lac},
-                        connectivity::RadioCell::Umts::ID{cell_id},
-                        connectivity::RadioCell::Umts::PSC{},
-                        connectivity::RadioCell::Umts::SignalStrength::from_percent(strength/100.f)
-                    };
-                    cells.emplace_back(umts);
-                    break;
-                }
-                default: break; // By default, we do not add a cell.
-                }
-            });
+                        connectivity::RadioCell::Lte lte
+                        {
+                            connectivity::RadioCell::Lte::MCC{mcc},
+                            connectivity::RadioCell::Lte::MNC{mnc},
+                            connectivity::RadioCell::Lte::LAC{lac},
+                            connectivity::RadioCell::Lte::ID{cell_id},
+                            connectivity::RadioCell::Lte::PID{},
+                            connectivity::RadioCell::Lte::SignalStrength::from_percent(strength/100.f)
+                        };
+                        cells.emplace_back(lte);
+                        break;
+                    }
+                    case connectivity::RadioCell::Type::umts:
+                    {
+                        connectivity::RadioCell::Umts umts
+                        {
+                            connectivity::RadioCell::Umts::MCC{mcc},
+                            connectivity::RadioCell::Umts::MNC{mnc},
+                            connectivity::RadioCell::Umts::LAC{lac},
+                            connectivity::RadioCell::Umts::ID{cell_id},
+                            connectivity::RadioCell::Umts::PSC{},
+                            connectivity::RadioCell::Umts::SignalStrength::from_percent(strength/100.f)
+                        };
+                        cells.emplace_back(umts);
+                        break;
+                    }
+                    default: break; // By default, we do not add a cell.
+                    }
+                });
 
-            return cells;
-        };
+                return cells;
+            };
+        }
     }
 
     void request_scan_for_wireless_networks()
     {
-        auto devices = d.network_manager.get_devices();
+        auto devices = d.network_manager->get_devices();
 
         for(const auto& device : devices)
         {
@@ -264,12 +288,12 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
         }
     }
 
-    const core::Property<std::vector<connectivity::WirelessNetwork>>& visible_wireless_networks()
+    const core::Property<std::vector<connectivity::WirelessNetwork> >& visible_wireless_networks()
     {
         return d.visible_wireless_networks;
     }
 
-    const core::Property<std::vector<connectivity::RadioCell>>& connected_radio_cells()
+    const core::Property<std::vector<connectivity::RadioCell> >& connected_radio_cells()
     {
         return d.visible_radio_cells;
     }
@@ -277,15 +301,28 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
     struct Private
     {
         Private()
-            : network_manager(system_bus()),
-              modem_manager(system_bus())
         {
+            try
+            {
+                network_manager.reset(new org::freedesktop::NetworkManager(system_bus()));
+            } catch(const std::runtime_error& e)
+            {
+                std::cerr << e.what() << std::endl;
+            }
+
+            try
+            {
+                modem_manager.reset(new org::Ofono::Manager(system_bus()));
+            } catch (const std::runtime_error& e)
+            {
+                std::cerr << e.what() << std::endl;
+            }
         }
 
-        org::freedesktop::NetworkManager network_manager;
-        org::Ofono::Manager modem_manager;
-        DispatchedProperty<std::vector<connectivity::WirelessNetwork>> visible_wireless_networks;
-        DispatchedProperty<std::vector<connectivity::RadioCell>> visible_radio_cells;
+        org::freedesktop::NetworkManager::Ptr network_manager;
+        org::Ofono::Manager::Ptr modem_manager;
+        DispatchedProperty<std::vector<connectivity::WirelessNetwork> > visible_wireless_networks;
+        DispatchedProperty<std::vector<connectivity::RadioCell> > visible_radio_cells;
     } d;
 };
 }

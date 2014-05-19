@@ -35,6 +35,8 @@ namespace freedesktop
 {
 struct NetworkManager
 {
+    typedef std::shared_ptr<NetworkManager> Ptr;
+
     struct AccessPoint
     {
         static const std::string& name()
@@ -48,6 +50,28 @@ struct NetworkManager
             static const std::string& name()
             {
                 static const std::string s{"Frequency"};
+                return s;
+            }
+
+            typedef AccessPoint Interface;
+            typedef std::uint32_t ValueType;
+            static const bool readable = true;
+            static const bool writable = false;
+        };
+
+        struct Mode
+        {
+            enum Value
+            {
+                unknown = 0,
+                adhoc = 1,
+                infra = 2,
+                ap = 3
+            };
+
+            static const std::string& name()
+            {
+                static const std::string s{"Mode"};
                 return s;
             }
 
@@ -71,6 +95,20 @@ struct NetworkManager
             static const bool writable = false;
         };
 
+        struct Ssid
+        {
+            static const std::string& name()
+            {
+                static const std::string s{"Ssid"};
+                return s;
+            }
+
+            typedef AccessPoint Interface;
+            typedef std::vector<std::int8_t> ValueType;
+            static const bool readable = true;
+            static const bool writable = false;
+        };
+
         struct Strength
         {
             static const std::string& name()
@@ -87,13 +125,17 @@ struct NetworkManager
 
         AccessPoint(const std::shared_ptr<core::dbus::Object>& object)
             : frequency(object->get_property<Frequency>()),
+              mode(object->get_property<Mode>()),
               hw_address(object->get_property<HwAddress>()),
+              ssid(object->get_property<Ssid>()),
               strength(object->get_property<Strength>())
         {
         }
 
         std::shared_ptr<core::dbus::Property<Frequency>> frequency;
+        std::shared_ptr<core::dbus::Property<Mode>> mode;
         std::shared_ptr<core::dbus::Property<HwAddress>> hw_address;
+        std::shared_ptr<core::dbus::Property<Ssid>> ssid;
         std::shared_ptr<core::dbus::Property<Strength>> strength;
     };
 
