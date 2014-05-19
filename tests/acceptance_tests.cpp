@@ -145,6 +145,12 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
     {
         SCOPED_TRACE("Server");
 
+        auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_term});
+        trap->signal_raised().connect([trap](core::posix::Signal)
+        {
+            trap->stop();
+        });
+
         auto bus = session_bus();
         bus->install_executor(core::dbus::asio::make_executor(bus));
 
@@ -168,6 +174,8 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
         dummy->inject_update(reference_position_update);
         dummy->inject_update(reference_velocity_update);
         dummy->inject_update(reference_heading_update);
+
+        trap->run();
 
         bus->stop();
 
