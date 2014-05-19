@@ -27,6 +27,7 @@ macro(LOCATION_SERVICE_ADD_TEST test_name src)
     ${test_name}
 
     ubuntu-location-service
+    ubuntu-location-service-connectivity
     ubuntu-location-service-daemon
 
     ${Boost_LIBRARIES}

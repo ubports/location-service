@@ -3,6 +3,8 @@ add_subdirectory(providers)
 add_library(
   ubuntu-location-service SHARED
 
+  ${UBUNTU_LOCATION_SERVICE_PUBLIC_HEADERS}
+
   default_provider_selection_policy.cpp
   
   criteria.cpp
@@ -13,8 +15,6 @@ add_library(
   provider_factory.cpp
   proxy_provider.cpp
   set_name_for_thread.cpp
-
-  connectivity/ofono_nm_connectivity_manager.cpp
 
   service/default_configuration.cpp
   service/default_permission_manager.cpp
@@ -30,10 +30,30 @@ add_library(
   providers/config.cpp
 )
 
+add_library(
+  ubuntu-location-service-connectivity SHARED
+
+  connectivity/ofono_nm_connectivity_manager.cpp
+)
+
+set(symbol_map "${CMAKE_SOURCE_DIR}/symbols.map")
+
 set_target_properties(
   ubuntu-location-service
 
   PROPERTIES
+  LINK_FLAGS "${ldflags} -Wl,--version-script,${symbol_map}"
+  LINK_DEPENDS ${symbol_map}
+  VERSION ${UBUNTU_LOCATION_SERVICE_VERSION_MAJOR}.${UBUNTU_LOCATION_SERVICE_VERSION_MINOR}.${UBUNTU_LOCATION_SERVICE_VERSION_PATCH}
+  SOVERSION ${UBUNTU_LOCATION_SERVICE_VERSION_MAJOR}
+)
+
+set_target_properties(
+  ubuntu-location-service-connectivity
+
+  PROPERTIES
+  LINK_FLAGS "${ldflags} -Wl,--version-script,${symbol_map}"
+  LINK_DEPENDS ${symbol_map}
   VERSION ${UBUNTU_LOCATION_SERVICE_VERSION_MAJOR}.${UBUNTU_LOCATION_SERVICE_VERSION_MINOR}.${UBUNTU_LOCATION_SERVICE_VERSION_PATCH}
   SOVERSION ${UBUNTU_LOCATION_SERVICE_VERSION_MAJOR}
 )
@@ -52,8 +72,23 @@ target_link_libraries(
   ${GFlags_LIBRARY}
 )
 
+target_link_libraries(
+  ubuntu-location-service-connectivity
+
+  ${Boost_LIBRARIES}
+  ${DBUS_LIBRARIES}
+  ${DBUS_CPP_LDFLAGS}
+  ${GLog_LIBRARY}
+  ${GFlags_LIBRARY}
+)
+
 install(
   TARGETS ubuntu-location-service
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+install(
+  TARGETS ubuntu-location-service-connectivity
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 

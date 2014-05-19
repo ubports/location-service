@@ -58,6 +58,8 @@ include_directories(
   include/location_service
 )
 
+file(GLOB_RECURSE UBUNTU_LOCATION_SERVICE_PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR} *.h)
+
 add_subdirectory(data)
 add_subdirectory(doc)
 add_subdirectory(examples)

@@ -40,6 +40,14 @@ public:
     static_assert(min < max, "min >= max");
 
     /**
+      * @brief Returns the invalid value for the specified range
+      */
+    inline static int invalid()
+    {
+        return min - 1;
+    }
+
+    /**
      * @brief Access the minimum value of the integer.
      */
     inline static int minimum()
@@ -66,7 +74,7 @@ public:
     /**
      * @brief Constructs an invalid instance.
      */
-    BoundedInteger() : value(min-1)
+    inline BoundedInteger() : value(min-1)
     {
     }
 
@@ -75,7 +83,7 @@ public:
      * @param value The raw value.
      * @throw std::runtime_error if value is not in [min, max].
      */
-    explicit BoundedInteger(int value) : value(value)
+    inline explicit BoundedInteger(int value) : value(value)
     {
         if (value < min || value > max)
             throw std::runtime_error(
@@ -87,7 +95,7 @@ public:
      * @brief Copy c'tor.
      * @param rhs The instance to copy from.
      */
-    BoundedInteger(const BoundedInteger<min, max, domain>& rhs) : value(rhs.value)
+    inline BoundedInteger(const BoundedInteger<min, max, domain>& rhs) : value(rhs.value)
     {
     }
 
@@ -96,7 +104,7 @@ public:
      * @param rhs The instance to assign from.
      * @return A mutable reference to this instance.
      */
-    BoundedInteger<min, max, domain>& operator=(const BoundedInteger<min, max, domain>& rhs)
+    inline BoundedInteger<min, max, domain>& operator=(const BoundedInteger<min, max, domain>& rhs)
     {
         value = rhs.value;
         return *this;
@@ -107,7 +115,7 @@ public:
      * @param rhs The instance to compare to.
      * @return true iff both instances' value are equal.
      */
-    bool operator==(const BoundedInteger<min, max, domain>& rhs) const
+    inline bool operator==(const BoundedInteger<min, max, domain>& rhs) const
     {
         return value == rhs.value;
     }
