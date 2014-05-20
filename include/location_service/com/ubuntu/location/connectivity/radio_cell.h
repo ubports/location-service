@@ -239,13 +239,13 @@ public:
             999,
             std::numeric_limits<int>::max()
         > MNC;
-        /** 16-bit Location Area Code, 0..65535, INT_MAX if unknown  */
-        typedef LocationAreaCode
+        /** 16-bit Tracking Area Code, 0..65535, INT_MAX if unknown  */
+        typedef TrackingAreaCode
         <
             0,
             65535,
             std::numeric_limits<int>::max()
-        > LAC;
+        > TAC;
         /** 28-bit Cell Identity described in TS 25.331, 0..268435455, INT_MAX if unknown  */
         typedef CellId
         <
@@ -272,7 +272,7 @@ public:
         {
             return mobile_country_code == rhs.mobile_country_code &&
                     mobile_network_code == rhs.mobile_network_code &&
-                    location_area_code == rhs.location_area_code &&
+                    tracking_area_code == rhs.tracking_area_code &&
                     id == rhs.id &&
                     physical_id == rhs.physical_id &&
                     strength == rhs.strength;
@@ -283,7 +283,7 @@ public:
             out << "("
                 << "mcc: " << lte.mobile_country_code << ", "
                 << "mnc: " << lte.mobile_network_code << ", "
-                << "lac: " << lte.location_area_code << ", "
+                << "lac: " << lte.tracking_area_code << ", "
                 << "id: " << lte.id << ", "
                 << "id: " << lte.physical_id << ", "
                 << "asu: " << lte.strength << ")";
@@ -293,7 +293,7 @@ public:
 
         MCC mobile_country_code;
         MNC mobile_network_code;
-        LAC location_area_code;
+        TAC tracking_area_code;
         ID id;
         PID physical_id;
         SignalStrength strength;

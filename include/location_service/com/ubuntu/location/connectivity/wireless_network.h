@@ -58,30 +58,25 @@ struct WirelessNetwork
     {
         /** @brief Tags a frequency measurement for a wireless network. */
         struct Frequency {};
-        /** @brief Tags the channel of a wireless network. */
-        struct Channel {};
         /** @brief Tags the signal strength of a wireless network. */
-        struct Strength {};
+        struct SignalStrength {};
     };
 
+    /** Frequency that an individual AP operates on. */
     typedef BoundedInteger
     <
         Tag::Frequency,
         2412,
         5825
     > Frequency;
+
+    /** Strength of signal for an individual AP. */
     typedef BoundedInteger
     <
-        Tag::Channel,
-        1,
-        165
-    > Channel;
-    typedef BoundedInteger
-    <
-        Tag::Strength,
+        Tag::SignalStrength,
         0,
         100
-    > Strength;
+    > SignalStrength;
 
     bool operator==(const WirelessNetwork& rhs) const
     {
@@ -89,9 +84,7 @@ struct WirelessNetwork
                ssid == rhs.ssid &&
                mode == rhs.mode &&
                frequency == rhs.frequency &&
-               channel == rhs.channel &&
-               strength == rhs.strength &&
-               snr == rhs.snr;
+               signal_strength == rhs.signal_strength;
     }
 
     friend std::ostream& operator<<(std::ostream& out, const WirelessNetwork& wifi)
@@ -101,9 +94,7 @@ struct WirelessNetwork
                    << "ssid: " << wifi.ssid << ", "
                    << "mode: " << wifi.mode << ", "
                    << "frequency: " << wifi.frequency << ", "
-                   << "channel: " << wifi.channel << ", "
-                   << "strength: " << wifi.strength << ", "
-                   << "snr: " << wifi.snr
+                   << "strength: " << wifi.signal_strength
                    << ")";
     }
 
@@ -111,9 +102,7 @@ struct WirelessNetwork
     std::string ssid; ///< The SSID of the network.
     Mode mode; ///< The mode of the network.
     Frequency frequency; ///< Frequency of the network/AP.
-    Channel channel; ///< Channel of the network/AP.
-    Strength strength; ///< Signal quality of the network/AP in percent.
-    float snr; ///< Signal-noise ratio of the specific network.
+    SignalStrength signal_strength; ///< Signal quality of the network/AP in percent.
 };
 }
 }

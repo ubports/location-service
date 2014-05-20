@@ -146,7 +146,7 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                             }
 
                             wifi.frequency.set(ap.frequency->get());
-                            wifi.snr = ap.strength->get() / 127.;
+                            wifi.signal_strength = connectivity::WirelessNetwork::SignalStrength{ap.strength->get()};
 
                             wifis.push_back(wifi);
                         }
@@ -244,7 +244,7 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         {
                             connectivity::RadioCell::Lte::MCC{mcc},
                             connectivity::RadioCell::Lte::MNC{mnc},
-                            connectivity::RadioCell::Lte::LAC{lac},
+                            connectivity::RadioCell::Lte::TAC{lac},
                             connectivity::RadioCell::Lte::ID{cell_id},
                             connectivity::RadioCell::Lte::PID{},
                             connectivity::RadioCell::Lte::SignalStrength::from_percent(strength/100.f)

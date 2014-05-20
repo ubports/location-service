@@ -35,6 +35,7 @@ struct SpaceVehicle
     /** @brief Numeric Id of an individual SpaceVehicle. */
     typedef std::uint32_t Id;
 
+    /** @brief Enumerates all known space-vehicle types. */
     enum class Type
     {
         unknown, ///< Unknown (and thus invalid) type.
@@ -47,6 +48,7 @@ struct SpaceVehicle
         qzss ///< Japanese regional system covering Asia and Oceania.
     };    
 
+    /** @brief Uniquely identifies a space vehicle, given its type and its id. */
     struct Key
     {
         Type type = Type::unknown; ///< The positioning system this vehicle belongs to.

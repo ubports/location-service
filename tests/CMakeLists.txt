@@ -43,13 +43,7 @@ macro(LOCATION_SERVICE_ADD_TEST test_name src)
     gtest
     gtest_main)
 
-  add_test(${test_name} ${test_name})
-
-  if (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
-    add_test(${test_name} ${DBUS_TEST_RUNNER_EXECUTABLE} --task=${CMAKE_CURRENT_BINARY_DIR}/${test_name} --parameter=--gtest_filter=*-*requires_hardware)
-  else (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
-    add_test(${test_name} ${CMAKE_CURRENT_BINARY_DIR}/${test_name} --gtest_filter=*-*requires_hardware)
-  endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
+  add_test(${test_name} ${CMAKE_CURRENT_BINARY_DIR}/${test_name} --gtest_filter=*-*requires_hardware)
 
   install(
     TARGETS ${test_name}

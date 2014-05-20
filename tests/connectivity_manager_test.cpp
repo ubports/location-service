@@ -22,22 +22,73 @@
 
 namespace location = com::ubuntu::location;
 
+TEST(RadioCell, default_construction_yields_a_gsm_cell)
+{
+    location::connectivity::RadioCell cell;
+
+    EXPECT_EQ(location::connectivity::RadioCell::Type::gsm, cell.type());
+}
+
+TEST(RadioCell, explicit_construction_yields_correct_type)
+{
+    {
+        location::connectivity::RadioCell::Gsm gsm
+        {
+            location::connectivity::RadioCell::Gsm::MCC{42},
+            location::connectivity::RadioCell::Gsm::MNC{42},
+            location::connectivity::RadioCell::Gsm::LAC{42},
+            location::connectivity::RadioCell::Gsm::ID{42},
+            location::connectivity::RadioCell::Gsm::SignalStrength{21}
+        };
+
+        location::connectivity::RadioCell cell{gsm};
+
+        EXPECT_EQ(location::connectivity::RadioCell::Type::gsm, cell.type());
+    }
+
+    {
+        location::connectivity::RadioCell::Umts umts
+        {
+            location::connectivity::RadioCell::Umts::MCC{42},
+            location::connectivity::RadioCell::Umts::MNC{42},
+            location::connectivity::RadioCell::Umts::LAC{42},
+            location::connectivity::RadioCell::Umts::ID{42},
+            location::connectivity::RadioCell::Umts::PSC{42},
+            location::connectivity::RadioCell::Umts::SignalStrength{21}
+        };
+
+        location::connectivity::RadioCell cell{umts};
+
+        EXPECT_EQ(location::connectivity::RadioCell::Type::umts, cell.type());
+    }
+
+    {
+        location::connectivity::RadioCell::Lte lte
+        {
+            location::connectivity::RadioCell::Lte::MCC{42},
+            location::connectivity::RadioCell::Lte::MNC{42},
+            location::connectivity::RadioCell::Lte::TAC{42},
+            location::connectivity::RadioCell::Lte::ID{42},
+            location::connectivity::RadioCell::Lte::PID{42},
+            location::connectivity::RadioCell::Lte::SignalStrength{21}
+        };
+
+        location::connectivity::RadioCell cell{lte};
+
+        EXPECT_EQ(location::connectivity::RadioCell::Type::lte, cell.type());
+    }
+}
+
 TEST(ConnectivityManager, default_implementation_is_queryable_for_wifis_and_radio_cells_requires_hardware)
 {
-    try
-    {
-        auto manager = location::connectivity::platform_default_manager();
+    auto manager = location::connectivity::platform_default_manager();
 
-        for (const auto& cell : manager->connected_radio_cells().get())
-            std::cout << cell << std::endl;
+    for (const auto& cell : manager->connected_radio_cells().get())
+        std::cout << cell << std::endl;
 
-        EXPECT_NO_THROW(
-        {
-            for (const auto& wifi: manager->visible_wireless_networks().get())
-                std::cout << wifi << std::endl;
-        });
-    } catch(...)
+    EXPECT_NO_THROW(
     {
-        std::cout << "oops" << std::endl;
-    }
+        for (const auto& wifi: manager->visible_wireless_networks().get())
+            std::cout << wifi << std::endl;
+    });
 }
