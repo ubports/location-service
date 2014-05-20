@@ -20,6 +20,7 @@
 
 #include <com/ubuntu/location/connectivity/bounded_integer.h>
 
+#include <iosfwd>
 #include <string>
 
 namespace com
@@ -32,6 +33,7 @@ namespace connectivity
 {
 struct WirelessNetwork
 {
+    /** @brief Enumerates all known operational modes of networks/aps. */
     enum class Mode
     {
         /** Mode is unknown. */
@@ -42,18 +44,7 @@ struct WirelessNetwork
         infrastructure = 2
     };
 
-    inline friend std::ostream& operator<<(std::ostream& out, Mode mode)
-    {
-        switch (mode)
-        {
-        case Mode::unknown: out << "Mode::unknown"; break;
-        case Mode::adhoc: out << "Mode::adhoc"; break;
-        case Mode::infrastructure: out << "Mode::infrastructure"; break;
-        }
-
-        return out;
-    }
-
+    /** @cond */
     struct Tag
     {
         /** @brief Tags a frequency measurement for a wireless network. */
@@ -61,6 +52,7 @@ struct WirelessNetwork
         /** @brief Tags the signal strength of a wireless network. */
         struct SignalStrength {};
     };
+    /** @endcond */
 
     /** Frequency that an individual AP operates on. */
     typedef BoundedInteger
@@ -78,32 +70,21 @@ struct WirelessNetwork
         100
     > SignalStrength;
 
-    bool operator==(const WirelessNetwork& rhs) const
-    {
-        return bssid == rhs.bssid &&
-               ssid == rhs.ssid &&
-               mode == rhs.mode &&
-               frequency == rhs.frequency &&
-               signal_strength == rhs.signal_strength;
-    }
-
-    friend std::ostream& operator<<(std::ostream& out, const WirelessNetwork& wifi)
-    {
-        return out << "("
-                   << "bssid: " << wifi.bssid << ", "
-                   << "ssid: " << wifi.ssid << ", "
-                   << "mode: " << wifi.mode << ", "
-                   << "frequency: " << wifi.frequency << ", "
-                   << "strength: " << wifi.signal_strength
-                   << ")";
-    }
-
     std::string bssid; ///< The BSSID of the network.
     std::string ssid; ///< The SSID of the network.
     Mode mode; ///< The mode of the network.
     Frequency frequency; ///< Frequency of the network/AP.
     SignalStrength signal_strength; ///< Signal quality of the network/AP in percent.
 };
+
+/** @brief Returns true iff lhs equals rhs. */
+bool operator==(const WirelessNetwork& lhs, const WirelessNetwork& rhs);
+
+/** @brief Pretty-prints the given mode to the given output stream. */
+std::ostream& operator<<(std::ostream& out, WirelessNetwork::Mode mode);
+
+/** @brief Pretty-prints the given wireless network to the given output stream. */
+std::ostream& operator<<(std::ostream& out, const WirelessNetwork& wifi);
 }
 }
 }

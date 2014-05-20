@@ -55,7 +55,6 @@ public:
     struct Rss {};
     struct Asu {};
     struct Ta {};
-    /** @endcond */
 
     template<int min, int max, int invalid = min-1>
     using MobileCountryCode = BoundedInteger<Mcc, min, max, invalid>;
@@ -77,6 +76,7 @@ public:
     using ArbitraryStrengthUnit = BoundedInteger<Asu, min, max, invalid>;
     template<int min, int max, int invalid = min-1>
     using TimingAdvance = BoundedInteger<Ta, min, max, invalid>;
+    /** @endcond */
 
     /** @brief Models a GSM radio cell. */
     struct Gsm
@@ -117,27 +117,6 @@ public:
             31,
             99
         > SignalStrength;
-
-        bool operator==(const Gsm& rhs) const
-        {
-            return mobile_country_code == rhs.mobile_country_code &&
-                    mobile_network_code == rhs.mobile_network_code &&
-                    location_area_code == rhs.location_area_code &&
-                    id == rhs.id &&
-                    strength == rhs.strength;
-        }
-
-        inline friend std::ostream& operator<<(std::ostream& out, const Gsm& gsm)
-        {
-            out << "("
-                << "mcc: " << gsm.mobile_country_code << ", "
-                << "mnc: " << gsm.mobile_network_code << ", "
-                << "lac: " << gsm.location_area_code << ", "
-                << "id: " << gsm.id << ", "
-                << "asu: " << gsm.strength << ")";
-
-            return out;
-        }
 
         MCC mobile_country_code;
         MNC mobile_network_code;
@@ -192,28 +171,6 @@ public:
             99
         > SignalStrength;
 
-        bool operator==(const Umts& rhs) const
-        {
-            return mobile_country_code == rhs.mobile_country_code &&
-                    mobile_network_code == rhs.mobile_network_code &&
-                    location_area_code == rhs.location_area_code &&
-                    id == rhs.id &&
-                    primary_scrambling_code == rhs.primary_scrambling_code &&
-                    strength == rhs.strength;
-        }
-
-        inline friend std::ostream& operator<<(std::ostream& out, const Umts& umts)
-        {
-            out << "("
-                << "mcc: " << umts.mobile_country_code << ", "
-                << "mnc: " << umts.mobile_network_code << ", "
-                << "lac: " << umts.location_area_code << ", "
-                << "id: " << umts.id << ", "
-                << "psc: " << umts.primary_scrambling_code << ", "
-                << "asu: " << umts.strength << ")";
-
-            return out;
-        }
         MCC mobile_country_code;
         MNC mobile_network_code;
         LAC location_area_code;
@@ -268,29 +225,6 @@ public:
             99
         > SignalStrength;
 
-        bool operator==(const Lte& rhs) const
-        {
-            return mobile_country_code == rhs.mobile_country_code &&
-                    mobile_network_code == rhs.mobile_network_code &&
-                    tracking_area_code == rhs.tracking_area_code &&
-                    id == rhs.id &&
-                    physical_id == rhs.physical_id &&
-                    strength == rhs.strength;
-        }
-
-        inline friend std::ostream& operator<<(std::ostream& out, const Lte& lte)
-        {
-            out << "("
-                << "mcc: " << lte.mobile_country_code << ", "
-                << "mnc: " << lte.mobile_network_code << ", "
-                << "lac: " << lte.tracking_area_code << ", "
-                << "id: " << lte.id << ", "
-                << "id: " << lte.physical_id << ", "
-                << "asu: " << lte.strength << ")";
-
-            return out;
-        }
-
         MCC mobile_country_code;
         MNC mobile_network_code;
         TAC tracking_area_code;
@@ -299,141 +233,70 @@ public:
         SignalStrength strength;
     };
 
-    RadioCell() : radio_type(Type::gsm), detail{Gsm()}
-    {
-    }
+    RadioCell();
+    explicit RadioCell(const Gsm& gsm);
+    explicit RadioCell(const Umts& umts);
+    explicit RadioCell(const Lte& lte);
 
-    explicit RadioCell(const Gsm& gsm)
-        : radio_type(Type::gsm), detail{gsm}
-    {
-    }
-
-    explicit RadioCell(const Umts& umts)
-        : radio_type(Type::umts), detail{umts}
-    {
-    }
-
-    explicit RadioCell(const Lte& lte)
-        : radio_type(Type::lte), detail{lte}
-    {
-    }
-
-    RadioCell(const RadioCell& rhs) : radio_type(rhs.radio_type)
-    {
-        switch(radio_type)
-        {
-        case Type::gsm: detail.gsm = rhs.detail.gsm; break;
-        case Type::umts: detail.umts = rhs.detail.umts; break;
-        case Type::lte: detail.lte = rhs.detail.lte; break;
-        case Type::unknown: break;
-        }
-    }
-
-    RadioCell& operator=(const RadioCell& rhs)
-    {
-        radio_type = rhs.radio_type;
-        switch(radio_type)
-        {
-        case Type::gsm: detail.gsm = rhs.detail.gsm; break;
-        case Type::umts: detail.umts = rhs.detail.umts; break;
-        case Type::lte: detail.lte = rhs.detail.lte; break;
-        case Type::unknown: break;
-        }
-
-        return *this;
-    }
-
-    /** @brief Returns true iff this instance equals rhs. */
-    bool operator==(const RadioCell& rhs) const
-    {
-        if (radio_type != rhs.radio_type)
-            return false;
-
-        switch(radio_type)
-        {
-        case Type::gsm: return detail.gsm == rhs.detail.gsm;
-        case Type::umts: return detail.umts == rhs.detail.umts;
-        case Type::lte: return detail.lte == rhs.detail.lte;
-        default: return true;
-        }
-
-        return false;
-    }
+    RadioCell(const RadioCell& rhs);
+    RadioCell& operator=(const RadioCell& rhs);
 
     /** @brief Returns the type of the radio cell. */
-    Type type() const
-    {
-        return radio_type;
-    }
+    Type type() const;
 
     /** @brief Returns GSM-specific details or throws std::runtime_error if this is not a GSM radiocell. */
-    const Gsm& gsm() const
-    {
-        if (radio_type != Type::gsm)
-            throw std::runtime_error("Bad access to unset network type.");
-
-        return detail.gsm;
-    }
+    const Gsm& gsm() const;
 
     /** @brief Returns UMTS-specific details or throws std::runtime_error if this is not a UMTS radiocell. */
-    const Umts& umts() const
-    {
-        if (radio_type != Type::umts)
-            throw std::runtime_error("Bad access to unset network type.");
-
-        return detail.umts;
-    }
+    const Umts& umts() const;
 
     /** @brief Returns LTE-specific details or throws std::runtime_error if this is not an LTE radiocell. */
-    const Lte& lte() const
-    {
-        if (radio_type != Type::lte)
-            throw std::runtime_error("Bad access to unset network type.");
-
-        return detail.lte;
-    }
-
-    /** @brief Pretty-prints the given cell to the given output stream. */
-    inline friend std::ostream& operator<<(std::ostream& out, const RadioCell& cell)
-    {
-        switch (cell.radio_type)
-        {
-        case RadioCell::Type::gsm: out << cell.detail.gsm; break;
-        case RadioCell::Type::umts: out << cell.detail.umts; break;
-        case RadioCell::Type::lte: out << cell.detail.lte; break;
-        case RadioCell::Type::unknown: break;
-        }
-
-        return out;
-    }
+    const Lte& lte() const;
 
 private:
+    /** @cond */
     Type radio_type;
 
     struct None {};
+
     union Detail
     {
-        inline Detail() : none(None{})
-        {
-        }
+        Detail();
+        Detail(const Gsm& gsm);
+        Detail(const Umts& umts);
+        Detail(const Lte& lte);
 
-        inline explicit Detail(const Gsm& gsm) : gsm(gsm)
-        {
-        }
-
-        inline explicit Detail(const Umts& umts) : umts(umts)
-        {
-        }
-
-        inline explicit Detail(const Lte& lte) : lte(lte)
-        {
-        }
         None none;
         Gsm gsm;
         Umts umts;
         Lte lte;
     } detail;
+    /** @endcond */
 };
+
+/** @brief Returns true iff lhs equals rhs. */
+bool operator==(const RadioCell::Gsm& lhs, const RadioCell::Gsm& rhs);
+
+/** @brief Pretty-prints the given gsm details to the given output stream. */
+std::ostream& operator<<(std::ostream& out, const RadioCell::Gsm& gsm);
+
+/** @brief Returns true iff lhs equals rhs. */
+bool operator==(const RadioCell::Umts& lhs, const RadioCell::Umts& rhs);
+
+/** @brief Pretty-prints the given umts details to the given output stream. */
+std::ostream& operator<<(std::ostream& out, const RadioCell::Umts& umts);
+
+/** @brief Returns true iff lhs equals rhs. */
+bool operator==(const RadioCell::Lte& lhs, const RadioCell::Lte& rhs);
+
+/** @brief Pretty-prints the given gsm details to the given output stream. */
+std::ostream& operator<<(std::ostream& out, const RadioCell::Lte& lte);
+
+/** @brief Returns true iff lhs equals rhs. */
+bool operator==(const RadioCell& lhs, const RadioCell& rhs);
+
+/** @brief Pretty-prints the given cell to the given output stream. */
+std::ostream& operator<<(std::ostream& out, const RadioCell& cell);
 }
 }
 }

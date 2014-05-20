@@ -20,7 +20,7 @@ include(CTest)
 include(GNUInstallDirs)
 
 find_package(PkgConfig)
-find_package(Boost 1.49 COMPONENTS system program_options)
+find_package(Boost COMPONENTS system program_options)
 find_package(GLog)
 find_package(GFlags)
 pkg_check_modules(DBUS dbus-1 REQUIRED)

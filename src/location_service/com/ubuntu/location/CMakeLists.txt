@@ -33,6 +33,10 @@ add_library(
 add_library(
   ubuntu-location-service-connectivity SHARED
 
+  set_name_for_thread.cpp
+
+  connectivity/radio_cell.cpp
+  connectivity/wireless_network.cpp
   connectivity/ofono_nm_connectivity_manager.cpp
 )
 

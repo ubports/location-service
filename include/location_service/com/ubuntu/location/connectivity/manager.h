@@ -23,6 +23,7 @@
 
 #include <core/property.h>
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -77,7 +78,7 @@ public:
      *
      * If users would like to receive updates about visible wireless networks, they
      * should connect to the Property's changed signal as in (all error handling omitted):
-     *
+     * @code
      * auto connectivity_manager = com::ubuntu::location::connectivity::platform_default_manager();
      *
      * // Subscribe to visible wireless network updates.
@@ -86,7 +87,7 @@ public:
      *     for (const auto& network : networks)
      *         std::cout << network.ssid << std::endl;
      * });
-     *
+     * @endcode
      * @return A getable/observable property carrying the visible wireless networks.
      */
     virtual const core::Property<std::vector<WirelessNetwork>>& visible_wireless_networks() = 0;
