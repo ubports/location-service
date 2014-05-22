@@ -6,8 +6,8 @@ set(UBUNTU_LOCATION_SERVICE_VERSION_MAJOR 0)
 set(UBUNTU_LOCATION_SERVICE_VERSION_MINOR 0)
 set(UBUNTU_LOCATION_SERVICE_VERSION_PATCH 3)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wextra -fPIC -pthread")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fno-strict-aliasing -pedantic -Wextra -fPIC -pthread")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wextra -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fno-strict-aliasing -pedantic -Wextra -fPIC")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -23,6 +23,7 @@ find_package(PkgConfig)
 find_package(Boost COMPONENTS system program_options)
 find_package(GLog)
 find_package(GFlags)
+find_package(Threads)
 pkg_check_modules(DBUS dbus-1 REQUIRED)
 pkg_check_modules(DBUS_CPP dbus-cpp REQUIRED)
 pkg_check_modules(PROCESS_CPP process-cpp REQUIRED)

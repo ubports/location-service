@@ -158,11 +158,6 @@ public:
      */
     inline int get() const
     {
-        if (!is_valid()) throw std::runtime_error
-        {
-            "BoundedInteger::get: Contained value is not valid."
-        };
-
         return value;
     }
 

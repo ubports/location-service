@@ -86,9 +86,6 @@ TEST(ConnectivityManager, default_implementation_is_queryable_for_wifis_and_radi
     for (const auto& cell : manager->connected_radio_cells().get())
         std::cout << cell << std::endl;
 
-    EXPECT_NO_THROW(
-    {
-        for (const auto& wifi: manager->visible_wireless_networks().get())
-            std::cout << wifi << std::endl;
-    });
+    for (const auto& wifi: manager->visible_wireless_networks().get())
+        std::cout << *wifi << std::endl;
 }

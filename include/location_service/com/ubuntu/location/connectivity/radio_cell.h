@@ -156,13 +156,6 @@ public:
             268435455,
             std::numeric_limits<int>::max()
         > ID;
-        /** 9-bit UMTS Primary Scrambling Code described in TS 25.331, 0..511, INT_MAX if unknown */
-        typedef PrimaryScramblingCode
-        <
-            0,
-            511,
-            std::numeric_limits<int>::max()
-        > PSC;
         /** Valid values are (0-31, 99) as defined in TS 27.007 8.5 */
         typedef ArbitraryStrengthUnit
         <
@@ -175,7 +168,6 @@ public:
         MNC mobile_network_code;
         LAC location_area_code;
         ID id;
-        PSC primary_scrambling_code;
         SignalStrength strength;
     };
 

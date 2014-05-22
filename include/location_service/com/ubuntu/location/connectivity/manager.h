@@ -35,6 +35,24 @@ namespace location
 {
 namespace connectivity
 {
+/** @brief Enumerates all known system connectivity states. */
+enum class State
+{
+    /** The state is unknown. */
+    unknown,
+    /** The system is not connected to any network. */
+    none,
+    /** The system is behind a captive portal and cannot reach the full internet. */
+    portal,
+    /**
+     * The system is connected to a network, but does not appear to be able to reach
+     * the full internet.
+     */
+    limited,
+    /** The system is connected to a network, and appears to be able to reach the full internet. */
+    full
+};
+
 /**
  * @brief The Manager class encapsulates access to network/radio information
  */
@@ -65,10 +83,27 @@ public:
     bool operator==(const Manager& rhs) const = delete;
 
     /**
+     * @brief Returns the getable/observable connectivity state of the system.
+     *
+     * Please note that this requires the underlying networking state to
+     * support connectivity state tracking. Right now, e.g. NetworkManager needs
+     * custom entries in /etc/NetworkManager/NetworkManager.conf to enable this
+     * functionality.
+     *
+     */
+    virtual const core::Property<State>& state() const = 0;
+
+    /**
      * @brief request_scan_for_wireless_networks schedules a scan for visible wireless networks.
+     * @throws std::runtime_error to indicate issues arising from the underlying networking stack.
      *
      * Please note that the implementation is required to operate asynchronously. Results of the scan
      * are reported via emitting the changed() signal on the visible_wireless_networks() property.
+     *
+     * Please also note that calling this function is usually not required. The underlying
+     * networking stack is updating the list of available wireless networks very frequently.
+     * In addition, the results from scans requested by other system components are reported
+     * to consumers of this API, too.
      *
      */
     virtual void request_scan_for_wireless_networks() = 0;
@@ -90,7 +125,7 @@ public:
      * @endcode
      * @return A getable/observable property carrying the visible wireless networks.
      */
-    virtual const core::Property<std::vector<WirelessNetwork>>& visible_wireless_networks() = 0;
+    virtual const core::Property<std::vector<WirelessNetwork::Ptr>>& visible_wireless_networks() = 0;
 
     /**
      * @brief All radio cells that the device is connected to.

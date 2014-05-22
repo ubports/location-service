@@ -69,6 +69,7 @@ target_link_libraries(
 
   ${ENABLED_PROVIDER_TARGETS}
 
+  ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_LIBRARIES}
   ${DBUS_LIBRARIES}
   ${DBUS_CPP_LDFLAGS}
@@ -79,6 +80,7 @@ target_link_libraries(
 target_link_libraries(
   ubuntu-location-service-connectivity
 
+  ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_LIBRARIES}
   ${DBUS_LIBRARIES}
   ${DBUS_CPP_LDFLAGS}

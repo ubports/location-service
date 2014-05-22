@@ -22,16 +22,6 @@
 
 namespace location = com::ubuntu::location;
 
-bool location::connectivity::operator==(const location::connectivity::WirelessNetwork& lhs,
-                                        const location::connectivity::WirelessNetwork& rhs)
-{
-    return lhs.bssid == rhs.bssid &&
-           lhs.ssid == rhs.ssid &&
-           lhs.mode == rhs.mode &&
-           lhs.frequency == rhs.frequency &&
-           lhs.signal_strength == rhs.signal_strength;
-}
-
 std::ostream& location::connectivity::operator<<(std::ostream& out, location::connectivity::WirelessNetwork::Mode mode)
 {
     switch (mode)
@@ -47,10 +37,10 @@ std::ostream& location::connectivity::operator<<(std::ostream& out, location::co
 std::ostream& location::connectivity::operator<<(std::ostream& out, const location::connectivity::WirelessNetwork& wifi)
 {
     return out << "("
-               << "bssid: " << wifi.bssid << ", "
-               << "ssid: " << wifi.ssid << ", "
-               << "mode: " << wifi.mode << ", "
-               << "frequency: " << wifi.frequency << ", "
-               << "strength: " << wifi.signal_strength
+               << "bssid: " << wifi.bssid().get() << ", "
+               << "ssid: " << wifi.ssid().get() << ", "
+               << "mode: " << wifi.mode().get() << ", "
+               << "frequency: " << wifi.frequency().get() << ", "
+               << "strength: " << wifi.signal_strength().get()
                << ")";
 }

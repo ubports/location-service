@@ -123,20 +123,36 @@ struct NetworkManager
             static const bool writable = false;
         };
 
+        struct PropertiesChanged
+        {
+            inline static std::string name()
+            {
+                return "PropertiesChanged";
+            }
+
+            typedef AccessPoint Interface;
+
+            typedef std::map<std::string, core::dbus::types::Variant> ArgumentType;
+        };
+
         AccessPoint(const std::shared_ptr<core::dbus::Object>& object)
-            : frequency(object->get_property<Frequency>()),
+            : object(object),
+              frequency(object->get_property<Frequency>()),
               mode(object->get_property<Mode>()),
               hw_address(object->get_property<HwAddress>()),
               ssid(object->get_property<Ssid>()),
-              strength(object->get_property<Strength>())
+              strength(object->get_property<Strength>()),
+              properties_changed(object->get_signal<PropertiesChanged>())
         {
         }
 
+        std::shared_ptr<core::dbus::Object> object;
         std::shared_ptr<core::dbus::Property<Frequency>> frequency;
         std::shared_ptr<core::dbus::Property<Mode>> mode;
         std::shared_ptr<core::dbus::Property<HwAddress>> hw_address;
         std::shared_ptr<core::dbus::Property<Ssid>> ssid;
         std::shared_ptr<core::dbus::Property<Strength>> strength;
+        std::shared_ptr<core::dbus::Signal<PropertiesChanged, PropertiesChanged::ArgumentType>> properties_changed;
     };
 
     struct Device
@@ -204,6 +220,33 @@ struct NetworkManager
                     return std::chrono::seconds{1};
                 }
             };
+
+            struct Signals
+            {
+                struct AccessPointAdded
+                {
+                    inline static std::string name()
+                    {
+                        return "AccessPointAdded";
+                    }
+
+                    typedef Wireless Interface;
+
+                    typedef core::dbus::types::ObjectPath ArgumentType;
+                };
+
+                struct AccessPointRemoved
+                {
+                    inline static std::string name()
+                    {
+                        return "AccessPointRemoved";
+                    }
+
+                    typedef Wireless Interface;
+
+                    typedef core::dbus::types::ObjectPath ArgumentType;
+                };
+            };
         };
 
         struct DeviceType
@@ -224,7 +267,12 @@ struct NetworkManager
                const std::shared_ptr<core::dbus::Object>& object)
             : service(service),
               object(object),
-              device_type(object->get_property<DeviceType>())
+              device_type(object->get_property<DeviceType>()),
+              signals
+              {
+                  object->get_signal<Wireless::Signals::AccessPointAdded>(),
+                  object->get_signal<Wireless::Signals::AccessPointRemoved>()
+              }
         {
         }
 
@@ -261,6 +309,11 @@ struct NetworkManager
         std::shared_ptr<core::dbus::Service> service;
         std::shared_ptr<core::dbus::Object> object;
         std::shared_ptr<core::dbus::Property<DeviceType>> device_type;
+        struct
+        {
+            core::dbus::Signal<Wireless::Signals::AccessPointAdded, Wireless::Signals::AccessPointAdded::ArgumentType>::Ptr ap_added;
+            core::dbus::Signal<Wireless::Signals::AccessPointRemoved, Wireless::Signals::AccessPointRemoved::ArgumentType>::Ptr ap_removed;
+        } signals;
     };
 
     static const std::string& name()
@@ -285,9 +338,84 @@ struct NetworkManager
         }
     };
 
+    struct Properties
+    {
+        struct Connectivity
+        {
+            enum Values
+            {
+                unknown = 0,
+                none = 1,
+                portal = 2,
+                limited = 3,
+                full = 4
+            };
+
+            static const std::string& name()
+            {
+                static const std::string s{"Connectivity"};
+                return s;
+            }
+
+            typedef NetworkManager Interface;
+            typedef std::uint32_t ValueType;
+            static const bool readable = true;
+            static const bool writable = false;
+        };
+    };
+
+    struct Signals
+    {
+        struct DeviceAdded
+        {
+            inline static std::string name()
+            {
+                return "DeviceAdded";
+            }
+
+            typedef NetworkManager Interface;
+
+            typedef core::dbus::types::ObjectPath ArgumentType;
+        };
+
+        struct DeviceRemoved
+        {
+            inline static std::string name()
+            {
+                return "DeviceRemoved";
+            }
+
+            typedef NetworkManager Interface;
+
+            typedef core::dbus::types::ObjectPath ArgumentType;
+        };
+
+        struct PropertiesChanged
+        {
+            inline static std::string name()
+            {
+                return "PropertiesChanged";
+            }
+
+            typedef NetworkManager Interface;
+
+            typedef std::map<std::string, core::dbus::types::Variant> ArgumentType;
+        };
+    };
+
     NetworkManager(const core::dbus::Bus::Ptr& bus)
         : service(core::dbus::Service::use_service<NetworkManager>(bus)),
-          object(service->object_for_path(core::dbus::types::ObjectPath("/org/freedesktop/NetworkManager")))
+          object(service->object_for_path(core::dbus::types::ObjectPath("/org/freedesktop/NetworkManager"))),
+          properties
+          {
+              object->get_property<Properties::Connectivity>()
+          },
+          signals
+          {
+              object->get_signal<Signals::DeviceAdded>(),
+              object->get_signal<Signals::DeviceRemoved>(),
+              object->get_signal<Signals::PropertiesChanged>()
+          }
     {
     }
 
@@ -315,6 +443,17 @@ struct NetworkManager
 
     std::shared_ptr<core::dbus::Service> service;
     std::shared_ptr<core::dbus::Object> object;
+
+    struct
+    {
+        std::shared_ptr<core::dbus::Property<Properties::Connectivity> > connectivity;
+    } properties;
+    struct
+    {
+        core::dbus::Signal<Signals::DeviceAdded, Signals::DeviceAdded::ArgumentType>::Ptr device_added;
+        core::dbus::Signal<Signals::DeviceRemoved, Signals::DeviceRemoved::ArgumentType>::Ptr device_removed;
+        core::dbus::Signal<Signals::PropertiesChanged, Signals::PropertiesChanged::ArgumentType>::Ptr properties_changed;
+    } signals;
 };
 }
 }

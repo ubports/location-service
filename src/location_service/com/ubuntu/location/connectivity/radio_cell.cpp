@@ -137,7 +137,6 @@ bool location::connectivity::operator==(const location::connectivity::RadioCell:
             lhs.mobile_network_code == rhs.mobile_network_code &&
             lhs.location_area_code == rhs.location_area_code &&
             lhs.id == rhs.id &&
-            lhs.primary_scrambling_code == rhs.primary_scrambling_code &&
             lhs.strength == rhs.strength;
 }
 
@@ -148,7 +147,6 @@ std::ostream& location::connectivity::operator<<(std::ostream& out, const locati
         << "mnc: " << umts.mobile_network_code << ", "
         << "lac: " << umts.location_area_code << ", "
         << "id: " << umts.id << ", "
-        << "psc: " << umts.primary_scrambling_code << ", "
         << "asu: " << umts.strength << ")";
 
     return out;

@@ -20,6 +20,8 @@
 
 #include <com/ubuntu/location/connectivity/bounded_integer.h>
 
+#include <core/property.h>
+
 #include <iosfwd>
 #include <string>
 
@@ -33,6 +35,8 @@ namespace connectivity
 {
 struct WirelessNetwork
 {
+    typedef std::shared_ptr<WirelessNetwork> Ptr;
+
     /** @brief Enumerates all known operational modes of networks/aps. */
     enum class Mode
     {
@@ -70,15 +74,35 @@ struct WirelessNetwork
         100
     > SignalStrength;
 
-    std::string bssid; ///< The BSSID of the network.
-    std::string ssid; ///< The SSID of the network.
-    Mode mode; ///< The mode of the network.
-    Frequency frequency; ///< Frequency of the network/AP.
-    SignalStrength signal_strength; ///< Signal quality of the network/AP in percent.
-};
+    /** @cond */
+    WirelessNetwork() = default;
+    WirelessNetwork(const WirelessNetwork&) = delete;
+    WirelessNetwork(WirelessNetwork&&) = delete;
 
-/** @brief Returns true iff lhs equals rhs. */
-bool operator==(const WirelessNetwork& lhs, const WirelessNetwork& rhs);
+    virtual ~WirelessNetwork() = default;
+
+    WirelessNetwork& operator=(const WirelessNetwork&) = delete;
+    WirelessNetwork& operator=(WirelessNetwork&&) = delete;
+    /** @endcond */
+
+    /** @brief Timestamp when the network became visible. */
+    virtual const core::Property<std::chrono::system_clock::time_point>& timestamp() const = 0;
+
+    /** @brief Returns the BSSID of the network */
+    virtual const core::Property<std::string>& bssid() const = 0;
+
+    /** @brief Returns the SSID of the network. */
+    virtual const core::Property<std::string>& ssid() const = 0;
+
+    /** @brief Returns the mode of the network. */
+    virtual const core::Property<Mode>& mode() const = 0;
+
+    /** @brief Returns the frequency that the network/AP operates upon. */
+    virtual const core::Property<Frequency>& frequency() const = 0;
+
+    /** @brief Returns the signal quality of the network/AP in percent. */
+    virtual const core::Property<SignalStrength>& signal_strength() const = 0;
+};
 
 /** @brief Pretty-prints the given mode to the given output stream. */
 std::ostream& operator<<(std::ostream& out, WirelessNetwork::Mode mode);
