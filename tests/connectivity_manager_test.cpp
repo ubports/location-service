@@ -53,7 +53,6 @@ TEST(RadioCell, explicit_construction_yields_correct_type)
             location::connectivity::RadioCell::Umts::MNC{42},
             location::connectivity::RadioCell::Umts::LAC{42},
             location::connectivity::RadioCell::Umts::ID{42},
-            location::connectivity::RadioCell::Umts::PSC{42},
             location::connectivity::RadioCell::Umts::SignalStrength{21}
         };
 
