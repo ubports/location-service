@@ -17,6 +17,10 @@
  */
 #include <com/ubuntu/location/service/implementation.h>
 
+#include <com/ubuntu/location/connectivity/manager.h>
+#include <com/ubuntu/location/service/harvester.h>
+#include <com/ubuntu/location/service/ichnaea_reporter.h>
+
 #include <com/ubuntu/location/service/session/implementation.h>
 
 #include <com/ubuntu/location/criteria.h>
@@ -40,9 +44,34 @@ namespace dbus = core::dbus;
 
 struct culs::Implementation::Private
 {
+    Private(const dbus::Bus::Ptr& connection,
+            const cul::Engine::Ptr& engine,
+            const culs::PermissionManager::Ptr& permission_manager)
+        : bus{connection},
+          engine{engine},
+          permission_manager{permission_manager},
+          harvester
+          {
+              Harvester::Configuration
+              {
+                  engine,
+                  connectivity::platform_default_manager(),
+                  std::make_shared<ichnaea::Reporter>(
+                      ichnaea::Reporter::Configuration
+                      {
+                          "https://162.213.35.107",
+                          "com::ubuntu::location::Harvester::ExampleKey"
+                      })
+              }
+          }
+    {
+        harvester.start();
+    }
+
     dbus::Bus::Ptr bus;
     cul::Engine::Ptr engine;
     culs::PermissionManager::Ptr permission_manager;
+    culs::Harvester harvester;
 };
 
 culs::Implementation::Implementation(

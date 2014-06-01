@@ -35,7 +35,7 @@ namespace service
 {
 class Implementation : public Skeleton
 {
-  public:
+public:
     typedef std::shared_ptr<Implementation> Ptr;
 
     Implementation(

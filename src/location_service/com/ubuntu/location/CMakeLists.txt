@@ -65,9 +65,7 @@ set_target_properties(
 add_definitions(${ENABLED_PROVIDER_TARGETS_DEFINITIONS})
 
 target_link_libraries(
-  ubuntu-location-service
-
-  ${ENABLED_PROVIDER_TARGETS}
+  ubuntu-location-service-connectivity
 
   ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_LIBRARIES}
@@ -78,12 +76,18 @@ target_link_libraries(
 )
 
 target_link_libraries(
+  ubuntu-location-service
+
   ubuntu-location-service-connectivity
+
+  ${ENABLED_PROVIDER_TARGETS}
 
   ${CMAKE_THREAD_LIBS_INIT}
   ${Boost_LIBRARIES}
   ${DBUS_LIBRARIES}
   ${DBUS_CPP_LDFLAGS}
+  ${JSON_CPP_LDFLAGS}
+  ${NET_CPP_LDFLAGS}
   ${GLog_LIBRARY}
   ${GFlags_LIBRARY}
 )

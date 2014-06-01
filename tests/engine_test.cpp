@@ -15,9 +15,12 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
+
 #include <com/ubuntu/location/engine.h>
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_selection_policy.h>
+
+#include "null_provider_selection_policy.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -45,20 +48,6 @@ struct MockProvider : public location::Provider
     MOCK_METHOD1(on_reference_velocity_updated,
                  void(const location::Update<location::Velocity>&));
 
-};
-
-struct NullProviderSelectionPolicy : public location::ProviderSelectionPolicy
-{
-    location::ProviderSelection
-    determine_provider_selection_for_criteria(
-            const location::Criteria&,
-            const location::ProviderEnumerator&)
-    {
-        return location::ProviderSelection {
-            location::Provider::Ptr{},
-            location::Provider::Ptr{},
-            location::Provider::Ptr{}};
-    }
 };
 }
 

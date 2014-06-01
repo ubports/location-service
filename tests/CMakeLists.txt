@@ -1,6 +1,6 @@
 find_package(Threads)
 
-add_definitions(-DCORE_DBUS_ENABLE_GOOGLE_TEST_FIXTURE)
+add_definitions(-DCORE_DBUS_ENABLE_GOOGLE_TEST_FIXTURE -DBOOST_ASIO_DISABLE_MOVE)
 
 option(
     LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER 
@@ -12,6 +12,9 @@ if (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
     find_program(DBUS_TEST_RUNNER_EXECUTABLE dbus-test-runner)
     message(STATUS "Executing test suite under dbus-test-runner")
 endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
+
+# Build mongoose as static library to leverage in location reporter testing
+add_library(mongoose mongoose.c)
 
 # Build with system gmock and embedded gtest
 set (GMOCK_INCLUDE_DIR "/usr/include/gmock/include" CACHE PATH "gmock source include directory")
@@ -32,8 +35,11 @@ macro(LOCATION_SERVICE_ADD_TEST test_name src)
     ubuntu-location-service-connectivity
     ubuntu-location-service-daemon
 
+    mongoose
+
     ${Boost_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
+
     ${PROCESS_CPP_LIBRARIES}
 
     ${ARGN}
@@ -65,6 +71,8 @@ LOCATION_SERVICE_ADD_TEST(criteria_test criteria_test.cpp)
 # LOCATION_SERVICE_ADD_TEST(daemon_and_cli_tests daemon_and_cli_tests.cpp)
 LOCATION_SERVICE_ADD_TEST(default_permission_manager_test default_permission_manager_test.cpp)
 LOCATION_SERVICE_ADD_TEST(engine_test engine_test.cpp)
+LOCATION_SERVICE_ADD_TEST(harvester_test harvester_test.cpp)
+LOCATION_SERVICE_ADD_TEST(ichnaea_reporter_test ichnaea_reporter_test.cpp)
 LOCATION_SERVICE_ADD_TEST(position_test position_test.cpp)
 LOCATION_SERVICE_ADD_TEST(provider_selection_policy_test provider_selection_policy_test.cpp)
 LOCATION_SERVICE_ADD_TEST(provider_factory_test provider_factory_test.cpp)

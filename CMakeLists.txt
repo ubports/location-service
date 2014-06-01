@@ -20,12 +20,14 @@ include(CTest)
 include(GNUInstallDirs)
 
 find_package(PkgConfig)
-find_package(Boost COMPONENTS system program_options)
+find_package(Boost COMPONENTS system program_options thread)
 find_package(GLog)
 find_package(GFlags)
 find_package(Threads)
 pkg_check_modules(DBUS dbus-1 REQUIRED)
 pkg_check_modules(DBUS_CPP dbus-cpp REQUIRED)
+pkg_check_modules(JSON_CPP jsoncpp REQUIRED)
+pkg_check_modules(NET_CPP net-cpp REQUIRED)
 pkg_check_modules(PROCESS_CPP process-cpp REQUIRED)
 pkg_check_modules(PROPERTIES_CPP properties-cpp REQUIRED)
 #####################################################################
@@ -52,6 +54,8 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
   ${DBUS_INCLUDE_DIRS}
   ${DBUS_CPP_INCLUDE_DIRS}
+  ${JSON_CPP_INCLUDE_DIRS}
+  ${NET_CPP_INCLUDE_DIRS}
   ${PROPERTIES_CPP_INCLUDE_DIRS}
   ${PROCESS_CPP_INCLUDE_DIRS}
   ${GLog_INCLUDE_DIR}
