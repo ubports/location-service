@@ -93,7 +93,7 @@ struct NullReporter : public location::service::Harvester::Reporter
     NullReporter() = default;
 
     /** @brief Tell the reporter that it should start operating. */
-    void start() override
+    void start()
     {
     }
 
