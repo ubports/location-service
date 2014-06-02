@@ -18,6 +18,8 @@ add_library(
 
   service/default_configuration.cpp
   service/default_permission_manager.cpp
+  service/harvester.cpp
+  service/ichnaea_reporter.cpp
   service/implementation.cpp
   service/skeleton.cpp
   service/stub.cpp

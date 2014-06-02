@@ -21,10 +21,6 @@
 #include <com/ubuntu/location/engine.h>
 #include <com/ubuntu/location/connectivity/manager.h>
 
-#include <com/ubuntu/location/logging.h>
-
-#include <atomic>
-
 namespace com
 {
 namespace ubuntu
@@ -76,48 +72,16 @@ public:
     /** @brief Creates a new instance and wires up to system components for receiving
      *  location updates, and wifi and cell id measurements.
      */
-    Harvester(const Configuration& configuration)
-        : config(configuration),
-          is_running{false}
-    {
-        config.engine->updates.reference_location.changed().connect([this](const Update<Position>& update)
-        {
-            VLOG(10) << "Reference location changed: " << update;
+    Harvester(const Configuration& configuration);
 
-            if (not is_running.load())
-                return;
+    /** @brief Stops the data collection and frees all resources held by the instance. */
+    virtual ~Harvester();
 
-            auto visible_wifis = config.connectivity_manager->visible_wireless_networks().get();
-            auto connected_cells = config.connectivity_manager->connected_radio_cells().get();
+    /** @brief Starts the harvester instance and its data collection. */
+    virtual void start();
 
-            config.reporter->report(update, visible_wifis, connected_cells);
-        });
-    }
-
-    virtual ~Harvester()
-    {
-        stop();
-    }
-
-    virtual void start()
-    {
-        if (is_running.load())
-            return;
-
-        is_running.exchange(true);
-
-        config.reporter->start();
-    }
-
-    virtual void stop()
-    {
-        if (not is_running.load())
-            return;
-
-        is_running.exchange(false);
-
-        config.reporter->stop();
-    }
+    /** @brief Stops the harvester instance and its data collection. */
+    virtual void stop();
 
 private:
     Configuration config;

@@ -87,6 +87,30 @@ const std::map<std::string, Property> known_properties =
     {"does_report_wifi_and_cell_ids", Property::does_report_wifi_and_cell_ids},
     {"visible_space_vehicles", Property::visible_space_vehicles}
 };
+
+struct NullReporter : public location::service::Harvester::Reporter
+{
+    NullReporter() = default;
+
+    /** @brief Tell the reporter that it should start operating. */
+    void start() override
+    {
+    }
+
+    /** @brief Tell the reporter to shut down its operation. */
+    void stop()
+    {
+    }
+
+    /**
+     * @brief Triggers the reporter to send off the information.
+     */
+    void report(const location::Update<location::Position>&,
+                const std::vector<location::connectivity::WirelessNetwork::Ptr>&,
+                const std::vector<location::connectivity::RadioCell>&)
+    {
+    }
+};
 }
 
 int location::service::Daemon::main(int argc, const char** argv)
@@ -190,7 +214,8 @@ int location::service::Daemon::main(int argc, const char** argv)
                 config.the_engine(
                     instantiated_providers,
                     config.the_provider_selection_policy()),
-                config.the_permission_manager());
+                config.the_permission_manager(),
+                std::make_shared<NullReporter>());
 
     std::thread t{[bus](){bus->run();}};
 

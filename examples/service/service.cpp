@@ -31,6 +31,33 @@ namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 namespace dbus = core::dbus;
 
+namespace
+{
+struct NullReporter : public culs::Harvester::Reporter
+{
+    NullReporter() = default;
+
+    /** @brief Tell the reporter that it should start operating. */
+    void start() override
+    {
+    }
+
+    /** @brief Tell the reporter to shut down its operation. */
+    void stop()
+    {
+    }
+
+    /**
+     * @brief Triggers the reporter to send off the information.
+     */
+    void report(const cul::Update<cul::Position>&,
+                const std::vector<cul::connectivity::WirelessNetwork::Ptr>&,
+                const std::vector<cul::connectivity::RadioCell>&)
+    {
+    }
+};
+}
+
 int main(int argc, char** argv)
 {
     cul::ProgramOptions options;
@@ -137,7 +164,8 @@ int main(int argc, char** argv)
                 config.the_engine(
                     instantiated_providers,
                     config.the_provider_selection_policy()),
-                config.the_permission_manager());
+                config.the_permission_manager(),
+                std::make_shared<NullReporter>());
     
     std::thread t{[bus](){bus->run();}};
     

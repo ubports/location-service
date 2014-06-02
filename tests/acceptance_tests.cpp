@@ -53,11 +53,36 @@
 #include <stdexcept>
 
 namespace cul = com::ubuntu::location;
+namespace culs = com::ubuntu::location::service;
 namespace culss = com::ubuntu::location::service::session;
 namespace dbus = core::dbus;
 
 namespace
 {
+struct NullReporter : public culs::Harvester::Reporter
+{
+    NullReporter() = default;
+
+    /** @brief Tell the reporter that it should start operating. */
+    void start() override
+    {
+    }
+
+    /** @brief Tell the reporter to shut down its operation. */
+    void stop()
+    {
+    }
+
+    /**
+     * @brief Triggers the reporter to send off the information.
+     */
+    void report(const cul::Update<cul::Position>&,
+                const std::vector<cul::connectivity::WirelessNetwork::Ptr>&,
+                const std::vector<cul::connectivity::RadioCell>&)
+    {
+    }
+};
+
 struct LocationServiceStandalone : public core::dbus::testing::Fixture
 {
 };
@@ -165,7 +190,8 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
                     config.the_engine(
                         config.the_provider_set(helper),
                         config.the_provider_selection_policy()),
-                    config.the_permission_manager());
+                    config.the_permission_manager(),
+                    std::make_shared<NullReporter>());
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -272,7 +298,8 @@ TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
         cul::service::Implementation service(
                     bus,
                     engine,
-                    permission_manager);
+                    permission_manager,
+                    std::make_shared<NullReporter>());
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -336,7 +363,8 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
         cul::service::Implementation service(
                     bus,
                     engine,
-                    permission_manager);
+                    permission_manager,
+                    std::make_shared<NullReporter>());
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -398,7 +426,8 @@ TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdu
         cul::service::Implementation service(
                     bus,
                     engine,
-                    permission_manager);
+                    permission_manager,
+                    std::make_shared<NullReporter>());
 
         std::thread t{[bus](){bus->run();}};
 
@@ -469,7 +498,9 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
         cul::service::Implementation service(
                     bus,
                     engine,
-                    permission_manager);
+                    permission_manager,
+                    std::make_shared<NullReporter>());
+
         engine->updates.visible_space_vehicles.set(visible_space_vehicles);
 
         std::thread t{[bus](){bus->run();}};

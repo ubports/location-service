@@ -19,6 +19,7 @@
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_IMPLEMENTATION_H_
 
 #include <com/ubuntu/location/engine.h>
+#include <com/ubuntu/location/service/harvester.h>
 #include <com/ubuntu/location/service/skeleton.h>
 
 #include <memory>
@@ -41,7 +42,9 @@ public:
     Implementation(
         const core::dbus::Bus::Ptr& bus,
         const Engine::Ptr& engine,
-        const PermissionManager::Ptr& permission_manager);
+        const PermissionManager::Ptr& permission_manager,
+        const Harvester::Reporter::Ptr& reporter);
+
     Implementation(const Implementation&) = delete;
     virtual ~Implementation() noexcept;
     Implementation& operator=(const Implementation&) = delete;

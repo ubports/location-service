@@ -46,7 +46,8 @@ struct culs::Implementation::Private
 {
     Private(const dbus::Bus::Ptr& connection,
             const cul::Engine::Ptr& engine,
-            const culs::PermissionManager::Ptr& permission_manager)
+            const culs::PermissionManager::Ptr& permission_manager,
+            const culs::Harvester::Reporter::Ptr& reporter)
         : bus{connection},
           engine{engine},
           permission_manager{permission_manager},
@@ -56,12 +57,7 @@ struct culs::Implementation::Private
               {
                   engine,
                   connectivity::platform_default_manager(),
-                  std::make_shared<ichnaea::Reporter>(
-                      ichnaea::Reporter::Configuration
-                      {
-                          "https://162.213.35.107",
-                          "com::ubuntu::location::Harvester::ExampleKey"
-                      })
+                  reporter
               }
           }
     {
@@ -77,9 +73,10 @@ struct culs::Implementation::Private
 culs::Implementation::Implementation(
     const dbus::Bus::Ptr& bus,
     const cul::Engine::Ptr& engine,
-    const culs::PermissionManager::Ptr& permission_manager)
+    const culs::PermissionManager::Ptr& permission_manager,
+    const Harvester::Reporter::Ptr& reporter)
     : Skeleton(bus, permission_manager),
-      d{new Private{bus, engine, permission_manager}}
+      d{new Private{bus, engine, permission_manager, reporter}}
 {
     if (!bus)
         throw std::runtime_error("Cannot create service for null bus.");

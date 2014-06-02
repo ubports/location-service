@@ -72,7 +72,11 @@ LOCATION_SERVICE_ADD_TEST(criteria_test criteria_test.cpp)
 LOCATION_SERVICE_ADD_TEST(default_permission_manager_test default_permission_manager_test.cpp)
 LOCATION_SERVICE_ADD_TEST(engine_test engine_test.cpp)
 LOCATION_SERVICE_ADD_TEST(harvester_test harvester_test.cpp)
-LOCATION_SERVICE_ADD_TEST(ichnaea_reporter_test ichnaea_reporter_test.cpp)
+
+if (NET_CPP_FOUND)
+  LOCATION_SERVICE_ADD_TEST(ichnaea_reporter_test ichnaea_reporter_test.cpp)
+endif (NET_CPP_FOUND)
+
 LOCATION_SERVICE_ADD_TEST(position_test position_test.cpp)
 LOCATION_SERVICE_ADD_TEST(provider_selection_policy_test provider_selection_policy_test.cpp)
 LOCATION_SERVICE_ADD_TEST(provider_factory_test provider_factory_test.cpp)
