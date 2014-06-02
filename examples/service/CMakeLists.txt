@@ -1,4 +1,4 @@
-message(${Boost_LIBRARIES})
+message(STATUS ${Boost_LIBRARIES})
 include_directories(
     ${Boost_INCLUDE_DIRS}
     ${DBUS_INCLUDE_DIRS}
