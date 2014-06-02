@@ -63,7 +63,7 @@ public:
     {
         Errors() = delete;
         /**
-         * @brief The ConnectivityManagementNotSupported struct is thrown if underlying
+         * @brief The ConnectivityManagementNotSupported struct is thrown if the underlying
          * platform does not provide support for connectivity mgmt.
          */
         struct ConnectivityManagementNotSupported : public std::runtime_error
@@ -76,11 +76,13 @@ public:
         };
     };
 
+    /** @cond */
     Manager(const Manager& rhs) = delete;
     virtual ~Manager() = default;
 
     Manager& operator=(const Manager& rhs) = delete;
     bool operator==(const Manager& rhs) const = delete;
+    /** @endcond */
 
     /**
      * @brief Returns the getable/observable connectivity state of the system.

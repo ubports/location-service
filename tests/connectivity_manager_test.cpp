@@ -78,6 +78,14 @@ TEST(RadioCell, explicit_construction_yields_correct_type)
     }
 }
 
+TEST(ConnectivityManager, repeatedly_requesting_network_scans_works)
+{
+    auto manager = location::connectivity::platform_default_manager();
+
+    for (unsigned int i = 0; i < 100; i++)
+        manager->request_scan_for_wireless_networks();
+}
+
 TEST(ConnectivityManager, default_implementation_is_queryable_for_wifis_and_radio_cells_requires_hardware)
 {
     auto manager = location::connectivity::platform_default_manager();

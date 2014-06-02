@@ -300,10 +300,7 @@ struct NetworkManager
         void request_scan() const
         {
             static const std::map<std::string, core::dbus::types::Variant> dictionary;
-            auto result = object->invoke_method_synchronously<Wireless::RequestScan, void>(dictionary);
-
-            if (result.is_error())
-                throw std::runtime_error(result.error().print());
+            auto result = object->invoke_method_asynchronously<Wireless::RequestScan, void>(dictionary);
         }
 
         std::shared_ptr<core::dbus::Service> service;
