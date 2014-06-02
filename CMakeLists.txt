@@ -20,7 +20,7 @@ include(CTest)
 include(GNUInstallDirs)
 
 find_package(PkgConfig)
-find_package(Boost COMPONENTS system program_options thread)
+find_package(Boost COMPONENTS system program_options)
 find_package(GLog)
 find_package(GFlags)
 find_package(Threads)
