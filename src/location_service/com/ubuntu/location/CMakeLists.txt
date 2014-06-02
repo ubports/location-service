@@ -1,5 +1,9 @@
 add_subdirectory(providers)
 
+if (${NET_CPP_FOUND})
+  set(ICHNAEA_REPORTER_SRCS service/ichnaea_reporter.cpp)
+endif (${NET_CPP_FOUND})
+
 add_library(
   ubuntu-location-service SHARED
 
@@ -19,7 +23,7 @@ add_library(
   service/default_configuration.cpp
   service/default_permission_manager.cpp
   service/harvester.cpp
-  service/ichnaea_reporter.cpp
+
   service/implementation.cpp
   service/skeleton.cpp
   service/stub.cpp
@@ -30,6 +34,8 @@ add_library(
   service/session/stub.cpp
 
   providers/config.cpp
+
+  ${ICHNAEA_REPORTER_SRCS}
 )
 
 add_library(
