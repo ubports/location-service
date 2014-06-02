@@ -19,7 +19,6 @@
 
 #include <com/ubuntu/location/connectivity/manager.h>
 #include <com/ubuntu/location/service/harvester.h>
-#include <com/ubuntu/location/service/ichnaea_reporter.h>
 
 #include <com/ubuntu/location/service/session/implementation.h>
 
