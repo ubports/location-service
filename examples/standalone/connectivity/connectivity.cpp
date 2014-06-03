@@ -40,44 +40,28 @@ int main(int argc, char** argv)
     // Subscribe to wifi added/removed signals.
     cm->wireless_network_added().connect([](const location::connectivity::WirelessNetwork::Ptr& wifi)
     {
-        std::cout << "Visible wireless network was added: " << wifi->ssid().get() << std::endl;
+        std::cout << "Visible wireless network was added: " << *wifi << std::endl;
+
+        // We don't want to keep the object alive
+        std::weak_ptr<location::connectivity::WirelessNetwork> wp
+        {
+            wifi
+        };
+
+        // Subscribe to signal strength updates. Please note that this is not considering
+        // the case of subscribing to already known wifis. We leave this up
+        // to consumers of the api.
+        wifi->signal_strength().changed().connect([wp](const location::connectivity::WirelessNetwork::SignalStrength& s)
+        {
+            auto sp = wp.lock();
+            if (sp)
+                std::cout << "Signal strength changed for wifi " << sp->ssid().get() << ": " << s << std::endl;
+        });
     });
 
     cm->wireless_network_removed().connect([](const location::connectivity::WirelessNetwork::Ptr& wifi)
     {
         std::cout << "Visible wireless network was removed: " << wifi->ssid().get() << std::endl;
-    });
-
-    // We subscribe to changes for visible wireless networks.
-    cm->visible_wireless_networks().changed().connect([](const WirelessNetworks& networks)
-    {
-        std::cout << "Visible wireless networks changed:" << std::endl;
-
-        // Iterate over all visible wireless networks.
-        for (const auto& wifi: networks)
-        {
-            std::cout << wifi->ssid().get() << ", timestamp: ";
-            auto ts = std::chrono::system_clock::to_time_t(wifi->timestamp().get());
-            std::cout << std::ctime(&ts);
-
-            // We don't want to keep the object alive
-            std::weak_ptr<location::connectivity::WirelessNetwork> wp
-            {
-                wifi
-            };
-
-            // Subscribe to cell updates. Please note that this is not considering
-            // the case of subscribing to already known wifis. We leave this up
-            // to consumers of the api.
-            wifi->signal_strength().changed().connect([wp](const location::connectivity::WirelessNetwork::SignalStrength& s)
-            {
-                auto sp = wp.lock();
-                if (sp)
-                    std::cout << "Signal strength changed for wifi " << sp->ssid().get() << ": " << s << std::endl;
-            });
-
-            std::cout << "  " << *wifi << std::endl;
-        }
     });
 
     // We subscribe to changes for connected radio cells.
@@ -94,12 +78,21 @@ int main(int argc, char** argv)
         std::cout << cell << std::endl;
 
     // Iterate over all networks that are visible right now.
-    for (const auto& wifi: cm->visible_wireless_networks().get())
+    cm->enumerate_visible_wireless_networks([](const location::connectivity::WirelessNetwork::Ptr& wifi)
     {
-        // We don't want to keep the object alive
-        std::weak_ptr<location::connectivity::WirelessNetwork> wp{wifi};
+        std::cout << wifi->ssid().get() << ", timestamp: ";
+        auto ts = std::chrono::system_clock::to_time_t(wifi->timestamp().get());
+        std::cout << std::ctime(&ts);
 
-        // Subscribe to cell updates
+        // We don't want to keep the object alive
+        std::weak_ptr<location::connectivity::WirelessNetwork> wp
+        {
+            wifi
+        };
+
+        // Subscribe to signal strength updates. Please note that this is not considering
+        // the case of subscribing to already known wifis. We leave this up
+        // to consumers of the api.
         wifi->signal_strength().changed().connect([wp](const location::connectivity::WirelessNetwork::SignalStrength& s)
         {
             auto sp = wp.lock();
@@ -107,8 +100,8 @@ int main(int argc, char** argv)
                 std::cout << "Signal strength changed for wifi " << sp->ssid().get() << ": " << s << std::endl;
         });
 
-        std::cout << *wifi << std::endl;
-    }
+        std::cout << "  " << *wifi << std::endl;
+    });
     
     // Request a scan for wireless networks.
     try
