@@ -114,10 +114,9 @@ TEST(Harvester, queries_wifis_and_cells_on_location_update)
 
     auto conn_man = std::make_shared<MockConnectivityManager>();
 
-    ON_CALL(*conn_man, visible_wireless_networks()).WillByDefault(ReturnRef(wifis));
     ON_CALL(*conn_man, connected_radio_cells()).WillByDefault(ReturnRef(cells));
 
-    EXPECT_CALL(*conn_man, visible_wireless_networks()).Times(1);
+    EXPECT_CALL(*conn_man, enumerate_visible_wireless_networks(_)).Times(1);
     EXPECT_CALL(*conn_man, connected_radio_cells()).Times(1);
 
     service::Harvester::Configuration config

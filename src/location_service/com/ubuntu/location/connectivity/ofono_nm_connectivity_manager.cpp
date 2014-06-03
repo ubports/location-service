@@ -417,14 +417,16 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
         return d.signals.wireless_network_added;
     }
 
+    void enumerate_visible_wireless_networks(const std::function<void(const connectivity::WirelessNetwork::Ptr&)>& f) const override
+    {
+        std::lock_guard<std::mutex> lg(d.cached.guard);
+        for (const auto& wifi : d.cached.wifis)
+            f(wifi.second);
+    }
+
     const core::Signal<connectivity::WirelessNetwork::Ptr>& wireless_network_removed() const override
     {
         return d.signals.wireless_network_removed;
-    }
-
-    const core::Property<std::vector<connectivity::WirelessNetwork::Ptr> >& visible_wireless_networks() override
-    {
-        return d.visible_wireless_networks;
     }
 
     const core::Property<std::vector<connectivity::RadioCell> >& connected_radio_cells() override
@@ -457,7 +459,6 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                             };
 
                             auto wifi = std::make_shared<CachedWirelessNetwork>(device, ap);
-                            std::vector<connectivity::WirelessNetwork::Ptr> wifis;
 
                             // Scoping access to the cache to prevent deadlocks
                             // when clients of the API request an enumeration of
@@ -466,19 +467,14 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                             {
                                 std::lock_guard<std::mutex> lg(cached.guard);
                                 cached.wifis[path] = std::make_shared<CachedWirelessNetwork>(device, ap);
-
-                                for (const auto& wifi : cached.wifis)
-                                    wifis.push_back(wifi.second);
                             }
 
-                            visible_wireless_networks.set(wifis);
                             signals.wireless_network_added(wifi);
                         });
 
                         device.signals.ap_removed->connect([this, device](const core::dbus::types::ObjectPath& path)
                         {
                             connectivity::WirelessNetwork::Ptr wifi;
-                            std::vector<connectivity::WirelessNetwork::Ptr> wifis;
 
                             // Scoping access to the cache to prevent deadlocks
                             // when clients of the API request an enumeration of
@@ -488,12 +484,8 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                                 std::lock_guard<std::mutex> lg(cached.guard);
                                 wifi = cached.wifis.at(path);
                                 cached.wifis.erase(path);
-
-                                for (const auto& wifi : cached.wifis)
-                                    wifis.push_back(wifi.second);
                             }
 
-                            visible_wireless_networks.set(wifis);
                             signals.wireless_network_removed(wifi);
                         });
 
@@ -506,12 +498,6 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         }
                     }
                 }
-
-                std::vector<connectivity::WirelessNetwork::Ptr> wifis;
-                for (const auto& wifi : cached.wifis)
-                    wifis.push_back(wifi.second);
-
-                visible_wireless_networks.set(wifis);
 
                 // Query the initial connectivity state
                 auto s = network_manager->properties.connectivity->get();
@@ -599,7 +585,7 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
 
         struct
         {
-            std::mutex guard;
+            mutable std::mutex guard;
             std::map<core::dbus::types::ObjectPath, CachedWirelessNetwork::Ptr> wifis;
             std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device> wireless_devices;
         } cached;
@@ -611,7 +597,6 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
         } signals;
 
         DispatchedProperty<connectivity::State> state;
-        DispatchedProperty<std::vector<connectivity::WirelessNetwork::Ptr> > visible_wireless_networks;
         DispatchedProperty<std::vector<connectivity::RadioCell> > visible_radio_cells;
     } d;
 };

@@ -106,6 +106,8 @@ TEST(ConnectivityManager, default_implementation_is_queryable_for_wifis_and_radi
     for (const auto& cell : manager->connected_radio_cells().get())
         std::cout << cell << std::endl;
 
-    for (const auto& wifi: manager->visible_wireless_networks().get())
+    manager->enumerate_visible_wireless_networks([](location::connectivity::WirelessNetwork::Ptr wifi)
+    {
         std::cout << *wifi << std::endl;
+    });
 }

@@ -48,14 +48,11 @@ struct MockConnectivityManager : public com::ubuntu::location::connectivity::Man
     MOCK_CONST_METHOD0(wireless_network_removed, const core::Signal<com::ubuntu::location::connectivity::WirelessNetwork::Ptr>& ());
 
     /**
-     * @brief All wireless networks visible to the device.
+     * @brief Enumerate all wireless networks visible to the device.
      */
-    MOCK_METHOD0(visible_wireless_networks,
-                 const core::Property<
-                    std::vector<
-                        com::ubuntu::location::connectivity::WirelessNetwork::Ptr
-                    >
-                 >&());
+    MOCK_CONST_METHOD1(
+            enumerate_visible_wireless_networks,
+            void(const std::function<void(const com::ubuntu::location::connectivity::WirelessNetwork::Ptr&)>&));
 
     /**
      * @brief All radio cells that the device is connected to.

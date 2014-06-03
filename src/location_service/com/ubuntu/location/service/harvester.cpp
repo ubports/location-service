@@ -33,7 +33,12 @@ location::service::Harvester::Harvester(const location::service::Harvester::Conf
         if (not is_running.load())
             return;
 
-        auto visible_wifis = config.connectivity_manager->visible_wireless_networks().get();
+        std::vector<location::connectivity::WirelessNetwork::Ptr> visible_wifis;
+        config.connectivity_manager->enumerate_visible_wireless_networks([&visible_wifis](location::connectivity::WirelessNetwork::Ptr wifi)
+        {
+            visible_wifis.push_back(wifi);
+        });
+
         auto connected_cells = config.connectivity_manager->connected_radio_cells().get();
 
         config.reporter->report(update, visible_wifis, connected_cells);

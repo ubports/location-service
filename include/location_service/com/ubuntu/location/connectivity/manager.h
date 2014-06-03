@@ -121,23 +121,9 @@ public:
     virtual const core::Signal<WirelessNetwork::Ptr>& wireless_network_removed() const = 0;
 
     /**
-     * @brief All wireless networks visible to the device.
-     *
-     * If users would like to receive updates about visible wireless networks, they
-     * should connect to the Property's changed signal as in (all error handling omitted):
-     * @code
-     * auto connectivity_manager = com::ubuntu::location::connectivity::platform_default_manager();
-     *
-     * // Subscribe to visible wireless network updates.
-     * connectivity_manager->visible_wireless_networks().changed().connect([](const std::vector<WirelessNetwork::Ptr>& networks)
-     * {
-     *     for (const auto& network : networks)
-     *         std::cout << network->ssid << std::endl;
-     * });
-     * @endcode
-     * @return A getable/observable property carrying the visible wireless networks.
+     * @brief Enumerates all wireless networks visible to the device.
      */
-    virtual const core::Property<std::vector<WirelessNetwork::Ptr>>& visible_wireless_networks() = 0;
+    virtual void enumerate_visible_wireless_networks(const std::function<void(const WirelessNetwork::Ptr&)>&) const = 0;
 
     /**
      * @brief All radio cells that the device is connected to.
