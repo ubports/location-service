@@ -130,7 +130,7 @@ struct Manager
 
                 typedef NetworkRegistration Interface;
 
-                typedef std::map<std::string, core::dbus::types::Variant> ArgumentType;
+                typedef std::tuple<std::string, core::dbus::types::Variant> ArgumentType;
             };
 
             struct Status
@@ -294,10 +294,9 @@ struct Manager
                       object->get_signal<PropertyChanged>()
                   }
             {
-                signals.property_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
+                signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
                 {
-                    for (const auto& entry : dict)
-                        std::cout << entry.first << std::endl;
+                    std::cout << std::get<0>(tuple) << std::endl;
                 });
 
                 refresh_properties();
