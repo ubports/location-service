@@ -546,7 +546,7 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
 
             } catch(const std::runtime_error& e)
             {
-                std::cerr << e.what() << std::endl;
+                LOG(ERROR) << e.what();
             }
 
             try
@@ -554,7 +554,7 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                 modem_manager.reset(new org::Ofono::Manager(system_bus()));
             } catch (const std::runtime_error& e)
             {
-                std::cerr << e.what() << std::endl;
+                LOG(ERROR) << "Error while setting up access to telephony stack [" << e.what() << "]";
             }
         }
 

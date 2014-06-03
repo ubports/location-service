@@ -102,7 +102,7 @@ struct Manager
             {
                 static const std::string s{"org.ofono.NetworkRegistration"};
                 return s;
-            }
+            }            
 
             struct GetProperties
             {
@@ -121,18 +121,73 @@ struct Manager
                 }
             };
 
-            struct Mode
+            struct PropertiesChanged
             {
-                static const char* unregistered() { return "unregistered"; }
-                static const char* registered() { return "registered"; }
-                static const char* searching() { return "searching"; }
-                static const char* denied() { return "denied"; }
-                static const char* unknown() { return "unknown"; }
-                static const char* roaming() { return "roaming"; }
+                inline static std::string name()
+                {
+                    return "PropertiesChanged";
+                }
+
+                typedef NetworkRegistration Interface;
+
+                typedef std::map<std::string, core::dbus::types::Variant> ArgumentType;
+            };
+
+            struct Status
+            {
+                enum class Value
+                {
+                    unregistered,
+                    registered,
+                    searching,
+                    denied,
+                    unknown,
+                    roaming
+                };
+
+                static constexpr const char* unregistered
+                {
+                    "unregistered"
+                };
+                static constexpr const char* registered
+                {
+                    "registered"
+                };
+                static constexpr const char* searching
+                {
+                    "searching"
+                };
+                static constexpr const char* denied
+                {
+                    "denied"
+                };
+                static constexpr const char* unknown
+                {
+                    "unknown"
+                };
+                static constexpr const char* roaming
+                {
+                    "roaming"
+                };
+
+                static const char* value_to_string(Value value)
+                {
+                    switch (value)
+                    {
+                    case Value::unregistered: return unregistered;
+                    case Value::registered: return registered;
+                    case Value::searching: return searching;
+                    case Value::denied: return denied;
+                    case Value::unknown: return unknown;
+                    case Value::roaming: return roaming;
+                    }
+
+                    return nullptr;
+                }
 
                 static const std::string& name()
                 {
-                    static const std::string s{"Mode"};
+                    static const std::string s{"Status"};
                     return s;
                 }
 
@@ -234,8 +289,17 @@ struct Manager
 
             NetworkRegistration(const std::shared_ptr<core::dbus::Object>& object)
                 : object(object),
-                  properties{}
+                  signals
+                  {
+                      object->get_signal<PropertiesChanged>()
+                  }
             {
+                signals.properties_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
+                {
+                    for (const auto& entry : dict)
+                        std::cout << entry.first << std::endl;
+                });
+
                 refresh_properties();
             }
 
@@ -258,6 +322,11 @@ struct Manager
 
             std::shared_ptr<core::dbus::Object> object;
             mutable GetProperties::ValueType properties;
+
+            struct
+            {
+                core::dbus::Signal<PropertiesChanged, PropertiesChanged::ArgumentType>::Ptr properties_changed;
+            } signals;
         };
 
         Modem(const std::shared_ptr<core::dbus::Service>& service,
