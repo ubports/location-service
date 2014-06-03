@@ -121,11 +121,11 @@ struct Manager
                 }
             };
 
-            struct PropertiesChanged
+            struct PropertyChanged
             {
                 inline static std::string name()
                 {
-                    return "PropertiesChanged";
+                    return "PropertyChanged";
                 }
 
                 typedef NetworkRegistration Interface;
@@ -291,10 +291,10 @@ struct Manager
                 : object(object),
                   signals
                   {
-                      object->get_signal<PropertiesChanged>()
+                      object->get_signal<PropertyChanged>()
                   }
             {
-                signals.properties_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
+                signals.property_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
                 {
                     for (const auto& entry : dict)
                         std::cout << entry.first << std::endl;
@@ -325,7 +325,7 @@ struct Manager
 
             struct
             {
-                core::dbus::Signal<PropertiesChanged, PropertiesChanged::ArgumentType>::Ptr properties_changed;
+                core::dbus::Signal<PropertyChanged, PropertyChanged::ArgumentType>::Ptr property_changed;
             } signals;
         };
 
