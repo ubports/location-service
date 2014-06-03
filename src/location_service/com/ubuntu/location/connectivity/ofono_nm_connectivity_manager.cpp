@@ -301,24 +301,36 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                     };
 
                     auto radio_type = type_lut.at(
-                                modem.network_registration.properties.technology->get());
+                                modem.network_registration.get<
+                                org::Ofono::Manager::Modem::NetworkRegistration::Technology
+                                >());
                     auto lac =
-                            modem.network_registration.properties.location_area_code->get();
+                            modem.network_registration.get<
+                            org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode
+                            >();
 
                     int cell_id =
-                            modem.network_registration.properties.cell_id->get();
+                            modem.network_registration.get<
+                            org::Ofono::Manager::Modem::NetworkRegistration::CellId
+                            >();
 
                     auto strength =
-                            modem.network_registration.properties.strength->get();
+                            modem.network_registration.get<
+                            org::Ofono::Manager::Modem::NetworkRegistration::Strength
+                            >();
 
                     std::stringstream ssmcc
                     {
-                        modem.network_registration.properties.mobile_country_code->get()
+                        modem.network_registration.get<
+                                org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode
+                                >()
                     };
                     int mcc{0}; ssmcc >> mcc;
                     std::stringstream ssmnc
                     {
-                        modem.network_registration.properties.mobile_network_code->get()
+                        modem.network_registration.get<
+                                org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode
+                                >()
                     };
                     int mnc{0}; ssmnc >> mnc;
 
