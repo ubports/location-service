@@ -111,6 +111,16 @@ public:
     virtual void request_scan_for_wireless_networks() = 0;
 
     /**
+     * @brief wireless_network_added is emitted whenever a new wifi becomes visible.
+     */
+    virtual const core::Signal<WirelessNetwork::Ptr>& wireless_network_added() const = 0;
+
+    /**
+     * @brief wireless_network_removed is emitted whenever a wifi disappears.
+     */
+    virtual const core::Signal<WirelessNetwork::Ptr>& wireless_network_removed() const = 0;
+
+    /**
      * @brief All wireless networks visible to the device.
      *
      * If users would like to receive updates about visible wireless networks, they
@@ -119,10 +129,10 @@ public:
      * auto connectivity_manager = com::ubuntu::location::connectivity::platform_default_manager();
      *
      * // Subscribe to visible wireless network updates.
-     * connectivity_manager->visible_wireless_networks().changed().connect([](const std::vector<WirelessNetwork>& networks)
+     * connectivity_manager->visible_wireless_networks().changed().connect([](const std::vector<WirelessNetwork::Ptr>& networks)
      * {
      *     for (const auto& network : networks)
-     *         std::cout << network.ssid << std::endl;
+     *         std::cout << network->ssid << std::endl;
      * });
      * @endcode
      * @return A getable/observable property carrying the visible wireless networks.

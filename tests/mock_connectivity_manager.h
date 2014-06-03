@@ -38,6 +38,16 @@ struct MockConnectivityManager : public com::ubuntu::location::connectivity::Man
     MOCK_METHOD0(request_scan_for_wireless_networks, void());
 
     /**
+     * @brief wireless_network_added is emitted whenever a new wifi becomes visible.
+     */
+    MOCK_CONST_METHOD0(wireless_network_added, const core::Signal<com::ubuntu::location::connectivity::WirelessNetwork::Ptr>& ());
+
+    /**
+     * @brief wireless_network_removed is emitted whenever a wifi disappears.
+     */
+    MOCK_CONST_METHOD0(wireless_network_removed, const core::Signal<com::ubuntu::location::connectivity::WirelessNetwork::Ptr>& ());
+
+    /**
      * @brief All wireless networks visible to the device.
      */
     MOCK_METHOD0(visible_wireless_networks,

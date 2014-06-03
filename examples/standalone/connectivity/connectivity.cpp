@@ -37,6 +37,17 @@ int main(int argc, char** argv)
         std::exit(1);
     }
 
+    // Subscribe to wifi added/removed signals.
+    cm->wireless_network_added().connect([](const location::connectivity::WirelessNetwork::Ptr& wifi)
+    {
+        std::cout << "Visible wireless network was added: " << wifi->ssid().get() << std::endl;
+    });
+
+    cm->wireless_network_removed().connect([](const location::connectivity::WirelessNetwork::Ptr& wifi)
+    {
+        std::cout << "Visible wireless network was removed: " << wifi->ssid().get() << std::endl;
+    });
+
     // We subscribe to changes for visible wireless networks.
     cm->visible_wireless_networks().changed().connect([](const WirelessNetworks& networks)
     {
