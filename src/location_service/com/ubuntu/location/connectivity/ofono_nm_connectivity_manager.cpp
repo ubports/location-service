@@ -18,6 +18,8 @@
 
 #include <com/ubuntu/location/connectivity/manager.h>
 
+#include <com/ubuntu/location/logging.h>
+
 #include "nm.h"
 #include "ofono.h"
 
@@ -183,7 +185,6 @@ struct CachedWirelessNetwork : public connectivity::WirelessNetwork
         // Wire up all the connections
         access_point_.properties_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
         {
-            std::cout << "Properties on access point " << ssid_.get() << " changed: " << std::endl;
             // We route by string
             static const std::unordered_map<std::string, std::function<void(CachedWirelessNetwork&, const core::dbus::types::Variant&)> > lut
             {
@@ -244,7 +245,8 @@ struct CachedWirelessNetwork : public connectivity::WirelessNetwork
 
             for (const auto& pair : dict)
             {
-                std::cout << "  " << pair.first << std::endl;
+                VLOG(1) << "Properties on access point " << ssid_.get() << " changed: " << std::endl
+                        << "  " << pair.first;
 
                 if (lut.count(pair.first) > 0)
                     lut.at(pair.first)(*this, pair.second);
@@ -346,6 +348,7 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                             connectivity::RadioCell::Gsm::ID{cell_id},
                             connectivity::RadioCell::Gsm::SignalStrength::from_percent(strength/100.f)
                         };
+                        VLOG(1) << gsm;
                         cells.emplace_back(gsm);
                         break;
                     }
@@ -360,6 +363,7 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                             connectivity::RadioCell::Lte::PID{},
                             connectivity::RadioCell::Lte::SignalStrength::from_percent(strength/100.f)
                         };
+                        VLOG(1) << lte;
                         cells.emplace_back(lte);
                         break;
                     }
@@ -373,10 +377,13 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                             connectivity::RadioCell::Umts::ID{cell_id},
                             connectivity::RadioCell::Umts::SignalStrength::from_percent(strength/100.f)
                         };
+                        VLOG(1) << umts;
                         cells.emplace_back(umts);
                         break;
                     }
-                    default: break; // By default, we do not add a cell.
+                    default:
+                        LOG(WARNING) << "Got a cell with unknown technology.";
+                        break; // By default, we do not add a cell.
                     }
                 });
 
@@ -423,7 +430,6 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                 {
                     if (device.type() == org::freedesktop::NetworkManager::Device::Type::wifi)
                     {
-                        std::cout << device.object->path() << std::endl;
                         cached.wireless_devices.insert(std::make_pair(device.object->path(), device));
 
                         device.signals.ap_added->connect([this, device](const core::dbus::types::ObjectPath& path)
@@ -503,8 +509,6 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                             org::freedesktop::NetworkManager::Properties::Connectivity::name(),
                             [this](const core::dbus::types::Variant& value)
                             {
-                                std::cout << "Connectivity status changed." << std::endl;
-
                                 auto s = value.as<org::freedesktop::NetworkManager::Properties::Connectivity::ValueType>();
 
                                 switch (s)
@@ -531,7 +535,8 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
 
                     for (const auto& pair : dict)
                     {
-                        std::cout << pair.first << " changed" << std::endl;
+                        VLOG(1) << "Property has changed: " << std::endl
+                                << "  " << pair.first;
 
                         if (lut.count(pair.first) > 0)
                             lut.at(pair.first)(pair.second);
