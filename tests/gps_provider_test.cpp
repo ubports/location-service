@@ -237,6 +237,26 @@ struct HardwareAbstractionLayerFixture : public ::testing::Test
     }
 };
 }
+
+TEST_F(HardwareAbstractionLayerFixture, provider_construction_works_requires_hardware)
+{
+    {
+        location::ProviderFactory::instance().create_provider_for_name_with_config("gps::Provider", location::Configuration{});
+    }
+
+    {
+        gps::Provider provider;
+    }
+
+    {
+        gps::Provider::create_instance(location::Configuration{});
+    }
+
+    {
+        location::ProviderFactory::instance().create_provider_for_name_with_config("gps::Provider", location::Configuration{});
+    }
+}
+
 // HardwareAbstractionLayerFixture.time_to_first_fix_cold_start_without_supl_benchmark_requires_hardware
 TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_without_supl_benchmark_requires_hardware)
 {
