@@ -301,36 +301,24 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                     };
 
                     auto radio_type = type_lut.at(
-                                modem.network_registration.get<
-                                org::Ofono::Manager::Modem::NetworkRegistration::Technology
-                                >());
+                                modem.network_registration.properties.technology->get());
                     auto lac =
-                            modem.network_registration.get<
-                            org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode
-                            >();
+                            modem.network_registration.properties.location_area_code->get();
 
                     int cell_id =
-                            modem.network_registration.get<
-                            org::Ofono::Manager::Modem::NetworkRegistration::CellId
-                            >(0);
+                            modem.network_registration.properties.cell_id->get();
 
                     auto strength =
-                            modem.network_registration.get<
-                            org::Ofono::Manager::Modem::NetworkRegistration::Strength
-                            >(0);
+                            modem.network_registration.properties.strength->get();
 
                     std::stringstream ssmcc
                     {
-                        modem.network_registration.get<
-                                org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode
-                                >()
+                        modem.network_registration.properties.mobile_country_code->get()
                     };
                     int mcc{0}; ssmcc >> mcc;
                     std::stringstream ssmnc
                     {
-                        modem.network_registration.get<
-                                org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode
-                                >()
+                        modem.network_registration.properties.mobile_network_code->get()
                     };
                     int mnc{0}; ssmnc >> mnc;
 

@@ -600,5 +600,11 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
 
 std::shared_ptr<gps::HardwareAbstractionLayer> gps::HardwareAbstractionLayer::create_default_instance()
 {
-    return std::shared_ptr<gps::HardwareAbstractionLayer>(new impl::HardwareAbstractionLayer());
+
+    static std::shared_ptr<gps::HardwareAbstractionLayer> instance
+    {
+        new impl::HardwareAbstractionLayer()
+    };
+
+    return instance;
 }

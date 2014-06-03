@@ -234,33 +234,30 @@ struct Manager
 
             NetworkRegistration(const std::shared_ptr<core::dbus::Object>& object)
                 : object(object),
-                  properties{}
+                  properties
+                  {
+                      object->get_property<Mode>(),
+                      object->get_property<LocationAreaCode>(),
+                      object->get_property<CellId>(),
+                      object->get_property<MobileNetworkCode>(),
+                      object->get_property<MobileCountryCode>(),
+                      object->get_property<Technology>(),
+                      object->get_property<Strength>(),
+                  }
             {
-                auto result = object->invoke_method_synchronously<GetProperties, GetProperties::ValueType>();
-                if (result.is_error())
-                    throw std::runtime_error(result.error().print());
-
-                properties = result.value();
-            }
-
-            template<typename Property>
-            typename Property::ValueType get(
-                    const typename Property::ValueType& default_value = typename Property::ValueType{}) const
-            {
-                try
-                {
-                    return properties.at(Property::name())
-                            .template as<typename Property::ValueType>();
-
-                } catch(...)
-                {
-                }
-
-                return default_value;
             }
 
             std::shared_ptr<core::dbus::Object> object;
-            GetProperties::ValueType properties;
+            struct
+            {
+                std::shared_ptr<core::dbus::Property<Mode> > mode;
+                std::shared_ptr<core::dbus::Property<LocationAreaCode>> location_area_code;
+                std::shared_ptr<core::dbus::Property<CellId>> cell_id;
+                std::shared_ptr<core::dbus::Property<MobileNetworkCode>> mobile_network_code;
+                std::shared_ptr<core::dbus::Property<MobileCountryCode>> mobile_country_code;
+                std::shared_ptr<core::dbus::Property<Technology>> technology;
+                std::shared_ptr<core::dbus::Property<Strength>> strength;
+            } properties;
         };
 
         Modem(const std::shared_ptr<core::dbus::Service>& service,
