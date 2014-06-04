@@ -121,12 +121,10 @@ int main(int argc, char** argv)
         {
             while (not cancelled)
             {
-                cm->enumerate_visible_wireless_networks([](const location::connectivity::WirelessNetwork::Ptr& wifi)
+                cm->enumerate_visible_wireless_networks([](const location::connectivity::WirelessNetwork::Ptr&)
                 {
-                    std::cout << wifi->ssid().get() << ", timestamp: ";
-                    auto ts = std::chrono::system_clock::to_time_t(wifi->timestamp().get());
-                    std::cout << std::ctime(&ts);
-                    std::cout << "  " << *wifi << std::endl;
+                    // We do nothing with the actual values and just keep the thread running
+                    // to put some load on the infrastructure.
                 });
             }
         }
@@ -138,10 +136,10 @@ int main(int argc, char** argv)
         {
             while (not cancelled)
             {
-                // Iterate over all radio cells that the device is connected with.
-                cm->enumerate_connected_radio_cells([](const location::connectivity::RadioCell::Ptr& cell)
+                cm->enumerate_connected_radio_cells([](const location::connectivity::RadioCell::Ptr&)
                 {
-                    std::cout << *cell << std::endl;
+                    // We do nothing with the actual values and just keep the thread running
+                    // to put some load on the infrastructure.
                 });
             }
         }
