@@ -629,22 +629,22 @@ struct Manager
               const std::shared_ptr<core::dbus::Object>& object)
             : service(service),
               object(object),
+              signals
+              {
+                  object->get_signal<PropertyChanged>()
+              },
               network_registration{object}
         {
-            auto result = object->invoke_method_synchronously<GetProperties, GetProperties::ValueType>();
-            if (result.is_error())
-                throw std::runtime_error(result.error().print());
-
-            auto properties = result.value();
-
-            for (const auto& pair : properties)
-            {
-                std::cout << pair.first << std::endl;
-            }
         }
 
         std::shared_ptr<core::dbus::Service> service;
         std::shared_ptr<core::dbus::Object> object;
+
+        struct
+        {
+            core::dbus::Signal<PropertyChanged, PropertyChanged::ArgumentType>::Ptr property_changed;
+        } signals;
+
         NetworkRegistration network_registration;
     };
 
@@ -659,6 +659,15 @@ struct Manager
     {
     }
 
+    Modem modem_for_path(const core::dbus::types::ObjectPath& path) const
+    {
+        return Modem
+        {
+            service,
+            service->object_for_path(path)
+        };
+    }
+
     void for_each_modem(const std::function<void(const Modem&)>& functor) const
     {
         auto result = object->invoke_method_synchronously<GetModems, GetModems::ResultType>();
@@ -668,11 +677,7 @@ struct Manager
 
         for (const auto& element : result.value())
         {
-            functor(Modem
-            {
-                service,
-                service->object_for_path(element.value)
-            });
+            functor(modem_for_path(element.value));
         }
     }
 
