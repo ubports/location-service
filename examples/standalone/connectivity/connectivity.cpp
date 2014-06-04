@@ -78,6 +78,22 @@ int main(int argc, char** argv)
         });
     });
 
+    cm->connected_cell_added().connect([](const location::connectivity::RadioCell::Ptr& cell)
+    {
+        std::cout << *cell << std::endl;
+
+        // Subscribe to changes on the cell
+        cell->changed().connect([]()
+        {
+            std::cout << "Something changed on a radio cell." << std::endl;
+        });
+    });
+
+    cm->connected_cell_removed().connect([](const location::connectivity::RadioCell::Ptr& cell)
+    {
+        std::cout << *cell << std::endl;
+    });
+
     // Iterate over all networks that are visible right now.
     cm->enumerate_visible_wireless_networks([](const location::connectivity::WirelessNetwork::Ptr& wifi)
     {

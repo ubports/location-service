@@ -126,6 +126,16 @@ public:
     virtual void enumerate_visible_wireless_networks(const std::function<void(const WirelessNetwork::Ptr&)>&) const = 0;
 
     /**
+     * @brief connected_cell_added is emitted whenever the underlying modem connects to a new cell.
+     */
+    virtual const core::Signal<RadioCell::Ptr>& connected_cell_added() const = 0;
+
+    /**
+     * @brief connected_cell_removed is emitted whenever the underlying modem disconnects from a cell.
+     */
+    virtual const core::Signal<RadioCell::Ptr>& connected_cell_removed() const = 0;
+
+    /**
      * @brief Enumerates all radio cells that the device is connected to.
      */
     virtual void enumerate_connected_radio_cells(const std::function<void(const RadioCell::Ptr&)>&) const = 0;

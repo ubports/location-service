@@ -55,6 +55,20 @@ struct MockConnectivityManager : public com::ubuntu::location::connectivity::Man
             void(const std::function<void(const com::ubuntu::location::connectivity::WirelessNetwork::Ptr&)>&));
 
     /**
+     * @brief connected_cell_added is emitted whenever the underlying modem connects to a new cell.
+     */
+    MOCK_CONST_METHOD0(
+            connected_cell_added,
+            const core::Signal<com::ubuntu::location::connectivity::RadioCell::Ptr>& ());
+
+    /**
+     * @brief connected_cell_removed is emitted whenever the underlying modem disconnects from a cell.
+     */
+    MOCK_CONST_METHOD0(
+            connected_cell_removed,
+            const core::Signal<com::ubuntu::location::connectivity::RadioCell::Ptr>& ());
+
+    /**
      * @brief Enumerate all radio cells that the device is connected to.
      */
     MOCK_CONST_METHOD1(

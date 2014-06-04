@@ -526,6 +526,11 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
         return d.signals.wireless_network_added;
     }
 
+    const core::Signal<connectivity::WirelessNetwork::Ptr>& wireless_network_removed() const override
+    {
+        return d.signals.wireless_network_removed;
+    }
+
     void enumerate_visible_wireless_networks(const std::function<void(const connectivity::WirelessNetwork::Ptr&)>& f) const override
     {
         std::lock_guard<std::mutex> lg(d.cached.guard);
@@ -533,9 +538,14 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
             f(wifi.second);
     }
 
-    const core::Signal<connectivity::WirelessNetwork::Ptr>& wireless_network_removed() const override
+    const core::Signal<connectivity::RadioCell::Ptr>& connected_cell_added() const override
     {
-        return d.signals.wireless_network_removed;
+        d.signals.connected_cell_added;
+    }
+
+    const core::Signal<connectivity::RadioCell::Ptr>& connected_cell_removed() const override
+    {
+        d.signals.connected_cell_removed;
     }
 
     void enumerate_connected_radio_cells(const std::function<void(const connectivity::RadioCell::Ptr&)>& f) const override
@@ -711,19 +721,30 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                                             interfaces.end(),
                                             std::string{org::Ofono::Manager::Modem::Properties::Interfaces::network_registration});
 
+                                CachedRadioCell::Ptr cell;
+
                                 if (it == interfaces.end())
                                 {
-                                    std::lock_guard<std::mutex> lg(cached.guard);
-                                    cached.cells.erase(modem_path);
+                                    {
+                                        std::lock_guard<std::mutex> lg(cached.guard);
+                                        cell = cached.cells.at(modem_path);
+                                        cached.cells.erase(modem_path);
+                                    }
+                                    signals.connected_cell_removed(cell);
                                 } else
                                 {
                                     auto itt = cached.cells.find(modem_path);
                                     if (itt == cached.cells.end())
                                     {
-                                        cached.cells.insert(
+                                        cell = std::make_shared<CachedRadioCell>(cached.modems.at(modem_path));
+                                        {
+                                            std::lock_guard<std::mutex> lg(cached.guard);
+                                            cached.cells.insert(
                                                     std::make_pair(
                                                         modem_path,
-                                                        std::make_shared<CachedRadioCell>(cached.modems.at(modem_path))));
+                                                        cell));
+                                        }
+                                        signals.connected_cell_added(cell);
                                     }
                                 }
                             }
@@ -740,8 +761,6 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
 
                 modem_manager->signals.modem_added->connect([this](const org::Ofono::Manager::ModemAdded::ArgumentType& arg)
                 {
-                    std::lock_guard<std::mutex> lg(cached.guard);
-
                     try
                     {
                         const auto& path = std::get<0>(arg);
@@ -767,27 +786,43 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                                             interfaces.end(),
                                             std::string{org::Ofono::Manager::Modem::Properties::Interfaces::network_registration});
 
+                                CachedRadioCell::Ptr cell;
+
                                 if (it == interfaces.end())
                                 {
-                                    std::lock_guard<std::mutex> lg(cached.guard);
-                                    cached.cells.erase(path);
+                                    {
+                                        std::lock_guard<std::mutex> lg(cached.guard);
+                                        cell = cached.cells.at(path);
+                                        cached.cells.erase(path);
+                                    }
+                                    signals.connected_cell_removed(cell);
                                 } else
                                 {
                                     auto itt = cached.cells.find(path);
                                     if (itt == cached.cells.end())
                                     {
-                                        cached.cells.insert(
+                                        cell = std::make_shared<CachedRadioCell>(cached.modems.at(path));
+                                        {
+                                            std::lock_guard<std::mutex> lg(cached.guard);
+                                            cached.cells.insert(
                                                     std::make_pair(
                                                         path,
-                                                        std::make_shared<CachedRadioCell>(cached.modems.at(path))));
+                                                        cell));
+                                        }
+                                        signals.connected_cell_added(cell);
                                     }
                                 }
                             }
 
                         });
 
-                        cached.modems.insert(std::make_pair(modem.object->path(), modem));
-                        cached.cells.insert(std::make_pair(modem.object->path(), std::make_shared<CachedRadioCell>(modem)));
+                        auto cell = std::make_shared<CachedRadioCell>(modem);
+                        {
+                            std::lock_guard<std::mutex> lg(cached.guard);
+                            cached.modems.insert(std::make_pair(modem.object->path(), modem));
+                            cached.cells.insert(std::make_pair(modem.object->path(), cell));
+                        }
+                        signals.connected_cell_added(cell);
                     } catch(const std::runtime_error& e)
                     {
                         LOG(WARNING) << "Exception while creating connected radio cell: " << e.what();
@@ -796,9 +831,14 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
 
                 modem_manager->signals.modem_removed->connect([this](const core::dbus::types::ObjectPath& path)
                 {
-                    std::lock_guard<std::mutex> lg(cached.guard);
-                    cached.modems.erase(path);
-                    cached.cells.erase(path);
+                    CachedRadioCell::Ptr cell;
+                    {
+                        std::lock_guard<std::mutex> lg(cached.guard);
+                        cell = cached.cells.at(path);
+                        cached.modems.erase(path);
+                        cached.cells.erase(path);
+                    }
+                    signals.connected_cell_removed(cell);
                 });
 
             } catch (const std::runtime_error& e)
@@ -821,6 +861,8 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
 
         struct
         {
+            core::Signal<connectivity::RadioCell::Ptr> connected_cell_added;
+            core::Signal<connectivity::RadioCell::Ptr> connected_cell_removed;
             core::Signal<connectivity::WirelessNetwork::Ptr> wireless_network_added;
             core::Signal<connectivity::WirelessNetwork::Ptr> wireless_network_removed;
         } signals;
