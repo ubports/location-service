@@ -4,6 +4,8 @@
 
 #include <cstdlib>
 
+#include <thread>
+
 namespace location = com::ubuntu::location;
 
 namespace
@@ -111,33 +113,43 @@ int main(int argc, char** argv)
         std::cerr << e.what() << std::endl;
     }
 
+    bool cancelled = false;
+
     std::thread t1
     {
-        [cm]()
+        [cm, &cancelled]()
         {
-            cm->enumerate_visible_wireless_networks([](const location::connectivity::WirelessNetwork::Ptr& wifi)
+            while (not cancelled)
             {
-                std::cout << wifi->ssid().get() << ", timestamp: ";
-                auto ts = std::chrono::system_clock::to_time_t(wifi->timestamp().get());
-                std::cout << std::ctime(&ts);
-                std::cout << "  " << *wifi << std::endl;
-            });
+                cm->enumerate_visible_wireless_networks([](const location::connectivity::WirelessNetwork::Ptr& wifi)
+                {
+                    std::cout << wifi->ssid().get() << ", timestamp: ";
+                    auto ts = std::chrono::system_clock::to_time_t(wifi->timestamp().get());
+                    std::cout << std::ctime(&ts);
+                    std::cout << "  " << *wifi << std::endl;
+                });
+            }
         }
     };
 
     std::thread t2
     {
-        [cm]()
+        [cm, &cancelled]()
         {
-            // Iterate over all radio cells that the device is connected with.
-            cm->enumerate_connected_radio_cells([](const location::connectivity::RadioCell::Ptr& cell)
+            while (not cancelled)
             {
-                std::cout << *cell << std::endl;
-            });
+                // Iterate over all radio cells that the device is connected with.
+                cm->enumerate_connected_radio_cells([](const location::connectivity::RadioCell::Ptr& cell)
+                {
+                    std::cout << *cell << std::endl;
+                });
+            }
         }
     };
 
     trap->run();
+
+    cancelled = true;
 
     if (t1.joinable())
         t1.join();
