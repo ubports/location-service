@@ -20,6 +20,8 @@
 
 #include <com/ubuntu/location/logging.h>
 
+#include "cached_radio_cell.h"
+#include "cached_wireless_network.h"
 #include "nm.h"
 #include "ofono.h"
 
@@ -45,463 +47,6 @@ namespace dbus = core::dbus;
 
 namespace
 {
-template<typename T>
-struct DispatchedProperty : public core::Property<T>
-{
-    typedef std::function<T()> Getter;
-
-    DispatchedProperty(const Getter& getter = Getter()) : getter(getter)
-    {
-    }
-
-    const T& get() const
-    {
-        if (getter)
-        {
-            return core::Property<T>::mutable_get() = getter();
-        }
-
-        return core::Property<T>::get();
-    }
-
-    Getter getter;
-};
-
-struct State
-{
-    ~State();
-
-    std::thread worker;
-} state;
-
-const std::shared_ptr<dbus::Bus>& system_bus()
-{
-    static std::once_flag once;
-    static const std::shared_ptr<dbus::Bus> instance
-    {
-        new dbus::Bus(dbus::WellKnownBus::system)
-    };
-
-    std::call_once(once,[]
-    {
-        auto executor = dbus::asio::make_executor(instance);
-        instance->install_executor(executor);
-        state.worker = std::move(std::thread([]()
-        {
-            instance->run();
-        }));
-        com::ubuntu::location::set_name_for_thread(
-                    state.worker,
-                    "OfonoNmConnectivityManagerWorkerThread");
-    });
-
-    return instance;
-}
-
-State::~State()
-{
-    if (worker.joinable())
-    {
-        system_bus()->stop();
-        worker.join();
-    }
-}
-
-struct CachedRadioCell : public connectivity::RadioCell
-{
-    typedef std::shared_ptr<CachedRadioCell> Ptr;
-
-    static const std::map<std::string, connectivity::RadioCell::Type>& type_lut()
-    {
-        static const std::map<std::string, connectivity::RadioCell::Type> lut
-        {
-            {
-                org::Ofono::Manager::Modem::NetworkRegistration::Technology::gsm(),
-                        connectivity::RadioCell::Type::gsm
-            },
-            {
-                org::Ofono::Manager::Modem::NetworkRegistration::Technology::lte(),
-                        connectivity::RadioCell::Type::lte
-            },
-            {
-                org::Ofono::Manager::Modem::NetworkRegistration::Technology::umts(),
-                        connectivity::RadioCell::Type::umts
-            },
-            {
-                org::Ofono::Manager::Modem::NetworkRegistration::Technology::edge(),
-                        connectivity::RadioCell::Type::unknown
-            },
-            {
-                org::Ofono::Manager::Modem::NetworkRegistration::Technology::hspa(),
-                        connectivity::RadioCell::Type::unknown
-            },
-            {std::string(), connectivity::RadioCell::Type::unknown}
-        };
-
-        return lut;
-    };
-
-    CachedRadioCell(const org::Ofono::Manager::Modem& modem)
-        : RadioCell(), radio_type(Type::gsm), modem(modem), detail{Gsm()}
-    {
-        auto technology =
-                modem.network_registration.get<
-                    org::Ofono::Manager::Modem::NetworkRegistration::Technology
-                >();
-
-        auto it = type_lut().find(technology);
-
-        if (it == type_lut().end()) throw std::runtime_error
-        {
-            "Unknown technology for connected cell: " + technology
-        };
-
-        if (it->second == connectivity::RadioCell::Type::unknown) throw std::runtime_error
-        {
-            "Unknown technology for connected cell: " + technology
-        };
-
-        radio_type = it->second;
-
-        auto lac =
-                modem.network_registration.get<
-                    org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode
-                >();
-
-        int cell_id =
-                modem.network_registration.get<
-                    org::Ofono::Manager::Modem::NetworkRegistration::CellId
-                >();
-
-        auto strength =
-                modem.network_registration.get<
-                    org::Ofono::Manager::Modem::NetworkRegistration::Strength
-                >();
-
-        std::stringstream ssmcc
-        {
-            modem.network_registration.get<
-                org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode
-            >()
-        };
-        int mcc{0}; ssmcc >> mcc;
-        std::stringstream ssmnc
-        {
-            modem.network_registration.get<
-                org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode
-            >()
-        };
-        int mnc{0}; ssmnc >> mnc;
-
-        switch(radio_type)
-        {
-        case connectivity::RadioCell::Type::gsm:
-        {
-            connectivity::RadioCell::Gsm gsm
-            {
-                connectivity::RadioCell::Gsm::MCC{mcc},
-                connectivity::RadioCell::Gsm::MNC{mnc},
-                connectivity::RadioCell::Gsm::LAC{lac},
-                connectivity::RadioCell::Gsm::ID{cell_id},
-                connectivity::RadioCell::Gsm::SignalStrength::from_percent(strength/100.f)
-            };
-            VLOG(1) << gsm;
-            detail.gsm = gsm;
-            break;
-        }
-        case connectivity::RadioCell::Type::lte:
-        {
-            connectivity::RadioCell::Lte lte
-            {
-                connectivity::RadioCell::Lte::MCC{mcc},
-                connectivity::RadioCell::Lte::MNC{mnc},
-                connectivity::RadioCell::Lte::TAC{lac},
-                connectivity::RadioCell::Lte::ID{cell_id},
-                connectivity::RadioCell::Lte::PID{},
-                connectivity::RadioCell::Lte::SignalStrength::from_percent(strength/100.f)
-            };
-            VLOG(1) << lte;
-            detail.lte = lte;
-            break;
-        }
-        case connectivity::RadioCell::Type::umts:
-        {
-            connectivity::RadioCell::Umts umts
-            {
-                connectivity::RadioCell::Umts::MCC{mcc},
-                connectivity::RadioCell::Umts::MNC{mnc},
-                connectivity::RadioCell::Umts::LAC{lac},
-                connectivity::RadioCell::Umts::ID{cell_id},
-                connectivity::RadioCell::Umts::SignalStrength::from_percent(strength/100.f)
-            };
-            VLOG(1) << umts;
-            detail.umts = umts;
-            break;
-        }
-        default:
-            break;
-        }
-
-        modem.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-        {
-            VLOG(10) << "Property on modem " << CachedRadioCell::modem.object->path() << " changed: " << std::get<0>(tuple);
-        });
-
-        modem.network_registration.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-        {
-            VLOG(10) << "Property changed for network registration: " << std::get<0>(tuple);
-        });
-    }
-
-    CachedRadioCell(const CachedRadioCell& rhs)
-        : RadioCell(), radio_type(rhs.radio_type), modem(rhs.modem)
-    {
-        switch(radio_type)
-        {
-        case connectivity::RadioCell::Type::gsm: detail.gsm = rhs.detail.gsm; break;
-        case connectivity::RadioCell::Type::umts: detail.umts = rhs.detail.umts; break;
-        case connectivity::RadioCell::Type::lte: detail.lte = rhs.detail.lte; break;
-        case connectivity::RadioCell::Type::unknown: break;
-        }
-    }
-
-    CachedRadioCell& operator=(const CachedRadioCell& rhs)
-    {
-        radio_type = rhs.radio_type;
-        modem = rhs.modem;
-
-        switch(radio_type)
-        {
-        case connectivity::RadioCell::Type::gsm: detail.gsm = rhs.detail.gsm; break;
-        case connectivity::RadioCell::Type::umts: detail.umts = rhs.detail.umts; break;
-        case connectivity::RadioCell::Type::lte: detail.lte = rhs.detail.lte; break;
-        case connectivity::RadioCell::Type::unknown: break;
-        }
-
-        return *this;
-    }
-
-    const core::Signal<>& changed() const override
-    {
-        return on_changed;
-    }
-
-    connectivity::RadioCell::Type type() const override
-    {
-        return radio_type;
-    }
-
-    const connectivity::RadioCell::Gsm& gsm() const override
-    {
-        if (radio_type != connectivity::RadioCell::Type::gsm)
-            throw std::runtime_error("Bad access to unset network type.");
-
-        return detail.gsm;
-    }
-
-    const connectivity::RadioCell::Umts& umts() const override
-    {
-        if (radio_type != RadioCell::Type::umts)
-            throw std::runtime_error("Bad access to unset network type.");
-
-        return detail.umts;
-    }
-
-    const connectivity::RadioCell::Lte& lte() const override
-    {
-        if (radio_type != RadioCell::Type::lte)
-            throw std::runtime_error("Bad access to unset network type.");
-
-        return detail.lte;
-    }
-
-    /** @cond */
-    core::Signal<> on_changed;
-    Type radio_type;
-    org::Ofono::Manager::Modem modem;
-
-    struct None {};
-
-    union Detail
-    {
-        Detail() : none(None{})
-        {
-        }
-
-        Detail(const connectivity::RadioCell::Gsm& gsm) : gsm(gsm)
-        {
-        }
-
-        Detail(const connectivity::RadioCell::Umts& umts) : umts(umts)
-        {
-        }
-
-        Detail(const connectivity::RadioCell::Lte& lte) : lte(lte)
-        {
-        }
-
-        None none;
-        Gsm gsm;
-        Umts umts;
-        Lte lte;
-    } detail;
-    /** @endcond */
-};
-
-struct CachedWirelessNetwork : public connectivity::WirelessNetwork
-{
-    typedef std::shared_ptr<CachedWirelessNetwork> Ptr;
-
-    const core::Property<std::chrono::system_clock::time_point>& timestamp() const override
-    {
-        return timestamp_;
-    }
-
-    const core::Property<std::string>& bssid() const override
-    {
-        return bssid_;
-    }
-
-    const core::Property<std::string>& ssid() const override
-    {
-        return ssid_;
-    }
-
-    const core::Property<Mode>& mode() const override
-    {
-        return mode_;
-    }
-
-    const core::Property<Frequency>& frequency() const override
-    {
-        return frequency_;
-    }
-
-    const core::Property<SignalStrength>& signal_strength() const override
-    {
-        return signal_strength_;
-    }
-
-    CachedWirelessNetwork(
-            const org::freedesktop::NetworkManager::Device& device,
-            const org::freedesktop::NetworkManager::AccessPoint& ap)
-        : device_(device),
-          access_point_(ap)
-    {
-        timestamp_ = std::chrono::system_clock::now();
-
-        bssid_ = access_point_.hw_address->get();
-        auto ssid = access_point_.ssid->get();
-        ssid_ = std::string(ssid.begin(), ssid.end());
-
-        auto mode = access_point_.mode->get();
-
-        switch (mode)
-        {
-        case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::unknown:
-            mode_ = connectivity::WirelessNetwork::Mode::unknown;
-            break;
-        case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::adhoc:
-            mode_ = connectivity::WirelessNetwork::Mode::adhoc;
-            break;
-        case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::infra:
-            mode_ = connectivity::WirelessNetwork::Mode::infrastructure;
-            break;
-        }
-
-        frequency_ = connectivity::WirelessNetwork::Frequency
-        {
-            access_point_.frequency->get()
-        };
-
-        signal_strength_ = connectivity::WirelessNetwork::SignalStrength
-        {
-            int(access_point_.strength->get())
-        };
-
-        // Wire up all the connections
-        access_point_.properties_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
-        {
-            // We route by string
-            static const std::unordered_map<std::string, std::function<void(CachedWirelessNetwork&, const core::dbus::types::Variant&)> > lut
-            {
-                {
-                    org::freedesktop::NetworkManager::AccessPoint::HwAddress::name(),
-                    [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
-                    {
-                        thiz.bssid_ = value.as<org::freedesktop::NetworkManager::AccessPoint::HwAddress::ValueType>();
-                    }
-                },
-                {
-                    org::freedesktop::NetworkManager::AccessPoint::Ssid::name(),
-                    [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
-                    {
-                        auto ssid = value.as<org::freedesktop::NetworkManager::AccessPoint::Ssid::ValueType>();
-                        thiz.ssid_ = std::string(ssid.begin(), ssid.end());
-                    }
-                },
-                {
-                    org::freedesktop::NetworkManager::AccessPoint::Strength::name(),
-                    [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
-                    {
-                        thiz.signal_strength_ = connectivity::WirelessNetwork::SignalStrength
-                        {
-                            value.as<org::freedesktop::NetworkManager::AccessPoint::Strength::ValueType>()
-                        };
-                    }
-                },
-                {
-                    org::freedesktop::NetworkManager::AccessPoint::Frequency::name(),
-                    [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
-                    {
-                        thiz.frequency_ = connectivity::WirelessNetwork::Frequency
-                        {
-                            value.as<org::freedesktop::NetworkManager::AccessPoint::Frequency::ValueType>()
-                        };
-                    }
-                },
-                {
-                    org::freedesktop::NetworkManager::AccessPoint::Mode::name(),
-                    [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
-                    {
-                        switch (value.as<org::freedesktop::NetworkManager::AccessPoint::Mode::ValueType>())
-                        {
-                        case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::unknown:
-                            thiz.mode_ = connectivity::WirelessNetwork::Mode::unknown;
-                            break;
-                        case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::adhoc:
-                            thiz.mode_ = connectivity::WirelessNetwork::Mode::adhoc;
-                            break;
-                        case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::infra:
-                            thiz.mode_ = connectivity::WirelessNetwork::Mode::infrastructure;
-                            break;
-                        }
-                    }
-                }
-            };
-
-            for (const auto& pair : dict)
-            {
-                VLOG(1) << "Properties on access point " << ssid_.get() << " changed: " << std::endl
-                        << "  " << pair.first;
-
-                if (lut.count(pair.first) > 0)
-                    lut.at(pair.first)(*this, pair.second);
-            }
-        });
-    }
-
-    org::freedesktop::NetworkManager::Device device_;
-    org::freedesktop::NetworkManager::AccessPoint access_point_;
-
-    core::Property<std::chrono::system_clock::time_point> timestamp_;
-    core::Property<std::string> bssid_;
-    core::Property<std::string> ssid_;
-    core::Property<WirelessNetwork::Mode> mode_;
-    core::Property<WirelessNetwork::Frequency> frequency_;
-    core::Property<WirelessNetwork::SignalStrength> signal_strength_;
-};
-
 struct OfonoNmConnectivityManager : public connectivity::Manager
 {
     OfonoNmConnectivityManager()
@@ -540,12 +85,12 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
 
     const core::Signal<connectivity::RadioCell::Ptr>& connected_cell_added() const override
     {
-        d.signals.connected_cell_added;
+        return d.signals.connected_cell_added;
     }
 
     const core::Signal<connectivity::RadioCell::Ptr>& connected_cell_removed() const override
     {
-        d.signals.connected_cell_removed;
+        return d.signals.connected_cell_removed;
     }
 
     void enumerate_connected_radio_cells(const std::function<void(const connectivity::RadioCell::Ptr&)>& f) const override
@@ -561,7 +106,31 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
         {
             try
             {
-                network_manager.reset(new org::freedesktop::NetworkManager(system_bus()));
+                system_bus.reset(
+                            new core::dbus::Bus(
+                                core::dbus::WellKnownBus::system));
+
+                executor = dbus::asio::make_executor(system_bus);
+
+                system_bus->install_executor(executor);
+
+                worker = std::move(std::thread
+                {
+                    [this]()
+                    {
+                        system_bus->run();
+                    }
+                });
+
+            } catch(const std::exception& e)
+            {
+                LOG(ERROR) << e.what();
+                return;
+            }
+
+            try
+            {
+                network_manager.reset(new org::freedesktop::NetworkManager(system_bus));
 
                 // Seed the map of known wifi devices
                 auto devices = network_manager->get_devices();
@@ -690,11 +259,14 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
             } catch(const std::runtime_error& e)
             {
                 LOG(ERROR) << e.what();
+            } catch(const std::exception& e)
+            {
+                LOG(ERROR) << e.what();
             }
 
             try
             {
-                modem_manager.reset(new org::Ofono::Manager(system_bus()));
+                modem_manager.reset(new org::Ofono::Manager(system_bus));
 
                 modem_manager->for_each_modem([this](const org::Ofono::Manager::Modem& modem)
                 {
@@ -847,6 +419,20 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
             }
         }
 
+        ~Private()
+        {
+            if (system_bus)
+                system_bus->stop();
+
+            if (worker.joinable())
+                worker.join();
+        }
+
+        core::dbus::Bus::Ptr system_bus;
+        core::dbus::Executor::Ptr executor;
+
+        std::thread worker;
+
         org::freedesktop::NetworkManager::Ptr network_manager;
         org::Ofono::Manager::Ptr modem_manager;
 
@@ -867,7 +453,7 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
             core::Signal<connectivity::WirelessNetwork::Ptr> wireless_network_removed;
         } signals;
 
-        DispatchedProperty<connectivity::State> state;
+        core::Property<connectivity::State> state;
     } d;
 };
 }
