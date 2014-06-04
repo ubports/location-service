@@ -20,6 +20,8 @@
 
 #include <com/ubuntu/location/connectivity/bounded_integer.h>
 
+#include <core/signal.h>
+
 #include <limits>
 #include <memory>
 
@@ -233,6 +235,9 @@ struct RadioCell
 
     RadioCell(const RadioCell& rhs) = delete;
     RadioCell& operator=(const RadioCell& rhs) = delete;
+
+    /** @brief Emitted when the cell details change. */
+    virtual const core::Signal<>& changed() const = 0;
 
     /** @brief Returns the type of the radio cell. */
     virtual Type type() const = 0;

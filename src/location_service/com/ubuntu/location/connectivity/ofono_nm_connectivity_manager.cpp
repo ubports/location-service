@@ -111,42 +111,47 @@ struct CachedRadioCell : public connectivity::RadioCell
 {
     typedef std::shared_ptr<CachedRadioCell> Ptr;
 
-    CachedRadioCell(const org::Ofono::Manager::Modem& modem)
-        : RadioCell(), radio_type(Type::gsm), modem(modem), detail{Gsm()}
+    static const std::map<std::string, connectivity::RadioCell::Type>& type_lut()
     {
-        static const std::map<std::string, connectivity::RadioCell::Type> type_lut =
+        static const std::map<std::string, connectivity::RadioCell::Type> lut
         {
             {
                 org::Ofono::Manager::Modem::NetworkRegistration::Technology::gsm(),
-                connectivity::RadioCell::Type::gsm
+                        connectivity::RadioCell::Type::gsm
             },
             {
                 org::Ofono::Manager::Modem::NetworkRegistration::Technology::lte(),
-                connectivity::RadioCell::Type::lte
+                        connectivity::RadioCell::Type::lte
             },
             {
                 org::Ofono::Manager::Modem::NetworkRegistration::Technology::umts(),
-                connectivity::RadioCell::Type::umts
+                        connectivity::RadioCell::Type::umts
             },
             {
                 org::Ofono::Manager::Modem::NetworkRegistration::Technology::edge(),
-                connectivity::RadioCell::Type::unknown
+                        connectivity::RadioCell::Type::unknown
             },
             {
                 org::Ofono::Manager::Modem::NetworkRegistration::Technology::hspa(),
-                connectivity::RadioCell::Type::unknown
+                        connectivity::RadioCell::Type::unknown
             },
             {std::string(), connectivity::RadioCell::Type::unknown}
         };
 
+        return lut;
+    };
+
+    CachedRadioCell(const org::Ofono::Manager::Modem& modem)
+        : RadioCell(), radio_type(Type::gsm), modem(modem), detail{Gsm()}
+    {
         auto technology =
                 modem.network_registration.get<
                     org::Ofono::Manager::Modem::NetworkRegistration::Technology
                 >();
 
-        auto it = type_lut.find(technology);
+        auto it = type_lut().find(technology);
 
-        if (it == type_lut.end()) throw std::runtime_error
+        if (it == type_lut().end()) throw std::runtime_error
         {
             "Unknown technology for connected cell: " + technology
         };
@@ -239,7 +244,12 @@ struct CachedRadioCell : public connectivity::RadioCell
 
         modem.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
         {
-            VLOG(1) << "Property on modem " << CachedRadioCell::modem.object->path() << " changed: " << std::get<0>(tuple);
+            VLOG(10) << "Property on modem " << CachedRadioCell::modem.object->path() << " changed: " << std::get<0>(tuple);
+        });
+
+        modem.network_registration.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
+        {
+            VLOG(10) << "Property changed for network registration: " << std::get<0>(tuple);
         });
     }
 
@@ -269,6 +279,11 @@ struct CachedRadioCell : public connectivity::RadioCell
         }
 
         return *this;
+    }
+
+    const core::Signal<>& changed() const override
+    {
+        return on_changed;
     }
 
     connectivity::RadioCell::Type type() const override
@@ -301,6 +316,7 @@ struct CachedRadioCell : public connectivity::RadioCell
     }
 
     /** @cond */
+    core::Signal<> on_changed;
     Type radio_type;
     org::Ofono::Manager::Modem modem;
 

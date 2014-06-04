@@ -68,6 +68,12 @@ int main(int argc, char** argv)
     cm->enumerate_connected_radio_cells([](const location::connectivity::RadioCell::Ptr& cell)
     {
         std::cout << *cell << std::endl;
+
+        // Subscribe to changes on the cell
+        cell->changed().connect([]()
+        {
+            std::cout << "Something changed on a radio cell." << std::endl;
+        });
     });
 
     // Iterate over all networks that are visible right now.

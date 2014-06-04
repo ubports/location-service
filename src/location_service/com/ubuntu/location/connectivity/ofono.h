@@ -591,11 +591,6 @@ struct Manager
                       object->get_signal<PropertyChanged>()
                   }
             {
-                signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-                {
-                    VLOG(10) << "Property changed for network registration: " << std::get<0>(tuple);
-                });
-
                 refresh_properties();
             }
 

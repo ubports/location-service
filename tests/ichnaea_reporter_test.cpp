@@ -64,6 +64,9 @@ struct MockRadioCell : public location::connectivity::RadioCell
     typedef std::shared_ptr<MockRadioCell> Ptr;
 
     /** @brief Returns the type of the radio cell. */
+    MOCK_CONST_METHOD0(changed, const core::Signal<>&());
+
+    /** @brief Returns the type of the radio cell. */
     MOCK_CONST_METHOD0(type, Type());
 
     /** @brief Returns GSM-specific details or throws std::runtime_error if this is not a GSM radiocell. */
