@@ -21,6 +21,7 @@
 #include <com/ubuntu/location/connectivity/bounded_integer.h>
 
 #include <limits>
+#include <memory>
 
 namespace com
 {
@@ -31,9 +32,11 @@ namespace location
 namespace connectivity
 {
 /** @brief Models a radio cell that one of the modems in the system is connected to. */
-class RadioCell
+struct RadioCell
 {
-public:
+    /** @cond */
+    typedef std::shared_ptr<RadioCell> Ptr;
+    /** @endcond */
 
     /** @brief Enumerates the known technologies. */
     enum class Type
@@ -225,45 +228,23 @@ public:
         SignalStrength strength;
     };
 
-    RadioCell();
-    explicit RadioCell(const Gsm& gsm);
-    explicit RadioCell(const Umts& umts);
-    explicit RadioCell(const Lte& lte);
+    RadioCell() = default;
+    virtual ~RadioCell() = default;
 
-    RadioCell(const RadioCell& rhs);
-    RadioCell& operator=(const RadioCell& rhs);
+    RadioCell(const RadioCell& rhs) = delete;
+    RadioCell& operator=(const RadioCell& rhs) = delete;
 
     /** @brief Returns the type of the radio cell. */
-    Type type() const;
+    virtual Type type() const = 0;
 
     /** @brief Returns GSM-specific details or throws std::runtime_error if this is not a GSM radiocell. */
-    const Gsm& gsm() const;
+    virtual const Gsm& gsm() const = 0;
 
     /** @brief Returns UMTS-specific details or throws std::runtime_error if this is not a UMTS radiocell. */
-    const Umts& umts() const;
+    virtual const Umts& umts() const = 0;
 
     /** @brief Returns LTE-specific details or throws std::runtime_error if this is not an LTE radiocell. */
-    const Lte& lte() const;
-
-private:
-    /** @cond */
-    Type radio_type;
-
-    struct None {};
-
-    union Detail
-    {
-        Detail();
-        Detail(const Gsm& gsm);
-        Detail(const Umts& umts);
-        Detail(const Lte& lte);
-
-        None none;
-        Gsm gsm;
-        Umts umts;
-        Lte lte;
-    } detail;
-    /** @endcond */
+    virtual const Lte& lte() const = 0;
 };
 
 /** @brief Returns true iff lhs equals rhs. */

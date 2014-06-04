@@ -39,7 +39,11 @@ location::service::Harvester::Harvester(const location::service::Harvester::Conf
             visible_wifis.push_back(wifi);
         });
 
-        auto connected_cells = config.connectivity_manager->connected_radio_cells().get();
+        std::vector<location::connectivity::RadioCell::Ptr> connected_cells;
+        config.connectivity_manager->enumerate_connected_radio_cells([&connected_cells](location::connectivity::RadioCell::Ptr cell)
+        {
+            connected_cells.push_back(cell);
+        });
 
         config.reporter->report(update, visible_wifis, connected_cells);
     });

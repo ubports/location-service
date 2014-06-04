@@ -55,7 +55,7 @@ public:
          */
         virtual void report(const Update<Position>& update,
                             const std::vector<connectivity::WirelessNetwork::Ptr>& wifis,
-                            const std::vector<connectivity::RadioCell>& cells) = 0;
+                            const std::vector<connectivity::RadioCell::Ptr>& cells) = 0;
     };
 
     /** @brief Configuration encapsulates all creation time options of class Harvester */

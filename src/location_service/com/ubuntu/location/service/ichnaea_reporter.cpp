@@ -74,7 +74,7 @@ void location::service::ichnaea::Reporter::stop()
 void location::service::ichnaea::Reporter::report(
         const location::Update<location::Position>& update,
         const std::vector<location::connectivity::WirelessNetwork::Ptr>& wifis,
-        const std::vector<location::connectivity::RadioCell>& cells)
+        const std::vector<location::connectivity::RadioCell::Ptr>& cells)
 {
     json::Value submit;
     json::Value item;
@@ -147,20 +147,20 @@ void location::service::ichnaea::Reporter::convert_wifis_to_json(
 }
 
 void location::service::ichnaea::Reporter::convert_cells_to_json(
-        const std::vector<location::connectivity::RadioCell>& cells,
+        const std::vector<location::connectivity::RadioCell::Ptr>& cells,
         json::Value& destination)
 {
     for (const auto& cell : cells)
     {
         json::Value c;
 
-        switch (cell.type())
+        switch (cell->type())
         {
         case connectivity::RadioCell::Type::gsm:
         {
             c[Json::Cell::radio] = "gsm";
 
-            const auto& details = cell.gsm();
+            const auto& details = cell->gsm();
 
             if (details.mobile_country_code.is_valid())
                 c[Json::Cell::mcc] = details.mobile_country_code.get();
@@ -179,7 +179,7 @@ void location::service::ichnaea::Reporter::convert_cells_to_json(
         {
             c[Json::Cell::radio] = "umts";
 
-            const auto& details = cell.umts();
+            const auto& details = cell->umts();
 
             if (details.mobile_country_code.is_valid())
                 c[Json::Cell::mcc] = details.mobile_country_code.get();
@@ -198,7 +198,7 @@ void location::service::ichnaea::Reporter::convert_cells_to_json(
         {
             c[Json::Cell::radio] = "lte";
 
-            const auto& details = cell.lte();
+            const auto& details = cell->lte();
 
             if (details.mobile_country_code.is_valid())
                 c[Json::Cell::mcc] = details.mobile_country_code.get();

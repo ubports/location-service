@@ -78,7 +78,7 @@ struct NullReporter : public culs::Harvester::Reporter
      */
     void report(const cul::Update<cul::Position>&,
                 const std::vector<cul::connectivity::WirelessNetwork::Ptr>&,
-                const std::vector<cul::connectivity::RadioCell>&)
+                const std::vector<cul::connectivity::RadioCell::Ptr>&)
     {
     }
 };

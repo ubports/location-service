@@ -107,7 +107,7 @@ struct NullReporter : public location::service::Harvester::Reporter
      */
     void report(const location::Update<location::Position>&,
                 const std::vector<location::connectivity::WirelessNetwork::Ptr>&,
-                const std::vector<location::connectivity::RadioCell>&)
+                const std::vector<location::connectivity::RadioCell::Ptr>&)
     {
     }
 };

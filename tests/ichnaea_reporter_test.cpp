@@ -59,6 +59,23 @@ struct MockWirelessNetwork : public location::connectivity::WirelessNetwork
     MOCK_CONST_METHOD0(signal_strength, const core::Property<SignalStrength>&());
 };
 
+struct MockRadioCell : public location::connectivity::RadioCell
+{
+    typedef std::shared_ptr<MockRadioCell> Ptr;
+
+    /** @brief Returns the type of the radio cell. */
+    MOCK_CONST_METHOD0(type, Type());
+
+    /** @brief Returns GSM-specific details or throws std::runtime_error if this is not a GSM radiocell. */
+    MOCK_CONST_METHOD0(gsm, const Gsm&());
+
+    /** @brief Returns UMTS-specific details or throws std::runtime_error if this is not a UMTS radiocell. */
+    MOCK_CONST_METHOD0(umts, const Umts&());
+
+    /** @brief Returns LTE-specific details or throws std::runtime_error if this is not an LTE radiocell. */
+    MOCK_CONST_METHOD0(lte, const Lte&());
+};
+
 location::Update<location::Position> reference_position_update
 {
     {
@@ -73,17 +90,25 @@ location::Update<location::Position> reference_position_update
 
 TEST(IchnaeaReporter, issues_correct_posts_requests)
 {
-    static const location::connectivity::RadioCell ref_cell
+    using namespace ::testing;
+
+    static const location::connectivity::RadioCell::Gsm gsm
     {
-        location::connectivity::RadioCell::Gsm
-        {
-            location::connectivity::RadioCell::Gsm::MCC{42},
-            location::connectivity::RadioCell::Gsm::MNC{42},
-            location::connectivity::RadioCell::Gsm::LAC{42},
-            location::connectivity::RadioCell::Gsm::ID{42},
-            location::connectivity::RadioCell::Gsm::SignalStrength{21}
-        }
+        location::connectivity::RadioCell::Gsm::MCC{42},
+        location::connectivity::RadioCell::Gsm::MNC{42},
+        location::connectivity::RadioCell::Gsm::LAC{42},
+        location::connectivity::RadioCell::Gsm::ID{42},
+        location::connectivity::RadioCell::Gsm::SignalStrength{21}
     };
+
+    static const MockRadioCell::Ptr ref_cell
+    {
+        new MockRadioCell()
+    };
+
+    ON_CALL(*ref_cell, type()).WillByDefault(Return(location::connectivity::RadioCell::Type::gsm));
+    ON_CALL(*ref_cell, gsm()).WillByDefault(ReturnRef(gsm));
+
     static const core::Property<std::chrono::system_clock::time_point> ref_timestamp
     {
         std::chrono::system_clock::now()
@@ -189,11 +214,11 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
                 EXPECT_EQ(1u, cells.size());
 
                 auto cell = cells[0];
-                EXPECT_EQ(ref_cell.gsm().mobile_country_code.get(), cell[Reporter::Json::Cell::mcc].asInt());
-                EXPECT_EQ(ref_cell.gsm().mobile_network_code.get(), cell[Reporter::Json::Cell::mnc].asInt());
-                EXPECT_EQ(ref_cell.gsm().location_area_code.get(), cell[Reporter::Json::Cell::lac].asInt());
-                EXPECT_EQ(ref_cell.gsm().id.get(), cell[Reporter::Json::Cell::cid].asInt());
-                EXPECT_EQ(ref_cell.gsm().strength.get(), cell[Reporter::Json::Cell::asu].asInt());
+                EXPECT_EQ(ref_cell->gsm().mobile_country_code.get(), cell[Reporter::Json::Cell::mcc].asInt());
+                EXPECT_EQ(ref_cell->gsm().mobile_network_code.get(), cell[Reporter::Json::Cell::mnc].asInt());
+                EXPECT_EQ(ref_cell->gsm().location_area_code.get(), cell[Reporter::Json::Cell::lac].asInt());
+                EXPECT_EQ(ref_cell->gsm().id.get(), cell[Reporter::Json::Cell::cid].asInt());
+                EXPECT_EQ(ref_cell->gsm().strength.get(), cell[Reporter::Json::Cell::asu].asInt());
 
                 mg_send_status(conn, static_cast<int>(submit::success));
                 return MG_TRUE;

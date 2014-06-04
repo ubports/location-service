@@ -55,14 +55,12 @@ struct MockConnectivityManager : public com::ubuntu::location::connectivity::Man
             void(const std::function<void(const com::ubuntu::location::connectivity::WirelessNetwork::Ptr&)>&));
 
     /**
-     * @brief All radio cells that the device is connected to.
+     * @brief Enumerate all radio cells that the device is connected to.
      */
-    MOCK_METHOD0(connected_radio_cells,
-                 const core::Property<
-                    std::vector<
-                        com::ubuntu::location::connectivity::RadioCell
-                    >
-                 >&());
+    MOCK_CONST_METHOD1(
+            enumerate_connected_radio_cells,
+            void(const std::function<void(const com::ubuntu::location::connectivity::RadioCell::Ptr&)>&));
+
 };
 
 #endif // MOCK_CONNECTIVITY_MANAGER_H_

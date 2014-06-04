@@ -45,7 +45,7 @@ struct MockReporter : public location::service::Harvester::Reporter
                  void(
                      const location::Update<location::Position>&,
                      const std::vector<location::connectivity::WirelessNetwork::Ptr>&,
-                     const std::vector<location::connectivity::RadioCell>&));
+                     const std::vector<location::connectivity::RadioCell::Ptr>&));
 };
 
 location::Update<location::Position> reference_position_update
@@ -109,15 +109,10 @@ TEST(Harvester, queries_wifis_and_cells_on_location_update)
     using namespace ::testing;
     using namespace location;
 
-    core::Property<std::vector<connectivity::WirelessNetwork::Ptr> > wifis;
-    core::Property<std::vector<connectivity::RadioCell> > cells;
-
     auto conn_man = std::make_shared<MockConnectivityManager>();
 
-    ON_CALL(*conn_man, connected_radio_cells()).WillByDefault(ReturnRef(cells));
-
+    EXPECT_CALL(*conn_man, enumerate_connected_radio_cells(_)).Times(1);
     EXPECT_CALL(*conn_man, enumerate_visible_wireless_networks(_)).Times(1);
-    EXPECT_CALL(*conn_man, connected_radio_cells()).Times(1);
 
     service::Harvester::Configuration config
     {

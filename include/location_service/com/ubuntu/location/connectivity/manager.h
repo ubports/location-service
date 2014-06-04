@@ -126,14 +126,9 @@ public:
     virtual void enumerate_visible_wireless_networks(const std::function<void(const WirelessNetwork::Ptr&)>&) const = 0;
 
     /**
-     * @brief All radio cells that the device is connected to.
-     *
-     * In case of multiple sims, the size of connected radio cells is larger than 1.
-     * In case of no radio connection, the size of connected radio cells is 0.
-     *
-     * @return A getable/observable property carrying the visible radio cells.
+     * @brief Enumerates all radio cells that the device is connected to.
      */
-    virtual const core::Property<std::vector<RadioCell>>& connected_radio_cells() = 0;
+    virtual void enumerate_connected_radio_cells(const std::function<void(const RadioCell::Ptr&)>&) const = 0;
 
 protected:
     Manager() = default;

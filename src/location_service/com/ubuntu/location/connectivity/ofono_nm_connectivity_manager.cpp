@@ -111,6 +111,115 @@ State::~State()
 namespace
 {
 
+
+struct CachedRadioCell : public connectivity::RadioCell
+{
+    typedef std::shared_ptr<CachedRadioCell> Ptr;
+
+    CachedRadioCell() : RadioCell(), radio_type(Type::gsm), detail{Gsm()}
+    {
+    }
+
+    CachedRadioCell(const connectivity::RadioCell::Gsm& gsm)
+        : RadioCell(), radio_type(Type::gsm), detail{gsm}
+    {
+    }
+
+    CachedRadioCell(const connectivity::RadioCell::Umts& umts)
+        : RadioCell(), radio_type(Type::umts), detail{umts}
+    {
+    }
+
+    CachedRadioCell(const connectivity::RadioCell::Lte& lte)
+        : RadioCell(), radio_type(Type::lte), detail{lte}
+    {
+    }
+
+    CachedRadioCell(const CachedRadioCell& rhs) : radio_type(rhs.radio_type)
+    {
+        switch(radio_type)
+        {
+        case connectivity::RadioCell::Type::gsm: detail.gsm = rhs.detail.gsm; break;
+        case connectivity::RadioCell::Type::umts: detail.umts = rhs.detail.umts; break;
+        case connectivity::RadioCell::Type::lte: detail.lte = rhs.detail.lte; break;
+        case connectivity::RadioCell::Type::unknown: break;
+        }
+    }
+
+    CachedRadioCell& operator=(const CachedRadioCell& rhs)
+    {
+        radio_type = rhs.radio_type;
+        switch(radio_type)
+        {
+        case connectivity::RadioCell::Type::gsm: detail.gsm = rhs.detail.gsm; break;
+        case connectivity::RadioCell::Type::umts: detail.umts = rhs.detail.umts; break;
+        case connectivity::RadioCell::Type::lte: detail.lte = rhs.detail.lte; break;
+        case connectivity::RadioCell::Type::unknown: break;
+        }
+
+        return *this;
+    }
+
+    connectivity::RadioCell::Type type() const override
+    {
+        return radio_type;
+    }
+
+    const connectivity::RadioCell::Gsm& gsm() const override
+    {
+        if (radio_type != connectivity::RadioCell::Type::gsm)
+            throw std::runtime_error("Bad access to unset network type.");
+
+        return detail.gsm;
+    }
+
+    const connectivity::RadioCell::Umts& umts() const override
+    {
+        if (radio_type != RadioCell::Type::umts)
+            throw std::runtime_error("Bad access to unset network type.");
+
+        return detail.umts;
+    }
+
+    const connectivity::RadioCell::Lte& lte() const override
+    {
+        if (radio_type != RadioCell::Type::lte)
+            throw std::runtime_error("Bad access to unset network type.");
+
+        return detail.lte;
+    }
+
+    /** @cond */
+    Type radio_type;
+
+    struct None {};
+
+    union Detail
+    {
+        Detail() : none(None{})
+        {
+        }
+
+        Detail(const connectivity::RadioCell::Gsm& gsm) : gsm(gsm)
+        {
+        }
+
+        Detail(const connectivity::RadioCell::Umts& umts) : umts(umts)
+        {
+        }
+
+        Detail(const connectivity::RadioCell::Lte& lte) : lte(lte)
+        {
+        }
+
+        None none;
+        Gsm gsm;
+        Umts umts;
+        Lte lte;
+    } detail;
+    /** @endcond */
+};
+
 struct CachedWirelessNetwork : public connectivity::WirelessNetwork
 {
     typedef std::shared_ptr<CachedWirelessNetwork> Ptr;
@@ -265,13 +374,11 @@ struct CachedWirelessNetwork : public connectivity::WirelessNetwork
     core::Property<WirelessNetwork::SignalStrength> signal_strength_;
 };
 
-namespace
+void update_connected_cells(
+        const org::Ofono::Manager::Ptr& ofono,
+        std::map<core::dbus::types::ObjectPath, CachedRadioCell::Ptr>& cache)
 {
-std::vector<connectivity::RadioCell> update_connected_cells(const org::Ofono::Manager::Ptr& ofono)
-{
-    std::vector<connectivity::RadioCell> cells;
-
-    ofono->for_each_modem([&cells](const org::Ofono::Manager::Modem& modem)
+    ofono->for_each_modem([&cache](const org::Ofono::Manager::Modem& modem)
     {
         static const std::map<std::string, connectivity::RadioCell::Type> type_lut =
         {
@@ -345,7 +452,7 @@ std::vector<connectivity::RadioCell> update_connected_cells(const org::Ofono::Ma
                 connectivity::RadioCell::Gsm::SignalStrength::from_percent(strength/100.f)
             };
             VLOG(1) << gsm;
-            cells.emplace_back(gsm);
+            cache[modem.object->path()] = std::make_shared<CachedRadioCell>(gsm);
             break;
         }
         case connectivity::RadioCell::Type::lte:
@@ -360,7 +467,7 @@ std::vector<connectivity::RadioCell> update_connected_cells(const org::Ofono::Ma
                 connectivity::RadioCell::Lte::SignalStrength::from_percent(strength/100.f)
             };
             VLOG(1) << lte;
-            cells.emplace_back(lte);
+            cache[modem.object->path()] = std::make_shared<CachedRadioCell>(lte);
             break;
         }
         case connectivity::RadioCell::Type::umts:
@@ -374,7 +481,7 @@ std::vector<connectivity::RadioCell> update_connected_cells(const org::Ofono::Ma
                 connectivity::RadioCell::Umts::SignalStrength::from_percent(strength/100.f)
             };
             VLOG(1) << umts;
-            cells.emplace_back(umts);
+            cache[modem.object->path()] = std::make_shared<CachedRadioCell>(umts);
             break;
         }
         default:
@@ -382,21 +489,12 @@ std::vector<connectivity::RadioCell> update_connected_cells(const org::Ofono::Ma
             break; // By default, we do not add a cell.
         }
     });
+}
 
-    return cells;
-}
-}
 struct OfonoNmConnectivityManager : public connectivity::Manager
 {
     OfonoNmConnectivityManager()
     {
-        if (d.modem_manager)
-        {
-            d.visible_radio_cells.getter = [this]()
-            {
-                return update_connected_cells(d.modem_manager);
-            };
-        }
     }
 
     const core::Property<connectivity::State>& state() const override
@@ -429,9 +527,11 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
         return d.signals.wireless_network_removed;
     }
 
-    const core::Property<std::vector<connectivity::RadioCell> >& connected_radio_cells() override
+    void enumerate_connected_radio_cells(const std::function<void(const connectivity::RadioCell::Ptr&)>& f) const override
     {
-        return d.visible_radio_cells;
+        std::lock_guard<std::mutex> lg(d.cached.guard);
+        for (const auto& cell : d.cached.cells)
+            f(cell.second);
     }
 
     struct Private
@@ -574,6 +674,7 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
             try
             {
                 modem_manager.reset(new org::Ofono::Manager(system_bus()));
+                update_connected_cells(modem_manager, cached.cells);
             } catch (const std::runtime_error& e)
             {
                 LOG(ERROR) << "Error while setting up access to telephony stack [" << e.what() << "]";
@@ -586,6 +687,7 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
         struct
         {
             mutable std::mutex guard;
+            std::map<core::dbus::types::ObjectPath, CachedRadioCell::Ptr> cells;
             std::map<core::dbus::types::ObjectPath, CachedWirelessNetwork::Ptr> wifis;
             std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device> wireless_devices;
         } cached;
@@ -597,7 +699,6 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
         } signals;
 
         DispatchedProperty<connectivity::State> state;
-        DispatchedProperty<std::vector<connectivity::RadioCell> > visible_radio_cells;
     } d;
 };
 }

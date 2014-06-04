@@ -64,18 +64,11 @@ int main(int argc, char** argv)
         std::cout << "Visible wireless network was removed: " << wifi->ssid().get() << std::endl;
     });
 
-    // We subscribe to changes for connected radio cells.
-    cm->connected_radio_cells().changed().connect([](const RadioCells& cells)
-    {
-        std::cout << "Connected radio cells changed:" << std::endl;
-
-        for (const auto& cell : cells)
-            std::cout << "  " << cell << std::endl;
-    });
-
     // Iterate over all radio cells that the device is connected with.
-    for (const auto& cell : cm->connected_radio_cells().get())
-        std::cout << cell << std::endl;
+    cm->enumerate_connected_radio_cells([](const location::connectivity::RadioCell::Ptr& cell)
+    {
+        std::cout << *cell << std::endl;
+    });
 
     // Iterate over all networks that are visible right now.
     cm->enumerate_visible_wireless_networks([](const location::connectivity::WirelessNetwork::Ptr& wifi)

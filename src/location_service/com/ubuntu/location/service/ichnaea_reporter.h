@@ -106,14 +106,14 @@ struct Reporter : public Harvester::Reporter
     void report(
             const Update<Position>& update,
             const std::vector<connectivity::WirelessNetwork::Ptr>& wifis,
-            const std::vector<connectivity::RadioCell>& cells) override;
+            const std::vector<connectivity::RadioCell::Ptr>& cells) override;
 
     static void convert_wifis_to_json(
             const std::vector<connectivity::WirelessNetwork::Ptr>& wifis,
             json::Value& destination);
 
     static void convert_cells_to_json(
-            const std::vector<connectivity::RadioCell>& cells,
+            const std::vector<connectivity::RadioCell::Ptr>& cells,
             json::Value& destination);
 
     core::net::http::Request::Configuration submit_request_config;
