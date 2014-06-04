@@ -111,7 +111,39 @@ int main(int argc, char** argv)
         std::cerr << e.what() << std::endl;
     }
 
+    std::thread t1
+    {
+        [cm]()
+        {
+            cm->enumerate_visible_wireless_networks([](const location::connectivity::WirelessNetwork::Ptr& wifi)
+            {
+                std::cout << wifi->ssid().get() << ", timestamp: ";
+                auto ts = std::chrono::system_clock::to_time_t(wifi->timestamp().get());
+                std::cout << std::ctime(&ts);
+                std::cout << "  " << *wifi << std::endl;
+            });
+        }
+    };
+
+    std::thread t2
+    {
+        [cm]()
+        {
+            // Iterate over all radio cells that the device is connected with.
+            cm->enumerate_connected_radio_cells([](const location::connectivity::RadioCell::Ptr& cell)
+            {
+                std::cout << *cell << std::endl;
+            });
+        }
+    };
+
     trap->run();
+
+    if (t1.joinable())
+        t1.join();
+
+    if (t2.joinable())
+        t2.join();
 
     return 0;
 }    
