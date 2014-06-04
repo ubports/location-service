@@ -236,6 +236,11 @@ struct CachedRadioCell : public connectivity::RadioCell
         default:
             break;
         }
+
+        modem.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
+        {
+            VLOG(1) << "Property on modem " << CachedRadioCell::modem.object->path() << " changed: " << std::get<0>(tuple);
+        });
     }
 
     CachedRadioCell(const CachedRadioCell& rhs)
@@ -726,6 +731,44 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
                         const auto& path = std::get<0>(arg);
 
                         auto modem = modem_manager->modem_for_path(path);
+
+                        modem.signals.property_changed->connect([this, path](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
+                        {
+                            const auto& key = std::get<0>(tuple);
+
+                            VLOG(10) << "Property changed for modem: " << std::get<0>(tuple);
+
+                            if (org::Ofono::Manager::Modem::Properties::Interfaces::name() == key)
+                            {
+                                auto interfaces = std::get<1>(tuple).as<std::vector<std::string> >();
+
+                                if (VLOG_IS_ON(10))
+                                    for(const auto& interface : interfaces)
+                                        VLOG(10) << interface;
+
+                                auto it = std::find(
+                                            interfaces.begin(),
+                                            interfaces.end(),
+                                            std::string{org::Ofono::Manager::Modem::Properties::Interfaces::network_registration});
+
+                                if (it == interfaces.end())
+                                {
+                                    std::lock_guard<std::mutex> lg(cached.guard);
+                                    cached.cells.erase(path);
+                                } else
+                                {
+                                    auto itt = cached.cells.find(path);
+                                    if (itt == cached.cells.end())
+                                    {
+                                        cached.cells.insert(
+                                                    std::make_pair(
+                                                        path,
+                                                        std::make_shared<CachedRadioCell>(cached.modems.at(path))));
+                                    }
+                                }
+                            }
+
+                        });
 
                         cached.modems.insert(std::make_pair(modem.object->path(), modem));
                         cached.cells.insert(std::make_pair(modem.object->path(), std::make_shared<CachedRadioCell>(modem)));
