@@ -239,7 +239,7 @@ struct CachedRadioCell : public connectivity::RadioCell
     }
 
     CachedRadioCell(const CachedRadioCell& rhs)
-        : radio_type(rhs.radio_type), modem(rhs.modem)
+        : RadioCell(), radio_type(rhs.radio_type), modem(rhs.modem)
     {
         switch(radio_type)
         {

@@ -96,6 +96,303 @@ struct Manager
 
     struct Modem
     {
+        static const std::string& name()
+        {
+            static const std::string s{"org.ofono.Modem"};
+            return s;
+        }
+
+        struct GetProperties
+        {
+            static const std::string& name()
+            {
+                static const std::string s{"GetProperties"};
+                return s;
+            }
+
+            typedef Modem Interface;
+            typedef std::map<std::string, core::dbus::types::Variant> ValueType;
+
+            static std::chrono::milliseconds default_timeout()
+            {
+                return std::chrono::seconds{1};
+            }
+        };
+
+        struct PropertyChanged
+        {
+            inline static std::string name()
+            {
+                return "PropertyChanged";
+            }
+
+            typedef Modem Interface;
+
+            typedef std::tuple<std::string, core::dbus::types::Variant> ArgumentType;
+        };
+
+        struct Properties
+        {
+            struct Powered
+            {
+                static const std::string& name()
+                {
+                    static const std::string s{"Powered"};
+                    return s;
+                }
+
+                typedef Modem Interface;
+                typedef bool ValueType;
+                static const bool readable = true;
+                static const bool writable = true;
+            };
+
+            struct Online
+            {
+                static const std::string& name()
+                {
+                    static const std::string s{"Online"};
+                    return s;
+                }
+
+                typedef Modem Interface;
+                typedef bool ValueType;
+                static const bool readable = true;
+                static const bool writable = true;
+            };
+
+            struct Lockdown
+            {
+                static const std::string& name()
+                {
+                    static const std::string s{"Lockdown"};
+                    return s;
+                }
+
+                typedef Modem Interface;
+                typedef bool ValueType;
+                static const bool readable = true;
+                static const bool writable = true;
+            };
+
+            struct Name
+            {
+                static const std::string& name()
+                {
+                    static const std::string s{"Name"};
+                    return s;
+                }
+
+                typedef Modem Interface;
+                typedef std::string ValueType;
+                static const bool readable = true;
+                static const bool writable = false;
+            };
+
+            struct Manufacturer
+            {
+                static const std::string& name()
+                {
+                    static const std::string s{"Manufacturer"};
+                    return s;
+                }
+
+                typedef Modem Interface;
+                typedef std::string ValueType;
+                static const bool readable = true;
+                static const bool writable = false;
+            };
+
+            struct Model
+            {
+                static const std::string& name()
+                {
+                    static const std::string s{"Model"};
+                    return s;
+                }
+
+                typedef Modem Interface;
+                typedef std::string ValueType;
+                static const bool readable = true;
+                static const bool writable = false;
+            };
+
+            struct Revision
+            {
+                static const std::string& name()
+                {
+                    static const std::string s{"Revision"};
+                    return s;
+                }
+
+                typedef Modem Interface;
+                typedef std::string ValueType;
+                static const bool readable = true;
+                static const bool writable = false;
+            };
+
+            struct Serial
+            {
+                static const std::string& name()
+                {
+                    static const std::string s{"Serial"};
+                    return s;
+                }
+
+                typedef Modem Interface;
+                typedef std::string ValueType;
+                static const bool readable = true;
+                static const bool writable = false;
+            };
+
+            struct Features
+            {
+                static constexpr const char* net{"net"};
+                static constexpr const char* rat{"rat"};
+                static constexpr const char* cbs{"cbs"};
+                static constexpr const char* sms{"sms"};
+                static constexpr const char* sim{"sim"};
+                static constexpr const char* stk{"stk"};
+                static constexpr const char* ussd{"ussd"};
+                static constexpr const char* gprs{"gprs"};
+                static constexpr const char* tty{"tty"};
+                static constexpr const char* gps{"gps"};
+
+                static const std::string& name()
+                {
+                    static const std::string s{"Features"};
+                    return s;
+                }
+
+                typedef Modem Interface;
+                typedef std::vector<std::string> ValueType;
+                static const bool readable = true;
+                static const bool writable = false;
+            };
+
+            struct Interfaces
+            {
+                static constexpr const char* assisted_satellite_navigation
+                {
+                    "org.ofono.AssistedSatelliteNavigation"
+                };
+                static constexpr const char* audio_settings
+                {
+                    "org.ofono.AudioSettings"
+                };
+                static constexpr const char* call_barring
+                {
+                    "org.ofono.CallBarring"
+                };
+                static constexpr const char* call_forwarding
+                {
+                    "org.ofono.CallForwarding"
+                };
+                static constexpr const char* call_meter
+                {
+                    "org.ofono.CallMeter"
+                };
+                static constexpr const char* call_settings
+                {
+                    "org.ofono.CallSettings"
+                };
+                static constexpr const char* call_volume
+                {
+                    "org.ofono.CallVolume"
+                };
+                static constexpr const char* cell_broadcast
+                {
+                    "org.ofono.CellBroadcast"
+                };
+                static constexpr const char* hands_free
+                {
+                    "org.ofono.Handsfree"
+                };
+                static constexpr const char* location_reporting
+                {
+                    "org.ofono.LocationReporting"
+                };
+                static constexpr const char* message_manager
+                {
+                    "org.ofono.MessageManager"
+                };
+                static constexpr const char* message_waiting
+                {
+                    "org.ofono.MessageWaiting"
+                };
+                static constexpr const char* network_registration
+                {
+                    "org.ofono.NetworkRegistration"
+                };
+                static constexpr const char* phonebook
+                {
+                    "org.ofono.Phonebook"
+                };
+                static constexpr const char* push_notification
+                {
+                    "org.ofono.PushNotification"
+                };
+                static constexpr const char* radio_settings
+                {
+                    "org.ofono.RadioSettings"
+                };
+                static constexpr const char* sim_manager
+                {
+                    "org.ofono.SimManager"
+                };
+                static constexpr const char* smart_messaging
+                {
+                    "org.ofono.SmartMessaging"
+                };
+                static constexpr const char* sim_toolkit
+                {
+                    "org.ofono.SimToolkit"
+                };
+                static constexpr const char* supplementary_services
+                {
+                    "org.ofono.SupplementaryServices"
+                };
+                static constexpr const char* text_telephony
+                {
+                    "org.ofono.TextTelephony"
+                };
+                static constexpr const char* voice_call_manager
+                {
+                    "org.ofono.VoiceCallManager"
+                };
+
+                static const std::string& name()
+                {
+                    static const std::string s{"Interfaces"};
+                    return s;
+                }
+
+                typedef Modem Interface;
+                typedef std::vector<std::string> ValueType;
+                static const bool readable = true;
+                static const bool writable = false;
+            };
+
+            struct Type
+            {
+                static constexpr const char* test{"test"};
+                static constexpr const char* hfp{"hfp"};
+                static constexpr const char* sap{"sap"};
+                static constexpr const char* hardware{"hardware"};
+
+                static const std::string& name()
+                {
+                    static const std::string s{"Type"};
+                    return s;
+                }
+
+                typedef Modem Interface;
+                typedef std::string ValueType;
+                static const bool readable = true;
+                static const bool writable = false;
+            };
+        };
+
         struct NetworkRegistration
         {
             static const std::string& name()
@@ -334,6 +631,16 @@ struct Manager
               object(object),
               network_registration{object}
         {
+            auto result = object->invoke_method_synchronously<GetProperties, GetProperties::ValueType>();
+            if (result.is_error())
+                throw std::runtime_error(result.error().print());
+
+            auto properties = result.value();
+
+            for (const auto& pair : properties)
+            {
+                std::cout << pair.first << std::endl;
+            }
         }
 
         std::shared_ptr<core::dbus::Service> service;
@@ -344,8 +651,15 @@ struct Manager
     Manager(const core::dbus::Bus::Ptr& bus)
         : service(core::dbus::Service::use_service<org::Ofono>(bus)),
           object(service->object_for_path(core::dbus::types::ObjectPath("/"))),
-          modem_added(object->get_signal<ModemAdded>()),
-          modem_removed(object->get_signal<ModemRemoved>())
+          signals
+          {
+              object->get_signal<ModemAdded>(),
+              object->get_signal<ModemRemoved>()
+          }
+    {
+    }
+
+    void for_each_modem(const std::function<void(const Modem&)>& functor) const
     {
         auto result = object->invoke_method_synchronously<GetModems, GetModems::ResultType>();
 
@@ -354,50 +668,22 @@ struct Manager
 
         for (const auto& element : result.value())
         {
-            modems.insert(
-                        std::make_pair(
-                            element.value,
-                            Modem
-                            {
-                                service,
-                                service->object_for_path(element.value)
-                            }));
-        }
-
-        modem_added->connect([this](const ModemAdded::ArgumentType& arg)
-        {
-            std::lock_guard<std::mutex> lg(guard);
-            modems.insert(
-                        std::make_pair(
-                            std::get<0>(arg),
-                            Modem{
-                                service,
-                                service->object_for_path(std::get<0>(arg))
-                            }));
-        });
-
-        modem_removed->connect([this](const ModemRemoved::ArgumentType& arg)
-        {
-            std::lock_guard<std::mutex> lg(guard);
-            modems.erase(arg);
-        });
-    }
-
-    void for_each_modem(const std::function<void(const Modem&)>& functor) const
-    {
-        std::lock_guard<std::mutex> lg(guard);
-        for (const auto& modem : modems)
-        {
-            functor(modem.second);
+            functor(Modem
+            {
+                service,
+                service->object_for_path(element.value)
+            });
         }
     }
 
     std::shared_ptr<core::dbus::Service> service;
     std::shared_ptr<core::dbus::Object> object;
-    std::shared_ptr<core::dbus::Signal<ModemAdded, ModemAdded::ArgumentType>> modem_added;
-    std::shared_ptr<core::dbus::Signal<ModemRemoved, ModemRemoved::ArgumentType>> modem_removed;
-    mutable std::mutex guard;
-    std::map<core::dbus::types::ObjectPath, Modem> modems;
+
+    struct
+    {
+        std::shared_ptr<core::dbus::Signal<ModemAdded, ModemAdded::ArgumentType>> modem_added;
+        std::shared_ptr<core::dbus::Signal<ModemRemoved, ModemRemoved::ArgumentType>> modem_removed;
+    } signals;
 };
 };
 }
