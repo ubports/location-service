@@ -106,36 +106,140 @@ State::~State()
         worker.join();
     }
 }
-}
-
-namespace
-{
-
 
 struct CachedRadioCell : public connectivity::RadioCell
 {
     typedef std::shared_ptr<CachedRadioCell> Ptr;
 
-    CachedRadioCell() : RadioCell(), radio_type(Type::gsm), detail{Gsm()}
+    CachedRadioCell(const org::Ofono::Manager::Modem& modem)
+        : RadioCell(), radio_type(Type::gsm), modem(modem), detail{Gsm()}
     {
+        static const std::map<std::string, connectivity::RadioCell::Type> type_lut =
+        {
+            {
+                org::Ofono::Manager::Modem::NetworkRegistration::Technology::gsm(),
+                connectivity::RadioCell::Type::gsm
+            },
+            {
+                org::Ofono::Manager::Modem::NetworkRegistration::Technology::lte(),
+                connectivity::RadioCell::Type::lte
+            },
+            {
+                org::Ofono::Manager::Modem::NetworkRegistration::Technology::umts(),
+                connectivity::RadioCell::Type::umts
+            },
+            {
+                org::Ofono::Manager::Modem::NetworkRegistration::Technology::edge(),
+                connectivity::RadioCell::Type::unknown
+            },
+            {
+                org::Ofono::Manager::Modem::NetworkRegistration::Technology::hspa(),
+                connectivity::RadioCell::Type::unknown
+            },
+            {std::string(), connectivity::RadioCell::Type::unknown}
+        };
+
+        auto technology =
+                modem.network_registration.get<
+                    org::Ofono::Manager::Modem::NetworkRegistration::Technology
+                >();
+
+        auto it = type_lut.find(technology);
+
+        if (it == type_lut.end()) throw std::runtime_error
+        {
+            "Unknown technology for connected cell: " + technology
+        };
+
+        if (it->second == connectivity::RadioCell::Type::unknown) throw std::runtime_error
+        {
+            "Unknown technology for connected cell: " + technology
+        };
+
+        radio_type = it->second;
+
+        auto lac =
+                modem.network_registration.get<
+                    org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode
+                >();
+
+        int cell_id =
+                modem.network_registration.get<
+                    org::Ofono::Manager::Modem::NetworkRegistration::CellId
+                >();
+
+        auto strength =
+                modem.network_registration.get<
+                    org::Ofono::Manager::Modem::NetworkRegistration::Strength
+                >();
+
+        std::stringstream ssmcc
+        {
+            modem.network_registration.get<
+                org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode
+            >()
+        };
+        int mcc{0}; ssmcc >> mcc;
+        std::stringstream ssmnc
+        {
+            modem.network_registration.get<
+                org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode
+            >()
+        };
+        int mnc{0}; ssmnc >> mnc;
+
+        switch(radio_type)
+        {
+        case connectivity::RadioCell::Type::gsm:
+        {
+            connectivity::RadioCell::Gsm gsm
+            {
+                connectivity::RadioCell::Gsm::MCC{mcc},
+                connectivity::RadioCell::Gsm::MNC{mnc},
+                connectivity::RadioCell::Gsm::LAC{lac},
+                connectivity::RadioCell::Gsm::ID{cell_id},
+                connectivity::RadioCell::Gsm::SignalStrength::from_percent(strength/100.f)
+            };
+            VLOG(1) << gsm;
+            detail.gsm = gsm;
+            break;
+        }
+        case connectivity::RadioCell::Type::lte:
+        {
+            connectivity::RadioCell::Lte lte
+            {
+                connectivity::RadioCell::Lte::MCC{mcc},
+                connectivity::RadioCell::Lte::MNC{mnc},
+                connectivity::RadioCell::Lte::TAC{lac},
+                connectivity::RadioCell::Lte::ID{cell_id},
+                connectivity::RadioCell::Lte::PID{},
+                connectivity::RadioCell::Lte::SignalStrength::from_percent(strength/100.f)
+            };
+            VLOG(1) << lte;
+            detail.lte = lte;
+            break;
+        }
+        case connectivity::RadioCell::Type::umts:
+        {
+            connectivity::RadioCell::Umts umts
+            {
+                connectivity::RadioCell::Umts::MCC{mcc},
+                connectivity::RadioCell::Umts::MNC{mnc},
+                connectivity::RadioCell::Umts::LAC{lac},
+                connectivity::RadioCell::Umts::ID{cell_id},
+                connectivity::RadioCell::Umts::SignalStrength::from_percent(strength/100.f)
+            };
+            VLOG(1) << umts;
+            detail.umts = umts;
+            break;
+        }
+        default:
+            break;
+        }
     }
 
-    CachedRadioCell(const connectivity::RadioCell::Gsm& gsm)
-        : RadioCell(), radio_type(Type::gsm), detail{gsm}
-    {
-    }
-
-    CachedRadioCell(const connectivity::RadioCell::Umts& umts)
-        : RadioCell(), radio_type(Type::umts), detail{umts}
-    {
-    }
-
-    CachedRadioCell(const connectivity::RadioCell::Lte& lte)
-        : RadioCell(), radio_type(Type::lte), detail{lte}
-    {
-    }
-
-    CachedRadioCell(const CachedRadioCell& rhs) : radio_type(rhs.radio_type)
+    CachedRadioCell(const CachedRadioCell& rhs)
+        : radio_type(rhs.radio_type), modem(rhs.modem)
     {
         switch(radio_type)
         {
@@ -149,6 +253,8 @@ struct CachedRadioCell : public connectivity::RadioCell
     CachedRadioCell& operator=(const CachedRadioCell& rhs)
     {
         radio_type = rhs.radio_type;
+        modem = rhs.modem;
+
         switch(radio_type)
         {
         case connectivity::RadioCell::Type::gsm: detail.gsm = rhs.detail.gsm; break;
@@ -191,6 +297,7 @@ struct CachedRadioCell : public connectivity::RadioCell
 
     /** @cond */
     Type radio_type;
+    org::Ofono::Manager::Modem modem;
 
     struct None {};
 
@@ -373,123 +480,6 @@ struct CachedWirelessNetwork : public connectivity::WirelessNetwork
     core::Property<WirelessNetwork::Frequency> frequency_;
     core::Property<WirelessNetwork::SignalStrength> signal_strength_;
 };
-
-void update_connected_cells(
-        const org::Ofono::Manager::Ptr& ofono,
-        std::map<core::dbus::types::ObjectPath, CachedRadioCell::Ptr>& cache)
-{
-    ofono->for_each_modem([&cache](const org::Ofono::Manager::Modem& modem)
-    {
-        static const std::map<std::string, connectivity::RadioCell::Type> type_lut =
-        {
-            {
-                org::Ofono::Manager::Modem::NetworkRegistration::Technology::gsm(),
-                connectivity::RadioCell::Type::gsm
-            },
-            {
-                org::Ofono::Manager::Modem::NetworkRegistration::Technology::lte(),
-                connectivity::RadioCell::Type::lte
-            },
-            {
-                org::Ofono::Manager::Modem::NetworkRegistration::Technology::umts(),
-                connectivity::RadioCell::Type::umts
-            },
-            {
-                org::Ofono::Manager::Modem::NetworkRegistration::Technology::edge(),
-                connectivity::RadioCell::Type::unknown
-            },
-            {
-                org::Ofono::Manager::Modem::NetworkRegistration::Technology::hspa(),
-                connectivity::RadioCell::Type::unknown
-            },
-            {std::string(), connectivity::RadioCell::Type::unknown}
-        };
-
-        auto radio_type = type_lut.at(
-                    modem.network_registration.get<
-                    org::Ofono::Manager::Modem::NetworkRegistration::Technology
-                    >());
-        auto lac =
-                modem.network_registration.get<
-                org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode
-                >();
-
-        int cell_id =
-                modem.network_registration.get<
-                org::Ofono::Manager::Modem::NetworkRegistration::CellId
-                >();
-
-        auto strength =
-                modem.network_registration.get<
-                org::Ofono::Manager::Modem::NetworkRegistration::Strength
-                >();
-
-        std::stringstream ssmcc
-        {
-            modem.network_registration.get<
-                    org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode
-                    >()
-        };
-        int mcc{0}; ssmcc >> mcc;
-        std::stringstream ssmnc
-        {
-            modem.network_registration.get<
-                    org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode
-                    >()
-        };
-        int mnc{0}; ssmnc >> mnc;
-
-        switch(radio_type)
-        {
-        case connectivity::RadioCell::Type::gsm:
-        {
-            connectivity::RadioCell::Gsm gsm
-            {
-                connectivity::RadioCell::Gsm::MCC{mcc},
-                connectivity::RadioCell::Gsm::MNC{mnc},
-                connectivity::RadioCell::Gsm::LAC{lac},
-                connectivity::RadioCell::Gsm::ID{cell_id},
-                connectivity::RadioCell::Gsm::SignalStrength::from_percent(strength/100.f)
-            };
-            VLOG(1) << gsm;
-            cache[modem.object->path()] = std::make_shared<CachedRadioCell>(gsm);
-            break;
-        }
-        case connectivity::RadioCell::Type::lte:
-        {
-            connectivity::RadioCell::Lte lte
-            {
-                connectivity::RadioCell::Lte::MCC{mcc},
-                connectivity::RadioCell::Lte::MNC{mnc},
-                connectivity::RadioCell::Lte::TAC{lac},
-                connectivity::RadioCell::Lte::ID{cell_id},
-                connectivity::RadioCell::Lte::PID{},
-                connectivity::RadioCell::Lte::SignalStrength::from_percent(strength/100.f)
-            };
-            VLOG(1) << lte;
-            cache[modem.object->path()] = std::make_shared<CachedRadioCell>(lte);
-            break;
-        }
-        case connectivity::RadioCell::Type::umts:
-        {
-            connectivity::RadioCell::Umts umts
-            {
-                connectivity::RadioCell::Umts::MCC{mcc},
-                connectivity::RadioCell::Umts::MNC{mnc},
-                connectivity::RadioCell::Umts::LAC{lac},
-                connectivity::RadioCell::Umts::ID{cell_id},
-                connectivity::RadioCell::Umts::SignalStrength::from_percent(strength/100.f)
-            };
-            VLOG(1) << umts;
-            cache[modem.object->path()] = std::make_shared<CachedRadioCell>(umts);
-            break;
-        }
-        default:
-            LOG(WARNING) << "Got a cell with unknown technology.";
-            break; // By default, we do not add a cell.
-        }
-    });
-}
 
 struct OfonoNmConnectivityManager : public connectivity::Manager
 {
@@ -674,7 +664,16 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
             try
             {
                 modem_manager.reset(new org::Ofono::Manager(system_bus()));
-                update_connected_cells(modem_manager, cached.cells);
+                modem_manager->for_each_modem([this](const org::Ofono::Manager::Modem& modem)
+                {
+                    try
+                    {
+                        cached.cells[modem.object->path()] = std::make_shared<CachedRadioCell>(modem);
+                    } catch(const std::runtime_error& e)
+                    {
+                        LOG(WARNING) << "Exception while creating connected radio cell: " << e.what();
+                    }
+                });
             } catch (const std::runtime_error& e)
             {
                 LOG(ERROR) << "Error while setting up access to telephony stack [" << e.what() << "]";
