@@ -253,6 +253,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
 
         for (int i = 0; i < sv_info->num_svs; i++)
         {
+            VLOG(20) << "  satellite " << i << ": ";
             location::SpaceVehicle sv;
 
             // PRN is in the range of [1, 32], adjusting it to make sure we
