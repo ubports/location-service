@@ -253,7 +253,6 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
 
         for (int i = 0; i < sv_info->num_svs; i++)
         {
-            VLOG(20) << "  satellite " << i << ": ";
             location::SpaceVehicle sv;
 
             // PRN is in the range of [1, 32], adjusting it to make sure we
@@ -275,8 +274,6 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
 
             svs.insert(sv);
         }
-
-        VLOG(20) << "Finished iterating list of satellites, about to report to upper layers: " << thiz;
 
         thiz->space_vehicle_updates()(svs);
     }

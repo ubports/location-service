@@ -133,7 +133,6 @@ culs::Implementation::Implementation(
     engine->updates.visible_space_vehicles.changed().connect(
                 [this](const std::map<cul::SpaceVehicle::Key, cul::SpaceVehicle>&svs)
                 {
-                    VLOG(10) << "Receiving update on visible space vehicles.";
                     visible_space_vehicles() = svs;
                 });
 }
