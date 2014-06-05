@@ -89,6 +89,7 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
     // And do the reverse: Satellite visibility updates are funneled via the engine's configuration.
     auto cs = provider->updates().svs.connect([this](const cul::Update<std::set<cul::SpaceVehicle>>& src)
     {
+        VLOG(10) << "Receiving update on satellite visibility.";
         updates.visible_space_vehicles.update([src](std::map<cul::SpaceVehicle::Key, cul::SpaceVehicle>& dest)
         {
             for(auto& sv : src.value)
