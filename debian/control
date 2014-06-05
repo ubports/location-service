@@ -56,6 +56,17 @@ Description: location service aggregating position/velocity/heading
  Contains header files required to develop clients talking to the ubuntu
  location service.
 
+Package: libubuntu-location-service-dbg
+Section: debug
+Architecture: any
+Multi-Arch: foreign
+Depends: libubuntu-location-service0 (= ${binary:Version}),
+         ${misc:Depends},
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains debug symbols.
+
 Package: ubuntu-location-service-tests
 Architecture: any
 Depends: ${misc:Depends},

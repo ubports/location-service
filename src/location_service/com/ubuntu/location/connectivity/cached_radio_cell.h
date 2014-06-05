@@ -170,34 +170,6 @@ struct CachedRadioCell : public com::ubuntu::location::connectivity::RadioCell
         });
     }
 
-    CachedRadioCell(const CachedRadioCell& rhs)
-        : RadioCell(), radio_type(rhs.radio_type), modem(rhs.modem)
-    {
-        switch(radio_type)
-        {
-        case com::ubuntu::location::connectivity::RadioCell::Type::gsm: detail.gsm = rhs.detail.gsm; break;
-        case com::ubuntu::location::connectivity::RadioCell::Type::umts: detail.umts = rhs.detail.umts; break;
-        case com::ubuntu::location::connectivity::RadioCell::Type::lte: detail.lte = rhs.detail.lte; break;
-        case com::ubuntu::location::connectivity::RadioCell::Type::unknown: break;
-        }
-    }
-
-    CachedRadioCell& operator=(const CachedRadioCell& rhs)
-    {
-        radio_type = rhs.radio_type;
-        modem = rhs.modem;
-
-        switch(radio_type)
-        {
-        case com::ubuntu::location::connectivity::RadioCell::Type::gsm: detail.gsm = rhs.detail.gsm; break;
-        case com::ubuntu::location::connectivity::RadioCell::Type::umts: detail.umts = rhs.detail.umts; break;
-        case com::ubuntu::location::connectivity::RadioCell::Type::lte: detail.lte = rhs.detail.lte; break;
-        case com::ubuntu::location::connectivity::RadioCell::Type::unknown: break;
-        }
-
-        return *this;
-    }
-
     const core::Signal<>& changed() const override
     {
         return on_changed;

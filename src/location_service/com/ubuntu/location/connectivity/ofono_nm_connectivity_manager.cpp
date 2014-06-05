@@ -130,135 +130,7 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
 
             try
             {
-                network_manager.reset(new org::freedesktop::NetworkManager(system_bus));
-
-                // Seed the map of known wifi devices
-                auto devices = network_manager->get_devices();
-
-                for(const auto& device : devices)
-                {
-                    if (device.type() == org::freedesktop::NetworkManager::Device::Type::wifi)
-                    {
-                        cached.wireless_devices.insert(std::make_pair(device.object->path(), device));
-
-                        device.signals.ap_added->connect([this, device](const core::dbus::types::ObjectPath& path)
-                        {
-                            org::freedesktop::NetworkManager::AccessPoint ap
-                            {
-                                network_manager->service->add_object_for_path(path)
-                            };
-
-                            auto wifi = std::make_shared<CachedWirelessNetwork>(device, ap);
-
-                            // Scoping access to the cache to prevent deadlocks
-                            // when clients of the API request an enumeration of
-                            // visible wireless networks in response to the signal
-                            // wireless_network_added being emitted.
-                            {
-                                std::lock_guard<std::mutex> lg(cached.guard);
-                                cached.wifis[path] = std::make_shared<CachedWirelessNetwork>(device, ap);
-                            }
-
-                            signals.wireless_network_added(wifi);
-                        });
-
-                        device.signals.ap_removed->connect([this, device](const core::dbus::types::ObjectPath& path)
-                        {
-                            connectivity::WirelessNetwork::Ptr wifi;
-
-                            // Scoping access to the cache to prevent deadlocks
-                            // when clients of the API request an enumeration of
-                            // visible wireless networks in response to the signal
-                            // wireless_network_removed being emitted.
-                            {
-                                std::lock_guard<std::mutex> lg(cached.guard);
-                                wifi = cached.wifis.at(path);
-                                cached.wifis.erase(path);
-                            }
-
-                            signals.wireless_network_removed(wifi);
-                        });
-
-                        auto access_points = device.get_access_points();
-
-                        for (const auto& ap : access_points)
-                        {
-                            auto path = ap.object->path();
-                            cached.wifis.insert(std::make_pair(path, std::make_shared<CachedWirelessNetwork>(device, ap)));
-                        }
-                    }
-                }
-
-                // Query the initial connectivity state
-                auto s = network_manager->properties.connectivity->get();
-
-                switch (s)
-                {
-                case org::freedesktop::NetworkManager::Properties::Connectivity::Values::unknown:
-                    state.set(connectivity::State::unknown);
-                    break;
-                case org::freedesktop::NetworkManager::Properties::Connectivity::Values::none:
-                    state.set(connectivity::State::none);
-                    break;
-                case org::freedesktop::NetworkManager::Properties::Connectivity::Values::portal:
-                    state.set(connectivity::State::portal);
-                    break;
-                case org::freedesktop::NetworkManager::Properties::Connectivity::Values::limited:
-                    state.set(connectivity::State::limited);
-                    break;
-                case org::freedesktop::NetworkManager::Properties::Connectivity::Values::full:
-                    state.set(connectivity::State::full);
-                    break;
-                }
-
-                // And we wire up to property changes here
-                network_manager->signals.properties_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
-                {
-                    // We route by string
-                    static const std::unordered_map<std::string, std::function<void(const core::dbus::types::Variant&)> > lut
-                    {
-                        {
-                            org::freedesktop::NetworkManager::Properties::Connectivity::name(),
-                            [this](const core::dbus::types::Variant& value)
-                            {
-                                auto s = value.as<org::freedesktop::NetworkManager::Properties::Connectivity::ValueType>();
-
-                                switch (s)
-                                {
-                                case org::freedesktop::NetworkManager::Properties::Connectivity::Values::unknown:
-                                    state.set(connectivity::State::unknown);
-                                    break;
-                                case org::freedesktop::NetworkManager::Properties::Connectivity::Values::none:
-                                    state.set(connectivity::State::none);
-                                    break;
-                                case org::freedesktop::NetworkManager::Properties::Connectivity::Values::portal:
-                                    state.set(connectivity::State::portal);
-                                    break;
-                                case org::freedesktop::NetworkManager::Properties::Connectivity::Values::limited:
-                                    state.set(connectivity::State::limited);
-                                    break;
-                                case org::freedesktop::NetworkManager::Properties::Connectivity::Values::full:
-                                    state.set(connectivity::State::full);
-                                    break;
-                                }
-                            }
-                        }
-                    };
-
-                    for (const auto& pair : dict)
-                    {
-                        VLOG(1) << "Property has changed: " << std::endl
-                                << "  " << pair.first;
-
-                        if (lut.count(pair.first) > 0)
-                            lut.at(pair.first)(pair.second);
-                    }
-                });
-
-
-            } catch(const std::runtime_error& e)
-            {
-                LOG(ERROR) << e.what();
+                setup_network_stack_access();
             } catch(const std::exception& e)
             {
                 LOG(ERROR) << e.what();
@@ -266,156 +138,10 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
 
             try
             {
-                modem_manager.reset(new org::Ofono::Manager(system_bus));
-
-                modem_manager->for_each_modem([this](const org::Ofono::Manager::Modem& modem)
-                {
-                    try
-                    {
-                        auto modem_path = modem.object->path();
-
-                        modem.signals.property_changed->connect([this, modem_path](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-                        {
-                            const auto& key = std::get<0>(tuple);
-
-                            VLOG(10) << "Property changed for modem: " << std::get<0>(tuple);
-
-                            if (org::Ofono::Manager::Modem::Properties::Interfaces::name() == key)
-                            {
-                                auto interfaces = std::get<1>(tuple).as<std::vector<std::string> >();
-
-                                if (VLOG_IS_ON(10))
-                                    for(const auto& interface : interfaces)
-                                        VLOG(10) << interface;
-
-                                auto it = std::find(
-                                            interfaces.begin(),
-                                            interfaces.end(),
-                                            std::string{org::Ofono::Manager::Modem::Properties::Interfaces::network_registration});
-
-                                CachedRadioCell::Ptr cell;
-
-                                if (it == interfaces.end())
-                                {
-                                    {
-                                        std::lock_guard<std::mutex> lg(cached.guard);
-                                        cell = cached.cells.at(modem_path);
-                                        cached.cells.erase(modem_path);
-                                    }
-                                    signals.connected_cell_removed(cell);
-                                } else
-                                {
-                                    auto itt = cached.cells.find(modem_path);
-                                    if (itt == cached.cells.end())
-                                    {
-                                        cell = std::make_shared<CachedRadioCell>(cached.modems.at(modem_path));
-                                        {
-                                            std::lock_guard<std::mutex> lg(cached.guard);
-                                            cached.cells.insert(
-                                                    std::make_pair(
-                                                        modem_path,
-                                                        cell));
-                                        }
-                                        signals.connected_cell_added(cell);
-                                    }
-                                }
-                            }
-
-                        });
-
-                        cached.modems.insert(std::make_pair(modem_path, modem));
-                        cached.cells.insert(std::make_pair(modem_path, std::make_shared<CachedRadioCell>(modem)));
-                    } catch(const std::runtime_error& e)
-                    {
-                        LOG(WARNING) << "Exception while creating connected radio cell: " << e.what();
-                    }
-                });
-
-                modem_manager->signals.modem_added->connect([this](const org::Ofono::Manager::ModemAdded::ArgumentType& arg)
-                {
-                    try
-                    {
-                        const auto& path = std::get<0>(arg);
-
-                        auto modem = modem_manager->modem_for_path(path);
-
-                        modem.signals.property_changed->connect([this, path](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-                        {
-                            const auto& key = std::get<0>(tuple);
-
-                            VLOG(10) << "Property changed for modem: " << std::get<0>(tuple);
-
-                            if (org::Ofono::Manager::Modem::Properties::Interfaces::name() == key)
-                            {
-                                auto interfaces = std::get<1>(tuple).as<std::vector<std::string> >();
-
-                                if (VLOG_IS_ON(10))
-                                    for(const auto& interface : interfaces)
-                                        VLOG(10) << interface;
-
-                                auto it = std::find(
-                                            interfaces.begin(),
-                                            interfaces.end(),
-                                            std::string{org::Ofono::Manager::Modem::Properties::Interfaces::network_registration});
-
-                                CachedRadioCell::Ptr cell;
-
-                                if (it == interfaces.end())
-                                {
-                                    {
-                                        std::lock_guard<std::mutex> lg(cached.guard);
-                                        cell = cached.cells.at(path);
-                                        cached.cells.erase(path);
-                                    }
-                                    signals.connected_cell_removed(cell);
-                                } else
-                                {
-                                    auto itt = cached.cells.find(path);
-                                    if (itt == cached.cells.end())
-                                    {
-                                        cell = std::make_shared<CachedRadioCell>(cached.modems.at(path));
-                                        {
-                                            std::lock_guard<std::mutex> lg(cached.guard);
-                                            cached.cells.insert(
-                                                    std::make_pair(
-                                                        path,
-                                                        cell));
-                                        }
-                                        signals.connected_cell_added(cell);
-                                    }
-                                }
-                            }
-
-                        });
-
-                        auto cell = std::make_shared<CachedRadioCell>(modem);
-                        {
-                            std::lock_guard<std::mutex> lg(cached.guard);
-                            cached.modems.insert(std::make_pair(modem.object->path(), modem));
-                            cached.cells.insert(std::make_pair(modem.object->path(), cell));
-                        }
-                        signals.connected_cell_added(cell);
-                    } catch(const std::runtime_error& e)
-                    {
-                        LOG(WARNING) << "Exception while creating connected radio cell: " << e.what();
-                    }
-                });
-
-                modem_manager->signals.modem_removed->connect([this](const core::dbus::types::ObjectPath& path)
-                {
-                    CachedRadioCell::Ptr cell;
-                    {
-                        std::lock_guard<std::mutex> lg(cached.guard);
-                        cell = cached.cells.at(path);
-                        cached.modems.erase(path);
-                        cached.cells.erase(path);
-                    }
-                    signals.connected_cell_removed(cell);
-                });
-
+                setup_radio_stack_access();
             } catch (const std::runtime_error& e)
             {
-                LOG(ERROR) << "Error while setting up access to telephony stack [" << e.what() << "]";
+                LOG(ERROR) << "Error while setting up access to radio stack [" << e.what() << "]";
             }
         }
 
@@ -426,6 +152,306 @@ struct OfonoNmConnectivityManager : public connectivity::Manager
 
             if (worker.joinable())
                 worker.join();
+        }
+
+        void setup_radio_stack_access()
+        {
+            modem_manager.reset(new org::Ofono::Manager(system_bus));
+
+            modem_manager->for_each_modem([this](const core::dbus::types::ObjectPath& path)
+            {
+                try
+                {
+                    on_modem_added(path);
+                }
+                catch(const std::runtime_error& e)
+                {
+                    LOG(WARNING) << "Exception while creating connected radio cell: " << e.what();
+                }
+            });
+
+            modem_manager->signals.modem_added->connect([this](const org::Ofono::Manager::ModemAdded::ArgumentType& arg)
+            {
+                try
+                {
+                    on_modem_added(std::get<0>(arg));
+                }
+                catch(const std::exception& e)
+                {
+                    LOG(WARNING) << "Exception while adding modem: " << e.what();
+                }
+            });
+
+            modem_manager->signals.modem_removed->connect([this](const core::dbus::types::ObjectPath& path)
+            {
+                try
+                {
+                    on_modem_removed(path);
+                }
+                catch(const std::exception& e)
+                {
+                    LOG(WARNING) << "Exception while removing modem: " << e.what();
+                }
+            });
+        }
+
+        void on_modem_added(const core::dbus::types::ObjectPath& path)
+        {
+            auto modem = modem_manager->modem_for_path(path);
+
+            // We first wire up to property changes here.
+            modem.signals.property_changed->connect([this, path](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
+            {
+                const auto& key = std::get<0>(tuple); VLOG(10) << "Property changed for modem: " << key;
+
+                if (org::Ofono::Manager::Modem::Properties::Interfaces::name() == key)
+                {
+                    auto interfaces = std::get<1>(tuple).as<std::vector<std::string> >();
+                    if (VLOG_IS_ON(10)) for(const auto& interface : interfaces) VLOG(10) << interface;
+                    on_modem_interfaces_changed(path, interfaces);
+                }
+
+            });
+
+            // And update our cache of modems and registered cells.
+            auto cell = std::make_shared<CachedRadioCell>(modem);
+            {
+                std::lock_guard<std::mutex> lg(cached.guard);
+                cached.modems.insert(std::make_pair(modem.object->path(), modem));
+                cached.cells.insert(std::make_pair(modem.object->path(), cell));
+            }
+            // Announce the newly added cell to API customers, without the lock
+            // on the cache being held.
+            signals.connected_cell_added(cell);
+        }
+
+        void on_modem_removed(const core::dbus::types::ObjectPath& path)
+        {
+            CachedRadioCell::Ptr cell;
+            {
+                std::lock_guard<std::mutex> lg(cached.guard);
+
+                // Update modem and cell cache.
+                auto itc = cached.cells.find(path);
+                auto itm = cached.modems.find(path);
+
+                if (itc != cached.cells.end())
+                {
+                    cell = itc->second;
+                    cached.cells.erase(itc);
+                }
+
+                if (itm != cached.modems.end())
+                {
+                    cached.modems.erase(path);
+                }
+            }
+            // Inform customers of the registered cell being removed, without
+            // the lock on the cache being held.
+            if (cell) signals.connected_cell_removed(cell);
+        }
+
+        void on_modem_interfaces_changed(
+                const core::dbus::types::ObjectPath& path,
+                const std::vector<std::string>& interfaces)
+        {
+            std::unique_lock<std::mutex> ul(cached.guard);
+
+            auto itt = cached.cells.find(path);
+            const bool has_cell_for_modem = itt != cached.cells.end();
+
+            auto it = std::find(
+                        interfaces.begin(),
+                        interfaces.end(),
+                        std::string{org::Ofono::Manager::Modem::Properties::Interfaces::network_registration});
+            const bool modem_has_network_registration = it != interfaces.end();
+
+            if (has_cell_for_modem and not modem_has_network_registration)
+            {
+                // A network registration was lost and we remove the corresponding
+                // cell instance from the cache.
+                auto cell = itt->second;
+                cached.cells.erase(itt);
+
+                // Cache is up to date now and we announce the removal of the cell
+                // to API customers, with the lock on the cache not being held.
+                ul.unlock(); signals.connected_cell_removed(cell);
+            } else if (not has_cell_for_modem and modem_has_network_registration)
+            {
+                // A new network registration is coming in and we have to create
+                // a corresponding cell instance.
+                auto cell = std::make_shared<CachedRadioCell>(cached.modems.at(path));
+                cached.cells.insert(std::make_pair(path,cell));
+                // Cache is up to date now and we announce the new cell to
+                // API customers, with the lock on the cache not being held.
+                ul.unlock(); signals.connected_cell_added(cell);
+            }
+        }
+
+        void setup_network_stack_access()
+        {
+            network_manager.reset(new org::freedesktop::NetworkManager(system_bus));
+
+            // Seed the map of known wifi devices
+            auto devices = network_manager->get_devices();
+
+            network_manager->for_each_device([this](const core::dbus::types::ObjectPath& device_path)
+            {
+                auto device = network_manager->device_for_path(device_path);
+
+                if (device.type() == org::freedesktop::NetworkManager::Device::Type::wifi)
+                {
+                    // Make the device known to the cache.
+                    cached.wireless_devices.insert(std::make_pair(device_path, device));
+
+                    // Iterate over all currently known wifis
+                    device.for_each_access_point([this, device_path](const core::dbus::types::ObjectPath& path)
+                    {
+                        try
+                        {
+                            on_access_point_added(path, device_path);
+                        }
+                        catch (const std::exception& e)
+                        {
+                            LOG(ERROR) << "Error while creating ap/wifi: " << e.what();
+                        }
+                    });
+
+                    device.signals.ap_added->connect([this, device_path](const core::dbus::types::ObjectPath& path)
+                    {
+                        try
+                        {
+                            on_access_point_added(path, device_path);
+                        }
+                        catch (const std::exception& e)
+                        {
+                            LOG(ERROR) << "Error while creating ap/wifi: " << e.what();
+                        }
+                    });
+
+                    device.signals.ap_removed->connect([this](const core::dbus::types::ObjectPath& path)
+                    {
+                        try
+                        {
+                            on_access_point_removed(path);
+                        }
+                        catch (const std::exception& e)
+                        {
+                            LOG(ERROR) << "Error while removing ap/wifi: " << e.what();
+                        }
+                    });
+                }
+            });
+
+            // Query the initial connectivity state
+            auto s = network_manager->properties.connectivity->get();
+
+            switch (s)
+            {
+            case org::freedesktop::NetworkManager::Properties::Connectivity::Values::unknown:
+                state.set(connectivity::State::unknown);
+                break;
+            case org::freedesktop::NetworkManager::Properties::Connectivity::Values::none:
+                state.set(connectivity::State::none);
+                break;
+            case org::freedesktop::NetworkManager::Properties::Connectivity::Values::portal:
+                state.set(connectivity::State::portal);
+                break;
+            case org::freedesktop::NetworkManager::Properties::Connectivity::Values::limited:
+                state.set(connectivity::State::limited);
+                break;
+            case org::freedesktop::NetworkManager::Properties::Connectivity::Values::full:
+                state.set(connectivity::State::full);
+                break;
+            }
+
+            // And we wire up to property changes here
+            network_manager->signals.properties_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
+            {
+                // We route by string
+                static const std::unordered_map<std::string, std::function<void(const core::dbus::types::Variant&)> > lut
+                {
+                    {
+                        org::freedesktop::NetworkManager::Properties::Connectivity::name(),
+                        [this](const core::dbus::types::Variant& value)
+                        {
+                            auto s = value.as<org::freedesktop::NetworkManager::Properties::Connectivity::ValueType>();
+
+                            switch (s)
+                            {
+                            case org::freedesktop::NetworkManager::Properties::Connectivity::Values::unknown:
+                                state.set(connectivity::State::unknown);
+                                break;
+                            case org::freedesktop::NetworkManager::Properties::Connectivity::Values::none:
+                                state.set(connectivity::State::none);
+                                break;
+                            case org::freedesktop::NetworkManager::Properties::Connectivity::Values::portal:
+                                state.set(connectivity::State::portal);
+                                break;
+                            case org::freedesktop::NetworkManager::Properties::Connectivity::Values::limited:
+                                state.set(connectivity::State::limited);
+                                break;
+                            case org::freedesktop::NetworkManager::Properties::Connectivity::Values::full:
+                                state.set(connectivity::State::full);
+                                break;
+                            }
+                        }
+                    }
+                };
+
+                for (const auto& pair : dict)
+                {
+                    VLOG(1) << "Property has changed: " << std::endl
+                            << "  " << pair.first;
+
+                    if (lut.count(pair.first) > 0)
+                        lut.at(pair.first)(pair.second);
+                }
+            });
+        }
+
+        void on_access_point_added(
+                const core::dbus::types::ObjectPath& ap_path,
+                const core::dbus::types::ObjectPath& device_path)
+        {
+            std::unique_lock<std::mutex> ul(cached.guard);
+
+            // Let's see if we have a device known for the path. We return early
+            // if we do not know about the device.
+            auto itd = cached.wireless_devices.find(device_path);
+            if (itd == cached.wireless_devices.end())
+                return;
+
+            org::freedesktop::NetworkManager::AccessPoint ap
+            {
+                network_manager->service->add_object_for_path(ap_path)
+            };
+
+            auto wifi = std::make_shared<CachedWirelessNetwork>(itd->second, ap);
+            cached.wifis[ap_path] = wifi;
+
+            // Let API consumers know that an AP appeared. The lock on the cache is
+            // not held to prevent from deadlocks.
+            ul.unlock(); signals.wireless_network_added(wifi);
+        }
+
+        void on_access_point_removed(const core::dbus::types::ObjectPath& ap_path)
+        {
+            std::unique_lock<std::mutex> ul(cached.guard);
+
+            // Let's see if we know about the wifi. We return early if not.
+            auto itw = cached.wifis.find(ap_path);
+            if (itw == cached.wifis.end())
+                return;
+
+            // Update the cache and keep a the wifi object alive until API consumers
+            // have been informed of the wifi going away.
+            connectivity::WirelessNetwork::Ptr wifi = itw->second;
+            cached.wifis.erase(itw);
+
+            // Let API consumers know that an AP disappeared. The lock on the cache is
+            // not held to prevent from deadlocks.
+            ul.unlock(); signals.wireless_network_removed(wifi);
         }
 
         core::dbus::Bus::Ptr system_bus;

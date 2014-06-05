@@ -663,7 +663,7 @@ struct Manager
         };
     }
 
-    void for_each_modem(const std::function<void(const Modem&)>& functor) const
+    void for_each_modem(const std::function<void(const core::dbus::types::ObjectPath&)>& functor) const
     {
         auto result = object->invoke_method_synchronously<GetModems, GetModems::ResultType>();
 
@@ -672,7 +672,7 @@ struct Manager
 
         for (const auto& element : result.value())
         {
-            functor(modem_for_path(element.value));
+            functor(element.value);
         }
     }
 

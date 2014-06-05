@@ -281,6 +281,18 @@ struct NetworkManager
             return static_cast<Type>(device_type->get());
         }
 
+        void for_each_access_point(const std::function<void(const core::dbus::types::ObjectPath&)>& f) const
+        {
+            typedef std::vector<core::dbus::types::ObjectPath> ResultType;
+            auto result = object->transact_method<Wireless::GetAccessPoints, ResultType>();
+
+            if (result.is_error())
+                throw std::runtime_error(result.error().print());
+
+            for (const auto& path : result.value())
+                f(path);
+        }
+
         std::vector<AccessPoint> get_access_points() const
         {
             typedef std::vector<core::dbus::types::ObjectPath> ResultType;
@@ -414,6 +426,26 @@ struct NetworkManager
               object->get_signal<Signals::PropertiesChanged>()
           }
     {
+    }
+
+    void for_each_device(const std::function<void(const core::dbus::types::ObjectPath&)>& f)
+    {
+        auto result =
+                object->transact_method<
+                    NetworkManager::GetDevices,
+                    std::vector<core::dbus::types::ObjectPath>
+                >();
+
+        if (result.is_error())
+            throw std::runtime_error(result.error().print());
+
+        for (const auto& path : result.value())
+            f(path);
+    }
+
+    Device device_for_path(const core::dbus::types::ObjectPath& path)
+    {
+        return Device(service, service->object_for_path(path));
     }
 
     std::vector<Device> get_devices()
