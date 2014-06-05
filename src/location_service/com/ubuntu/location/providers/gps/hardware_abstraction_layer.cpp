@@ -276,6 +276,8 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
             svs.insert(sv);
         }
 
+        VLOG(20) << "Finished iterating list of satellites, about to report to upper layers.";
+
         thiz->space_vehicle_updates()(svs);
     }
 

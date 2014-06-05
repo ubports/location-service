@@ -607,8 +607,16 @@ struct Manager
             typename Property::ValueType get() const
             {
                 refresh_properties();
-                return properties.at(Property::name())
-                        .template as<typename Property::ValueType>();
+
+                auto it = properties.find(Property::name());
+
+                if (it == properties.end())
+                {
+                    LOG(WARNING) << "Could not find property for name " << Property::name();
+                    return Property::ValueType{};
+                }
+
+                return it->second.template as<typename Property::ValueType>();
             }
 
             std::shared_ptr<core::dbus::Object> object;

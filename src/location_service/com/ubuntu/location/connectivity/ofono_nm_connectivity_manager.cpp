@@ -234,6 +234,13 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_interfaces_changed(
 {
     std::unique_lock<std::mutex> ul(cached.guard);
 
+    auto itm = cached.modems.find(path);
+    if (itm == cached.modems.end())
+    {
+        LOG(WARNING) << "Could not find a modem for path " << path.as_string();
+        return;
+    }
+
     auto itt = cached.cells.find(path);
     const bool has_cell_for_modem = itt != cached.cells.end();
 
@@ -257,7 +264,7 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_interfaces_changed(
     {
         // A new network registration is coming in and we have to create
         // a corresponding cell instance.
-        auto cell = std::make_shared<CachedRadioCell>(cached.modems.at(path));
+        auto cell = std::make_shared<CachedRadioCell>(itm->second);
         cached.cells.insert(std::make_pair(path,cell));
         // Cache is up to date now and we announce the new cell to
         // API customers, with the lock on the cache not being held.
