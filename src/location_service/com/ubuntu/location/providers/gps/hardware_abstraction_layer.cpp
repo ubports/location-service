@@ -278,7 +278,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
 
         VLOG(20) << "Finished iterating list of satellites, about to report to upper layers: " << thiz;
 
-        //thiz->space_vehicle_updates()(svs);
+        thiz->space_vehicle_updates()(svs);
     }
 
     static void on_set_capabilities(uint32_t capabilities, void* context)
