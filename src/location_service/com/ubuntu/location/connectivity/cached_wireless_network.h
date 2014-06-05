@@ -24,6 +24,35 @@
 
 namespace
 {
+std::string utf8_ssid_to_string(const org::freedesktop::NetworkManager::AccessPoint::Ssid::ValueType& ssid)
+{
+    return std::string(ssid.begin(), ssid.end());
+}
+
+com::ubuntu::location::connectivity::WirelessNetwork::Mode
+wifi_mode_from_ap_mode(org::freedesktop::NetworkManager::AccessPoint::Mode::ValueType value)
+{
+    com::ubuntu::location::connectivity::WirelessNetwork::Mode mode
+    {
+        com::ubuntu::location::connectivity::WirelessNetwork::Mode::unknown
+    };
+
+    switch (value)
+    {
+    case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::unknown:
+        mode = com::ubuntu::location::connectivity::WirelessNetwork::Mode::unknown;
+        break;
+    case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::adhoc:
+        mode = com::ubuntu::location::connectivity::WirelessNetwork::Mode::adhoc;
+        break;
+    case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::infra:
+        mode = com::ubuntu::location::connectivity::WirelessNetwork::Mode::infrastructure;
+        break;
+    }
+
+    return mode;
+}
+
 struct CachedWirelessNetwork : public com::ubuntu::location::connectivity::WirelessNetwork
 {
     typedef std::shared_ptr<CachedWirelessNetwork> Ptr;
@@ -65,31 +94,13 @@ struct CachedWirelessNetwork : public com::ubuntu::location::connectivity::Wirel
           access_point_(ap)
     {
         timestamp_ = std::chrono::system_clock::now();
-
         bssid_ = access_point_.hw_address->get();
-        auto ssid = access_point_.ssid->get();
-        ssid_ = std::string(ssid.begin(), ssid.end());
-
-        auto mode = access_point_.mode->get();
-
-        switch (mode)
-        {
-        case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::unknown:
-            mode_ = com::ubuntu::location::connectivity::WirelessNetwork::Mode::unknown;
-            break;
-        case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::adhoc:
-            mode_ = com::ubuntu::location::connectivity::WirelessNetwork::Mode::adhoc;
-            break;
-        case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::infra:
-            mode_ = com::ubuntu::location::connectivity::WirelessNetwork::Mode::infrastructure;
-            break;
-        }
-
+        ssid_ = utf8_ssid_to_string(access_point_.ssid->get());
+        mode_ = wifi_mode_from_ap_mode(access_point_.mode->get());
         frequency_ = com::ubuntu::location::connectivity::WirelessNetwork::Frequency
         {
             access_point_.frequency->get()
         };
-
         signal_strength_ = com::ubuntu::location::connectivity::WirelessNetwork::SignalStrength
         {
             int(access_point_.strength->get())
@@ -98,73 +109,73 @@ struct CachedWirelessNetwork : public com::ubuntu::location::connectivity::Wirel
         // Wire up all the connections
         access_point_.properties_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
         {
-            // We route by string
-            static const std::unordered_map<std::string, std::function<void(CachedWirelessNetwork&, const core::dbus::types::Variant&)> > lut
-            {
-                {
-                    org::freedesktop::NetworkManager::AccessPoint::HwAddress::name(),
-                    [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
-                    {
-                        thiz.bssid_ = value.as<org::freedesktop::NetworkManager::AccessPoint::HwAddress::ValueType>();
-                    }
-                },
-                {
-                    org::freedesktop::NetworkManager::AccessPoint::Ssid::name(),
-                    [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
-                    {
-                        auto ssid = value.as<org::freedesktop::NetworkManager::AccessPoint::Ssid::ValueType>();
-                        thiz.ssid_ = std::string(ssid.begin(), ssid.end());
-                    }
-                },
-                {
-                    org::freedesktop::NetworkManager::AccessPoint::Strength::name(),
-                    [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
-                    {
-                        thiz.signal_strength_ = com::ubuntu::location::connectivity::WirelessNetwork::SignalStrength
-                        {
-                            value.as<org::freedesktop::NetworkManager::AccessPoint::Strength::ValueType>()
-                        };
-                    }
-                },
-                {
-                    org::freedesktop::NetworkManager::AccessPoint::Frequency::name(),
-                    [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
-                    {
-                        thiz.frequency_ = com::ubuntu::location::connectivity::WirelessNetwork::Frequency
-                        {
-                            value.as<org::freedesktop::NetworkManager::AccessPoint::Frequency::ValueType>()
-                        };
-                    }
-                },
-                {
-                    org::freedesktop::NetworkManager::AccessPoint::Mode::name(),
-                    [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
-                    {
-                        switch (value.as<org::freedesktop::NetworkManager::AccessPoint::Mode::ValueType>())
-                        {
-                        case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::unknown:
-                            thiz.mode_ = com::ubuntu::location::connectivity::WirelessNetwork::Mode::unknown;
-                            break;
-                        case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::adhoc:
-                            thiz.mode_ = com::ubuntu::location::connectivity::WirelessNetwork::Mode::adhoc;
-                            break;
-                        case org::freedesktop::NetworkManager::AccessPoint::Mode::Value::infra:
-                            thiz.mode_ = com::ubuntu::location::connectivity::WirelessNetwork::Mode::infrastructure;
-                            break;
-                        }
-                    }
-                }
-            };
-
-            for (const auto& pair : dict)
-            {
-                VLOG(1) << "Properties on access point " << ssid_.get() << " changed: " << std::endl
-                        << "  " << pair.first;
-
-                if (lut.count(pair.first) > 0)
-                    lut.at(pair.first)(*this, pair.second);
-            }
+            on_access_point_properties_changed(dict);
         });
+    }
+
+    void on_access_point_properties_changed(const std::map<std::string, core::dbus::types::Variant>& dict)
+    {
+        // We route by string
+        static const std::unordered_map<std::string, std::function<void(CachedWirelessNetwork&, const core::dbus::types::Variant&)> > lut
+        {
+            {
+                org::freedesktop::NetworkManager::AccessPoint::HwAddress::name(),
+                [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
+                {
+                    thiz.bssid_ = value.as<org::freedesktop::NetworkManager::AccessPoint::HwAddress::ValueType>();
+                }
+            },
+            {
+                org::freedesktop::NetworkManager::AccessPoint::Ssid::name(),
+                [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
+                {
+                    thiz.ssid_ = utf8_ssid_to_string(value.as<org::freedesktop::NetworkManager::AccessPoint::Ssid::ValueType>());
+                }
+            },
+            {
+                org::freedesktop::NetworkManager::AccessPoint::Strength::name(),
+                [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
+                {
+                    thiz.signal_strength_ = com::ubuntu::location::connectivity::WirelessNetwork::SignalStrength
+                    {
+                        value.as<org::freedesktop::NetworkManager::AccessPoint::Strength::ValueType>()
+                    };
+                }
+            },
+            {
+                org::freedesktop::NetworkManager::AccessPoint::Frequency::name(),
+                [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
+                {
+                    thiz.frequency_ = com::ubuntu::location::connectivity::WirelessNetwork::Frequency
+                    {
+                        value.as<org::freedesktop::NetworkManager::AccessPoint::Frequency::ValueType>()
+                    };
+                }
+            },
+            {
+                org::freedesktop::NetworkManager::AccessPoint::Mode::name(),
+                [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
+                {
+                    thiz.mode_ = wifi_mode_from_ap_mode(value.as<org::freedesktop::NetworkManager::AccessPoint::Mode::ValueType>());
+                }
+            }
+        };
+
+        for (const auto& pair : dict)
+        {
+            VLOG(1) << "Properties on access point " << ssid_.get() << " changed: \n"
+                    << "  " << pair.first;
+
+            // We do not treat failing property updates as fatal but instead just
+            // log the issue for later analysis.
+            try
+            {
+                if (lut.count(pair.first) > 0) lut.at(pair.first)(*this, pair.second);
+            } catch (const std::exception& e)
+            {
+                LOG(WARNING) << "Exception while updating state for property change: " << pair.first;
+            }
+        }
     }
 
     org::freedesktop::NetworkManager::Device device_;
