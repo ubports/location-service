@@ -17,6 +17,7 @@
  */
 #include <com/ubuntu/location/engine.h>
 
+#include <com/ubuntu/location/logging.h>
 #include <com/ubuntu/location/provider_selection_policy.h>
 
 #include <stdexcept>
