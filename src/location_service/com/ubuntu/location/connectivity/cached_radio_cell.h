@@ -18,12 +18,13 @@
 #ifndef CACHED_RADIO_CELL_H_
 #define CACHED_RADIO_CELL_H_
 
-#include <com/ubuntu/location/connectivity/cached_radio_cell.h>
+#include <com/ubuntu/location/connectivity/radio_cell.h>
 
 #include "ofono.h"
 
 namespace
 {
+
 struct CachedRadioCell : public com::ubuntu::location::connectivity::RadioCell
 {
     typedef std::shared_ptr<CachedRadioCell> Ptr;
@@ -161,12 +162,12 @@ struct CachedRadioCell : public com::ubuntu::location::connectivity::RadioCell
 
         modem.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
         {
-            VLOG(10) << "Property on modem " << CachedRadioCell::modem.object->path() << " changed: " << std::get<0>(tuple);
+            on_modem_property_changed(tuple);
         });
 
         modem.network_registration.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
         {
-            VLOG(10) << "Property changed for network registration: " << std::get<0>(tuple);
+            on_network_registration_property_changed(tuple);
         });
     }
 
@@ -202,6 +203,164 @@ struct CachedRadioCell : public com::ubuntu::location::connectivity::RadioCell
             throw std::runtime_error("Bad access to unset network type.");
 
         return detail.lte;
+    }
+
+    void on_modem_property_changed(const std::tuple<std::string, core::dbus::types::Variant>& tuple)
+    {
+        VLOG(10) << "Property on modem " << modem.object->path() << " changed: " << std::get<0>(tuple);
+    }
+
+    void on_network_registration_property_changed(const std::tuple<std::string, core::dbus::types::Variant>& tuple)
+    {
+        VLOG(10) << "Property changed on modem " << modem.object->path() << " for network registration: " << std::get<0>(tuple);
+
+        const auto& key = std::get<0>(tuple);
+        const auto& variant = std::get<1>(tuple);
+
+        if (key == org::Ofono::Manager::Modem::NetworkRegistration::CellId::name())
+        {
+            auto value = variant.as<
+                        org::Ofono::Manager::Modem::NetworkRegistration::CellId::ValueType
+                    >();
+
+            switch(radio_type)
+            {
+            case com::ubuntu::location::connectivity::RadioCell::Type::gsm:
+                detail.gsm.id.set(value);
+                VLOG(1) << detail.gsm;
+                break;
+            case com::ubuntu::location::connectivity::RadioCell::Type::umts:
+                detail.umts.id.set(value);
+                VLOG(1) << detail.umts;
+                break;
+            case com::ubuntu::location::connectivity::RadioCell::Type::lte:
+                detail.lte.id.set(value);
+                VLOG(1) << detail.lte;
+                break;
+            default:
+                break;
+            };
+
+            on_changed();
+        }
+
+        if (key == org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode::name())
+        {
+            auto value = variant.as<
+                        org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode::ValueType
+                    >();
+            switch(radio_type)
+            {
+            case com::ubuntu::location::connectivity::RadioCell::Type::gsm:
+                detail.gsm.location_area_code.set(value);
+                VLOG(1) << detail.gsm;
+                break;
+            case com::ubuntu::location::connectivity::RadioCell::Type::umts:
+                detail.umts.location_area_code.set(value);
+                VLOG(1) << detail.umts;
+                break;
+            case com::ubuntu::location::connectivity::RadioCell::Type::lte:
+                detail.lte.tracking_area_code.set(value);
+                VLOG(1) << detail.lte;
+                break;
+            default:
+                break;
+            };
+
+            on_changed();
+        }
+
+        if (key == org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode::name())
+        {
+            std::stringstream ss
+            {
+                variant.as<
+                    org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode::ValueType
+                >()
+            };
+            int value{-1}; ss >> value;
+
+            switch(radio_type)
+            {
+            case com::ubuntu::location::connectivity::RadioCell::Type::gsm:
+                detail.gsm.mobile_country_code.set(value);
+                VLOG(1) << detail.gsm;
+                break;
+            case com::ubuntu::location::connectivity::RadioCell::Type::umts:
+                detail.umts.mobile_country_code.set(value);
+                VLOG(1) << detail.umts;
+                break;
+            case com::ubuntu::location::connectivity::RadioCell::Type::lte:
+                detail.lte.mobile_country_code.set(value);
+                VLOG(1) << detail.lte;
+                break;
+            default:
+                break;
+            };
+
+            on_changed();
+        }
+
+        if (key == org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode::name())
+        {
+            std::stringstream ss
+            {
+                variant.as<
+                    org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode::ValueType
+                >()
+            };
+            int value{-1}; ss >> value;
+
+            switch(radio_type)
+            {
+            case com::ubuntu::location::connectivity::RadioCell::Type::gsm:
+                detail.gsm.mobile_network_code.set(value);
+                VLOG(1) << detail.gsm;
+                break;
+            case com::ubuntu::location::connectivity::RadioCell::Type::umts:
+                detail.umts.mobile_network_code.set(value);
+                VLOG(1) << detail.umts;
+                break;
+            case com::ubuntu::location::connectivity::RadioCell::Type::lte:
+                detail.lte.mobile_network_code.set(value);
+                VLOG(1) << detail.lte;
+                break;
+            default:
+                break;
+            };
+
+            on_changed();
+        }
+
+        if (key == org::Ofono::Manager::Modem::NetworkRegistration::Strength::name())
+        {
+            auto value = variant.as<
+                        org::Ofono::Manager::Modem::NetworkRegistration::Strength::ValueType
+                    >();
+
+            switch(radio_type)
+            {
+            case com::ubuntu::location::connectivity::RadioCell::Type::gsm:
+                detail.gsm.strength
+                        = com::ubuntu::location::connectivity::RadioCell::Gsm::SignalStrength::from_percent(value/100.f);
+                VLOG(1) << detail.gsm;
+                break;
+            case com::ubuntu::location::connectivity::RadioCell::Type::umts:
+                detail.umts.strength
+                        = com::ubuntu::location::connectivity::RadioCell::Umts::SignalStrength::from_percent(value/100.f);
+                VLOG(1) << detail.umts;
+                break;
+            case com::ubuntu::location::connectivity::RadioCell::Type::lte:
+                detail.lte.strength
+                        = com::ubuntu::location::connectivity::RadioCell::Lte::SignalStrength::from_percent(value/100.f);
+                VLOG(1) << detail.lte;
+                break;
+            default:
+                break;
+            };
+
+            on_changed();
+        }
     }
 
     /** @cond */
