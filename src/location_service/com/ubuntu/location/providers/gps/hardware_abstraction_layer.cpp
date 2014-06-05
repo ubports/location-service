@@ -276,7 +276,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
             svs.insert(sv);
         }
 
-        VLOG(20) << "Finished iterating list of satellites, about to report to upper layers.";
+        VLOG(20) << "Finished iterating list of satellites, about to report to upper layers: " << thiz;
 
         thiz->space_vehicle_updates()(svs);
     }
@@ -376,13 +376,14 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         return impl.velocity_updates;
     }
 
-    const core::Signal<std::set<location::SpaceVehicle>>& space_vehicle_updates() const
+    const core::Signal<std::set<location::SpaceVehicle> >& space_vehicle_updates() const
     {
         return impl.space_vehicle_updates;
     }
 
-    core::Signal<std::set<location::SpaceVehicle>>& space_vehicle_updates()
+    core::Signal<std::set<location::SpaceVehicle> >& space_vehicle_updates()
     {
+        VLOG(10) << __PRETTY_FUNCTION__;
         return impl.space_vehicle_updates;
     }
 
