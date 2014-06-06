@@ -299,7 +299,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         thiz->impl.supl_assistant.status() = static_cast<gps::HardwareAbstractionLayer::SuplAssistant::Status>(status->status);
         thiz->impl.supl_assistant.server_ip() = gps::HardwareAbstractionLayer::SuplAssistant::IpV4Address{status->ipaddr};
 
-        VLOG(1) << thiz->impl.supl_assistant.status().get() << ", "
+        VLOG(1) << int(thiz->impl.supl_assistant.status().get()) << ", "
                 << thiz->impl.supl_assistant.server_ip().get().triplets[0] << "."
                 << thiz->impl.supl_assistant.server_ip().get().triplets[1] << "."
                 << thiz->impl.supl_assistant.server_ip().get().triplets[2] << "."
