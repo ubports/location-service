@@ -61,33 +61,33 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         virtual void set_server(const std::string& host_name, std::uint16_t port)
         {
             // TODO(tvoss): Reenable this once the platform api HAL changes land.
-            /*u_hardware_gps_agps_set_server_for_type(
+            u_hardware_gps_agps_set_server_for_type(
                         impl.hal.impl.gps_handle,
                         U_HARDWARE_GPS_AGPS_TYPE_SUPL,
                         host_name.c_str(),
-                        port);*/
+                        port);
         }
 
         void notify_data_connection_open_via_apn(const std::string& name)
         {
             // TODO(tvoss): Reenable this once the platform api HAL changes land.
-            /*u_hardware_gps_agps_notify_connection_is_open(
+            u_hardware_gps_agps_notify_connection_is_open(
                         impl.hal.impl.gps_handle,
-                        name.c_str());*/
+                        name.c_str());
         }
 
         void notify_data_connection_closed()
         {
             // TODO(tvoss): Reenable this once the platform api HAL changes land.
-            /*u_hardware_gps_agps_notify_connection_is_closed(
-                        impl.hal.impl.gps_handle);*/
+            u_hardware_gps_agps_notify_connection_is_closed(
+                        impl.hal.impl.gps_handle);
         }
 
         void notify_data_connection_not_available()
         {
             // TODO(tvoss): Reenable this once the platform api HAL changes land.
-            /*u_hardware_gps_agps_notify_connection_not_available(
-                        impl.hal.impl.gps_handle);*/
+            u_hardware_gps_agps_notify_connection_not_available(
+                        impl.hal.impl.gps_handle);
         }
 
         struct Impl
@@ -492,7 +492,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         return impl.dispatch_updated_modes_to_driver();
     }
 
-    virtual bool inject_reference_position(const location::Position& position)
+    virtual bool inject_reference_position(const location::Position&)
     {
         // TODO(tvoss): We should expose the int return type of the underyling
         //  Android HAL to capture errors here.
@@ -524,7 +524,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
     {
         Impl(HardwareAbstractionLayer* parent)
             : capabilities(0),
-              assistance_mode(gps::AssistanceMode::standalone),
+              assistance_mode(gps::AssistanceMode::mobile_station_assisted),
               position_mode(gps::PositionMode::periodic),
               supl_assistant(*parent)
         {
