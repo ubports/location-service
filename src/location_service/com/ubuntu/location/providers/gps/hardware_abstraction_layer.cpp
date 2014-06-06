@@ -295,6 +295,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
             return;
         }
         auto thiz = static_cast<impl::HardwareAbstractionLayer*>(context);
+        thiz->impl.supl_assistant.notify_data_connection_open_via_apn("supl");
         thiz->impl.supl_assistant.status() = static_cast<gps::HardwareAbstractionLayer::SuplAssistant::Status>(status->status);
         thiz->impl.supl_assistant.server_ip() = gps::HardwareAbstractionLayer::SuplAssistant::IpV4Address{status->ipaddr};
     }
