@@ -26,6 +26,7 @@
 #include <core/property.h>
 
 #include <chrono>
+#include <iosfwd>
 #include <memory>
 #include <cstdint>
 
