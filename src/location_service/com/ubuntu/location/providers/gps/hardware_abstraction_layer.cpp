@@ -28,6 +28,31 @@
 namespace gps = com::ubuntu::location::providers::gps;
 namespace location = com::ubuntu::location;
 
+/** @brief Pretty prints a SUPL assistant status. */
+std::ostream& gps::operator<<(std::ostream& out, gps::HardwareAbstractionLayer::SuplAssistant::Status status)
+{
+    switch (status)
+    {
+    /** The assistant requires a data connection. */
+    case gps::HardwareAbstractionLayer::SuplAssistant::Status::request_data_connection:
+        out << "SuplAssistant::Status::request_data_connection"; break;
+    /** The assistant no longer requires a data connection. */
+    case gps::HardwareAbstractionLayer::SuplAssistant::Status::release_data_connection:
+        out << "SuplAssistant::Status::release_data_connection"; break;
+    /** The data connection has been initiated. */
+    case gps::HardwareAbstractionLayer::SuplAssistant::Status::data_connection_initiated:
+        out << "SuplAssistant::Status::data_connection_initiated"; break;
+    /** The data transfer has been successfully completed. */
+    case gps::HardwareAbstractionLayer::SuplAssistant::Status::data_connection_completed:
+        out << "SuplAssistant::Status::data_connection_completed"; break;
+    /** The data transfer failed. */
+    case gps::HardwareAbstractionLayer::SuplAssistant::Status::data_connection_failed:
+        out << "SuplAssistant::Status::data_connection_completed"; break;
+    }
+
+    return out;
+}
+
 namespace impl
 {
 struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer

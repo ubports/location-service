@@ -313,6 +313,9 @@ public:
 protected:
     HardwareAbstractionLayer() = default;
 };
+
+/** @brief Pretty prints a SUPL assistant status. */
+std::ostream& operator<<(std::ostream& out, HardwareAbstractionLayer::SuplAssistant::Status status);
 }
 }
 }
