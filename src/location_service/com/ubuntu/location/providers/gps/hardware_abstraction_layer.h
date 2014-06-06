@@ -148,6 +148,24 @@ public:
             data_connection_failed = 5
         };
 
+        inline friend std::ostream& operator<<(std::ostream& out, Status status)
+        {
+            switch (status)
+            {
+            case Status::request_data_connection:
+                out << "SuplAssistant::Status::request_data_connection"; break;
+            case Status::release_data_connection:
+                out << "SuplAssistant::Status::release_data_connection"; break;
+            case Status::data_connection_initiated:
+                out << "SuplAssistant::Status::data_connection_initiated"; break;
+            case Status::data_connection_completed:
+                out << "SuplAssistant::Status::data_connection_completed"; break;
+            case Status::data_connection_failed:
+                out << "SuplAssistant::Status::data_connection_completed"; break;
+            }
+            return out;
+        }
+
         virtual ~SuplAssistant() = default;
         SuplAssistant(const SuplAssistant&) = delete;
 
@@ -314,9 +332,6 @@ public:
 protected:
     HardwareAbstractionLayer() = default;
 };
-
-/** @brief Pretty prints a SUPL assistant status. */
-std::ostream& operator<<(std::ostream& out, HardwareAbstractionLayer::SuplAssistant::Status status);
 }
 }
 }
