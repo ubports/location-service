@@ -546,6 +546,8 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
             gps_params.context = parent;
 
             gps_handle = u_hardware_gps_new(std::addressof(gps_params));
+
+            dispatch_updated_modes_to_driver();
         }
 
         bool dispatch_updated_modes_to_driver()
