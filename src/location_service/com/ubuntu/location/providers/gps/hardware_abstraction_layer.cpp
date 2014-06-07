@@ -519,16 +519,16 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         return impl.dispatch_updated_modes_to_driver();
     }
 
-    virtual bool inject_reference_position(const location::Position&)
+    virtual bool inject_reference_position(const location::Position& position)
     {
         // TODO(tvoss): We should expose the int return type of the underyling
         //  Android HAL to capture errors here.
-        // TODO(tvoss): Reenable this once the platform api HAL changes land.
-        /*u_hardware_gps_inject_location(impl.gps_handle,
-                                       position.latitude.value.value(),
-                                       position.longitude.value.value(),
-                                       position.accuracy.horizontal ?
-                                           position.accuracy.horizontal->value() : 0);*/
+        UHardwareGpsLocation loc;
+        loc.size = sizeof(loc);
+        loc.flags = U_HARDWARE_GPS_LOCATION_HAS_LAT_LONG;
+        loc.latitude = position.latitude.value.value();
+        loc.longitude = position.longitude.value.value();
+        u_hardware_gps_inject_location(impl.gps_handle, loc);
         return true;
     }
 
