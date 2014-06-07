@@ -401,6 +401,7 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
 
     // We want to run in assisted mode
     EXPECT_TRUE(hal->set_assistance_mode(gps::AssistanceMode::mobile_station_based));
+    hal->supl_assistant().notify_data_connection_open_via_apn("internet");
 
     // Let's see if we have a custom supl server configured via the environment
     try
@@ -425,12 +426,6 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         // by the system.
     }
 
-    hal->inject_reference_position(location::Position
-    {
-       location::wgs84::Latitude{51.444670 * location::units::Degrees},
-       location::wgs84::Longitude{7.210852 * location::units::Degrees}
-    });
-
     // We wire up our state to position updates from the hal.
     hal->position_updates().connect([&state](const location::Position& pos)
     {
@@ -444,6 +439,12 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         // We want to force a cold start per trial.
         hal->delete_all_aiding_data();
         state.reset();
+
+        hal->inject_reference_position(location::Position
+        {
+           location::wgs84::Latitude{51.444670 * location::units::Degrees},
+           location::wgs84::Longitude{7.210852 * location::units::Degrees}
+        });
 
         auto start = std::chrono::duration_cast<std::chrono::microseconds>(location::Clock::now().time_since_epoch());
         {
