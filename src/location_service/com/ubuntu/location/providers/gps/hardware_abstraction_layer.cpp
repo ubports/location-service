@@ -294,16 +294,37 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
             VLOG(1) << "\t We only support SUPL at this point in time.";
             return;
         }
+
         auto thiz = static_cast<impl::HardwareAbstractionLayer*>(context);
-        thiz->impl.supl_assistant.notify_data_connection_open_via_apn("supl");
         thiz->impl.supl_assistant.status() = static_cast<gps::HardwareAbstractionLayer::SuplAssistant::Status>(status->status);
         thiz->impl.supl_assistant.server_ip() = gps::HardwareAbstractionLayer::SuplAssistant::IpV4Address{status->ipaddr};
 
         VLOG(1) << int(thiz->impl.supl_assistant.status().get()) << ", "
+                << status->ipaddr << ", "
                 << (int)thiz->impl.supl_assistant.server_ip().get().triplets[0] << "."
                 << (int)thiz->impl.supl_assistant.server_ip().get().triplets[1] << "."
                 << (int)thiz->impl.supl_assistant.server_ip().get().triplets[2] << "."
-                << (int)thiz->impl.supl_assistant.server_ip().get().triplets[3] << ".";
+                << (int)thiz->impl.supl_assistant.server_ip().get().triplets[3];
+
+        switch (status->status)
+        {
+        case U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN:
+            VLOG(1) << "U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN";
+            thiz->impl.supl_assistant.notify_data_connection_open_via_apn("supl");
+            break;
+        case U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN:
+            VLOG(1) << "U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN";
+            break;
+        case U_HARDWARE_GPS_AGPS_DATA_CONNECTED:
+            VLOG(1) << "U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN";
+            break;
+        case U_HARDWARE_GPS_AGPS_DATA_CONN_DONE:
+            VLOG(1) << "U_HARDWARE_GPS_AGPS_DATA_CONN_DONE";
+            break;
+        case U_HARDWARE_GPS_AGPS_DATA_CONN_FAILED:
+            VLOG(1) << "U_HARDWARE_GPS_AGPS_DATA_CONN_FAILED";
+            break;
+        }
     }
 
     static void on_request_utc_time(void* context)
