@@ -420,11 +420,10 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         hal->supl_assistant().set_server(server, port);
     } catch(...)
     {
+        hal->supl_assistant().set_server("supl.google.com", 7276);
         // Ignoring exceptions here and defaulting to configuration provided
         // by the system.
     }
-
-    hal->supl_assistant().notify_data_connection_open_via_apn("dummy-apn");
 
     // We wire up our state to position updates from the hal.
     hal->position_updates().connect([&state](const location::Position& pos)
