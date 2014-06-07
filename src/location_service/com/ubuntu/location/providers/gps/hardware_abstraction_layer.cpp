@@ -300,10 +300,10 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         thiz->impl.supl_assistant.server_ip() = gps::HardwareAbstractionLayer::SuplAssistant::IpV4Address{status->ipaddr};
 
         VLOG(1) << int(thiz->impl.supl_assistant.status().get()) << ", "
-                << thiz->impl.supl_assistant.server_ip().get().triplets[0] << "."
-                << thiz->impl.supl_assistant.server_ip().get().triplets[1] << "."
-                << thiz->impl.supl_assistant.server_ip().get().triplets[2] << "."
-                << thiz->impl.supl_assistant.server_ip().get().triplets[3] << ".";
+                << (int)thiz->impl.supl_assistant.server_ip().get().triplets[0] << "."
+                << (int)thiz->impl.supl_assistant.server_ip().get().triplets[1] << "."
+                << (int)thiz->impl.supl_assistant.server_ip().get().triplets[2] << "."
+                << (int)thiz->impl.supl_assistant.server_ip().get().triplets[3] << ".";
     }
 
     static void on_request_utc_time(void* context)
