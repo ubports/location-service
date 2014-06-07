@@ -400,8 +400,7 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
     } state;
 
     // We want to run in assisted mode
-    EXPECT_TRUE(hal->set_assistance_mode(gps::AssistanceMode::mobile_station_assisted));
-    hal->supl_assistant().notify_data_connection_open_via_apn("test");
+    EXPECT_TRUE(hal->set_assistance_mode(gps::AssistanceMode::mobile_station_based));
 
     // Let's see if we have a custom supl server configured via the environment
     try
