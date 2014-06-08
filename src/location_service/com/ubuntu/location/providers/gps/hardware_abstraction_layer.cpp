@@ -310,6 +310,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         {
         case U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN:
             VLOG(1) << "U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN";
+            thiz->impl.supl_assistant.set_server("supl.google.com", 7276);
             break;
         case U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN:
             VLOG(1) << "U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN";
@@ -579,14 +580,14 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
 
         bool dispatch_updated_modes_to_driver()
         {
-            std::map<gps::AssistanceMode, std::uint32_t> assistance_mode_lut =
+            static const std::map<gps::AssistanceMode, std::uint32_t> assistance_mode_lut =
             {
                 {gps::AssistanceMode::mobile_station_assisted, U_HARDWARE_GPS_POSITION_MODE_MS_ASSISTED},
                 {gps::AssistanceMode::mobile_station_based, U_HARDWARE_GPS_POSITION_MODE_MS_BASED},
                 {gps::AssistanceMode::standalone, U_HARDWARE_GPS_POSITION_MODE_STANDALONE}
             };
 
-            std::map<gps::PositionMode, std::uint32_t> position_mode_lut =
+            static const std::map<gps::PositionMode, std::uint32_t> position_mode_lut =
             {
                 {gps::PositionMode::periodic, U_HARDWARE_GPS_POSITION_RECURRENCE_PERIODIC},
                 {gps::PositionMode::single_shot, U_HARDWARE_GPS_POSITION_RECURRENCE_SINGLE}
@@ -595,8 +596,8 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
             auto am = assistance_mode_lut.at(assistance_mode);
             auto pm = position_mode_lut.at(position_mode);
 
-            static const uint32_t preferred_accuracy_in_meters = 5;
-            static const uint32_t preferred_ttff_in_ms = 10000;
+            static const uint32_t preferred_accuracy_in_meters = 0;
+            static const uint32_t preferred_ttff_in_ms = 0;
             static const std::chrono::milliseconds min_interval{500};
 
             return u_hardware_gps_set_position_mode(
