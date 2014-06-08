@@ -551,7 +551,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
     {
         Impl(HardwareAbstractionLayer* parent)
             : capabilities(0),
-              assistance_mode(gps::AssistanceMode::mobile_station_assisted),
+              assistance_mode(gps::AssistanceMode::mobile_station_based),
               position_mode(gps::PositionMode::periodic),
               supl_assistant(*parent)
         {
@@ -595,8 +595,8 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
             auto am = assistance_mode_lut.at(assistance_mode);
             auto pm = position_mode_lut.at(position_mode);
 
-            static const uint32_t preferred_accuracy_in_meters = 1;
-            static const uint32_t preferred_ttff_in_ms = 0;
+            static const uint32_t preferred_accuracy_in_meters = 5;
+            static const uint32_t preferred_ttff_in_ms = 10000;
             static const std::chrono::milliseconds min_interval{500};
 
             return u_hardware_gps_set_position_mode(
