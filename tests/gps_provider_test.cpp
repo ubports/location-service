@@ -399,33 +399,6 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         bool fix_received;
     } state;
 
-    // We want to run in assisted mode
-    EXPECT_TRUE(hal->set_assistance_mode(gps::AssistanceMode::mobile_station_based));
-    hal->supl_assistant().notify_data_connection_open_via_apn("internet");
-
-    // Let's see if we have a custom supl server configured via the environment
-    try
-    {
-        auto server = core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_SERVER_ADDRESS");
-        std::uint16_t port = 8799;
-
-        try
-        {
-            std::stringstream ss(core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_SERVER_PORT"));
-            ss >> port;
-        } catch(...)
-        {
-            // Ignoring any issues and defaulting to 8799 for the port.
-        }
-
-        hal->supl_assistant().set_server(server, port);
-    } catch(...)
-    {
-        hal->supl_assistant().set_server("supl.google.com", 7276);
-        // Ignoring exceptions here and defaulting to configuration provided
-        // by the system.
-    }
-
     // We wire up our state to position updates from the hal.
     hal->position_updates().connect([&state](const location::Position& pos)
     {
@@ -439,6 +412,33 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         // We want to force a cold start per trial.
         hal->delete_all_aiding_data();
         state.reset();
+
+        // We want to run in assisted mode
+        EXPECT_TRUE(hal->set_assistance_mode(gps::AssistanceMode::mobile_station_based));
+        hal->supl_assistant().notify_data_connection_open_via_apn("internet");
+
+        // Let's see if we have a custom supl server configured via the environment
+        try
+        {
+            auto server = core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_SERVER_ADDRESS");
+            std::uint16_t port = 8799;
+
+            try
+            {
+                std::stringstream ss(core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_SERVER_PORT"));
+                ss >> port;
+            } catch(...)
+            {
+                // Ignoring any issues and defaulting to 8799 for the port.
+            }
+
+            hal->supl_assistant().set_server(server, port);
+        } catch(...)
+        {
+            hal->supl_assistant().set_server("supl.google.com", 7276);
+            // Ignoring exceptions here and defaulting to configuration provided
+            // by the system.
+        }
 
         hal->inject_reference_position(location::Position
         {
