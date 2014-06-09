@@ -310,6 +310,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         {
         case U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN:
             VLOG(1) << "U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN";
+            thiz->impl.supl_assistant.notify_data_connection_open_via_apn("internet");
             thiz->inject_reference_position(location::Position
             {
                location::wgs84::Latitude{51.444670 * location::units::Degrees},
