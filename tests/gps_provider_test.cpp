@@ -415,7 +415,6 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
 
         // We want to run in assisted mode
         EXPECT_TRUE(hal->set_assistance_mode(gps::AssistanceMode::mobile_station_based));
-        hal->supl_assistant().notify_data_connection_open_via_apn("internet");
 
         // Let's see if we have a custom supl server configured via the environment
         try
@@ -435,16 +434,9 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
             hal->supl_assistant().set_server(server, port);
         } catch(...)
         {
-            hal->supl_assistant().set_server("supl.google.com", 7276);
             // Ignoring exceptions here and defaulting to configuration provided
             // by the system.
         }
-
-        hal->inject_reference_position(location::Position
-        {
-           location::wgs84::Latitude{51.444670 * location::units::Degrees},
-           location::wgs84::Longitude{7.210852 * location::units::Degrees}
-        });
 
         auto start = std::chrono::duration_cast<std::chrono::microseconds>(location::Clock::now().time_since_epoch());
         {
