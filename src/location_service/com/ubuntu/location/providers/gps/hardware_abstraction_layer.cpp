@@ -306,16 +306,20 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
                 << (int)thiz->impl.supl_assistant.server_ip().get().triplets[2] << "."
                 << (int)thiz->impl.supl_assistant.server_ip().get().triplets[3];
 
+        location::Position ref_pos
+        {
+            location::wgs84::Latitude{51.444670 * location::units::Degrees},
+            location::wgs84::Longitude{7.210852 * location::units::Degrees}
+        };
+
+        ref_pos.accuracy.horizontal = 10 * location::units::Meters;
+
         switch (status->status)
         {
         case U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN:
             VLOG(1) << "U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN";
             thiz->impl.supl_assistant.notify_data_connection_open_via_apn("internet");
-            thiz->inject_reference_position(location::Position
-            {
-               location::wgs84::Latitude{51.444670 * location::units::Degrees},
-               location::wgs84::Longitude{7.210852 * location::units::Degrees}
-            });
+            thiz->inject_reference_position(ref_pos);
             break;
         case U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN:
             VLOG(1) << "U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN";
