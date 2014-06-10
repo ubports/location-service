@@ -98,7 +98,7 @@ int main(int argc, char** argv)
     cm->enumerate_visible_wireless_networks([](const location::connectivity::WirelessNetwork::Ptr& wifi)
     {
         std::cout << wifi->ssid().get() << ", timestamp: ";
-        auto ts = std::chrono::system_clock::to_time_t(wifi->timestamp().get());
+        auto ts = std::chrono::system_clock::to_time_t(wifi->last_seen().get());
         std::cout << std::ctime(&ts);
 
         // We don't want to keep the object alive
@@ -106,6 +106,17 @@ int main(int argc, char** argv)
         {
             wifi
         };
+
+        // Subscribe to last-seen updates.
+        wifi->last_seen().changed().connect([wp](const std::chrono::system_clock::time_point& tp)
+        {
+            auto sp = wp.lock();
+            if (sp)
+            {
+                auto ts = std::chrono::system_clock::to_time_t(tp);
+                std::cout << "Last seen changed for wifi " << sp->ssid().get() << ": " << std::ctime(&ts) << std::endl;
+            }
+        });
 
         // Subscribe to signal strength updates. Please note that this is not considering
         // the case of subscribing to already known wifis. We leave this up
@@ -120,6 +131,12 @@ int main(int argc, char** argv)
         std::cout << "  " << *wifi << std::endl;
     });
     
+    // Subscribe to end-of-scan signals
+    cm->wireless_network_scan_finished().connect([]()
+    {
+        std::cout << "A wireless network scan finished." << std::endl;
+    });
+
     // Request a scan for wireless networks.
     try
     {

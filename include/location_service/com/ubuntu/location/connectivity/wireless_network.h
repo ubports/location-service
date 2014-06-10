@@ -86,7 +86,7 @@ struct WirelessNetwork
     /** @endcond */
 
     /** @brief Timestamp when the network became visible. */
-    virtual const core::Property<std::chrono::system_clock::time_point>& timestamp() const = 0;
+    virtual const core::Property<std::chrono::system_clock::time_point>& last_seen() const = 0;
 
     /** @brief Returns the BSSID of the network */
     virtual const core::Property<std::string>& bssid() const = 0;

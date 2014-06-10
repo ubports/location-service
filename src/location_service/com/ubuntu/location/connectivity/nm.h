@@ -59,6 +59,20 @@ struct NetworkManager
             static const bool writable = false;
         };
 
+        struct LastSeen
+        {
+            static const std::string& name()
+            {
+                static const std::string s{"LastSeen"};
+                return s;
+            }
+
+            typedef AccessPoint Interface;
+            typedef std::int32_t ValueType;
+            static const bool readable = true;
+            static const bool writable = false;
+        };
+
         struct Mode
         {
             enum Value
@@ -138,6 +152,7 @@ struct NetworkManager
         AccessPoint(const std::shared_ptr<core::dbus::Object>& object)
             : object(object),
               frequency(object->get_property<Frequency>()),
+              last_seen(object->get_property<LastSeen>()),
               mode(object->get_property<Mode>()),
               hw_address(object->get_property<HwAddress>()),
               ssid(object->get_property<Ssid>()),
@@ -148,6 +163,7 @@ struct NetworkManager
 
         std::shared_ptr<core::dbus::Object> object;
         std::shared_ptr<core::dbus::Property<Frequency>> frequency;
+        std::shared_ptr<core::dbus::Property<LastSeen>> last_seen;
         std::shared_ptr<core::dbus::Property<Mode>> mode;
         std::shared_ptr<core::dbus::Property<HwAddress>> hw_address;
         std::shared_ptr<core::dbus::Property<Ssid>> ssid;
@@ -223,6 +239,17 @@ struct NetworkManager
 
             struct Signals
             {
+                struct ScanDone
+                {
+                    inline static std::string name()
+                    {
+                        return "ScanDone";
+                    }
+
+                    typedef Wireless Interface;
+                    typedef void ArgumentType;
+                };
+
                 struct AccessPointAdded
                 {
                     inline static std::string name()
@@ -270,6 +297,7 @@ struct NetworkManager
               device_type(object->get_property<DeviceType>()),
               signals
               {
+                  object->get_signal<Wireless::Signals::ScanDone>(),
                   object->get_signal<Wireless::Signals::AccessPointAdded>(),
                   object->get_signal<Wireless::Signals::AccessPointRemoved>()
               }
@@ -320,6 +348,7 @@ struct NetworkManager
         std::shared_ptr<core::dbus::Property<DeviceType>> device_type;
         struct
         {
+            core::dbus::Signal<Wireless::Signals::ScanDone, Wireless::Signals::ScanDone::ArgumentType>::Ptr scan_done;
             core::dbus::Signal<Wireless::Signals::AccessPointAdded, Wireless::Signals::AccessPointAdded::ArgumentType>::Ptr ap_added;
             core::dbus::Signal<Wireless::Signals::AccessPointRemoved, Wireless::Signals::AccessPointRemoved::ArgumentType>::Ptr ap_removed;
         } signals;

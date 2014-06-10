@@ -41,7 +41,7 @@ namespace
 struct MockWirelessNetwork : public location::connectivity::WirelessNetwork
 {
     /** @brief Timestamp when the network became visible. */
-    MOCK_CONST_METHOD0(timestamp, const core::Property<std::chrono::system_clock::time_point>&());
+    MOCK_CONST_METHOD0(last_seen, const core::Property<std::chrono::system_clock::time_point>&());
 
     /** @brief Returns the BSSID of the network */
     MOCK_CONST_METHOD0(bssid, const core::Property<std::string>&());
@@ -258,7 +258,7 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
     using namespace ::testing;
 
     auto wireless_network = std::make_shared<NiceMock<MockWirelessNetwork> >();
-    ON_CALL(*wireless_network, timestamp()).WillByDefault(ReturnRef(ref_timestamp));
+    ON_CALL(*wireless_network, last_seen()).WillByDefault(ReturnRef(ref_timestamp));
     ON_CALL(*wireless_network, bssid()).WillByDefault(ReturnRef(ref_bssid));
     ON_CALL(*wireless_network, ssid()).WillByDefault(ReturnRef(ref_ssid));
     ON_CALL(*wireless_network, mode()).WillByDefault(ReturnRef(ref_mode));

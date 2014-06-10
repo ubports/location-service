@@ -63,6 +63,11 @@ void impl::OfonoNmConnectivityManager::request_scan_for_wireless_networks()
         pair.second.request_scan();
 }
 
+const core::Signal<>& impl::OfonoNmConnectivityManager::wireless_network_scan_finished() const
+{
+    return d.signals.wireless_network_scan_finished;
+}
+
 const core::Signal<connectivity::WirelessNetwork::Ptr>& impl::OfonoNmConnectivityManager::wireless_network_added() const
 {
     return d.signals.wireless_network_added;
@@ -296,6 +301,11 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
                 {
                     LOG(ERROR) << "Error while creating ap/wifi: " << e.what();
                 }
+            });
+
+            device.signals.scan_done->connect([this]()
+            {
+                signals.wireless_network_scan_finished();
             });
 
             device.signals.ap_added->connect([this, device_path](const core::dbus::types::ObjectPath& path)

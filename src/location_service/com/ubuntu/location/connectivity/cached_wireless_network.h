@@ -57,9 +57,9 @@ struct CachedWirelessNetwork : public com::ubuntu::location::connectivity::Wirel
 {
     typedef std::shared_ptr<CachedWirelessNetwork> Ptr;
 
-    const core::Property<std::chrono::system_clock::time_point>& timestamp() const override
+    const core::Property<std::chrono::system_clock::time_point>& last_seen() const override
     {
-        return timestamp_;
+        return last_seen_;
     }
 
     const core::Property<std::string>& bssid() const override
@@ -93,7 +93,11 @@ struct CachedWirelessNetwork : public com::ubuntu::location::connectivity::Wirel
         : device_(device),
           access_point_(ap)
     {
-        timestamp_ = std::chrono::system_clock::now();
+        last_seen_ = std::chrono::system_clock::time_point
+        {
+            std::chrono::system_clock::duration{access_point_.last_seen->get()}
+        };
+
         bssid_ = access_point_.hw_address->get();
         ssid_ = utf8_ssid_to_string(access_point_.ssid->get());
         mode_ = wifi_mode_from_ap_mode(access_point_.mode->get());
@@ -158,6 +162,16 @@ struct CachedWirelessNetwork : public com::ubuntu::location::connectivity::Wirel
                 {
                     thiz.mode_ = wifi_mode_from_ap_mode(value.as<org::freedesktop::NetworkManager::AccessPoint::Mode::ValueType>());
                 }
+            },
+            {
+                org::freedesktop::NetworkManager::AccessPoint::LastSeen::name(),
+                [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
+                {
+                    thiz.last_seen_ = std::chrono::system_clock::time_point
+                    {
+                        std::chrono::system_clock::duration{thiz.access_point_.last_seen->get()}
+                    };
+                }
             }
         };
 
@@ -181,7 +195,7 @@ struct CachedWirelessNetwork : public com::ubuntu::location::connectivity::Wirel
     org::freedesktop::NetworkManager::Device device_;
     org::freedesktop::NetworkManager::AccessPoint access_point_;
 
-    core::Property<std::chrono::system_clock::time_point> timestamp_;
+    core::Property<std::chrono::system_clock::time_point> last_seen_;
     core::Property<std::string> bssid_;
     core::Property<std::string> ssid_;
     core::Property<WirelessNetwork::Mode> mode_;

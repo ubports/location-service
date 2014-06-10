@@ -111,6 +111,15 @@ public:
     virtual void request_scan_for_wireless_networks() = 0;
 
     /**
+     * @brief wireless_network_scan_finished is emitted when a scan for wireless networks ends.
+     *
+     * Please note that the signal may also be raised for scans that have been
+     * initiated by other system components.
+     *
+     */
+    virtual const core::Signal<>& wireless_network_scan_finished() const = 0;
+
+    /**
      * @brief wireless_network_added is emitted whenever a new wifi becomes visible.
      */
     virtual const core::Signal<WirelessNetwork::Ptr>& wireless_network_added() const = 0;

@@ -55,6 +55,7 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
 
     void request_scan_for_wireless_networks() override;
 
+    const core::Signal<>& wireless_network_scan_finished() const override;
     const core::Signal<com::ubuntu::location::connectivity::WirelessNetwork::Ptr>& wireless_network_added() const override;
     const core::Signal<com::ubuntu::location::connectivity::WirelessNetwork::Ptr>& wireless_network_removed() const override;
 
@@ -98,6 +99,7 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
 
         struct
         {
+            core::Signal<> wireless_network_scan_finished;
             core::Signal<com::ubuntu::location::connectivity::RadioCell::Ptr> connected_cell_added;
             core::Signal<com::ubuntu::location::connectivity::RadioCell::Ptr> connected_cell_removed;
             core::Signal<com::ubuntu::location::connectivity::WirelessNetwork::Ptr> wireless_network_added;

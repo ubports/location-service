@@ -38,6 +38,15 @@ struct MockConnectivityManager : public com::ubuntu::location::connectivity::Man
     MOCK_METHOD0(request_scan_for_wireless_networks, void());
 
     /**
+     * @brief wireless_network_scan_finished is emitted when a scan for wireless networks ends.
+     *
+     * Please note that the signal may also be raised for scans that have been
+     * initiated by other system components.
+     *
+     */
+    MOCK_CONST_METHOD0(wireless_network_scan_finished, const core::Signal<>&());
+
+    /**
      * @brief wireless_network_added is emitted whenever a new wifi becomes visible.
      */
     MOCK_CONST_METHOD0(wireless_network_added, const core::Signal<com::ubuntu::location::connectivity::WirelessNetwork::Ptr>& ());
