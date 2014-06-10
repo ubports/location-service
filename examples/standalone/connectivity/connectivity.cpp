@@ -71,10 +71,15 @@ int main(int argc, char** argv)
     {
         std::cout << *cell << std::endl;
 
+        std::weak_ptr<location::connectivity::RadioCell> wp{cell};
+
         // Subscribe to changes on the cell
-        cell->changed().connect([]()
+        cell->changed().connect([wp]()
         {
-            std::cout << "Something changed on a radio cell." << std::endl;
+            auto sp = wp.lock();
+
+            if (sp)
+                std::cout << "Something changed on a radio cell: " << *sp << std::endl;
         });
     });
 
