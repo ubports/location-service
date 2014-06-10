@@ -304,22 +304,13 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
                 << (int)thiz->impl.supl_assistant.server_ip().get().triplets[0] << "."
                 << (int)thiz->impl.supl_assistant.server_ip().get().triplets[1] << "."
                 << (int)thiz->impl.supl_assistant.server_ip().get().triplets[2] << "."
-                << (int)thiz->impl.supl_assistant.server_ip().get().triplets[3];
-
-        location::Position ref_pos
-        {
-            location::wgs84::Latitude{51.444670 * location::units::Degrees},
-            location::wgs84::Longitude{7.210852 * location::units::Degrees}
-        };
-
-        ref_pos.accuracy.horizontal = 10 * location::units::Meters;
+                << (int)thiz->impl.supl_assistant.server_ip().get().triplets[3];        
 
         switch (status->status)
         {
         case U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN:
             VLOG(1) << "U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN";
             thiz->impl.supl_assistant.notify_data_connection_open_via_apn("pinternet.interkom.de");
-            thiz->inject_reference_position(ref_pos);
             break;
         case U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN:
             VLOG(1) << "U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN";
@@ -538,7 +529,15 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         loc.flags = U_HARDWARE_GPS_LOCATION_HAS_LAT_LONG;
         loc.latitude = position.latitude.value.value();
         loc.longitude = position.longitude.value.value();
+
+        if (position.accuracy.horizontal)
+        {
+            loc.flags |= U_HARDWARE_GPS_LOCATION_HAS_ACCURACY;
+            loc.accuracy = (*position.accuracy.horizontal).value();
+        }
+
         u_hardware_gps_inject_location(impl.gps_handle, loc);
+
         return true;
     }
 

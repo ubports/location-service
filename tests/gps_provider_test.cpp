@@ -399,6 +399,40 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         bool fix_received;
     } state;
 
+    location::Position ref_pos
+    {
+        location::wgs84::Latitude{51.444670 * location::units::Degrees},
+        location::wgs84::Longitude{7.210852 * location::units::Degrees}
+    };
+    ref_pos.accuracy.horizontal = 10 * location::units::Meters;
+
+    try
+    {
+        auto s = core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_REF_LAT");
+        ref_pos.latitude = location::wgs84::Latitude{std::stod(s) * location::units::Degrees};
+    } catch(const std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+
+    try
+    {
+        auto s = core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_REF_LON");
+        ref_pos.longitude = location::wgs84::Longitude{std::stod(s) * location::units::Degrees};
+    } catch(const std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+
+    try
+    {
+        auto s = core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_REF_ACCURACY");
+        ref_pos.accuracy.horizontal = std::stod(s) * location::units::Meters;
+    } catch(const std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+
     // We wire up our state to position updates from the hal.
     hal->position_updates().connect([&state](const location::Position& pos)
     {
@@ -410,7 +444,7 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         std::cout << "Executing trial " << i << " of " << trials << " trials" << std::endl;
 
         // We want to force a cold start per trial.
-        hal->delete_all_aiding_data();
+        // hal->delete_all_aiding_data();
         state.reset();
 
         // We want to run in assisted mode
@@ -441,6 +475,7 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         auto start = std::chrono::duration_cast<std::chrono::microseconds>(location::Clock::now().time_since_epoch());
         {
             hal->start_positioning();
+            hal->inject_reference_position(ref_pos);
             // We expect a maximum cold start time of 15 minutes. The theoretical
             // limit is 12.5 minutes, and we add up some grace period to make the
             // test more robust (see http://en.wikipedia.org/wiki/Time_to_first_fix).
