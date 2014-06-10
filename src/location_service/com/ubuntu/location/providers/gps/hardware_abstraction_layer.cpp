@@ -105,6 +105,16 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
 
     static void on_nmea_update(int64_t timestamp, const char *nmea, int length, void *context)
     {
+        location::Position ref_pos
+        {
+            location::wgs84::Latitude{51.444670 * location::units::Degrees},
+            location::wgs84::Longitude{7.210852 * location::units::Degrees}
+        };
+        ref_pos.accuracy.horizontal = 10 * location::units::Meters;
+
+        auto thiz = static_cast<impl::HardwareAbstractionLayer*>(context);
+        thiz->inject_reference_position(ref_pos);
+
         VLOG(20) << __PRETTY_FUNCTION__ << ": "
                 << "timestamp=" << timestamp << " "
                 << "nmea=" << nmea << " "
