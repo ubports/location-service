@@ -53,7 +53,6 @@ struct RadioCell
     struct Mcc {};
     struct Mnc {};
     struct Lac {};
-    struct Tac {};
     struct Id {};
     struct Psc {};
     struct Pid {};
@@ -68,7 +67,7 @@ struct RadioCell
     template<int min, int max, int invalid = min-1>
     using LocationAreaCode = BoundedInteger<Lac, min, max, invalid>;
     template<int min, int max, int invalid = min-1>
-    using TrackingAreaCode = BoundedInteger<Tac, min, max, invalid>;
+    using TrackingAreaCode = BoundedInteger<Lac, min, max, invalid>;
     template<int min, int max, int invalid = min-1>
     using CellId = BoundedInteger<Id, min, max, invalid>;
     template<int min, int max, int invalid = min-1>

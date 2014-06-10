@@ -176,6 +176,12 @@ public:
         value = new_value;
     }
 
+    /** @brief Resets the instance to an invalid value. */
+    inline void reset()
+    {
+        value = invalid();
+    }
+
     /**
      * @brief operator << pretty prints an instance of BoundedInteger.
      * @param out The stream to print to.

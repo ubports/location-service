@@ -108,9 +108,9 @@ std::ostream& location::connectivity::operator<<(std::ostream& out, const locati
 {
     switch (cell.type())
     {
-    case location::connectivity::RadioCell::Type::gsm: out << cell.gsm(); break;
-    case location::connectivity::RadioCell::Type::umts: out << cell.umts(); break;
-    case location::connectivity::RadioCell::Type::lte: out << cell.lte(); break;
+    case location::connectivity::RadioCell::Type::gsm: out << "gsm" << cell.gsm(); break;
+    case location::connectivity::RadioCell::Type::umts: out << "umts" << cell.umts(); break;
+    case location::connectivity::RadioCell::Type::lte: out << "lte" << cell.lte(); break;
     case location::connectivity::RadioCell::Type::unknown: break;
     }
 

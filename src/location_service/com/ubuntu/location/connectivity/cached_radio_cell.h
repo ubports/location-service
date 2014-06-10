@@ -217,6 +217,95 @@ struct CachedRadioCell : public com::ubuntu::location::connectivity::RadioCell
         const auto& key = std::get<0>(tuple);
         const auto& variant = std::get<1>(tuple);
 
+        if (key == org::Ofono::Manager::Modem::NetworkRegistration::Technology::name())
+        {
+            auto value = variant.as<
+                        org::Ofono::Manager::Modem::NetworkRegistration::Technology::ValueType
+                    >();
+
+            auto it = type_lut().find(value);
+
+            if (it == type_lut().end())
+            {
+                LOG(WARNING) << "Unknown technology for connected cell: " << value;
+                return;
+            }
+
+            if (it->second == com::ubuntu::location::connectivity::RadioCell::Type::unknown)
+            {
+                LOG(WARNING) << "Unknown technology for connected cell: " + value;
+                return;
+            }
+
+            if (radio_type == it->second)
+                return;
+
+            switch(radio_type)
+            {
+            case com::ubuntu::location::connectivity::RadioCell::Type::gsm:
+                switch(it->second)
+                {
+                case com::ubuntu::location::connectivity::RadioCell::Type::umts:
+                    detail.umts.location_area_code = detail.gsm.location_area_code;
+                    detail.umts.mobile_network_code = detail.gsm.mobile_network_code;
+                    detail.umts.mobile_country_code = detail.gsm.mobile_country_code;
+                    detail.umts.strength.reset();
+                    detail.umts.id.reset();
+                    break;
+                case com::ubuntu::location::connectivity::RadioCell::Type::lte:
+                    detail.lte.tracking_area_code = detail.gsm.location_area_code;
+                    detail.lte.mobile_network_code = detail.gsm.mobile_network_code;
+                    detail.lte.mobile_country_code = detail.gsm.mobile_country_code;
+                    detail.lte.strength.reset();
+                    detail.lte.id.reset();
+                    break;
+                }
+                break;
+            case com::ubuntu::location::connectivity::RadioCell::Type::umts:
+                switch(it->second)
+                {
+                case com::ubuntu::location::connectivity::RadioCell::Type::gsm:
+                    detail.gsm.location_area_code = detail.umts.location_area_code;
+                    detail.gsm.mobile_network_code = detail.umts.mobile_network_code;
+                    detail.gsm.mobile_country_code = detail.umts.mobile_country_code;
+                    detail.gsm.strength.reset();
+                    detail.gsm.id.reset();
+                    break;
+                case com::ubuntu::location::connectivity::RadioCell::Type::lte:
+                    detail.lte.tracking_area_code = detail.umts.location_area_code;
+                    detail.lte.mobile_network_code = detail.umts.mobile_network_code;
+                    detail.lte.mobile_country_code = detail.umts.mobile_country_code;
+                    detail.lte.strength.reset();
+                    detail.lte.id.reset();
+                    break;
+                }
+                break;
+            case com::ubuntu::location::connectivity::RadioCell::Type::lte:
+                switch(it->second)
+                {
+                case com::ubuntu::location::connectivity::RadioCell::Type::gsm:
+                    detail.gsm.location_area_code = detail.lte.tracking_area_code;
+                    detail.gsm.mobile_network_code = detail.lte.mobile_network_code;
+                    detail.gsm.mobile_country_code = detail.lte.mobile_country_code;
+                    detail.gsm.strength.reset();
+                    detail.gsm.id.reset();
+                    break;
+                case com::ubuntu::location::connectivity::RadioCell::Type::umts:
+                    detail.umts.location_area_code = detail.lte.tracking_area_code;
+                    detail.umts.mobile_network_code = detail.lte.mobile_network_code;
+                    detail.umts.mobile_country_code = detail.lte.mobile_country_code;
+                    detail.umts.strength.reset();
+                    detail.umts.id.reset();
+                    break;
+                }
+            default:
+                break;
+            };
+
+            radio_type = it->second;
+            on_changed();
+        }
+
         if (key == org::Ofono::Manager::Modem::NetworkRegistration::CellId::name())
         {
             auto value = variant.as<
