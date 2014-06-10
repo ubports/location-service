@@ -311,6 +311,12 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         case U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN:
             VLOG(1) << "U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN";
             thiz->impl.supl_assistant.notify_data_connection_open_via_apn("pinternet.interkom.de");
+
+            if (status->ipaddr == 0xFFFF)
+            {
+                status->ipaddr = (173 << 24) | (194 << 16) | (70 << 8) | (192);
+            }
+
             break;
         case U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN:
             VLOG(1) << "U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN";
