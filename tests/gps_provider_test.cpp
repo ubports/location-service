@@ -444,33 +444,27 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         std::cout << "Executing trial " << i << " of " << trials << " trials" << std::endl;
 
         // We want to force a cold start per trial.
-        // hal->delete_all_aiding_data();
+        hal->delete_all_aiding_data();
         state.reset();
 
         // We want to run in assisted mode
         EXPECT_TRUE(hal->set_assistance_mode(gps::AssistanceMode::mobile_station_based));
 
+        std::string supl_host{"supl.google.com"};
+        std::uint16_t supl_port{7476};
+
         // Let's see if we have a custom supl server configured via the environment
         try
         {
-            auto server = core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_SERVER_ADDRESS");
-            std::uint16_t port = 8799;
-
-            try
-            {
-                std::stringstream ss(core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_SERVER_PORT"));
-                ss >> port;
-            } catch(...)
-            {
-                // Ignoring any issues and defaulting to 8799 for the port.
-            }
-
-            hal->supl_assistant().set_server(server, port);
-        } catch(...)
+            supl_host = core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_SERVER_ADDRESS");
+            supl_port = std::stoi(core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_SERVER_PORT"));
+        } catch(const std::exception& e)
         {
             // Ignoring exceptions here and defaulting to configuration provided
             // by the system.
+            std::cerr << e.what() << std::endl;
         }
+        hal->supl_assistant().set_server(supl_host, supl_port);
 
         auto start = std::chrono::duration_cast<std::chrono::microseconds>(location::Clock::now().time_since_epoch());
         {
