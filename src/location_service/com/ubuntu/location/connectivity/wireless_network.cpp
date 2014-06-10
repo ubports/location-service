@@ -36,9 +36,12 @@ std::ostream& location::connectivity::operator<<(std::ostream& out, location::co
 
 std::ostream& location::connectivity::operator<<(std::ostream& out, const location::connectivity::WirelessNetwork& wifi)
 {
+    auto ts = std::chrono::system_clock::to_time_t(wifi.last_seen().get());
+
     return out << "("
                << "bssid: " << wifi.bssid().get() << ", "
                << "ssid: " << wifi.ssid().get() << ", "
+               << "last seen: " << std::ctime(&ts) << ", "
                << "mode: " << wifi.mode().get() << ", "
                << "frequency: " << wifi.frequency().get() << ", "
                << "strength: " << wifi.signal_strength().get()
