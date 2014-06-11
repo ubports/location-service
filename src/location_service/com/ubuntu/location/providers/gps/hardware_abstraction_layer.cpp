@@ -678,7 +678,8 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
             : capabilities(0),
               assistance_mode(gps::AssistanceMode::mobile_station_based),
               position_mode(gps::PositionMode::periodic),
-              supl_assistant(*parent)
+              supl_assistant(*parent),
+              gps_xtra_downloader(create_xtra_downloader())
         {
             ::memset(&gps_params, 0, sizeof(gps_params));
 
@@ -700,7 +701,6 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
             gps_handle = u_hardware_gps_new(std::addressof(gps_params));
 
             dispatch_updated_modes_to_driver();
-
 
             std::ifstream in{"/etc/gps.conf"};
             location::Configuration config;
