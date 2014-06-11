@@ -30,6 +30,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
+#include <thread>
 
 namespace gps = com::ubuntu::location::providers::gps;
 namespace location = com::ubuntu::location;
@@ -464,17 +465,30 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
             // by the system.
             std::cerr << e.what() << std::endl;
         }
-        hal->supl_assistant().set_server(supl_host, supl_port);
 
         auto start = std::chrono::duration_cast<std::chrono::microseconds>(location::Clock::now().time_since_epoch());
         {
+            bool running = true;
+
             hal->start_positioning();
-            hal->inject_reference_position(ref_pos);
+            hal->supl_assistant().set_server(supl_host, supl_port);
+
+            std::thread injector([hal, ref_pos, &running]()
+            {
+                while (running)
+                    hal->inject_reference_position(ref_pos);
+            });
+
             // We expect a maximum cold start time of 15 minutes. The theoretical
             // limit is 12.5 minutes, and we add up some grace period to make the
             // test more robust (see http://en.wikipedia.org/wiki/Time_to_first_fix).
             EXPECT_TRUE(state.wait_for_fix_for(std::chrono::seconds{15 * 60}));
             hal->stop_positioning();
+
+            running = false;
+            if (injector.joinable())
+                injector.join();
+
         }
         auto stop = std::chrono::duration_cast<std::chrono::microseconds>(location::Clock::now().time_since_epoch());
 
