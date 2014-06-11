@@ -1,8 +1,10 @@
-add_subdirectory(providers)
-
 if (${NET_CPP_FOUND})
+  add_definitions(-DCOM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP=1)
+
   set(ICHNAEA_REPORTER_SRCS service/ichnaea_reporter.cpp)
 endif (${NET_CPP_FOUND})
+
+add_subdirectory(providers)
 
 add_library(
   ubuntu-location-service SHARED

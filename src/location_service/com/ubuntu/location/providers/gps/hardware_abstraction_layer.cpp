@@ -19,17 +19,111 @@
 #include "hardware_abstraction_layer.h"
 
 #include <com/ubuntu/location/clock.h>
+#include <com/ubuntu/location/configuration.h>
 #include <com/ubuntu/location/logging.h>
 
 #include <com/ubuntu/location/connectivity/manager.h>
 
 #include <ubuntu/hardware/gps.h>
 
+#if defined(COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP)
+#include <core/net/http/client.h>
+#include <core/net/http/request.h>
+#include <core/net/http/response.h>
+#endif // COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP
+
+#include <boost/property_tree/ini_parser.hpp>
+
+#include <random>
+
 namespace gps = com::ubuntu::location::providers::gps;
 namespace location = com::ubuntu::location;
 
 namespace impl
 {
+struct GpsXtraDownloader
+{
+    /** @brief Configuration options specific to a GpsXtraDownloader implementation. */
+    struct Configuration
+    {
+        /** Set of hosts serving GPS xtra data. */
+        std::vector<std::string> xtra_hosts;
+    };
+
+    GpsXtraDownloader() = default;
+    virtual ~GpsXtraDownloader() = default;
+
+    /** brief Downloads a GPS xtra data package from one of the servers given in config. */
+    virtual std::vector<char> download_xtra_data(const Configuration& config) = 0;
+};
+
+struct NullGpsXtraDownloader : public GpsXtraDownloader
+{
+    std::vector<char> download_xtra_data(const Configuration& config)
+    {
+        VLOG(10) << __PRETTY_FUNCTION__ << "\n"
+                 << "  Nr. xtra hosts: " << config.xtra_hosts.size();
+
+        return std::vector<char>{};
+    }
+};
+
+#if defined(COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP)
+struct NetCppGpsXtraDownloader : public GpsXtraDownloader
+{
+    NetCppGpsXtraDownloader() : http_client{core::net::http::make_client()}
+    {
+    }
+
+    virtual std::vector<char> download_xtra_data(const Configuration& config) override
+    {
+        if (config.xtra_hosts.empty()) throw std::runtime_error
+        {
+            "Missing xtra hosts."
+        };
+
+        std::uniform_int_distribution<std::size_t> dist{0, config.xtra_hosts.size() - 1};
+
+        auto host = config.xtra_hosts.at(dist(dre));
+
+        auto rc = core::net::http::Request::Configuration::from_uri_as_string(host);
+
+        rc.header.add("Accept", "*/*");
+        rc.header.add("Accept", "application/vnd.wap.mms-message");
+        rc.header.add("Accept", "application/vnd.wap.sic");
+        rc.header.add("x-wap-profile", "http://www.openmobilealliance.org/tech/profiles/UAPROF/ccppschema-20021212#");
+
+        auto request = http_client->get(rc);
+        auto response = request->execute([](const core::net::http::Request::Progress&)
+        {
+            return core::net::http::Request::Progress::Next::continue_operation;
+        });
+
+        if (response.status != core::net::http::Status::ok)
+        {
+            std::stringstream ss{"Request for xtra data on "};
+            ss << host << " did not succeed: " << response.status;
+            throw std::runtime_error{ss.str()};
+        }
+
+        return std::vector<char>(response.body.begin(), response.body.end());
+    }
+
+    std::shared_ptr<core::net::http::Client> http_client;
+    std::default_random_engine dre;
+
+};
+#endif
+
+std::shared_ptr<GpsXtraDownloader> create_xtra_downloader()
+{
+#if defined(COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP)
+    return std::make_shared<NetCppGpsXtraDownloader>();
+#else
+    return std::make_shared<NullGpsXtraDownloader>();
+#endif // COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP
+}
+
 struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
 {
     struct SuplAssistant : public gps::HardwareAbstractionLayer::SuplAssistant
@@ -126,6 +220,12 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
     {
         VLOG(1) << __PRETTY_FUNCTION__ << ": "
                 << "context=" << context;
+
+        auto thiz = static_cast<impl::HardwareAbstractionLayer*>(context);
+
+        auto xtra_gps_data = thiz->impl.gps_xtra_downloader->download_xtra_data(thiz->impl.gps_xtra_configuration);
+        if (not xtra_gps_data.empty())
+            u_hardware_gps_inject_xtra_data(thiz->impl.gps_handle, &xtra_gps_data.front(), xtra_gps_data.size());
     }
 
     static void on_gps_ni_notify(UHardwareGpsNiNotification* notification, void* context)
@@ -600,6 +700,18 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
             gps_handle = u_hardware_gps_new(std::addressof(gps_params));
 
             dispatch_updated_modes_to_driver();
+
+
+            std::ifstream in{"/etc/gps.conf"};
+            location::Configuration config;
+            boost::property_tree::read_ini(in, config);
+
+            if (config.count("XTRA_SERVER_1") > 0)
+                gps_xtra_configuration.xtra_hosts.push_back(config.get<std::string>("XTRA_SERVER_1"));
+            if (config.count("XTRA_SERVER_2") > 0)
+                gps_xtra_configuration.xtra_hosts.push_back(config.get<std::string>("XTRA_SERVER_2"));
+            if (config.count("XTRA_SERVER_3") > 0)
+                gps_xtra_configuration.xtra_hosts.push_back(config.get<std::string>("XTRA_SERVER_3"));
         }
 
         bool dispatch_updated_modes_to_driver()
@@ -649,6 +761,10 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         core::Signal<location::Heading> heading_updates;
         core::Signal<location::Velocity> velocity_updates;
         core::Property<gps::ChipsetStatus> chipset_status;
+
+        // Helper for downloading gps xtra data
+        GpsXtraDownloader::Configuration gps_xtra_configuration;
+        std::shared_ptr<GpsXtraDownloader> gps_xtra_downloader;
     } impl;
 };
 }
