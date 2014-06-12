@@ -50,9 +50,18 @@ int main(int argc, char** argv)
             wifi
         };
 
-        // Subscribe to signal strength updates. Please note that this is not considering
+
+
+        // Subscribe to signal strength and last_seen updates. Please note that this is not considering
         // the case of subscribing to already known wifis. We leave this up
         // to consumers of the api.
+        wifi->last_seen().changed().connect([wp](const std::chrono::system_clock::time_point& tp)
+        {
+            auto sp = wp.lock();
+            if (sp)
+                std::cout << "Signal strength changed for wifi " << sp->ssid().get() << ": " << tp.time_since_epoch().count() << std::endl;
+        });
+
         wifi->signal_strength().changed().connect([wp](const location::connectivity::WirelessNetwork::SignalStrength& s)
         {
             auto sp = wp.lock();
@@ -102,9 +111,7 @@ int main(int argc, char** argv)
     // Iterate over all networks that are visible right now.
     cm->enumerate_visible_wireless_networks([](const location::connectivity::WirelessNetwork::Ptr& wifi)
     {
-        std::cout << wifi->ssid().get() << ", timestamp: ";
-        auto ts = std::chrono::system_clock::to_time_t(wifi->last_seen().get());
-        std::cout << std::ctime(&ts);
+        std::cout << *wifi << std::endl;
 
         // We don't want to keep the object alive
         std::weak_ptr<location::connectivity::WirelessNetwork> wp
@@ -132,8 +139,6 @@ int main(int argc, char** argv)
             if (sp)
                 std::cout << "Signal strength changed for wifi " << sp->ssid().get() << ": " << s << std::endl;
         });
-
-        std::cout << "  " << *wifi << std::endl;
     });
     
     // Subscribe to end-of-scan signals
