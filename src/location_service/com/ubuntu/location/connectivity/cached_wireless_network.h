@@ -169,7 +169,10 @@ struct CachedWirelessNetwork : public com::ubuntu::location::connectivity::Wirel
                 {
                     thiz.last_seen_ = std::chrono::system_clock::time_point
                     {
-                        std::chrono::system_clock::duration{thiz.access_point_.last_seen->get()}
+                        std::chrono::system_clock::duration
+                        {
+                            value.as<org::freedesktop::NetworkManager::AccessPoint::LastSeen::ValueType>()
+                        }
                     };
                 }
             }

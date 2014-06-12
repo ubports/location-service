@@ -247,56 +247,6 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         VLOG(1) << __PRETTY_FUNCTION__ << ": "
                 << "flags=" << flags << " "
                 << "context=" << context;
-
-        // TODO(tvoss): Reenable this once the platform api HAL changes land.
-        /*
-        auto thiz = static_cast<impl::HardwareAbstractionLayer*>(context);
-
-        auto connectivity_manager = location::connectivity::platform_default_manager();
-
-        if (connectivity_manager)
-        {
-            auto visible_cells = connectivity_manager->visible_radio_cells().get();
-
-            if (!visible_cells.empty())
-            {
-                VLOG(1) << "We are considering " << visible_cells.size() << " radio cells.";
-
-                const auto& cell = visible_cells.front();
-                VLOG(1) << "\t" << cell;
-
-                UHardwareGpsAGpsRefLocation ref_loc;
-                switch (cell.type())
-                {
-                case location::connectivity::RadioCell::Type::gsm:
-                    ref_loc.type = U_HARDWARE_GPS_AGPS_REF_LOCATION_TYPE_GSM_CELLID;
-                    ref_loc.u.cellID.mcc = cell.gsm().mobile_country_code.get();
-                    ref_loc.u.cellID.mnc = cell.gsm().mobile_network_code.get();
-                    ref_loc.u.cellID.lac = cell.gsm().location_area_code.get();
-                    ref_loc.u.cellID.cid = cell.gsm().id.get();
-                    u_hardware_gps_agps_set_reference_location(
-                                thiz->impl.gps_handle,
-                                &ref_loc,
-                                sizeof(ref_loc));
-                    break;
-                case location::connectivity::RadioCell::Type::umts:
-                    ref_loc.type = U_HARDWARE_GPS_AGPS_REF_LOCATION_TYPE_UMTS_CELLID;
-                    ref_loc.u.cellID.mcc = cell.umts().mobile_country_code.get();
-                    ref_loc.u.cellID.mnc = cell.umts().mobile_network_code.get();
-                    ref_loc.u.cellID.lac = cell.umts().location_area_code.get();
-                    ref_loc.u.cellID.cid = cell.umts().id.get();
-                    u_hardware_gps_agps_set_reference_location(
-                                thiz->impl.gps_handle,
-                                &ref_loc,
-                                sizeof(ref_loc));
-                    break;
-                default:
-                    LOG(WARNING) << "The Android GPS HAL only supports gsm and umts cell ids.";
-                    break;
-                }
-            }
-        }
-        */
     }
 
     static void on_location_update(UHardwareGpsLocation* location, void* context)
@@ -432,7 +382,7 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
             VLOG(1) << "U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN";
             break;
         case U_HARDWARE_GPS_AGPS_DATA_CONNECTED:
-            VLOG(1) << "U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN";
+            VLOG(1) << "U_HARDWARE_GPS_AGPS_DATA_CONNECTED";
             break;
         case U_HARDWARE_GPS_AGPS_DATA_CONN_DONE:
             VLOG(1) << "U_HARDWARE_GPS_AGPS_DATA_CONN_DONE";
