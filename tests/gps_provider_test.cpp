@@ -372,6 +372,21 @@ TEST_F(HardwareAbstractionLayerFixture, DISABLED_provider_construction_works_req
 
 namespace
 {
+static constexpr const char* enable_harvesting_key
+{
+    "COM_UBUNTU_LOCATION_GPS_PROVIDER_ENABLE_HARVESTING_DURING_TESTS"
+};
+
+static constexpr const char* ichnaea_instance_url_key
+{
+    "COM_UBUNTU_LOCATION_GPS_PROVIDER_ICHNAEA_INSTANCE_URL"
+};
+
+static constexpr const char* ichnaea_api_key_key
+{
+    "COM_UBUNTU_LOCATION_GPS_PROVIDER_ICHNAEA_API_KEY"
+};
+
 location::service::Harvester& the_harvester()
 {
     struct State
@@ -383,8 +398,8 @@ location::service::Harvester& the_harvester()
 
         location::service::ichnaea::Reporter::Configuration reporter_configuration
         {
-            "https://162.213.35.107",
-            "location_service_test_cases"
+            core::posix::this_process::env::get(ichnaea_instance_url_key, "https://162.213.35.107"),
+            core::posix::this_process::env::get(ichnaea_api_key_key, "location_service_test_cases")
         };
 
         std::shared_ptr<location::service::ichnaea::Reporter> reporter
@@ -465,10 +480,18 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_without_sup
     // We wire up our state to position updates from the hal.
     hal->position_updates().connect([&state](const location::Position& pos)
     {
-        the_harvester().report_position_update(location::Update<location::Position>
+        try
         {
-            pos, location::Clock::now()
-        });
+            // This will throw if the env variable is not set.
+            core::posix::this_process::env::get(enable_harvesting_key);
+
+            the_harvester().report_position_update(location::Update<location::Position>
+            {
+                pos, location::Clock::now()
+            });
+        } catch(...)
+        {
+        }
 
         state.on_position_updated(pos);
     });
@@ -593,10 +616,18 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
     // We wire up our state to position updates from the hal.
     hal->position_updates().connect([&state](const location::Position& pos)
     {
-        the_harvester().report_position_update(location::Update<location::Position>
+        try
         {
-            pos, location::Clock::now()
-        });
+            // This will throw if the env variable is not set.
+            core::posix::this_process::env::get(enable_harvesting_key);
+
+            the_harvester().report_position_update(location::Update<location::Position>
+            {
+                pos, location::Clock::now()
+            });
+        } catch(...)
+        {
+        }
 
         state.on_position_updated(pos);
     });
