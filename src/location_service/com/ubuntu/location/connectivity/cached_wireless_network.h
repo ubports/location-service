@@ -20,6 +20,8 @@
 
 #include <com/ubuntu/location/connectivity/wireless_network.h>
 
+#include <com/ubuntu/location/logging.h>
+
 #include "nm.h"
 
 namespace
@@ -93,10 +95,16 @@ struct CachedWirelessNetwork : public com::ubuntu::location::connectivity::Wirel
         : device_(device),
           access_point_(ap)
     {
-        last_seen_ = std::chrono::system_clock::time_point
+        try
         {
-            std::chrono::system_clock::duration{access_point_.last_seen->get()}
-        };
+            last_seen_ = std::chrono::system_clock::time_point
+            {
+                std::chrono::system_clock::duration{access_point_.last_seen->get()}
+            };
+        } catch(const std::exception& e)
+        {
+            LOG(WARNING) << e.what();
+        }
 
         bssid_ = access_point_.hw_address->get();
         ssid_ = utf8_ssid_to_string(access_point_.ssid->get());
