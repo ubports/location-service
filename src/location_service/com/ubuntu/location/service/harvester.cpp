@@ -44,12 +44,14 @@ void location::service::Harvester::report_position_update(const location::Update
     std::vector<location::connectivity::WirelessNetwork::Ptr> visible_wifis;
     config.connectivity_manager->enumerate_visible_wireless_networks([&visible_wifis](location::connectivity::WirelessNetwork::Ptr wifi)
     {
+        VLOG(10) << "Got a visible wifi: " << *wifi << std::endl;
         visible_wifis.push_back(wifi);
     });
 
     std::vector<location::connectivity::RadioCell::Ptr> connected_cells;
     config.connectivity_manager->enumerate_connected_radio_cells([&connected_cells](location::connectivity::RadioCell::Ptr cell)
     {
+        VLOG(10) << "Got a cell: " << *cell << std::endl;
         connected_cells.push_back(cell);
     });
 
