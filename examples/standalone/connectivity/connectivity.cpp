@@ -124,10 +124,7 @@ int main(int argc, char** argv)
         {
             auto sp = wp.lock();
             if (sp)
-            {
-                auto ts = std::chrono::system_clock::to_time_t(tp);
-                std::cout << "Last seen changed for wifi " << sp->ssid().get() << ": " << std::ctime(&ts) << std::endl;
-            }
+                std::cout << "Last seen changed for wifi " << *sp << std::endl;
         });
 
         // Subscribe to signal strength updates. Please note that this is not considering
@@ -137,7 +134,7 @@ int main(int argc, char** argv)
         {
             auto sp = wp.lock();
             if (sp)
-                std::cout << "Signal strength changed for wifi " << sp->ssid().get() << ": " << s << std::endl;
+                std::cout << "Signal strength changed for wifi: " << *sp << std::endl;
         });
     });
     
