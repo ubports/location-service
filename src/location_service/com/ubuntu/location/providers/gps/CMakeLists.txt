@@ -16,8 +16,11 @@ if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
     add_library(
         gps
 
+        android_hardware_abstraction_layer.h
+        android_hardware_abstraction_layer.cpp
+
         hardware_abstraction_layer.h
-        hardware_abstraction_layer.cpp
+        # hardware_abstraction_layer.cpp
 
         provider.h
         provider.cpp)
