@@ -26,32 +26,34 @@ location::service::Harvester::Harvester(const location::service::Harvester::Conf
     : config(configuration),
       is_running{false}
 {
-    config.engine->updates.reference_location.changed().connect([this](const Update<Position>& update)
-    {
-        VLOG(10) << "Reference location changed: " << update;
-
-        if (not is_running.load())
-            return;
-
-        std::vector<location::connectivity::WirelessNetwork::Ptr> visible_wifis;
-        config.connectivity_manager->enumerate_visible_wireless_networks([&visible_wifis](location::connectivity::WirelessNetwork::Ptr wifi)
-        {
-            visible_wifis.push_back(wifi);
-        });
-
-        std::vector<location::connectivity::RadioCell::Ptr> connected_cells;
-        config.connectivity_manager->enumerate_connected_radio_cells([&connected_cells](location::connectivity::RadioCell::Ptr cell)
-        {
-            connected_cells.push_back(cell);
-        });
-
-        config.reporter->report(update, visible_wifis, connected_cells);
-    });
 }
 
 location::service::Harvester::~Harvester()
 {
     stop();
+}
+
+/** @brief Report updated position to the harvester instance. */
+void location::service::Harvester::report_position_update(const location::Update<location::Position>& update)
+{
+    VLOG(10) << "Reference location changed: " << update;
+
+    if (not is_running.load())
+        return;
+
+    std::vector<location::connectivity::WirelessNetwork::Ptr> visible_wifis;
+    config.connectivity_manager->enumerate_visible_wireless_networks([&visible_wifis](location::connectivity::WirelessNetwork::Ptr wifi)
+    {
+        visible_wifis.push_back(wifi);
+    });
+
+    std::vector<location::connectivity::RadioCell::Ptr> connected_cells;
+    config.connectivity_manager->enumerate_connected_radio_cells([&connected_cells](location::connectivity::RadioCell::Ptr cell)
+    {
+        connected_cells.push_back(cell);
+    });
+
+    config.reporter->report(update, visible_wifis, connected_cells);
 }
 
 void location::service::Harvester::start()

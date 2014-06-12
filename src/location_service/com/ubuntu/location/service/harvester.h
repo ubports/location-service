@@ -61,8 +61,6 @@ public:
     /** @brief Configuration encapsulates all creation time options of class Harvester */
     struct Configuration
     {
-        /** The position engine that the harvester should use. */
-        std::shared_ptr<Engine> engine;
         /** The connectivity manager that the harvester should use. */
         std::shared_ptr<connectivity::Manager> connectivity_manager;
         /** The reporter implementation */
@@ -76,6 +74,9 @@ public:
 
     /** @brief Stops the data collection and frees all resources held by the instance. */
     virtual ~Harvester();
+
+    /** @brief Report updated position to the harvester instance. */
+    virtual void report_position_update(const Update<Position>& update);
 
     /** @brief Starts the harvester instance and its data collection. */
     virtual void start();

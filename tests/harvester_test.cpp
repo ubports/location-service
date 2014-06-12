@@ -70,7 +70,6 @@ TEST(Harvester, calls_start_and_stop_on_reporter)
 
     location::service::Harvester::Configuration config
     {
-        std::make_shared<location::Engine>(std::make_shared<NullProviderSelectionPolicy>()),
         location::connectivity::platform_default_manager(),
         reporter
     };
@@ -90,7 +89,6 @@ TEST(Harvester, invokes_reporter_on_location_update_only_if_started)
 
     location::service::Harvester::Configuration config
     {
-        std::make_shared<location::Engine>(std::make_shared<NullProviderSelectionPolicy>()),
         location::connectivity::platform_default_manager(),
         reporter
     };
@@ -98,10 +96,10 @@ TEST(Harvester, invokes_reporter_on_location_update_only_if_started)
     location::service::Harvester harvester(config);
 
     harvester.start();
-    config.engine->updates.reference_location = reference_position_update;
+    harvester.report_position_update(reference_position_update);
 
     harvester.stop();
-    config.engine->updates.reference_location = reference_position_update;
+    harvester.report_position_update(reference_position_update);
 }
 
 TEST(Harvester, queries_wifis_and_cells_on_location_update)
@@ -116,7 +114,6 @@ TEST(Harvester, queries_wifis_and_cells_on_location_update)
 
     service::Harvester::Configuration config
     {
-        std::make_shared<Engine>(std::make_shared<NullProviderSelectionPolicy>()),
         conn_man,
         std::make_shared<NiceMock<MockReporter>>()
     };
@@ -124,5 +121,5 @@ TEST(Harvester, queries_wifis_and_cells_on_location_update)
     service::Harvester harvester(config);
 
     harvester.start();
-    config.engine->updates.reference_location = reference_position_update;
+    harvester.report_position_update(reference_position_update);
 }

@@ -54,12 +54,16 @@ struct culs::Implementation::Private
           {
               Harvester::Configuration
               {
-                  engine,
                   connectivity::platform_default_manager(),
                   reporter
               }
           }
     {
+        engine->updates.reference_location.changed().connect([this](const cul::Update<cul::Position>& update)
+        {
+            harvester.report_position_update(update);
+        });
+
         harvester.start();
     }
 

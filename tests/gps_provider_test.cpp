@@ -363,6 +363,52 @@ TEST_F(HardwareAbstractionLayerFixture, DISABLED_provider_construction_works_req
     }
 }
 
+// We are carrying out quite some positioning here and leverage that fact for feeding location
+// and wifi/cell data to a location service. Please note that we feed to the mozilla location service
+// in the general case.
+
+#include <com/ubuntu/location/service/harvester.h>
+#include <com/ubuntu/location/service/ichnaea_reporter.h>
+
+namespace
+{
+location::service::Harvester& the_harvester()
+{
+    struct State
+    {
+        State()
+        {
+            harvester.start();
+        }
+
+        location::service::ichnaea::Reporter::Configuration reporter_configuration
+        {
+            "https://162.213.35.107",
+            "location_service_test_cases"
+        };
+
+        std::shared_ptr<location::service::ichnaea::Reporter> reporter
+        {
+            new location::service::ichnaea::Reporter{reporter_configuration}
+        };
+
+        location::service::Harvester::Configuration configuration
+        {
+            location::connectivity::platform_default_manager(),
+            reporter
+        };
+
+        location::service::Harvester harvester
+        {
+           configuration
+        };
+    };
+
+    static State state;
+    return state.harvester;
+}
+}
+
 // HardwareAbstractionLayerFixture.time_to_first_fix_cold_start_without_supl_benchmark_requires_hardware
 TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_without_supl_benchmark_requires_hardware)
 {
@@ -419,6 +465,11 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_without_sup
     // We wire up our state to position updates from the hal.
     hal->position_updates().connect([&state](const location::Position& pos)
     {
+        the_harvester().report_position_update(location::Update<location::Position>
+        {
+            pos, location::Clock::now()
+        });
+
         state.on_position_updated(pos);
     });
 
@@ -542,6 +593,11 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
     // We wire up our state to position updates from the hal.
     hal->position_updates().connect([&state](const location::Position& pos)
     {
+        the_harvester().report_position_update(location::Update<location::Position>
+        {
+            pos, location::Clock::now()
+        });
+
         state.on_position_updated(pos);
     });
 
