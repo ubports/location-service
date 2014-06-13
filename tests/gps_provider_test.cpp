@@ -532,6 +532,8 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_without_sup
 // HardwareAbstractionLayerFixture.time_to_first_fix_cold_start_with_supl_benchmark_requires_hardware
 TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_benchmark_requires_hardware)
 {
+    using namespace core::posix;
+
     typedef boost::accumulators::accumulator_set<
         double,
         boost::accumulators::stats<
@@ -581,37 +583,21 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
 
     location::Position ref_pos
     {
-        location::wgs84::Latitude{51.444670 * location::units::Degrees},
-        location::wgs84::Longitude{7.210852 * location::units::Degrees}
+        location::wgs84::Latitude
+        {
+            std::stod(this_process::env::get(
+                          "GPS_SUPL_BENCHMARK_REF_LAT", "51.444670")) * location::units::Degrees
+        },
+        location::wgs84::Longitude
+        {
+            std::stod(this_process::env::get(
+                          "GPS_SUPL_BENCHMARK_REF_LON", "7.210852")) * location::units::Degrees
+        }
     };
-    ref_pos.accuracy.horizontal = 10 * location::units::Meters;
 
-    try
-    {
-        auto s = core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_REF_LAT");
-        ref_pos.latitude = location::wgs84::Latitude{std::stod(s) * location::units::Degrees};
-    } catch(const std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-    }
-
-    try
-    {
-        auto s = core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_REF_LON");
-        ref_pos.longitude = location::wgs84::Longitude{std::stod(s) * location::units::Degrees};
-    } catch(const std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-    }
-
-    try
-    {
-        auto s = core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_REF_ACCURACY");
-        ref_pos.accuracy.horizontal = std::stod(s) * location::units::Meters;
-    } catch(const std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-    }
+    ref_pos.accuracy.horizontal
+            = std::stod(this_process::env::get(
+                            "GPS_SUPL_BENCHMARK_REF_ACCURACY", "10")) * location::units::Meters;
 
     // We wire up our state to position updates from the hal.
     hal->position_updates().connect([&state](const location::Position& pos)
@@ -619,12 +605,13 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         try
         {
             // This will throw if the env variable is not set.
-            core::posix::this_process::env::get(enable_harvesting_key);
+            core::posix::this_process::env::get_or_throw(enable_harvesting_key);
 
-            the_harvester().report_position_update(location::Update<location::Position>
-            {
-                pos, location::Clock::now()
-            });
+            the_harvester().report_position_update(
+                        location::Update<location::Position>
+                        {
+                            pos, location::Clock::now()
+                        });
         } catch(...)
         {
         }
