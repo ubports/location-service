@@ -51,9 +51,10 @@ macro(LOCATION_SERVICE_ADD_TEST test_name src)
 
   add_test(${test_name} ${CMAKE_CURRENT_BINARY_DIR}/${test_name} --gtest_filter=*-*requires_hardware)
 
+  # Address android's limit on cmdline length and distill ubuntu-location-service into uls
   install(
     TARGETS ${test_name}
-    DESTINATION ${CMAKE_INSTALL_BINDIR}/ubuntu-location-service-tests
+    DESTINATION ${CMAKE_INSTALL_BINDIR}/uls-tests
   )
 endmacro(LOCATION_SERVICE_ADD_TEST)
 
