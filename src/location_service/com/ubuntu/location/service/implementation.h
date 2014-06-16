@@ -19,6 +19,7 @@
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_IMPLEMENTATION_H_
 
 #include <com/ubuntu/location/engine.h>
+#include <com/ubuntu/location/connectivity/manager.h>
 #include <com/ubuntu/location/service/harvester.h>
 #include <com/ubuntu/location/service/skeleton.h>
 
@@ -39,21 +40,31 @@ class Implementation : public Skeleton
 public:
     typedef std::shared_ptr<Implementation> Ptr;
 
-    Implementation(
-        const core::dbus::Bus::Ptr& bus,
-        const Engine::Ptr& engine,
-        const PermissionManager::Ptr& permission_manager,
-        const Harvester::Reporter::Ptr& reporter);
+    // Summarizes configuration options for the implementation.
+    struct Configuration
+    {
+        // The bus connection to expose the service upon.
+        core::dbus::Bus::Ptr bus;
+        // The positioning Engine that the service should use.
+        Engine::Ptr engine;
+        // The permission manager that the service should use.
+        PermissionManager::Ptr permission_manager;
+        // All harvesting specific options.
+        Harvester::Configuration harvester;
+    };
 
-    Implementation(const Implementation&) = delete;
-    virtual ~Implementation() noexcept;
-    Implementation& operator=(const Implementation&) = delete;
+    // Creates a new instance of the service with the given configuration.
+    // Throws std::runtime_error in case of issues.
+    Implementation(const Configuration& configuration);
 
+    // Creates a new session for the given criteria.
     session::Interface::Ptr create_session_for_criteria(const Criteria& criteria);
 
   private:
-    struct Private;
-    std::unique_ptr<Private> d;
+    // The service configuration.
+    Configuration configuration;
+    // The harvester instance.
+    Harvester harvester;
 };
 }
 }

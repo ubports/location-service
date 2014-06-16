@@ -56,6 +56,8 @@ const core::net::http::Status success
 
 struct Reporter : public Harvester::Reporter
 {
+    static constexpr const char* nick_name_header{"X-Nickname"};
+
     struct Json
     {
         static constexpr const char* radio{"radio"};
@@ -96,6 +98,8 @@ struct Reporter : public Harvester::Reporter
         std::string uri;
         // API key for the submission
         std::string key;
+        // Nickname for the submission
+        std::string nick_name;
     };
 
     Reporter(const Configuration& configuration);

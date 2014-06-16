@@ -44,8 +44,6 @@ struct culs::Skeleton::Private : public std::enable_shared_from_this<culs::Skele
           is_online(object->get_property<culs::Interface::Properties::IsOnline>()),
           visible_space_vehicles(object->get_property<culs::Interface::Properties::VisibleSpaceVehicles>())
     {
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-
         object->install_method_handler<culs::Interface::CreateSessionForCriteria>([this](const dbus::Message::Ptr& msg)
         {
             handle_create_session_for_criteria(msg);

@@ -21,6 +21,7 @@
 #include <com/ubuntu/location/space_vehicle.h>
 
 #include <core/dbus/dbus.h>
+#include <core/dbus/fixture.h>
 #include <core/dbus/message.h>
 
 #include <core/testing/cross_process_sync.h>
@@ -36,44 +37,43 @@ namespace location = com::ubuntu::location;
 
 namespace
 {
-auto testing_daemon = []()
+struct DaemonAndCli : public core::dbus::testing::Fixture
 {
-    char const* argv[] =
-    {
-        "Daemon",
-        "--bus=session",
-        "--testing",
-        nullptr
-    };
-
-    auto result = location::service::Daemon::main(3, argv);
-
-    EXPECT_EQ(EXIT_SUCCESS, result);
-
-    return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
 };
 
-std::function<core::posix::exit::Status ()> querying_cli_for_property(const std::string& property)
+std::function<core::posix::exit::Status()> testing_daemon(DaemonAndCli& fixture)
 {
-    return [property]()
+    return [&fixture]()
+    {
+        location::service::Daemon::Configuration config;
+
+        config.bus = fixture.session_bus();
+        config.is_testing_enabled = true;
+
+        auto result = location::service::Daemon::main(config);
+
+        EXPECT_EQ(EXIT_SUCCESS, result);
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
+    };
+}
+
+std::function<core::posix::exit::Status ()> querying_cli_for_property(
+        location::service::Daemon::Cli::Property property,
+        DaemonAndCli& fixture)
+{
+    return [property, &fixture]()
     {
         // We need to wait some time to make sure that the service is up and running
-        timespec ts = { 1, 0 };
-        ::nanosleep(&ts, nullptr);
+        std::this_thread::sleep_for(std::chrono::seconds{1});
 
-        char const* argv[] =
-        {
-            "Cli",
-            "--bus=session",
-            nullptr,
-            "--get",
-            nullptr
-        };
+        location::service::Daemon::Cli::Configuration config;
 
-        auto arg = std::string("--property=") + property;
-        argv[2] = arg.c_str();
+        config.bus = fixture.session_bus();
+        config.command = location::service::Daemon::Cli::Command::get;
+        config.property = property;
 
-        auto result = location::service::Daemon::Cli::main(4, argv);
+        auto result = location::service::Daemon::Cli::main(config);
 
         EXPECT_EQ(EXIT_SUCCESS, result);
 
@@ -82,93 +82,169 @@ std::function<core::posix::exit::Status ()> querying_cli_for_property(const std:
 }
 
 template<typename T>
-std::function<core::posix::exit::Status ()> adjusting_cli_for_property(const std::string& property, const T& value)
+std::function<core::posix::exit::Status ()> adjusting_cli_for_property(
+        location::service::Daemon::Cli::Property property,
+        const T& value,
+        DaemonAndCli& fixture)
 {
-    return [property, value]()
+    return [property, value, &fixture]()
     {
         // We need to wait some time to make sure that the service is up and running
-        timespec ts = { 1, 0 };
-        ::nanosleep(&ts, nullptr);
+        std::this_thread::sleep_for(std::chrono::seconds{1});
 
-        char const* argv[] =
-        {
-            "Cli",
-            "--bus=session",
-            nullptr,
-            nullptr,
-            nullptr
-        };
+        std::stringstream ss; ss << value;
 
-        auto property_arg = std::string("--property=") + property;
-        argv[2] = property_arg.c_str();
+        location::service::Daemon::Cli::Configuration config;
 
-        std::stringstream ss; ss << "--set=" << std::boolalpha << value;
-        auto set_arg = ss.str();
-        argv[3] = set_arg.c_str();
+        config.bus = fixture.session_bus();
+        config.command = location::service::Daemon::Cli::Command::set;
+        config.property = property;
+        config.new_value = ss.str();
 
-        auto result = location::service::Daemon::Cli::main(4, argv);
+        auto result = location::service::Daemon::Cli::main(config);
 
         EXPECT_EQ(EXIT_SUCCESS, result);
-        EXPECT_EQ(core::posix::exit::Status::success, querying_cli_for_property(property)());
-
 
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
 }
 }
 
-TEST(DaemonAndCli, QueryingIsOnlinePropertyWorks)
+TEST_F(DaemonAndCli, QueryingIsOnlinePropertyWorks)
 {
     EXPECT_EQ(core::testing::ForkAndRunResult::empty,
               core::testing::fork_and_run(
-                  testing_daemon,
-                  querying_cli_for_property("is_online")));
+                  testing_daemon(*this),
+                  querying_cli_for_property(
+                      location::service::Daemon::Cli::Property::is_online,
+                      *this)));
 }
 
-TEST(DaemonAndCli, AdjustingIsOnlinePropertyWorks)
+TEST_F(DaemonAndCli, AdjustingIsOnlinePropertyWorks)
 {
     EXPECT_EQ(core::testing::ForkAndRunResult::empty,
               core::testing::fork_and_run(
-                  testing_daemon,
-                  adjusting_cli_for_property("is_online", false)));
+                  testing_daemon(*this),
+                  adjusting_cli_for_property(
+                      location::service::Daemon::Cli::Property::is_online, false, *this)));
 }
 
-TEST(DaemonAndCli, QueryingDoesSatelliteBasedPositionPropertyWorks)
+TEST_F(DaemonAndCli, QueryingDoesSatelliteBasedPositionPropertyWorks)
 {
     EXPECT_EQ(core::testing::ForkAndRunResult::empty,
               core::testing::fork_and_run(
-                  testing_daemon,
-                  querying_cli_for_property("does_satellite_based_positioning")));
+                  testing_daemon(*this),
+                  querying_cli_for_property(
+                      location::service::Daemon::Cli::Property::does_satellite_based_positioning,
+                      *this)));
 }
 
-TEST(DaemonAndCli, AdjustingDoesSatelliteBasedPositionPropertyWorks)
+TEST_F(DaemonAndCli, AdjustingDoesSatelliteBasedPositionPropertyWorks)
 {
     EXPECT_EQ(core::testing::ForkAndRunResult::empty,
               core::testing::fork_and_run(
-                  testing_daemon,
-                  adjusting_cli_for_property("does_satellite_based_positioning", false)));
+                  testing_daemon(*this),
+                  adjusting_cli_for_property(
+                      location::service::Daemon::Cli::Property::does_satellite_based_positioning,
+                      false,
+                      *this)));
 }
 
-TEST(DaemonAndCli, QueryingDoesReportWifiAndCellIdsPropertyWorks)
+TEST_F(DaemonAndCli, QueryingDoesReportWifiAndCellIdsPropertyWorks)
 {
     EXPECT_NO_FATAL_FAILURE(
                 core::testing::fork_and_run(
-                    testing_daemon,
-                    querying_cli_for_property("does_report_wifi_and_cell_ids")));
+                    testing_daemon(*this),
+                    querying_cli_for_property(
+                        location::service::Daemon::Cli::Property::does_report_wifi_and_cell_ids,
+                        *this)));
 }
 
-TEST(DaemonAndCli, AdjustingDoesReportWifiAndCellIdsPropertyWorks)
+TEST_F(DaemonAndCli, AdjustingDoesReportWifiAndCellIdsPropertyWorks)
 {
     EXPECT_NO_FATAL_FAILURE(
                 core::testing::fork_and_run(
-                    testing_daemon,
-                    adjusting_cli_for_property("does_report_wifi_and_cell_ids", true)));
+                    testing_daemon(*this),
+                    adjusting_cli_for_property(
+                        location::service::Daemon::Cli::Property::does_report_wifi_and_cell_ids,
+                        true,
+                        *this)));
 }
 
-TEST(DaemonAndCli, QueryingVisibleSpaceVehiclesPropertyWorks)
+TEST_F(DaemonAndCli, QueryingVisibleSpaceVehiclesPropertyWorks)
 {
     EXPECT_EQ(core::testing::ForkAndRunResult::empty,
               core::testing::fork_and_run(
-                  testing_daemon,
-                  querying_cli_for_property("visible_space_vehicles")));
+                  testing_daemon(*this),
+                  querying_cli_for_property(
+                      location::service::Daemon::Cli::Property::visible_space_vehicles,
+                      *this)));
+}
+
+TEST(DaemonCli, CommandLineArgsParsingWorksForCorrectArguments)
+{
+    char* args[] =
+    {
+        "--bus", "session",
+        "--get",
+        "--property", "is_online"
+    };
+
+    auto config = location::service::Daemon::Cli::Configuration::from_command_line_args(5, args);
+
+    EXPECT_EQ(location::service::Daemon::Cli::Command::get, config.command);
+    EXPECT_EQ(location::service::Daemon::Cli::Property::is_online, config.property);
+}
+
+TEST(DaemonCli, CommandLineArgsParsingThrowsForInvalidArguments)
+{
+    char* args[] =
+    {
+        "--bus", "session",
+        "--get", "--set", // Both get and set specificed, expected to throw
+        "--property", "is_online"
+    };
+
+    EXPECT_ANY_THROW(location::service::Daemon::Cli::Configuration::from_command_line_args(5, args));
+}
+
+TEST(Daemon, CommandLineParsingThrowsForEmptyProviders)
+{
+    char* args[] =
+    {
+        "--bus", "session"
+    };
+
+    EXPECT_ANY_THROW(location::service::Daemon::Configuration::from_command_line_args(2, args));
+}
+
+TEST(Daemon, CommandLineParsingDoesNotThrowForEmptyProvidersInTesting)
+{
+    char* args[] =
+    {
+        "--bus", "session",
+        "--testing"
+    };
+
+    EXPECT_ANY_THROW(location::service::Daemon::Configuration::from_command_line_args(2, args));
+}
+
+TEST(Daemon, CommandLineParsingWorksForProvidersAndProviderOptions)
+{
+    char* args[] =
+    {
+        "--bus", "session",
+        "--provider", "does::not::exist::Provider",
+        "--does::not::exist::Provider::option1=test1",
+        "--does::not::exist::Provider::option2=test2",
+        "--does::not::exist::Provider::option3=test3"
+    };
+
+    auto config = location::service::Daemon::Configuration::from_command_line_args(7, args);
+
+    EXPECT_EQ(1u, config.providers.size());
+    EXPECT_EQ("does::not::exist::Provider", config.providers[0]);
+    EXPECT_EQ("test1", config.provider_options.at(config.providers[0]).get<std::string>("option1"));
+    EXPECT_EQ("test2", config.provider_options.at(config.providers[0]).get<std::string>("option2"));
+    EXPECT_EQ("test3", config.provider_options.at(config.providers[0]).get<std::string>("option3"));
 }

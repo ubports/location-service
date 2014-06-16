@@ -28,6 +28,8 @@
 #include <core/dbus/resolver.h>
 #include <core/dbus/asio/executor.h>
 
+#include <core/posix/signal.h>
+
 #include <system_error>
 #include <thread>
 
@@ -37,57 +39,8 @@
 namespace location = com::ubuntu::location;
 namespace dbus = core::dbus;
 
-namespace core
-{
-struct SigTermCatcher
-{
-    inline SigTermCatcher()
-    {
-        sigemptyset(&signal_mask);
-
-        if (-1 == sigaddset(&signal_mask, SIGTERM))
-            throw std::system_error(errno, std::system_category());
-
-        if (-1 == sigprocmask(SIG_BLOCK, &signal_mask, NULL))
-            throw std::system_error(errno, std::system_category());
-    }
-
-    inline void wait_for_signal()
-    {
-        int signal = -1;
-        ::sigwait(&signal_mask, &signal);
-    }
-
-    sigset_t signal_mask;
-};
-}
-
 namespace
 {
-enum class Command
-{
-    unknown,
-    get,
-    set
-};
-
-enum class Property
-{
-    unknown,
-    is_online,
-    does_satellite_based_positioning,
-    does_report_wifi_and_cell_ids,
-    visible_space_vehicles
-};
-
-const std::map<std::string, Property> known_properties =
-{
-    {"is_online", Property::is_online},
-    {"does_satellite_based_positioning", Property::does_satellite_based_positioning},
-    {"does_report_wifi_and_cell_ids", Property::does_report_wifi_and_cell_ids},
-    {"visible_space_vehicles", Property::visible_space_vehicles}
-};
-
 struct NullReporter : public location::service::Harvester::Reporter
 {
     NullReporter() = default;
@@ -111,12 +64,9 @@ struct NullReporter : public location::service::Harvester::Reporter
     {
     }
 };
-}
 
-int location::service::Daemon::main(int argc, const char** argv)
+location::ProgramOptions init_daemon_options()
 {
-    core::SigTermCatcher sc;
-
     location::ProgramOptions options;
 
     options.add("help", "Produces this help message");
@@ -124,38 +74,51 @@ int location::service::Daemon::main(int argc, const char** argv)
     options.add_composed<std::vector<std::string>>("provider",
                                                    "The providers that should be added to the engine");
 
-    if (!options.parse_from_command_line_args(argc, argv))
-        return EXIT_FAILURE;
+    return options;
+}
 
-    if (options.value_count_for_key("help") > 0)
+location::ProgramOptions& mutable_daemon_options()
+{
+    static location::ProgramOptions options = init_daemon_options();
+    return options;
+}
+}
+
+location::service::Daemon::Configuration location::service::Daemon::Configuration::from_command_line_args(int argc, char **argv)
+{
+    location::service::Daemon::Configuration result;
+
+    if (!mutable_daemon_options().parse_from_command_line_args(argc, (const char**)argv))
+        throw std::runtime_error{"Could not parse command-line, aborting..."};
+
+    result.bus = dbus::Bus::Ptr
     {
-        options.print_help(std::cout);
-        return EXIT_SUCCESS;
+        new dbus::Bus
+        {
+            mutable_daemon_options().bus()
+        }
+    };
+
+    if (mutable_daemon_options().value_count_for_key("testing") == 0 && mutable_daemon_options().value_count_for_key("provider") == 0)
+    {
+        std::stringstream ss;
+        ss << "A set of providers need to be specified. The following providers are known:" << std::endl;
+        location::ProviderFactory::instance().enumerate(
+                    [&ss](const std::string& name, const location::ProviderFactory::Factory&)
+        {
+            ss << "\t" << name << std::endl;
+        });
+        throw std::runtime_error{ss.str()};
     }
 
-    std::set<location::Provider::Ptr> instantiated_providers;
-
-    if (options.value_count_for_key("testing") == 0 &&
-        options.value_count_for_key("provider") == 0)
+    if(mutable_daemon_options().value_count_for_key("provider") > 0)
     {
-        std::cout << "A set of providers need to be specified. The following providers are known:" << std::endl;
-        location::ProviderFactory::instance().enumerate(
-                    [](const std::string& name, const location::ProviderFactory::Factory&)
-        {
-            std::cout << "\t" << name << std::endl;
-        });
-        return EXIT_FAILURE;
-    } else if(options.value_count_for_key("provider") > 0)
-    {
-        auto selected_providers = options.value_for_key<std::vector<std::string>>("provider");
+        result.providers = mutable_daemon_options().value_for_key<std::vector<std::string>>("provider");
 
-        std::map<std::string, location::ProviderFactory::Configuration> config_lut;
-
-        for (const std::string& provider : selected_providers)
+        for (const std::string& provider : result.providers)
         {
-            std::cout << "Instantiating and configuring: " << provider << std::endl;
-            options.enumerate_unrecognized_options(
-                        [&config_lut, provider](const std::string& s)
+            mutable_daemon_options().enumerate_unrecognized_options(
+                        [&result, provider](const std::string& s)
             {
                 std::stringstream in(s);
                 std::string key, value;
@@ -174,54 +137,81 @@ int location::service::Daemon::main(int argc, const char** argv)
 
                 std::cout << "\t" << key << " -> " << value << std::endl;
 
-                config_lut[provider].put(key, value);
+                result.provider_options[provider].put(key, value);
             });
-
-            try
-            {
-                auto p = location::ProviderFactory::instance().create_provider_for_name_with_config(
-                            provider,
-                            config_lut[provider]);
-
-                if (p)
-                    instantiated_providers.insert(p);
-                else
-                    throw std::runtime_error("Problem instantiating provider");
-
-            } catch(const std::runtime_error& e)
-            {
-                std::cerr << "Exception instantiating provider: " << e.what() << " ... Aborting now." << std::endl;
-                return EXIT_FAILURE;
-            }
         }
     }
 
-    dbus::Bus::Ptr bus
+    return result;
+}
+
+void location::service::Daemon::print_help(std::ostream& out)
+{
+    mutable_daemon_options().print_help(out);
+}
+
+int location::service::Daemon::main(const location::service::Daemon::Configuration& config)
+{
+    auto trap = core::posix::trap_signals_for_all_subsequent_threads(
     {
-        new dbus::Bus{options.bus()}
+        core::posix::Signal::sig_term,
+        core::posix::Signal::sig_int
+    });
+
+    trap->signal_raised().connect([trap](const core::posix::Signal&)
+    {
+        trap->stop();
+    });
+
+    std::set<location::Provider::Ptr> instantiated_providers;
+
+    for (const std::string& provider : config.providers)
+    {
+        std::cout << "Instantiating and configuring: " << provider << std::endl;
+
+        try
+        {
+            auto p = location::ProviderFactory::instance().create_provider_for_name_with_config(
+                        provider,
+                        config.provider_options.at(provider));
+
+            if (p)
+                instantiated_providers.insert(p);
+            else
+                throw std::runtime_error("Problem instantiating provider");
+
+        } catch(const std::runtime_error& e)
+        {
+            std::cerr << "Exception instantiating provider: " << e.what() << " ... Aborting now." << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
+
+    config.bus->install_executor(dbus::asio::make_executor(config.bus));
+
+    location::service::DefaultConfiguration dc;
+    location::service::Implementation::Configuration configuration
+    {
+        config.bus,
+        dc.the_engine(instantiated_providers, dc.the_provider_selection_policy()),
+        dc.the_permission_manager(),
+        location::service::Harvester::Configuration
+        {
+            location::connectivity::platform_default_manager(),
+            std::make_shared<NullReporter>()
+        }
     };
 
-    bus->install_executor(dbus::asio::make_executor(bus));
+    location::service::Implementation location_service
+    {
+        configuration
+    };
 
-    location::service::DefaultConfiguration config;
+    std::thread t{[&config](){config.bus->run();}};
 
-    auto location_service =
-            dbus::announce_service_on_bus<
-            location::service::Interface,
-            location::service::Implementation
-            >(
-                bus,
-                config.the_engine(
-                    instantiated_providers,
-                    config.the_provider_selection_policy()),
-                config.the_permission_manager(),
-                std::make_shared<NullReporter>());
+    trap->run();
 
-    std::thread t{[bus](){bus->run();}};
-
-    sc.wait_for_signal();
-
-    bus->stop();
+    config.bus->stop();
 
     if (t.joinable())
         t.join();
@@ -229,7 +219,9 @@ int location::service::Daemon::main(int argc, const char** argv)
     return EXIT_SUCCESS;
 }
 
-int location::service::Daemon::Cli::main(int argc, const char** argv)
+namespace
+{
+location::ProgramOptions init_cli_options()
 {
     location::ProgramOptions options;
 
@@ -240,65 +232,80 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
                 "   does_satellite_based_positioning [get/set]\n"
                 "   does_report_wifi_and_cell_ids [get/set]\n"
                 "   visible_space_vehicles [get]",
-                std::string("is_online"));
+                location::service::Daemon::Cli::Property::unknown);
     options.add<std::string>("set", "Adjust the value of the property.");
     options.add("get", "Query the value of the property.");
 
-    if (!options.parse_from_command_line_args(argc, argv))
+    return options;
+}
+
+location::ProgramOptions& mutable_cli_options()
+{
+    static location::ProgramOptions options = init_cli_options();
+    return options;
+}
+}
+
+location::service::Daemon::Cli::Configuration location::service::Daemon::Cli::Configuration::from_command_line_args(int argc, char** argv)
+{
+    location::service::Daemon::Cli::Configuration result;
+
+    if (!mutable_cli_options().parse_from_command_line_args(argc, (const char**)argv))
     {
-        options.print_help(std::cout);
-        return EXIT_FAILURE;
+        throw std::runtime_error{"Error parsing command line"};
     }
 
-    if (options.value_count_for_key("help") > 0)
+    if (mutable_cli_options().value_count_for_key("help") > 0)
     {
-        options.print_help(std::cout);
-        return EXIT_SUCCESS;
+        throw std::runtime_error{"Error parsing command line"};
     }
 
-    if (options.value_count_for_key("property") == 0)
+    if (mutable_cli_options().value_count_for_key("get") > 0 && mutable_cli_options().value_count_for_key("set") > 0)
     {
-        options.print_help(std::cout);
-        return EXIT_FAILURE;
+        throw std::logic_error
+        {
+            "Both set and get specified, aborting..."
+        };
     }
 
-    if (options.value_count_for_key("get") > 0 && options.value_count_for_key("set") > 0)
+    result.bus = dbus::Bus::Ptr
     {
-        options.print_help(std::cout);
-        return EXIT_FAILURE;
-    }
-
-    auto property = Property::unknown;
-
-    try
-    {
-        property = known_properties.at(options.value_for_key<std::string>("property"));
-    } catch(const std::runtime_error& e)
-    {
-        std::cout << "Unknown property, aborting now." << std::endl;
-        options.print_help(std::cout);
-        return EXIT_FAILURE;
-    }
-
-    auto command = Command::unknown;
-
-    if (options.value_count_for_key("get") > 0)
-        command = Command::get;
-    else if (options.value_count_for_key("set") > 0)
-        command = Command::set;
-
-    dbus::Bus::Ptr bus
-    {
-        new dbus::Bus{options.bus()}
+        new dbus::Bus
+        {
+            mutable_cli_options().bus()
+        }
     };
 
-    auto location_service =
-            dbus::resolve_service_on_bus<location::service::Interface, location::service::Stub>(bus);
+    result.property = mutable_cli_options().value_for_key<location::service::Daemon::Cli::Property>("property");
 
-    switch (property)
+    if (mutable_cli_options().value_count_for_key("get") > 0)
+    {
+        result.command = Command::get;
+    }
+    else if (mutable_cli_options().value_count_for_key("set") > 0)
+    {
+        result.command = Command::set;
+        result.new_value = mutable_cli_options().value_for_key<std::string>("set");
+    }
+
+    return result;
+}
+
+/** @brief Pretty-prints the CLI's help text to the given output stream. */
+void location::service::Daemon::Cli::print_help(std::ostream& out)
+{
+    mutable_cli_options().print_help(out);
+}
+
+int location::service::Daemon::Cli::main(const location::service::Daemon::Cli::Configuration& config)
+{
+    auto location_service =
+            dbus::resolve_service_on_bus<location::service::Interface, location::service::Stub>(config.bus);
+
+    switch (config.property)
     {
     case Property::is_online:
-        switch (command)
+        switch (config.command)
         {
         case Command::get:
             std::cout << std::boolalpha << "Location service is "
@@ -306,13 +313,11 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
             break;
         case Command::set:
         {
-            auto set_value = options.value_for_key<std::string>("set");
-
-            std::stringstream ss(set_value);
+            std::stringstream ss(config.new_value);
             bool flag = location_service->is_online();
             ss >> std::boolalpha >> flag;
 
-            std::cout << "Adjusting is_online property to value: " << set_value << " -> ";
+            std::cout << "Adjusting is_online property to value: " << config.new_value << " -> ";
 
             location_service->is_online() = flag;
 
@@ -328,7 +333,7 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
         }
         break;
     case Property::does_report_wifi_and_cell_ids:
-        switch (command)
+        switch (config.command)
         {
         case Command::get:
             std::cout << std::boolalpha << "Location service "
@@ -337,8 +342,7 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
             break;
         case Command::set:
         {
-            auto set_value = options.value_for_key<std::string>("set");
-            std::stringstream ss(set_value);
+            std::stringstream ss(config.new_value);
             bool flag = location_service->does_report_cell_and_wifi_ids();
             ss >> std::boolalpha >> flag;
 
@@ -357,7 +361,7 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
         }
         break;
     case Property::does_satellite_based_positioning:
-        switch (command)
+        switch (config.command)
         {
         case Command::get:
             std::cout << std::boolalpha << "Location service "
@@ -366,8 +370,7 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
             break;
         case Command::set:
         {
-            auto set_value = options.value_for_key<std::string>("set");
-            std::stringstream ss(set_value);
+            std::stringstream ss(config.new_value);
             bool flag = location_service->does_satellite_based_positioning();
             ss >> std::boolalpha >> flag;
 
@@ -387,7 +390,7 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
         break;
     case Property::visible_space_vehicles:
     {
-        switch (command)
+        switch (config.command)
         {
         case Command::get:
         {
@@ -399,7 +402,7 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
         }
         case Command::set:
             std::cout << "Property visible_space_vehicles is not set-able, aborting now." << std::endl;
-            options.print_help(std::cout);
+            location::service::Daemon::Cli::print_help(std::cout);
             return EXIT_FAILURE;
         case Command::unknown: break;
         }
@@ -407,9 +410,53 @@ int location::service::Daemon::Cli::main(int argc, const char** argv)
     }
     case Property::unknown:
         std::cout << "Unknown property, aborting now." << std::endl;
-        options.print_help(std::cout);
+        location::service::Daemon::Cli::print_help(std::cout);
         return EXIT_FAILURE;
     }
 
     return EXIT_SUCCESS;
+}
+
+/** @brief Parses a Cli property from the given input stream, throws std::runtime_error. */
+std::istream& location::service::operator>>(std::istream& in, location::service::Daemon::Cli::Property& property)
+{
+    static const std::map<std::string, location::service::Daemon::Cli::Property> lut =
+    {
+        {"is_online", location::service::Daemon::Cli::Property::is_online},
+        {"does_satellite_based_positioning", location::service::Daemon::Cli::Property::does_satellite_based_positioning},
+        {"does_report_wifi_and_cell_ids", location::service::Daemon::Cli::Property::does_report_wifi_and_cell_ids},
+        {"visible_space_vehicles", location::service::Daemon::Cli::Property::visible_space_vehicles}
+    };
+
+    std::string value; in >> value;
+
+    auto it = lut.find(value);
+
+    if (it == lut.end()) throw std::runtime_error
+    {
+        "Unknown property specified: " + value
+    };
+
+    property = it->second;
+    return in;
+}
+
+/** @brief Parses a Cli property from the given input stream, throws std::runtime_error. */
+std::ostream& location::service::operator<<(std::ostream& out, location::service::Daemon::Cli::Property property)
+{
+    switch (property)
+    {
+    case location::service::Daemon::Cli::Property::is_online:
+        out << "is_online"; break;
+    case location::service::Daemon::Cli::Property::does_satellite_based_positioning:
+        out << "does_satellite_based_positioning"; break;
+    case location::service::Daemon::Cli::Property::does_report_wifi_and_cell_ids:
+        out << "does_report_wifi_and_cell_ids"; break;
+    case location::service::Daemon::Cli::Property::visible_space_vehicles:
+        out << "visible_space_vehicles"; break;
+    case location::service::Daemon::Cli::Property::unknown:
+        out << "unknown"; break;
+    }
+
+    return out;
 }

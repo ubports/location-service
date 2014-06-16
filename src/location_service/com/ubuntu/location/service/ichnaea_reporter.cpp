@@ -44,6 +44,9 @@ location::service::ichnaea::Reporter::Reporter(
     submit_request_config = core::net::http::Request::Configuration::from_uri_as_string(uri);
     submit_request_config.ssl.verify_host = false;
     submit_request_config.ssl.verify_peer = false;
+
+    if (not configuration.nick_name.empty())
+        submit_request_config.header.add(Reporter::nick_name_header, configuration.nick_name);
 }
 
 location::service::ichnaea::Reporter::~Reporter()
@@ -110,16 +113,16 @@ void location::service::ichnaea::Reporter::report(
     request->async_execute(
                 core::net::http::Request::Handler()
                 .on_response([](const core::net::http::Response& response)
-    {
-        if (response.status != ichnaea::submit::success)
-            LOG(ERROR) << "Error submitting to ichnaea: " << response.body;
-        else
-            LOG(INFO) << "Succesfully submitted to ichnaea.";
-    })
+                {
+                    if (response.status != ichnaea::submit::success)
+                        LOG(ERROR) << "Error submitting to ichnaea: " << response.body;
+                    else
+                        LOG(INFO) << "Succesfully submitted to ichnaea.";
+                })
                 .on_error([](const core::net::Error& e)
-    {
-        LOG(ERROR) << "Networking error while submitting to ichnaea: " << e.what();
-    }));
+                {
+                    LOG(ERROR) << "Networking error while submitting to ichnaea: " << e.what();
+                }));
 }
 
 void location::service::ichnaea::Reporter::convert_wifis_to_json(

@@ -41,114 +41,82 @@ namespace culs = com::ubuntu::location::service;
 
 namespace dbus = core::dbus;
 
-struct culs::Implementation::Private
+culs::Implementation::Implementation(const culs::Implementation::Configuration& config)
+    : Skeleton{config.bus, config.permission_manager},
+      configuration(config),
+      harvester(config.harvester)
 {
-    Private(const dbus::Bus::Ptr& connection,
-            const cul::Engine::Ptr& engine,
-            const culs::PermissionManager::Ptr& permission_manager,
-            const culs::Harvester::Reporter::Ptr& reporter)
-        : bus{connection},
-          engine{engine},
-          permission_manager{permission_manager},
-          harvester
-          {
-              Harvester::Configuration
-              {
-                  connectivity::platform_default_manager(),
-                  reporter
-              }
-          }
-    {
-        engine->updates.reference_location.changed().connect([this](const cul::Update<cul::Position>& update)
-        {
-            harvester.report_position_update(update);
-        });
-
-        harvester.start();
-    }
-
-    dbus::Bus::Ptr bus;
-    cul::Engine::Ptr engine;
-    culs::PermissionManager::Ptr permission_manager;
-    culs::Harvester harvester;
-};
-
-culs::Implementation::Implementation(
-    const dbus::Bus::Ptr& bus,
-    const cul::Engine::Ptr& engine,
-    const culs::PermissionManager::Ptr& permission_manager,
-    const Harvester::Reporter::Ptr& reporter)
-    : Skeleton(bus, permission_manager),
-      d{new Private{bus, engine, permission_manager, reporter}}
-{
-    if (!bus)
+    if (!configuration.bus)
         throw std::runtime_error("Cannot create service for null bus.");
-    if (!engine)
+    if (!configuration.engine)
         throw std::runtime_error("Cannot create service for null engine.");
-    if (!permission_manager)
+    if (!configuration.permission_manager)
         throw std::runtime_error("Cannot create service for null permission manager.");
 
     is_online() =
-            engine->configuration.engine_state == Engine::Status::on ||
-            engine->configuration.engine_state == Engine::Status::active;
+            configuration.engine->configuration.engine_state == Engine::Status::on ||
+            configuration.engine->configuration.engine_state == Engine::Status::active;
     is_online().changed().connect(
                 [this](bool value)
                 {
-                    d->engine->configuration.engine_state
+                    configuration.engine->configuration.engine_state
                             = value ?
                                 Engine::Status::on :
                                 Engine::Status::off;
                 });
     does_report_cell_and_wifi_ids() =
-            d->engine->configuration.wifi_and_cell_id_reporting_state ==
+            configuration.engine->configuration.wifi_and_cell_id_reporting_state ==
             cul::WifiAndCellIdReportingState::on;
     does_report_cell_and_wifi_ids().changed().connect(
                 [this](bool value)
                 {
-                    d->engine->configuration.wifi_and_cell_id_reporting_state
+                    configuration.engine->configuration.wifi_and_cell_id_reporting_state
                             = value ?
                                 cul::WifiAndCellIdReportingState::on :
                                 cul::WifiAndCellIdReportingState::off;
                 });
     does_satellite_based_positioning() =
-            d->engine->configuration.satellite_based_positioning_state ==
+            configuration.engine->configuration.satellite_based_positioning_state ==
             cul::SatelliteBasedPositioningState::on;
     does_satellite_based_positioning().changed().connect(
                 [this](bool value)
                 {
-                    d->engine->configuration.satellite_based_positioning_state
+                    configuration.engine->configuration.satellite_based_positioning_state
                             = value ?
                                 cul::SatelliteBasedPositioningState::on :
                                 cul::SatelliteBasedPositioningState::off;
                 });
-    engine->configuration.engine_state.changed().connect(
+    configuration.engine->configuration.engine_state.changed().connect(
                 [this](Engine::Status status)
                 {
                     is_online() =
                             status == Engine::Status::on ||
                             status == Engine::Status::active;
                 });
-    engine->configuration.satellite_based_positioning_state.changed().connect(
+    configuration.engine->configuration.satellite_based_positioning_state.changed().connect(
                 [this](cul::SatelliteBasedPositioningState state)
                 {
                     does_satellite_based_positioning() =
                             state == cul::SatelliteBasedPositioningState::on;
                 });
-    engine->updates.visible_space_vehicles.changed().connect(
+    configuration.engine->updates.visible_space_vehicles.changed().connect(
                 [this](const std::map<cul::SpaceVehicle::Key, cul::SpaceVehicle>&svs)
                 {
                     visible_space_vehicles() = svs;
                 });
-}
 
-culs::Implementation::~Implementation() noexcept
-{
+    configuration.engine->updates.reference_location.changed().connect([this](const cul::Update<cul::Position>& update)
+    {
+        harvester.report_position_update(update);
+    });
+
+    harvester.start();
 }
 
 culs::session::Interface::Ptr culs::Implementation::create_session_for_criteria(const cul::Criteria& criteria)
 {
     auto provider_selection
-            = d->engine->determine_provider_selection_for_criteria(criteria);
+            = configuration.engine->determine_provider_selection_for_criteria(criteria);
     auto proxy_provider = ProxyProvider::Ptr
     {
         new ProxyProvider{provider_selection}

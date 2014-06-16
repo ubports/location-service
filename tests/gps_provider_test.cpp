@@ -364,7 +364,7 @@ TEST_F(HardwareAbstractionLayerFixture, DISABLED_provider_construction_works_req
 }
 
 // We are carrying out quite some positioning here and leverage that fact for feeding location
-// and wifi/cell data to a location service. Please note that we feed to the mozilla location service
+// and wifi/cell data to Mozilla location service instances. Please note that we feed to the mozilla location service
 // in the general case.
 
 #include <com/ubuntu/location/service/harvester.h>
@@ -372,19 +372,29 @@ TEST_F(HardwareAbstractionLayerFixture, DISABLED_provider_construction_works_req
 
 namespace
 {
+// If this key is set to any value in the environment, we send off data to Mozilla location
+// service instances.
 static constexpr const char* enable_harvesting_key
 {
     "COM_UBUNTU_LOCATION_GPS_PROVIDER_ENABLE_HARVESTING_DURING_TESTS"
 };
 
-static constexpr const char* ichnaea_instance_url_key
+// The host name of the Mozilla location service instance.
+static constexpr const char* ichnaea_host_key
 {
-    "COM_UBUNTU_LOCATION_GPS_PROVIDER_ICHNAEA_INSTANCE_URL"
+    "COM_UBUNTU_LOCATION_GPS_PROVIDER_ICHNAEA_HOST"
 };
 
+// The API key to submit under.
 static constexpr const char* ichnaea_api_key_key
 {
     "COM_UBUNTU_LOCATION_GPS_PROVIDER_ICHNAEA_API_KEY"
+};
+
+// The API key to submit under.
+static constexpr const char* ichnaea_nickname_key
+{
+    "COM_UBUNTU_LOCATION_GPS_PROVIDER_ICHNAEA_NICKNAME_KEY"
 };
 
 location::service::Harvester& the_harvester()
@@ -398,8 +408,9 @@ location::service::Harvester& the_harvester()
 
         location::service::ichnaea::Reporter::Configuration reporter_configuration
         {
-            core::posix::this_process::env::get(ichnaea_instance_url_key, "https://162.213.35.107"),
-            core::posix::this_process::env::get(ichnaea_api_key_key, "location_service_test_cases")
+            core::posix::this_process::env::get(ichnaea_host_key, "https://162.213.35.107"),
+            core::posix::this_process::env::get(ichnaea_api_key_key, "ubuntu_location_service_test_cases"),
+            core::posix::this_process::env::get(ichnaea_nickname_key, "ubuntu_location_service")
         };
 
         std::shared_ptr<location::service::ichnaea::Reporter> reporter
@@ -483,7 +494,7 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_without_sup
         try
         {
             // This will throw if the env variable is not set.
-            core::posix::this_process::env::get(enable_harvesting_key);
+            core::posix::this_process::env::get_or_throw(enable_harvesting_key);
 
             the_harvester().report_position_update(location::Update<location::Position>
             {
@@ -630,20 +641,8 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         // We want to run in assisted mode
         EXPECT_TRUE(hal->set_assistance_mode(gps::AssistanceMode::mobile_station_based));
 
-        std::string supl_host{"supl.google.com"};
-        std::uint16_t supl_port{7476};
-
-        // Let's see if we have a custom supl server configured via the environment
-        try
-        {
-            supl_host = core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_SERVER_ADDRESS");
-            supl_port = std::stoi(core::posix::this_process::env::get_or_throw("GPS_SUPL_BENCHMARK_SERVER_PORT"));
-        } catch(const std::exception& e)
-        {
-            // Ignoring exceptions here and defaulting to configuration provided
-            // by the system.
-            std::cerr << e.what() << std::endl;
-        }
+        auto supl_host = this_process::env::get("GPS_SUPL_BENCHMARK_SERVER_ADDRESS", "supl.google.com");
+        auto supl_port = std::stoi(this_process::env::get("GPS_SUPL_BENCHMARK_SERVER_PORT", "7476"));
 
         hal->supl_assistant().set_server(supl_host, supl_port);
 

@@ -18,7 +18,29 @@
 
 #include "daemon.h"
 
+namespace location = com::ubuntu::location;
+
 int main(int argc, char** argv)
 {
-    return com::ubuntu::location::service::Daemon::main(argc, (char const**)argv);
+    location::service::Daemon::Configuration config;
+    try
+    {
+        config = location::service::Daemon::Configuration::from_command_line_args(argc, argv);
+    } catch(const std::runtime_error& e)
+    {
+        std::cerr << "Problem parsing command line: " << e.what();
+        location::service::Daemon::print_help(std::cerr);
+        return EXIT_FAILURE;
+    }
+
+    try
+    {
+        location::service::Daemon::main(config);
+    } catch(const std::exception& e)
+    {
+        std::cout << "Problem executing the daemon: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }

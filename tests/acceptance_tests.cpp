@@ -183,15 +183,20 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
 
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
-        cul::service::DefaultConfiguration config;
 
-        cul::service::Implementation service(
-                    bus,
-                    config.the_engine(
-                        config.the_provider_set(helper),
-                        config.the_provider_selection_policy()),
-                    config.the_permission_manager(),
-                    std::make_shared<NullReporter>());
+        cul::service::DefaultConfiguration config;
+        cul::service::Implementation::Configuration configuration
+        {
+            bus,
+            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+            config.the_permission_manager(),
+            cul::service::Harvester::Configuration
+            {
+                cul::connectivity::platform_default_manager(),
+                std::make_shared<NullReporter>()
+            }
+        };
+        cul::service::Implementation location_service{configuration};
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -289,17 +294,21 @@ TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
         bus->install_executor(dbus::asio::make_executor(bus));
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
+
         cul::service::DefaultConfiguration config;
-        auto engine = config.the_engine(
-                    config.the_provider_set(helper),
-                    config.the_provider_selection_policy());
-        engine->configuration.engine_state = cul::Engine::Status::on;
-        auto permission_manager = config.the_permission_manager();
-        cul::service::Implementation service(
-                    bus,
-                    engine,
-                    permission_manager,
-                    std::make_shared<NullReporter>());
+        cul::service::Implementation::Configuration configuration
+        {
+            bus,
+            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+            config.the_permission_manager(),
+            cul::service::Harvester::Configuration
+            {
+                cul::connectivity::platform_default_manager(),
+                std::make_shared<NullReporter>()
+            }
+        };
+        configuration.engine->configuration.engine_state = cul::Engine::Status::on;
+        cul::service::Implementation location_service{configuration};
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -355,16 +364,21 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
 
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
+
         cul::service::DefaultConfiguration config;
-        auto engine = config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy());
-        engine->configuration.satellite_based_positioning_state.set(
-                    cul::SatelliteBasedPositioningState::on);
-        auto permission_manager = config.the_permission_manager();
-        cul::service::Implementation service(
-                    bus,
-                    engine,
-                    permission_manager,
-                    std::make_shared<NullReporter>());
+        cul::service::Implementation::Configuration configuration
+        {
+            bus,
+            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+            config.the_permission_manager(),
+            cul::service::Harvester::Configuration
+            {
+                cul::connectivity::platform_default_manager(),
+                std::make_shared<NullReporter>()
+            }
+        };
+        configuration.engine->configuration.satellite_based_positioning_state.set(cul::SatelliteBasedPositioningState::on);
+        cul::service::Implementation location_service{configuration};
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -418,16 +432,20 @@ TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdu
         bus->install_executor(dbus::asio::make_executor(bus));
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
+
         cul::service::DefaultConfiguration config;
-        auto engine = config.the_engine(
-                    config.the_provider_set(helper),
-                    config.the_provider_selection_policy());
-        auto permission_manager = config.the_permission_manager();
-        cul::service::Implementation service(
-                    bus,
-                    engine,
-                    permission_manager,
-                    std::make_shared<NullReporter>());
+        cul::service::Implementation::Configuration configuration
+        {
+            bus,
+            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+            config.the_permission_manager(),
+            cul::service::Harvester::Configuration
+            {
+                cul::connectivity::platform_default_manager(),
+                std::make_shared<NullReporter>()
+            }
+        };
+        cul::service::Implementation location_service{configuration};
 
         std::thread t{[bus](){bus->run();}};
 
@@ -490,18 +508,22 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
         bus->install_executor(dbus::asio::make_executor(bus));
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
-        cul::service::DefaultConfiguration config;
-        auto engine = config.the_engine(
-                    config.the_provider_set(helper),
-                    config.the_provider_selection_policy());
-        auto permission_manager = config.the_permission_manager();
-        cul::service::Implementation service(
-                    bus,
-                    engine,
-                    permission_manager,
-                    std::make_shared<NullReporter>());
 
-        engine->updates.visible_space_vehicles.set(visible_space_vehicles);
+        cul::service::DefaultConfiguration config;
+        cul::service::Implementation::Configuration configuration
+        {
+            bus,
+            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+            config.the_permission_manager(),
+            cul::service::Harvester::Configuration
+            {
+                cul::connectivity::platform_default_manager(),
+                std::make_shared<NullReporter>()
+            }
+        };
+        cul::service::Implementation location_service{configuration};
+
+        configuration.engine->updates.visible_space_vehicles.set(visible_space_vehicles);
 
         std::thread t{[bus](){bus->run();}};
 

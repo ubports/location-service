@@ -154,18 +154,20 @@ int main(int argc, char** argv)
     bus->install_executor(dbus::asio::make_executor(bus));
 
     culs::DefaultConfiguration config;
-    
-    auto location_service =
-            dbus::announce_service_on_bus<
-                culs::Interface, 
-                culs::Implementation
-            >(
-                bus,
-                config.the_engine(
-                    instantiated_providers,
-                    config.the_provider_selection_policy()),
-                config.the_permission_manager(),
-                std::make_shared<NullReporter>());
+
+    culs::Implementation::Configuration configuration
+    {
+        bus,
+        config.the_engine(instantiated_providers, config.the_provider_selection_policy()),
+        config.the_permission_manager(),
+        culs::Harvester::Configuration
+        {
+            cul::connectivity::platform_default_manager(),
+            std::make_shared<NullReporter>()
+        }
+    };
+
+    auto location_service = std::make_shared<culs::Implementation>(configuration);
     
     std::thread t{[bus](){bus->run();}};
     
