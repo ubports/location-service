@@ -92,6 +92,7 @@ struct Reporter : public Harvester::Reporter
         };
     };
 
+    // Creation-time options for the ICHNAEA reporter
     struct Configuration
     {
         // Uri of the ICHNAEA instance we want to submit to.

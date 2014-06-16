@@ -147,6 +147,11 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
         "test_key"
     };
 
+    static const std::string nick_name
+    {
+        "nick_name"
+    };
+
     core::posix::ChildProcess server = core::posix::fork([]()
     {
         bool terminated = false;
@@ -179,7 +184,14 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
 
             int handle_request(mg_connection* conn)
             {
+                core::net::http::Header header;
 
+                for (int i = 0; i < conn->num_headers; i++)
+                {
+                    header.add(conn->http_headers[i].name, conn->http_headers[i].value);
+                }
+
+                EXPECT_TRUE(header.has(location::service::ichnaea::Reporter::nick_name_header));
                 EXPECT_STREQ("/v1/submit", conn->uri);
                 EXPECT_STREQ("POST", conn->request_method);
                 EXPECT_EQ("key=" + api_key, conn->query_string);
@@ -268,7 +280,8 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
     location::service::ichnaea::Reporter::Configuration config
     {
         "http://127.0.0.1:5000",
-        api_key
+        api_key,
+        "nickname"
     };
 
     location::service::ichnaea::Reporter reporter{config};
