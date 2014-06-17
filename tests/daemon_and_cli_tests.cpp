@@ -181,6 +181,13 @@ TEST_F(DaemonAndCli, QueryingVisibleSpaceVehiclesPropertyWorks)
                       *this)));
 }
 
+namespace
+{
+auto null_dbus_connection_factory = [](core::dbus::WellKnownBus)
+{
+    return core::dbus::Bus::Ptr{};
+};
+}
 TEST(DaemonCli, CommandLineArgsParsingWorksForCorrectArguments)
 {
     char* args[] =
@@ -190,7 +197,7 @@ TEST(DaemonCli, CommandLineArgsParsingWorksForCorrectArguments)
         "--property", "is_online"
     };
 
-    auto config = location::service::Daemon::Cli::Configuration::from_command_line_args(5, args);
+    auto config = location::service::Daemon::Cli::Configuration::from_command_line_args(5, args, null_dbus_connection_factory);
 
     EXPECT_EQ(location::service::Daemon::Cli::Command::get, config.command);
     EXPECT_EQ(location::service::Daemon::Cli::Property::is_online, config.property);
@@ -205,7 +212,7 @@ TEST(DaemonCli, CommandLineArgsParsingThrowsForInvalidArguments)
         "--property", "is_online"
     };
 
-    EXPECT_ANY_THROW(location::service::Daemon::Cli::Configuration::from_command_line_args(5, args));
+    EXPECT_ANY_THROW(location::service::Daemon::Cli::Configuration::from_command_line_args(5, args, null_dbus_connection_factory));
 }
 
 TEST(Daemon, CommandLineParsingThrowsForEmptyProviders)
@@ -215,7 +222,7 @@ TEST(Daemon, CommandLineParsingThrowsForEmptyProviders)
         "--bus", "session"
     };
 
-    EXPECT_ANY_THROW(location::service::Daemon::Configuration::from_command_line_args(2, args));
+    EXPECT_ANY_THROW(location::service::Daemon::Configuration::from_command_line_args(2, args, null_dbus_connection_factory));
 }
 
 TEST(Daemon, CommandLineParsingDoesNotThrowForEmptyProvidersInTesting)
@@ -226,7 +233,7 @@ TEST(Daemon, CommandLineParsingDoesNotThrowForEmptyProvidersInTesting)
         "--testing"
     };
 
-    EXPECT_ANY_THROW(location::service::Daemon::Configuration::from_command_line_args(2, args));
+    EXPECT_ANY_THROW(location::service::Daemon::Configuration::from_command_line_args(2, args, null_dbus_connection_factory));
 }
 
 TEST(Daemon, CommandLineParsingWorksForProvidersAndProviderOptions)
@@ -240,7 +247,7 @@ TEST(Daemon, CommandLineParsingWorksForProvidersAndProviderOptions)
         "--does::not::exist::Provider::option3=test3"
     };
 
-    auto config = location::service::Daemon::Configuration::from_command_line_args(7, args);
+    auto config = location::service::Daemon::Configuration::from_command_line_args(7, args, null_dbus_connection_factory);
 
     EXPECT_EQ(1u, config.providers.size());
     EXPECT_EQ("does::not::exist::Provider", config.providers[0]);

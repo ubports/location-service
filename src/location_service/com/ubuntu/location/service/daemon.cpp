@@ -84,20 +84,17 @@ location::ProgramOptions& mutable_daemon_options()
 }
 }
 
-location::service::Daemon::Configuration location::service::Daemon::Configuration::from_command_line_args(int argc, char **argv)
+location::service::Daemon::Configuration location::service::Daemon::Configuration::from_command_line_args(
+        int argc,
+        char **argv,
+        location::service::Daemon::DBusConnectionFactory factory)
 {
     location::service::Daemon::Configuration result;
 
     if (!mutable_daemon_options().parse_from_command_line_args(argc, (const char**)argv))
         throw std::runtime_error{"Could not parse command-line, aborting..."};
 
-    result.bus = dbus::Bus::Ptr
-    {
-        new dbus::Bus
-        {
-            mutable_daemon_options().bus()
-        }
-    };
+    result.bus = factory(mutable_daemon_options().bus());
 
     if (mutable_daemon_options().value_count_for_key("testing") == 0 && mutable_daemon_options().value_count_for_key("provider") == 0)
     {
@@ -246,7 +243,10 @@ location::ProgramOptions& mutable_cli_options()
 }
 }
 
-location::service::Daemon::Cli::Configuration location::service::Daemon::Cli::Configuration::from_command_line_args(int argc, char** argv)
+location::service::Daemon::Cli::Configuration location::service::Daemon::Cli::Configuration::from_command_line_args(
+        int argc,
+        char** argv,
+        location::service::Daemon::DBusConnectionFactory factory)
 {
     location::service::Daemon::Cli::Configuration result;
 
@@ -268,13 +268,7 @@ location::service::Daemon::Cli::Configuration location::service::Daemon::Cli::Co
         };
     }
 
-    result.bus = dbus::Bus::Ptr
-    {
-        new dbus::Bus
-        {
-            mutable_cli_options().bus()
-        }
-    };
+    result.bus = factory(mutable_cli_options().bus());
 
     result.property = mutable_cli_options().value_for_key<location::service::Daemon::Cli::Property>("property");
 

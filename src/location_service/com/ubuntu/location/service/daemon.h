@@ -38,6 +38,21 @@ namespace service
  */
 struct Daemon
 {
+    /** @brief Function signature for creating DBus connections. */
+    typedef std::function<core::dbus::Bus::Ptr(core::dbus::WellKnownBus)> DBusConnectionFactory;
+
+    /** @brief Returns the default connection factory. */
+    static DBusConnectionFactory default_dbus_connection_factory()
+    {
+        return [](core::dbus::WellKnownBus bus)
+        {
+            return core::dbus::Bus::Ptr
+            {
+                new core::dbus::Bus(bus)
+            };
+        };
+    }
+
     /** @brief Describes the command-line interface to the daemon. */
     struct Cli
     {
@@ -85,7 +100,10 @@ struct Daemon
              * --set arg                 Adjust the value of the property.
              * --get                     Query the value of the property.
              */
-            static Configuration from_command_line_args(int argc, char** argv);
+            static Configuration from_command_line_args(
+                    int argc,
+                    char** argv,
+                    DBusConnectionFactory factory = default_dbus_connection_factory());
 
             /** @brief The bus to connect to. */
             core::dbus::Bus::Ptr bus;
@@ -128,7 +146,10 @@ struct Daemon
          *   --testing             Enables executing the service without selected providers
          *   --provider arg        The providers that should be added to the engine
          */
-        static Configuration from_command_line_args(int argc, char** argv);
+        static Configuration from_command_line_args(
+                int argc,
+                char** argv,
+                DBusConnectionFactory factory = default_dbus_connection_factory());
 
         /** @brief The bus to connect to. */
         core::dbus::Bus::Ptr bus;
