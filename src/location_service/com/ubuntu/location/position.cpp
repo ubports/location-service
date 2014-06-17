@@ -40,6 +40,25 @@ cul::Position::Position(
 {
 }
 
+cul::Position::Position(const cul::wgs84::Latitude& lat,
+                        const cul::wgs84::Longitude& lon,
+                        const cul::wgs84::Altitude& alt,
+                        const cul::units::Quantity<cul::units::Length>& hor_acc)
+    : cul::Position::Position(lat, lon, alt)
+{
+    accuracy.horizontal = hor_acc;
+}
+
+cul::Position::Position(const cul::wgs84::Latitude& lat,
+                        const cul::wgs84::Longitude& lon,
+                        const cul::wgs84::Altitude& alt,
+                        const cul::units::Quantity<cul::units::Length>& hor_acc,
+                        const cul::units::Quantity<cul::units::Length>& ver_acc)
+    : cul::Position::Position(lat, lon, alt, hor_acc)
+{
+    accuracy.vertical = ver_acc;
+}
+
 bool cul::Position::operator==(const cul::Position& rhs) const
 {
     return latitude == rhs.latitude &&

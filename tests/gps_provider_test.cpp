@@ -16,8 +16,9 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 #include <com/ubuntu/location/providers/gps/provider.h>
-
 #include <com/ubuntu/location/providers/gps/android_hardware_abstraction_layer.h>
+
+#include <com/ubuntu/location/service/program_options.h>
 
 #include <core/posix/this_process.h>
 
@@ -315,10 +316,87 @@ TEST(GpsProvider, DISABLED_accessing_starting_and_stopping_gps_provider_works_re
     EXPECT_NO_THROW(provider.stop_heading_updates());
 }
 
+// We are carrying out quite some positioning here and leverage that fact for feeding location
+// and wifi/cell data to Mozilla location service instances. Please note that we feed to the mozilla location service
+// in the general case.
+#include <com/ubuntu/location/service/harvester.h>
+#include <com/ubuntu/location/service/ichnaea_reporter.h>
+
 namespace
 {
 struct HardwareAbstractionLayerFixture : public ::testing::Test
 {
+    // If this key is set to any value in the environment, we send off data to Mozilla location
+    // service instances.
+    static constexpr const char* enable_harvesting{"enable_harvesting_during_tests"};
+    // The host name of the Mozilla location service instance.
+    static constexpr const char* ichnaea_host{"ichnaea_host"};
+    // The API key to submit under.
+    static constexpr const char* ichnaea_api_key{"ichnaea_api_key"};
+    // The API key to submit under.
+    static constexpr const char* ichnaea_nickname{"ichnaea_nickname"};
+    // Reference latitude value.
+    static constexpr const char* ref_lat{"ref_lat"};
+    // Reference longitude value.
+    static constexpr const char* ref_lon{"ref_lon"};
+    // Reference horizontal accuracy value.
+    static constexpr const char* ref_accuracy{"ref_accuracy"};
+    // SUPL host address
+    static constexpr const char* supl_host{"supl_host"};
+    // SUPL port
+    static constexpr const char* supl_port{"supl_port"};
+
+    static location::ProgramOptions init_options()
+    {
+        location::ProgramOptions options;
+
+        options.environment_prefix("GPS_TEST_");
+
+        options.add(enable_harvesting,
+                    "If this key is set to any value in the environment, "
+                    "we send off data to Mozilla location service instances.",
+                    false);
+
+        options.add(ichnaea_host,
+                    "The host name of the Mozilla location service instance.",
+                    std::string{"https://location.services.mozilla.com"});
+
+        options.add(ichnaea_api_key,
+                    "The API key to submit under.",
+                    std::string{"ubuntu_location_service_test_cases"});
+
+        options.add(ichnaea_nickname,
+                    "The nickname to submit under.",
+                    std::string{"ubuntu_location_service"});
+
+        options.add(ref_lat,
+                    "Reference latitude value.",
+                    double{51.444670});
+
+        options.add(ref_lon,
+                    "Reference longitude value.",
+                    double{7.210852});
+
+        options.add(ref_accuracy,
+                    "Reference horizontal accuracy value.",
+                    double{10});
+
+        options.add(supl_host,
+                    "SUPL host to use for positioning benchmarks.",
+                    std::string{"supl.google.com"});
+
+        options.add(supl_port,
+                    "SUPL port to use for positioning benchmarks.",
+                    std::uint16_t{7476});
+
+        return options;
+    }
+
+    HardwareAbstractionLayerFixture()
+    {
+        harvester.start();
+    }
+
     void SetUp()
     {
         // We need to make sure that we are running as root. In addition, we will stop
@@ -341,6 +419,58 @@ struct HardwareAbstractionLayerFixture : public ::testing::Test
         int rc = ::system("service ubuntu-location-service start");
         (void) rc;
     }
+
+    bool IsHarvestingDuringTestsEnabled() const
+    {
+        return options.value_for_key<bool>(enable_harvesting);
+    }
+
+    location::ProgramOptions options = init_options();
+    bool options_parsed_from_env
+    {
+        options.parse_from_environment()
+    };
+    // The Ichnaea instance and its configuration.
+    location::service::ichnaea::Reporter::Configuration reporter_configuration
+    {
+        options.value_for_key<std::string>(ichnaea_host),
+        options.value_for_key<std::string>(ichnaea_api_key),
+        options.value_for_key<std::string>(ichnaea_nickname)
+    };
+    std::shared_ptr<location::service::ichnaea::Reporter> reporter
+    {
+        new location::service::ichnaea::Reporter{reporter_configuration}
+    };
+    // The harvester instance and its configuration.
+    location::service::Harvester::Configuration harvester_configuration
+    {
+        location::connectivity::platform_default_manager(),
+        reporter
+    };
+    location::service::Harvester harvester
+    {
+        harvester_configuration
+    };
+    // Reference position for SUPL benchmarks.
+    location::Position ref_pos
+    {
+        location::wgs84::Latitude
+        {
+            options.value_for_key<double>(ref_lat) * location::units::Degrees
+        },
+        location::wgs84::Longitude
+        {
+            options.value_for_key<double>(ref_lon) * location::units::Degrees
+        },
+        location::wgs84::Altitude
+        {
+            0 * location::units::Meter
+        },
+        location::units::Quantity<location::units::Length>
+        {
+            options.value_for_key<double>(ref_accuracy) * location::units::Meters
+        }
+    };
 };
 }
 
@@ -361,78 +491,6 @@ TEST_F(HardwareAbstractionLayerFixture, DISABLED_provider_construction_works_req
     {
         location::ProviderFactory::instance().create_provider_for_name_with_config("gps::Provider", location::Configuration{});
     }
-}
-
-// We are carrying out quite some positioning here and leverage that fact for feeding location
-// and wifi/cell data to Mozilla location service instances. Please note that we feed to the mozilla location service
-// in the general case.
-
-#include <com/ubuntu/location/service/harvester.h>
-#include <com/ubuntu/location/service/ichnaea_reporter.h>
-
-namespace
-{
-// If this key is set to any value in the environment, we send off data to Mozilla location
-// service instances.
-static constexpr const char* enable_harvesting_key
-{
-    "COM_UBUNTU_LOCATION_GPS_PROVIDER_ENABLE_HARVESTING_DURING_TESTS"
-};
-
-// The host name of the Mozilla location service instance.
-static constexpr const char* ichnaea_host_key
-{
-    "COM_UBUNTU_LOCATION_GPS_PROVIDER_ICHNAEA_HOST"
-};
-
-// The API key to submit under.
-static constexpr const char* ichnaea_api_key_key
-{
-    "COM_UBUNTU_LOCATION_GPS_PROVIDER_ICHNAEA_API_KEY"
-};
-
-// The API key to submit under.
-static constexpr const char* ichnaea_nickname_key
-{
-    "COM_UBUNTU_LOCATION_GPS_PROVIDER_ICHNAEA_NICKNAME_KEY"
-};
-
-location::service::Harvester& the_harvester()
-{
-    struct State
-    {
-        State()
-        {
-            harvester.start();
-        }
-
-        location::service::ichnaea::Reporter::Configuration reporter_configuration
-        {
-            core::posix::this_process::env::get(ichnaea_host_key, "https://162.213.35.107"),
-            core::posix::this_process::env::get(ichnaea_api_key_key, "ubuntu_location_service_test_cases"),
-            core::posix::this_process::env::get(ichnaea_nickname_key, "ubuntu_location_service")
-        };
-
-        std::shared_ptr<location::service::ichnaea::Reporter> reporter
-        {
-            new location::service::ichnaea::Reporter{reporter_configuration}
-        };
-
-        location::service::Harvester::Configuration configuration
-        {
-            location::connectivity::platform_default_manager(),
-            reporter
-        };
-
-        location::service::Harvester harvester
-        {
-           configuration
-        };
-    };
-
-    static State state;
-    return state.harvester;
-}
 }
 
 // HardwareAbstractionLayerFixture.time_to_first_fix_cold_start_without_supl_benchmark_requires_hardware
@@ -489,21 +547,13 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_without_sup
     hal->set_assistance_mode(gps::AssistanceMode::standalone);
 
     // We wire up our state to position updates from the hal.
-    hal->position_updates().connect([&state](const location::Position& pos)
+    hal->position_updates().connect([this, &state](const location::Position& pos)
     {
-        try
-        {
-            // This will throw if the env variable is not set.
-            core::posix::this_process::env::get_or_throw(enable_harvesting_key);
-
-            the_harvester().report_position_update(location::Update<location::Position>
+        if (IsHarvestingDuringTestsEnabled())
+            harvester.report_position_update(location::Update<location::Position>
             {
                 pos, location::Clock::now()
             });
-        } catch(...)
-        {
-        }
-
         state.on_position_updated(pos);
     });
 
@@ -592,41 +642,14 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         bool fix_received;
     } state;
 
-    location::Position ref_pos
-    {
-        location::wgs84::Latitude
-        {
-            std::stod(this_process::env::get(
-                          "GPS_SUPL_BENCHMARK_REF_LAT", "51.444670")) * location::units::Degrees
-        },
-        location::wgs84::Longitude
-        {
-            std::stod(this_process::env::get(
-                          "GPS_SUPL_BENCHMARK_REF_LON", "7.210852")) * location::units::Degrees
-        }
-    };
-
-    ref_pos.accuracy.horizontal
-            = std::stod(this_process::env::get(
-                            "GPS_SUPL_BENCHMARK_REF_ACCURACY", "10")) * location::units::Meters;
-
     // We wire up our state to position updates from the hal.
-    hal->position_updates().connect([&state](const location::Position& pos)
+    hal->position_updates().connect([this, &state](const location::Position& pos)
     {
-        try
-        {
-            // This will throw if the env variable is not set.
-            core::posix::this_process::env::get_or_throw(enable_harvesting_key);
-
-            the_harvester().report_position_update(
-                        location::Update<location::Position>
-                        {
-                            pos, location::Clock::now()
-                        });
-        } catch(...)
-        {
-        }
-
+        if (IsHarvestingDuringTestsEnabled())
+            harvester.report_position_update(location::Update<location::Position>
+            {
+                pos, location::Clock::now()
+            });
         state.on_position_updated(pos);
     });
 
@@ -641,8 +664,8 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
         // We want to run in assisted mode
         EXPECT_TRUE(hal->set_assistance_mode(gps::AssistanceMode::mobile_station_based));
 
-        auto supl_host = this_process::env::get("GPS_SUPL_BENCHMARK_SERVER_ADDRESS", "supl.google.com");
-        auto supl_port = std::stoi(this_process::env::get("GPS_SUPL_BENCHMARK_SERVER_PORT", "7476"));
+        auto supl_host = options.value_for_key<std::string>(HardwareAbstractionLayerFixture::supl_host);
+        auto supl_port = options.value_for_key<std::uint16_t>(HardwareAbstractionLayerFixture::supl_port);
 
         hal->supl_assistant().set_server(supl_host, supl_port);
 
@@ -652,7 +675,7 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
 
             hal->start_positioning();
 
-            std::thread injector([hal, ref_pos, &running]()
+            std::thread injector([this, hal, &running]()
             {
                 while (running)
                 {

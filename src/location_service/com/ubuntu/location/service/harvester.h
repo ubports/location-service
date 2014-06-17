@@ -19,6 +19,7 @@
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_HARVESTER_H_
 
 #include <com/ubuntu/location/engine.h>
+#include <com/ubuntu/location/update.h>
 #include <com/ubuntu/location/connectivity/manager.h>
 
 namespace com

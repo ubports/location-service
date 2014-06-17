@@ -38,9 +38,20 @@ namespace location
  */
 struct Position
 {
+    struct Accuracy
+    {
+        typedef units::Quantity<units::Length> Horizontal;
+        typedef units::Quantity<units::Length> Vertical;
+
+        Optional<Horizontal> horizontal{};
+        Optional<Vertical> vertical{};
+    };
+
     Position() = default;
     Position(const wgs84::Latitude&, const wgs84::Longitude&);
     Position(const wgs84::Latitude&, const wgs84::Longitude&, const wgs84::Altitude&);
+    Position(const wgs84::Latitude&, const wgs84::Longitude&, const wgs84::Altitude&, const units::Quantity<units::Length>& hor_acc);
+    Position(const wgs84::Latitude&, const wgs84::Longitude&, const wgs84::Altitude&, const units::Quantity<units::Length>& hor_acc, const units::Quantity<units::Length>& ver_acc);
 
     bool operator==(const Position& rhs) const;
     bool operator!=(const Position& rhs) const;
@@ -48,15 +59,7 @@ struct Position
     wgs84::Latitude latitude = wgs84::Latitude{};
     wgs84::Longitude longitude = wgs84::Longitude{};
     Optional<wgs84::Altitude> altitude = Optional<wgs84::Altitude>{};
-
-    struct Accuracy
-    {
-        typedef units::Quantity<units::Length> Horizontal;
-        typedef units::Quantity<units::Length> Vertical;
-
-        Optional<Horizontal> horizontal = Horizontal{};
-        Optional<Vertical> vertical = Optional<Vertical>{};
-    } accuracy = Accuracy{};
+    Accuracy accuracy{};
 };
 
 std::ostream& operator<<(std::ostream& out, const Position& position);

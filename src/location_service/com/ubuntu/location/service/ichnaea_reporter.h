@@ -34,20 +34,28 @@ namespace json = Json;
 
 namespace com{namespace ubuntu{namespace location{namespace service
 {
+/**
+ * @brief All types and functions that are used to communicate with instances
+ * of the Mozilla location service go here. Please see for further details:
+ *
+ *   - https://mozilla-ichnaea.readthedocs.org/en/latest/api/index.html#submit
+ *   - https://github.com/mozilla/MozStumbler
+ */
 namespace ichnaea
 {
 namespace submit
 {
+/** @brief Resource path for wifi- and cell-id submissions.  */
 constexpr const char* resource
 {
     "/v1/submit?key="
 };
-
+/** @brief Http code marking errors for Mozilla location service instances. */
 const core::net::http::Status error
 {
     core::net::http::Status::bad_request
 };
-
+/** @brief Http code marking a successful submission request to Mozilla location service instances. */
 const core::net::http::Status success
 {
     core::net::http::Status::no_content
@@ -56,8 +64,10 @@ const core::net::http::Status success
 
 struct Reporter : public Harvester::Reporter
 {
+    /** @brief Submissions can be tagged with a nick-name for tracking on leaderboards. */
     static constexpr const char* nick_name_header{"X-Nickname"};
 
+    /** @brief The JSON-dialect of the Mozilla location service is described here. */
     struct Json
     {
         static constexpr const char* radio{"radio"};
@@ -92,37 +102,51 @@ struct Reporter : public Harvester::Reporter
         };
     };
 
-    // Creation-time options for the ICHNAEA reporter
+    /** Creation-time options for the ICHNAEA reporter */
     struct Configuration
     {
-        // Uri of the ICHNAEA instance we want to submit to.
+        /** Uri of the ICHNAEA instance we want to submit to. */
         std::string uri;
-        // API key for the submission
+        /** API key for the submission */
         std::string key;
-        // Nickname for the submission
+        /** Nickname for the submission */
         std::string nick_name;
     };
 
+    /** @brief Constructs a new instance with the given parameters. */
     Reporter(const Configuration& configuration);
+    /** @brief Stops the reporter instance and frees all related resources. */
     ~Reporter();
 
-    void start() override;
+    /** @brief Starts the reporter and prepares for submission. */
+    void start() override;    
+    /** @brief Stops the reporter. */
     void stop() override;
+
+    /**
+     * @brief Announced a position update, together with visible wifis and cells to the reporter.
+     * @throws std::runtime_error if wifis and cells are empty.
+     */
     void report(
             const Update<Position>& update,
             const std::vector<connectivity::WirelessNetwork::Ptr>& wifis,
             const std::vector<connectivity::RadioCell::Ptr>& cells) override;
 
+    /** @brief Encodes a collection of wifis into the Mozilla loation service JSON dialect. */
     static void convert_wifis_to_json(
             const std::vector<connectivity::WirelessNetwork::Ptr>& wifis,
             json::Value& destination);
 
+    /** @brief Encodes a collection of radio cells into the Mozilla loation service JSON dialect. */
     static void convert_cells_to_json(
             const std::vector<connectivity::RadioCell::Ptr>& cells,
             json::Value& destination);
 
+    /** @brief The http request configuration for submissions to the mozilla location service. */
     core::net::http::Request::Configuration submit_request_config;
+    /** @brief The http client instance used to talk to Mozilla location service instances. */
     std::shared_ptr<core::net::http::Client> http_client;
+    /** @brief Worker thread for dispatching the http client instance. */
     std::thread http_client_worker;
 };
 }

@@ -206,16 +206,6 @@ android::HardwareAbstractionLayer::SuplAssistant::Impl::Impl(android::HardwareAb
 
 void android::HardwareAbstractionLayer::on_nmea_update(int64_t timestamp, const char *nmea, int length, void *context)
 {
-    location::Position ref_pos
-    {
-        location::wgs84::Latitude{51.444670 * location::units::Degrees},
-        location::wgs84::Longitude{7.210852 * location::units::Degrees}
-    };
-    ref_pos.accuracy.horizontal = 10 * location::units::Meters;
-
-    auto thiz = static_cast<android::HardwareAbstractionLayer*>(context);
-    thiz->inject_reference_position(ref_pos);
-
     VLOG(20) << __PRETTY_FUNCTION__ << ": "
              << "timestamp=" << timestamp << " "
              << "nmea=" << nmea << " "
@@ -348,6 +338,7 @@ void android::HardwareAbstractionLayer::on_sv_status_update(UHardwareGpsSvStatus
 void android::HardwareAbstractionLayer::on_set_capabilities(uint32_t capabilities, void* context)
 {
     VLOG(1) << __PRETTY_FUNCTION__;
+
     auto thiz = static_cast<android::HardwareAbstractionLayer*>(context);
     thiz->capabilities() = capabilities;
 }
@@ -439,7 +430,7 @@ std::uint32_t& android::HardwareAbstractionLayer::capabilities()
     return impl.capabilities;
 }
 
-    // From gps::HardwareAbstractionLayer
+// From gps::HardwareAbstractionLayer
 gps::HardwareAbstractionLayer::SuplAssistant& android::HardwareAbstractionLayer::supl_assistant()
 {
     return impl.supl_assistant;

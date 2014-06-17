@@ -101,6 +101,27 @@ struct ProgramOptions
         return true;
     }
 
+    bool parse_from_environment()
+    {
+        try
+        {
+            auto parsed = boost::program_options::parse_environment(od, env_prefix);
+            boost::program_options::store(parsed, vm);
+        } catch(const std::runtime_error& e)
+        {
+            std::cerr << e.what() << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+
+    ProgramOptions& environment_prefix(const std::string& prefix)
+    {
+        env_prefix = prefix;
+        return *this;
+    }
+
     core::dbus::WellKnownBus bus()
     {
         static const std::map<std::string, core::dbus::WellKnownBus> lut =
@@ -114,6 +135,12 @@ struct ProgramOptions
 
     template<typename T>
     T value_for_key(const std::string& key)
+    {
+        return vm[key].as<T>();
+    }
+
+    template<typename T>
+    T value_for_key(const std::string& key) const
     {
         return vm[key].as<T>();
     }
@@ -135,6 +162,7 @@ struct ProgramOptions
     }
 
     bool allow_unregistered;
+    std::string env_prefix;
     boost::program_options::options_description od;
     boost::program_options::variables_map vm;
     std::vector<std::string> unrecognized;
