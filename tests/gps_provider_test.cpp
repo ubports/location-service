@@ -17,10 +17,15 @@
  */
 #include <com/ubuntu/location/providers/gps/provider.h>
 #include <com/ubuntu/location/providers/gps/android_hardware_abstraction_layer.h>
+#include <com/ubuntu/location/providers/gps/net_cpp_gps_xtra_downloader.h>
 
+#include <com/ubuntu/location/logging.h>
 #include <com/ubuntu/location/service/program_options.h>
 
+#include <core/posix/fork.h>
 #include <core/posix/this_process.h>
+
+#include "mongoose.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -296,6 +301,106 @@ TEST(GpsProvider, updates_from_hal_are_passed_on_by_the_provider)
     hal.space_vehicle_updates_(svs);
 }
 
+TEST(GpsXtraDownloader, throws_for_missing_xtra_hosts)
+{
+    gps::android::NetCppGpsXtraDownloader downloader;
+    EXPECT_ANY_THROW(downloader.download_xtra_data(gps::android::GpsXtraDownloader::Configuration{}));
+}
+
+TEST(GpsXtraDownloader, downloading_xtra_data_from_known_host_works)
+{
+    gps::android::GpsXtraDownloader::Configuration config;
+    config.xtra_hosts.push_back("http://xtra1.gpsonextra.net/xtra2.bin");
+
+    gps::android::NetCppGpsXtraDownloader downloader;
+    auto result = downloader.download_xtra_data(config);
+    EXPECT_GT(result.size(), 0);
+}
+
+TEST(GpsXtraDownloader, download_attempt_throws_for_unreachable_host)
+{
+    gps::android::GpsXtraDownloader::Configuration config;
+    config.xtra_hosts.push_back("http://does_not_exist.host.com/");
+
+    gps::android::NetCppGpsXtraDownloader downloader;
+    EXPECT_ANY_THROW(downloader.download_xtra_data(config));
+}
+
+TEST(GpsXtraDownloader, download_attempt_throws_if_timeout_is_reached)
+{
+    auto server = core::posix::fork([]()
+    {
+        bool terminated = false;
+
+        auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_term});
+        trap->signal_raised().connect([trap, &terminated](core::posix::Signal)
+        {
+            trap->stop();
+            terminated = true;
+        });
+
+        struct Handler
+        {
+            static int on_request(mg_connection* conn, mg_event ev)
+            {
+                auto thiz = static_cast<Handler*>(conn->server_param);
+
+                switch (ev)
+                {
+                case MG_REQUEST:
+                    return thiz->handle_request(conn);
+                case MG_AUTH:
+                    return MG_TRUE;
+                default:
+                    return MG_FALSE;
+                }
+
+                return MG_FALSE;
+            }
+
+            int handle_request(mg_connection* conn)
+            {
+                core::net::http::Header header;
+                return MG_TRUE;
+            }
+        } handler;
+
+        std::thread trap_worker
+        {
+            [trap]()
+            {
+                trap->run();
+            }
+        };
+
+        auto server = mg_create_server(&handler, Handler::on_request);
+        mg_set_option(server, "listening_port", "5000");
+
+        for (;;)
+        {
+            mg_poll_server(server, 200);
+
+            if (terminated)
+                break;
+        }
+
+        // Cleanup, and free server instance
+        mg_destroy_server(&server);
+
+        if (trap_worker.joinable())
+            trap_worker.join();
+
+        return HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
+    }, core::posix::StandardStream::empty);
+
+    std::this_thread::sleep_for(std::chrono::seconds{1});
+
+    gps::android::GpsXtraDownloader::Configuration config;
+    config.xtra_hosts.push_back("http://127.0.0.1:5000");
+
+    gps::android::NetCppGpsXtraDownloader downloader;
+    EXPECT_ANY_THROW(downloader.download_xtra_data(config));
+}
 /*****************************************************************
  *                                                               *
  * All tests requiring hardware go here. They are named with     *
@@ -327,7 +432,7 @@ namespace
 struct HardwareAbstractionLayerFixture : public ::testing::Test
 {
     // If this key is set to any value in the environment, we send off data to Mozilla location
-    // service instances.
+    // service instances. ENABLE_HARVESTING_DURING_TESTS
     static constexpr const char* enable_harvesting{"enable_harvesting_during_tests"};
     // The host name of the Mozilla location service instance.
     static constexpr const char* ichnaea_host{"ichnaea_host"};
@@ -394,6 +499,7 @@ struct HardwareAbstractionLayerFixture : public ::testing::Test
 
     HardwareAbstractionLayerFixture()
     {
+        options.print(LOG(INFO));
         harvester.start();
     }
 

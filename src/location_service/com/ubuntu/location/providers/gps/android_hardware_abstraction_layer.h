@@ -36,8 +36,16 @@ struct GpsXtraDownloader
         /** @brief Reads a configuration from a gps.conf file in INI format. */
         static Configuration from_gps_conf_ini_file(std::istream& in);
 
+        /** @brief Timeout on gps xtra download operations. */
+        std::chrono::milliseconds timeout
+        {
+            1500
+        };
+
         /** Set of hosts serving GPS xtra data. */
-        std::vector<std::string> xtra_hosts;
+        std::vector<std::string> xtra_hosts
+        {
+        };
     };
 
     GpsXtraDownloader() = default;

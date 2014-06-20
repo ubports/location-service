@@ -18,6 +18,9 @@
 
 #include "android_hardware_abstraction_layer.h"
 
+#include "net_cpp_gps_xtra_downloader.h"
+#include "null_gps_xtra_downloader.h"
+
 #include <com/ubuntu/location/clock.h>
 #include <com/ubuntu/location/configuration.h>
 #include <com/ubuntu/location/logging.h>
@@ -25,12 +28,6 @@
 #include <com/ubuntu/location/connectivity/manager.h>
 
 #include <ubuntu/hardware/gps.h>
-
-#if defined(COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP)
-#include <core/net/http/client.h>
-#include <core/net/http/request.h>
-#include <core/net/http/response.h>
-#endif // COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP
 
 #include <boost/property_tree/ini_parser.hpp>
 
@@ -43,85 +40,12 @@ namespace location = com::ubuntu::location;
 
 namespace
 {
-/** @brief Implements a GPS xtra downloader that just logs download attempts. */
-struct NullGpsXtraDownloader : public android::GpsXtraDownloader
-{
-    std::vector<char> download_xtra_data(const Configuration& config) override
-    {
-        VLOG(10) << __PRETTY_FUNCTION__ << "\n"
-                 << "  Nr. xtra hosts: " << config.xtra_hosts.size();
-
-        return std::vector<char>{};
-    }
-};
-
-#if defined(COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP)
-/** @brief Implements a GPS xtra downloader relying on net-cpp to do the actual download. */
-struct NetCppGpsXtraDownloader : public android::GpsXtraDownloader
-{
-    static constexpr const char* x_wap_profile_key
-    {
-        "x-wap-profile"
-    };
-
-    static constexpr const char* x_wap_profile_value
-    {
-        "http://www.openmobilealliance.org/tech/profiles/UAPROF/ccppschema-20021212#"
-    };
-
-    NetCppGpsXtraDownloader() : http_client{core::net::http::make_client()}
-    {
-    }
-
-    /** @brief Executes the actual download, throws if no xtra servers are given in the config. */
-    virtual std::vector<char> download_xtra_data(const Configuration& config) override
-    {
-        if (config.xtra_hosts.empty()) throw std::runtime_error
-        {
-            "Missing xtra hosts."
-        };
-
-        std::uniform_int_distribution<std::size_t> dist{0, config.xtra_hosts.size() - 1};
-
-        auto host = config.xtra_hosts.at(dist(dre));
-
-        auto rc = core::net::http::Request::Configuration::from_uri_as_string(host);
-
-        rc.header.add("Accept", "*/*");
-        rc.header.add("Accept", "application/vnd.wap.mms-message");
-        rc.header.add("Accept", "application/vnd.wap.sic");
-        rc.header.add(x_wap_profile_key, x_wap_profile_value);
-
-        auto request = http_client->get(rc);
-        auto response = request->execute([](const core::net::http::Request::Progress&)
-        {
-            return core::net::http::Request::Progress::Next::continue_operation;
-        });
-
-        if (response.status != core::net::http::Status::ok)
-        {
-            std::stringstream ss{"Request for xtra data on "};
-            ss << host << " did not succeed: " << response.status;
-            throw std::runtime_error{ss.str()};
-        }
-
-        return std::vector<char>(response.body.begin(), response.body.end());
-    }
-
-    // Client instance to talk to xtra servers.
-    std::shared_ptr<core::net::http::Client> http_client;
-    // Random number generator for load balancing purposes.
-    std::default_random_engine dre;
-
-};
-#endif
-
 std::shared_ptr<android::GpsXtraDownloader> create_xtra_downloader()
 {
 #if defined(COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP)
-    return std::make_shared<NetCppGpsXtraDownloader>();
+    return std::make_shared<android::NetCppGpsXtraDownloader>();
 #else
-    return std::make_shared<NullGpsXtraDownloader>();
+    return std::make_shared<android::NullGpsXtraDownloader>();
 #endif // COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP
 }
 }
@@ -140,6 +64,8 @@ android::GpsXtraDownloader::Configuration android::GpsXtraDownloader::Configurat
         result.xtra_hosts.push_back(config.get<std::string>("XTRA_SERVER_2"));
     if (config.count("XTRA_SERVER_3") > 0)
         result.xtra_hosts.push_back(config.get<std::string>("XTRA_SERVER_3"));
+
+    result.timeout = std::chrono::milliseconds{1500};
 
     return result;
 }
@@ -368,13 +294,6 @@ void android::HardwareAbstractionLayer::on_agps_status_update(UHardwareGpsAGpsSt
     {
     case U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN:
         VLOG(1) << "U_HARDWARE_GPS_REQUEST_AGPS_DATA_CONN";
-        thiz->impl.supl_assistant.notify_data_connection_open_via_apn("web.vodafone.de");
-
-        if (status->ipaddr == 0xFFFF)
-        {
-            status->ipaddr = (173 << 24) | (194 << 16) | (70 << 8) | (192);
-        }
-
         break;
     case U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN:
         VLOG(1) << "U_HARDWARE_GPS_RELEASE_AGPS_DATA_CONN";

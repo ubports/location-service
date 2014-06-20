@@ -89,8 +89,6 @@ void culs::Skeleton::Private::handle_create_session_for_criteria(const dbus::Mes
 
     try
     {
-        static int id = 0;
-
         Criteria criteria;
         in->reader() >> criteria;
 
