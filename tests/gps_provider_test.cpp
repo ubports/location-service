@@ -307,7 +307,7 @@ TEST(GpsXtraDownloader, throws_for_missing_xtra_hosts)
     EXPECT_ANY_THROW(downloader.download_xtra_data(gps::android::GpsXtraDownloader::Configuration{}));
 }
 
-TEST(GpsXtraDownloader, downloading_xtra_data_from_known_host_works)
+TEST(GpsXtraDownloader, DISABLED_downloading_xtra_data_from_known_host_works)
 {
     gps::android::GpsXtraDownloader::Configuration config;
     config.xtra_hosts.push_back("http://xtra1.gpsonextra.net/xtra2.bin");
