@@ -108,7 +108,18 @@ culss::Stub::Stub(const dbus::Bus::Ptr& bus,
                   std::placeholders::_1));
 }
 
-culss::Stub::~Stub() noexcept {}
+culss::Stub::~Stub() noexcept
+{
+    VLOG(10) << __PRETTY_FUNCTION__;
+
+    //stop_position_updates();
+    //stop_heading_updates();
+    //stop_velocity_updates();
+
+    d->object->uninstall_method_handler<culss::Interface::UpdatePosition>();
+    d->object->uninstall_method_handler<culss::Interface::UpdateHeading>();
+    d->object->uninstall_method_handler<culss::Interface::UpdateVelocity>();
+}
 
 const dbus::types::ObjectPath& culss::Stub::path() const
 {
@@ -117,20 +128,30 @@ const dbus::types::ObjectPath& culss::Stub::path() const
 
 void culss::Stub::start_position_updates()
 {
+    VLOG(10) << __PRETTY_FUNCTION__;
+
     auto result = d->object->transact_method<Interface::StartPositionUpdates,void>();
 
     if (result.is_error())
-        throw std::runtime_error(result.error().print());
+    {
+        std::stringstream ss; ss << __PRETTY_FUNCTION__ << ": " << result.error().print();
+        throw std::runtime_error(ss.str());
+    }
 }
 
 void culss::Stub::stop_position_updates() noexcept
 {
+    VLOG(10) << __PRETTY_FUNCTION__;
+
     try
     {
         auto result = d->object->invoke_method_synchronously<Interface::StopPositionUpdates,void>();
 
         if (result.is_error())
-            LOG(WARNING) << result.error();
+        {
+            std::stringstream ss; ss << __PRETTY_FUNCTION__ << ": " << result.error().print();
+            throw std::runtime_error(ss.str());
+        }
     } catch(const std::runtime_error& e)
     {
         LOG(WARNING) << e.what();
@@ -139,19 +160,29 @@ void culss::Stub::stop_position_updates() noexcept
 
 void culss::Stub::start_velocity_updates()
 {
+    VLOG(10) << __PRETTY_FUNCTION__;
+
     auto result = d->object->transact_method<Interface::StartVelocityUpdates,void>();
 
     if (result.is_error())
-        throw std::runtime_error(result.error().print());
+    {
+        std::stringstream ss; ss << __PRETTY_FUNCTION__ << ": " << result.error().print();
+        throw std::runtime_error(ss.str());
+    }
 }
 
 void culss::Stub::stop_velocity_updates() noexcept
 {
+    VLOG(10) << __PRETTY_FUNCTION__;
+
     try {
         auto result = d->object->transact_method<Interface::StopVelocityUpdates,void>();
 
         if (result.is_error())
-            LOG(WARNING) << result.error();
+        {
+            std::stringstream ss; ss << __PRETTY_FUNCTION__ << ": " << result.error().print();
+            throw std::runtime_error(ss.str());
+        }
     } catch(const std::runtime_error& e)
     {
         LOG(WARNING) << e.what();
@@ -160,19 +191,29 @@ void culss::Stub::stop_velocity_updates() noexcept
 
 void culss::Stub::start_heading_updates()
 {
+    VLOG(10) << __PRETTY_FUNCTION__;
+
     auto result = d->object->transact_method<Interface::StartHeadingUpdates,void>();
 
     if (result.is_error())
-        throw std::runtime_error(result.error().print());
+    {
+        std::stringstream ss; ss << __PRETTY_FUNCTION__ << ": " << result.error().print();
+        throw std::runtime_error(ss.str());
+    }
 }
 
 void culss::Stub::stop_heading_updates() noexcept
 {
+    VLOG(10) << __PRETTY_FUNCTION__;
+
     try {
         auto result = d->object->transact_method<Interface::StopHeadingUpdates,void>();
 
         if (result.is_error())
-            LOG(WARNING) << result.error();
+        {
+            std::stringstream ss; ss << __PRETTY_FUNCTION__ << ": " << result.error().print();
+            throw std::runtime_error(ss.str());
+        }
     } catch(const std::runtime_error& e)
     {
         LOG(WARNING) << e.what();
@@ -181,6 +222,8 @@ void culss::Stub::stop_heading_updates() noexcept
 
 void culss::Stub::Private::update_heading(const dbus::Message::Ptr& incoming)
 {
+    VLOG(10) << __PRETTY_FUNCTION__;
+
     try
     {
         Update<Heading> update; incoming->reader() >> update;
@@ -198,6 +241,8 @@ void culss::Stub::Private::update_heading(const dbus::Message::Ptr& incoming)
 
 void culss::Stub::Private::update_position(const dbus::Message::Ptr& incoming)
 {
+    VLOG(10) << __PRETTY_FUNCTION__;
+
     try
     {
         Update<Position> update; incoming->reader() >> update;
@@ -215,6 +260,8 @@ void culss::Stub::Private::update_position(const dbus::Message::Ptr& incoming)
 
 void culss::Stub::Private::update_velocity(const dbus::Message::Ptr& incoming)
 {
+    VLOG(10) << __PRETTY_FUNCTION__;
+
     try
     {
         Update<Velocity> update; incoming->reader() >> update;

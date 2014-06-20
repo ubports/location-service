@@ -173,5 +173,5 @@ cul::Provider::Requirements cul::operator|(cul::Provider::Requirements lhs, cul:
 
 cul::Provider::Requirements cul::operator&(cul::Provider::Requirements lhs, cul::Provider::Requirements rhs)
 {
-    return static_cast<cul::Provider::Requirements>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+    return static_cast<cul::Provider::Requirements>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
 }

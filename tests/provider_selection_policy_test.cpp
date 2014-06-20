@@ -66,17 +66,18 @@ TEST(DefaultProviderSelectionPolicy, if_no_provider_matches_criteria_null_is_ret
 
     ProviderSetEnumerator enumerator{providers};
 
-    EXPECT_EQ(cul::Provider::Ptr{}, 
+    EXPECT_EQ(cul::ProviderSelectionPolicy::null_provider(),
               policy.determine_position_updates_provider(cul::Criteria{}, enumerator));
-    EXPECT_EQ(cul::Provider::Ptr{}, 
+    EXPECT_EQ(cul::ProviderSelectionPolicy::null_provider(),
               policy.determine_heading_updates_provider(cul::Criteria{}, enumerator));
-    EXPECT_EQ(cul::Provider::Ptr{}, 
+    EXPECT_EQ(cul::ProviderSelectionPolicy::null_provider(),
               policy.determine_velocity_updates_provider(cul::Criteria{}, enumerator));
+
     cul::ProviderSelection empty_selection
     {
-        cul::Provider::Ptr{},
-        cul::Provider::Ptr{},
-        cul::Provider::Ptr{}
+        cul::ProviderSelectionPolicy::null_provider(),
+        cul::ProviderSelectionPolicy::null_provider(),
+        cul::ProviderSelectionPolicy::null_provider()
     };
     EXPECT_EQ(empty_selection,
               policy.determine_provider_selection_for_criteria(cul::Criteria{}, enumerator));

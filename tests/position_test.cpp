@@ -47,7 +47,7 @@ TEST(Position, InitWithLatLonAltGivesValidFieldsForLatLonAlt)
 
 #include <core/dbus/message_streaming_operators.h>
 
-TEST(Position, DISABLED_EncodingAndDecodingGivesSameResults)
+TEST(Position, EncodingAndDecodingGivesSameResults)
 {
     cul::Position p
     {

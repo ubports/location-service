@@ -188,21 +188,6 @@ TEST(Provider, starting_and_stopping_multiple_times_results_in_exactly_one_call_
 
 #include <com/ubuntu/location/proxy_provider.h>
 
-TEST(ProxyProvider, start_and_stop_does_not_throw_for_null_providers)
-{
-    cul::ProviderSelection selection;
-    cul::ProxyProvider pp{selection};
-
-    EXPECT_NO_THROW(pp.start_position_updates());
-    EXPECT_NO_THROW(pp.stop_position_updates());
-
-    EXPECT_NO_THROW(pp.start_heading_updates());
-    EXPECT_NO_THROW(pp.stop_heading_updates());
-
-    EXPECT_NO_THROW(pp.start_velocity_updates());
-    EXPECT_NO_THROW(pp.stop_velocity_updates());
-}
-
 TEST(ProxyProvider, start_and_stop_of_updates_propagates_to_correct_providers)
 {
     using namespace ::testing;

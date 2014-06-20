@@ -65,6 +65,17 @@ public:
     Configuration configuration;
     // The harvester instance.
     Harvester harvester;
+    // All event connections are automatically cut on destruction.
+    struct
+    {
+        core::ScopedConnection is_online;
+        core::ScopedConnection does_report_cell_and_wifi_ids;
+        core::ScopedConnection does_satellite_based_positioning;
+        core::ScopedConnection engine_state;
+        core::ScopedConnection satellite_based_positioning_state;
+        core::ScopedConnection visible_space_vehicles;
+        core::ScopedConnection reference_position;
+    } connections;
 };
 }
 }

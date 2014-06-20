@@ -21,6 +21,24 @@
 
 namespace cul = com::ubuntu::location;
 
+namespace
+{
+struct NullProvider : public cul::Provider
+{
+    NullProvider() = default;
+};
+
+std::shared_ptr<cul::Provider> null_provider_instance
+{
+    new NullProvider{}
+};
+}
+
+const cul::Provider::Ptr& cul::ProviderSelectionPolicy::null_provider()
+{
+    return null_provider_instance;
+}
+
 cul::DefaultProviderSelectionPolicy::DefaultProviderSelectionPolicy()
 {
 }
@@ -67,7 +85,7 @@ cul::DefaultProviderSelectionPolicy::determine_position_updates_provider(
                 matching_providers.insert(provider);
         });
 
-    return matching_providers.empty() ? Provider::Ptr {} : *matching_providers.begin();
+    return matching_providers.empty() ? null_provider() : *matching_providers.begin();
 }
 
 cul::Provider::Ptr cul::DefaultProviderSelectionPolicy::determine_heading_updates_provider(
@@ -91,7 +109,7 @@ cul::Provider::Ptr cul::DefaultProviderSelectionPolicy::determine_heading_update
                 matching_providers.insert(provider);
         });
 
-    return matching_providers.empty() ? Provider::Ptr {} : *matching_providers.begin();
+    return matching_providers.empty() ? null_provider() : *matching_providers.begin();
 }
 
 cul::Provider::Ptr cul::DefaultProviderSelectionPolicy::determine_velocity_updates_provider(
@@ -115,6 +133,5 @@ cul::Provider::Ptr cul::DefaultProviderSelectionPolicy::determine_velocity_updat
                 matching_providers.insert(provider);
         });
 
-    return matching_providers.empty() ? Provider::Ptr {} :
-    *matching_providers.begin();
+    return matching_providers.empty() ? null_provider() : *matching_providers.begin();
 }

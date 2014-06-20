@@ -107,6 +107,7 @@ struct ProgramOptions
         {
             auto parsed = boost::program_options::parse_environment(od, env_prefix);
             boost::program_options::store(parsed, vm);
+            vm.notify();
         } catch(const std::runtime_error& e)
         {
             std::cerr << e.what() << std::endl;
@@ -154,6 +155,12 @@ struct ProgramOptions
     {
         for (const std::string& s : unrecognized)
             enumerator(s);
+    }
+
+    void print(std::ostream& out) const
+    {
+        for (const auto& pair : vm)
+            out << pair.first << ": " << (pair.second.defaulted() ? "default" : "set") << std::endl;
     }
 
     void print_help(std::ostream& out)

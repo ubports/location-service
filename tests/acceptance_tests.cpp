@@ -20,6 +20,7 @@
 #include <com/ubuntu/location/clock.h>
 #include <com/ubuntu/location/engine.h>
 #include <com/ubuntu/location/heading.h>
+#include <com/ubuntu/location/logging.h>
 #include <com/ubuntu/location/position.h>
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/update.h>
@@ -28,8 +29,12 @@
 #include <com/ubuntu/location/wgs84/latitude.h>
 #include <com/ubuntu/location/wgs84/longitude.h>
 
+#include <com/ubuntu/location/providers/dummy/provider.h>
+
+#include <com/ubuntu/location/service/daemon.h>
 #include <com/ubuntu/location/service/default_configuration.h>
 #include <com/ubuntu/location/service/implementation.h>
+#include <com/ubuntu/location/service/program_options.h>
 #include <com/ubuntu/location/service/stub.h>
 
 #include <core/dbus/announcer.h>
@@ -558,4 +563,306 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
     };
 
     EXPECT_EQ(core::testing::ForkAndRunResult::empty, core::testing::fork_and_run(server, client));
+}
+
+namespace
+{
+struct LocationServiceStandaloneLoad : public LocationServiceStandalone
+{
+    struct Keys
+    {
+        // Reference Latitude value for dummy::Provider setup.
+        static constexpr const char* ref_lat{"ref_lat"};
+        // Reference Longitude value for dummy::Provider setup.
+        static constexpr const char* ref_lon{"ref_lon"};
+        // Reference velocity value for dummy::Provider setup.
+        static constexpr const char* ref_velocity{"ref_velocity"};
+        // Reference heading value for dummy::Provider setup.
+        static constexpr const char* ref_heading{"ref_heading"};
+        // Update period length in [ms] for dummy::Provider setup.
+        static constexpr const char* update_period{"update_period"};
+        // Number of clients that should be fired up.
+        static constexpr const char* client_count{"client_count"};
+        // Test duration in [s]
+        static constexpr const char* test_duration{"test_duration"};
+    };
+    static cul::ProgramOptions init_options()
+    {
+        cul::ProgramOptions options;
+
+        options.environment_prefix("ACCEPTANCE_TEST_");
+
+        options.add(Keys::ref_lat,
+                    "Reference Latitude value for dummy::Provider setup.",
+                    51.444670);
+
+        options.add(Keys::ref_lon,
+                    "Reference Longitude value for dummy::Provider setup.",
+                    7.210852);
+
+        options.add(Keys::ref_velocity,
+                    "Reference velocity value for dummy::Provider setup.",
+                    7.);
+
+        options.add(Keys::ref_heading,
+                    "Reference heading value for dummy::Provider setup.",
+                    80.);
+
+        options.add(Keys::update_period,
+                    "Update period length for dummy::Provider setup.",
+                    std::uint32_t{100});
+
+        options.add(Keys::client_count,
+                    "Number of clients that should be fired up.",
+                    std::uint32_t{50});
+
+        options.add(Keys::test_duration,
+                    "Test duration in [s]",
+                    std::uint32_t{30});
+
+        return options;
+    }
+
+    // Initialize our options pack.
+    cul::ProgramOptions options = init_options();
+    // And force parsing of the environment.
+    bool options_parsed_from_env
+    {
+        options.parse_from_environment()
+    };
+    // Reference values used in setting expectations
+    const double ref_lat
+    {
+        options.value_for_key<double>(Keys::ref_lat)
+    };
+    const double ref_lon
+    {
+        options.value_for_key<double>(Keys::ref_lon)
+    };
+    const double ref_velocity
+    {
+        options.value_for_key<double>(Keys::ref_velocity)
+    };
+    const double ref_heading
+    {
+       options.value_for_key<double>(Keys::ref_heading)
+    };
+    const std::uint32_t update_period
+    {
+        options.value_for_key<std::uint32_t>(Keys::update_period)
+    };
+    const std::uint32_t client_count
+    {
+        options.value_for_key<std::uint32_t>(Keys::client_count)
+    };
+    const std::chrono::seconds test_duration
+    {
+        options.value_for_key<std::uint32_t>(Keys::test_duration)
+    };
+
+};
+}
+
+TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingWorks)
+{
+    options.print(LOG(INFO));
+
+    auto server = core::posix::fork([this]()
+    {
+        SCOPED_TRACE("Server");
+
+        VLOG(1) << "Server started: " << getpid();
+
+        cul::Configuration dummy_provider_config;
+
+        dummy_provider_config.add(
+                    cul::providers::dummy::Configuration::Keys::reference_position_lat,
+                    ref_lat);
+
+        dummy_provider_config.add(
+                    cul::providers::dummy::Configuration::Keys::reference_position_lon,
+                    ref_lon);
+
+        dummy_provider_config.add(
+                    cul::providers::dummy::Configuration::Keys::reference_heading,
+                    ref_heading);
+
+        dummy_provider_config.add(
+                    cul::providers::dummy::Configuration::Keys::reference_velocity,
+                    ref_velocity);
+
+        dummy_provider_config.add(
+                    cul::providers::dummy::Configuration::Keys::update_period,
+                    update_period);
+
+        std::map<std::string, cul::Configuration> provider_config
+        {
+            {cul::providers::dummy::Provider::class_name(), dummy_provider_config}
+        };
+
+        cul::service::Daemon::Configuration config;
+        config.bus = session_bus();
+        config.is_testing_enabled = false;
+        config.providers = {cul::providers::dummy::Provider::class_name()};
+        config.provider_options = provider_config;
+
+        core::posix::exit::Status status{core::posix::exit::Status::failure};
+
+        try
+        {
+            status = static_cast<core::posix::exit::Status>(cul::service::Daemon::main(config));
+        } catch(const std::exception& e)
+        {
+            ADD_FAILURE() << e.what();
+        } catch(...)
+        {
+            ADD_FAILURE() << "Caught exception while executing daemon";
+        }
+
+        return ::testing::Test::HasFailure() ?
+                    core::posix::exit::Status::failure :
+                    status;
+    }, core::posix::StandardStream::empty);
+
+    std::this_thread::sleep_for(std::chrono::seconds{2});
+
+    auto client = [this]()
+    {
+        SCOPED_TRACE("Client");
+
+        auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_term});
+        trap->signal_raised().connect([trap](core::posix::Signal)
+        {
+            VLOG(1) << "Received core::posix::Signal::sig_term";
+            trap->stop();
+        });
+
+        auto bus = session_bus();
+        bus->install_executor(dbus::asio::make_executor(bus));
+        std::thread t{[bus](){bus->run();}};
+
+        try
+        {
+            auto location_service = dbus::resolve_service_on_bus<
+                cul::service::Interface,
+                cul::service::Stub>(bus);
+
+            auto s1 = location_service->create_session_for_criteria(cul::Criteria{});
+
+            VLOG(1) << "Successfully created session: " << s1 << std::flush;
+
+            auto c1 = s1->updates().position.changed().connect(
+                [this](const cul::Update<cul::Position>& new_position)
+                {
+                    VLOG(100) << new_position;
+
+                    EXPECT_DOUBLE_EQ(ref_lat, new_position.value.latitude.value.value());
+                    EXPECT_DOUBLE_EQ(ref_lon, new_position.value.longitude.value.value());
+                });
+
+            auto c2 = s1->updates().velocity.changed().connect(
+                [this](const cul::Update<cul::Velocity>& new_velocity)
+                {
+                    VLOG(100) << new_velocity;
+                    EXPECT_DOUBLE_EQ(ref_velocity, new_velocity.value.value());
+                });
+
+            auto c3 = s1->updates().heading.changed().connect(
+                [this](const cul::Update<cul::Heading>& new_heading)
+                {
+                    VLOG(100) << new_heading;
+                    EXPECT_DOUBLE_EQ(ref_heading, new_heading.value.value());
+                });
+
+            VLOG(100) << "Created event connections, starting updates..." << std::flush;
+
+            s1->updates().position_status = culss::Interface::Updates::Status::enabled;
+            s1->updates().heading_status = culss::Interface::Updates::Status::enabled;
+            s1->updates().velocity_status = culss::Interface::Updates::Status::enabled;
+
+            trap->run();
+        } catch(const std::exception& e)
+        {
+            LOG(ERROR) << e.what();
+        } catch(...)
+        {
+            LOG(ERROR) << "Something else happened";
+        }
+
+        bus->stop();
+
+        if (t.joinable())
+            t.join();
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
+    };
+
+    std::vector<core::posix::ChildProcess> clients;
+
+    for (unsigned int i = 0; i < client_count; i++)
+    {
+        clients.push_back(core::posix::fork(client, core::posix::StandardStream::empty));
+    }
+
+    bool running = true;
+
+    std::thread chaos
+    {
+        [&clients, client, &running]()
+        {
+            std::this_thread::sleep_for(std::chrono::seconds{2});
+
+            std::default_random_engine generator;
+            std::uniform_int_distribution<int> dice(1, 6);
+
+            while (running && clients.size() > 1)
+            {
+
+                std::uniform_int_distribution<int> client_dist(0,clients.size()-1);
+
+                // Sample a client index
+                auto idx = client_dist(generator);
+                // Pick a client at random
+                auto& c = clients.at(idx);
+                // Kill that client
+                c.send_signal_or_throw(core::posix::Signal::sig_kill);
+                // Wait for the child to avoid zombies
+                c.wait_for(core::posix::wait::Flags::untraced);
+                // And remove it from the list
+                if (dice(generator) <= 3)
+                    clients.erase(clients.begin() + idx);
+                else
+                    clients.at(idx) = core::posix::fork(client, core::posix::StandardStream::empty);
+
+                // And we pause for 500ms
+                std::this_thread::sleep_for(std::chrono::milliseconds{500});
+            }
+        }
+    };
+
+    // We let the setup spin for 30 seconds.
+    std::this_thread::sleep_for(test_duration);
+
+    running = false;
+
+    if (chaos.joinable())
+        chaos.join();
+
+    for (auto& client : clients)
+    {
+        VLOG(1) << "Stopping client...: " << client.pid();
+        client.send_signal_or_throw(core::posix::Signal::sig_term);
+        auto result = client.wait_for(core::posix::wait::Flags::untraced);
+
+        EXPECT_EQ(core::posix::wait::Result::Status::exited, result.status);
+        EXPECT_EQ(core::posix::exit::Status::success, result.detail.if_exited.status);
+    }
+
+    VLOG(1) << "Cleaned up clients, shutting down the service...";
+
+    server.send_signal_or_throw(core::posix::Signal::sig_term);
+    auto result = server.wait_for(core::posix::wait::Flags::untraced);
+
+    EXPECT_EQ(core::posix::wait::Result::Status::exited, result.status);
+    EXPECT_EQ(core::posix::exit::Status::success, result.detail.if_exited.status);
 }

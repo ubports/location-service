@@ -79,6 +79,7 @@ public:
         };
     };
 
+    /** @brief Summarizes all updates delivered via the engine. */
     struct Updates
     {
         /** The current best known reference location */
@@ -94,7 +95,7 @@ public:
     Engine(const std::shared_ptr<ProviderSelectionPolicy>& provider_selection_policy);
     Engine(const Engine&) = delete;
     Engine& operator=(const Engine&) = delete;
-    virtual ~Engine() = default;
+    virtual ~Engine();
 
     /**
      * @brief Calculates a set of providers that satisfies the given criteria.
@@ -127,10 +128,10 @@ public:
      */
     virtual void for_each_provider(const std::function<void(const Provider::Ptr&)>& enumerator) const noexcept;
 
-    /** The engine's configuration. */
+    /** @brief The engine's configuration. */
     Configuration configuration;
 
-    /** All updates distributed via the engine. */
+    /** @brief All updates distributed via the engine. */
     Updates updates;
 
 private:
@@ -141,6 +142,7 @@ private:
         core::ScopedConnection reference_heading_updates;
         core::ScopedConnection wifi_and_cell_id_reporting_state_updates;
         core::ScopedConnection space_vehicle_visibility_updates;
+        core::ScopedConnection provider_position_updates;
     };
 
     mutable std::mutex guard;

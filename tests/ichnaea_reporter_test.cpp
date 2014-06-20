@@ -106,7 +106,7 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
 
     static const MockRadioCell::Ptr ref_cell
     {
-        new MockRadioCell()
+        new NiceMock<MockRadioCell>()
     };
 
     ON_CALL(*ref_cell, type()).WillByDefault(Return(location::connectivity::RadioCell::Type::gsm));

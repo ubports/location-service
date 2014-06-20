@@ -48,9 +48,14 @@ public:
     virtual void stop_heading_updates();
     
 private:
-    Provider::Ptr position_updates_provider;
-    Provider::Ptr heading_updates_provider;
-    Provider::Ptr velocity_updates_provider;
+    ProviderSelection providers;
+
+    struct
+    {
+        core::ScopedConnection position_updates;
+        core::ScopedConnection heading_updates;
+        core::ScopedConnection velocity_updates;
+    } connections;
 };
 }
 }

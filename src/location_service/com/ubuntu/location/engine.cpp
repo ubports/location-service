@@ -47,7 +47,16 @@ cul::Engine::Engine(const std::shared_ptr<cul::ProviderSelectionPolicy>& provide
             break;
         }
     });
+}
 
+cul::Engine::~Engine()
+{
+    for_each_provider([](const Provider::Ptr& provider)
+    {
+        provider->state_controller()->stop_position_updates();
+        provider->state_controller()->stop_heading_updates();
+        provider->state_controller()->stop_velocity_updates();
+    });
 }
 
 cul::ProviderSelection cul::Engine::determine_provider_selection_for_criteria(const cul::Criteria& criteria)
@@ -103,13 +112,13 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
 
     // We are a bit dumb and just take any position update as new reference.
     // We should come up with a better heuristic here.
-    provider->updates().position.connect([this](const cul::Update<cul::Position>& src)
+    auto cpr = provider->updates().position.connect([this](const cul::Update<cul::Position>& src)
     {
         updates.reference_location = src;
     });
 
     std::lock_guard<std::mutex> lg(guard);
-    providers.emplace(provider, std::move(ProviderConnections{cp, ch, cv, cr, cs}));
+    providers.emplace(provider, std::move(ProviderConnections{cp, ch, cv, cr, cs, cpr}));
 }
 
 void cul::Engine::remove_provider(const cul::Provider::Ptr& provider) noexcept

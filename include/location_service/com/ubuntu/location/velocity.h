@@ -26,7 +26,7 @@ namespace ubuntu
 {
 namespace location
 {
-/** Velocity is measured in m/s. */
+/** @brief Velocity is measured in m/s. */
 typedef units::Quantity<units::Velocity> Velocity;
 }
 }

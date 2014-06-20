@@ -50,7 +50,10 @@ struct culs::Skeleton::Private : public std::enable_shared_from_this<culs::Skele
         });
     }
 
-    ~Private() noexcept {}
+    ~Private() noexcept
+    {
+        object->uninstall_method_handler<culs::Interface::CreateSessionForCriteria>();
+    }
 
     void handle_create_session_for_criteria(const dbus::Message::Ptr& msg);
 
@@ -80,10 +83,14 @@ culs::Skeleton::~Skeleton() noexcept
 
 void culs::Skeleton::Private::handle_create_session_for_criteria(const dbus::Message::Ptr& in)
 {
+    VLOG(1) << __PRETTY_FUNCTION__;
+
     auto sender = in->sender();
 
     try
     {
+        static int id = 0;
+
         Criteria criteria;
         in->reader() >> criteria;
 

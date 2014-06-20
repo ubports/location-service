@@ -57,15 +57,38 @@ location::Provider::Ptr dummy::Provider::create_instance(const location::Provide
 
     provider_config.update_period = std::chrono::milliseconds
     {
-            config.get(dummy::Configuration::key_update_period(), 500)
+        config.get(dummy::Configuration::Keys::update_period, 500)
     };
     provider_config.reference_position.latitude = location::wgs84::Latitude
     {
-            config.get(dummy::Configuration::key_reference_position_lat(), 51.) * location::units::Degrees
+        config.get(dummy::Configuration::Keys::reference_position_lat, 51.) * location::units::Degrees
     };
     provider_config.reference_position.longitude = location::wgs84::Longitude
     {
-            config.get(dummy::Configuration::key_reference_position_lon(), 7.) * location::units::Degrees
+        config.get(dummy::Configuration::Keys::reference_position_lon, 7.) * location::units::Degrees
+    };
+
+    if (config.count(dummy::Configuration::Keys::reference_position_alt) > 0)
+        provider_config.reference_position.altitude = location::wgs84::Altitude
+        {
+            config.get(dummy::Configuration::Keys::reference_position_alt, 0.) * location::units::Meters
+        };
+
+    if (config.count(dummy::Configuration::Keys::reference_horizontal_accuracy) > 0)
+        provider_config.reference_position.accuracy.horizontal =
+            config.get(dummy::Configuration::Keys::reference_horizontal_accuracy, 0.) * location::units::Meters;
+
+    if (config.count(dummy::Configuration::Keys::reference_vertical_accuracy) > 0)
+        provider_config.reference_position.accuracy.vertical =
+            config.get(dummy::Configuration::Keys::reference_vertical_accuracy, 0.) * location::units::Meters;
+
+    provider_config.reference_velocity = location::Velocity
+    {
+        config.get(dummy::Configuration::Keys::reference_velocity, 9.) * location::units::MetersPerSecond
+    };
+    provider_config.reference_heading = location::Heading
+    {
+        config.get(dummy::Configuration::Keys::reference_heading, 127.) * location::units::Degrees
     };
 
     return location::Provider::Ptr{new dummy::Provider{provider_config}};
@@ -82,6 +105,9 @@ dummy::Provider::Provider(const dummy::Configuration& config)
 dummy::Provider::~Provider() noexcept
 {
     stop_position_updates();
+
+    if (d->worker.joinable())
+        d->worker.join();
 }
 
 bool dummy::Provider::matches_criteria(const location::Criteria&)
@@ -99,24 +125,41 @@ void dummy::Provider::start_position_updates()
     d->worker = std::move(std::thread([this]()
     {
         d->state.store(Private::State::started);
-        VLOG(1) << "dummy::Provider::start_position_updates: started";
+        VLOG(1) << __PRETTY_FUNCTION__ << ": started";
 
-        location::Update<location::Position> update
+        location::Update<location::Position> position_update
         {
             d->configuration.reference_position,
             location::Clock::now()
         };
 
+        location::Update<location::Heading> heading_update
+        {
+            d->configuration.reference_heading,
+            location::Clock::now()
+        };
+
+        location::Update<location::Velocity> velocity_update
+        {
+            d->configuration.reference_velocity,
+            location::Clock::now()
+        };
+
         while (!d->stop_requested)
         {
-            update.when = location::Clock::now();
-            mutable_updates().position(update);
+            position_update.when = location::Clock::now();
+            heading_update.when = location::Clock::now();
+            velocity_update.when = location::Clock::now();
+
+            mutable_updates().position(position_update);
+            mutable_updates().heading(heading_update);
+            mutable_updates().velocity(velocity_update);
+
             std::this_thread::sleep_for(d->configuration.update_period);
         }
-    }));
 
-    d->state.store(Private::State::stopped);
-    VLOG(1) << "dummy::Provider::start_position_updates: stopped";
+        d->state.store(Private::State::stopped);
+    }));
 }
 
 void dummy::Provider::stop_position_updates()
@@ -125,11 +168,8 @@ void dummy::Provider::stop_position_updates()
         return;
 
     d->state.store(Private::State::stopping);
-    VLOG(1) << "dummy::Provider::stop_position_updates: stopping";
-    if (d->worker.joinable())
-    {
-        d->stop_requested = true;
-        d->worker.join();
-    }
+    VLOG(1) << __PRETTY_FUNCTION__ << ": stopping";
+
+    d->stop_requested = true;
 }
 

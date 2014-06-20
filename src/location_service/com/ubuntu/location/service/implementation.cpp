@@ -42,9 +42,59 @@ namespace culs = com::ubuntu::location::service;
 namespace dbus = core::dbus;
 
 culs::Implementation::Implementation(const culs::Implementation::Configuration& config)
-    : Skeleton{config.bus, config.permission_manager},
+    : Skeleton(config.bus, config.permission_manager),
       configuration(config),
-      harvester(config.harvester)
+      harvester(config.harvester),
+      connections
+      {
+          is_online().changed().connect(
+              [this](bool value)
+              {
+                  configuration.engine->configuration.engine_state
+                        = value ?
+                            Engine::Status::on :
+                            Engine::Status::off;
+              }),
+          does_report_cell_and_wifi_ids().changed().connect(
+              [this](bool value)
+              {
+                  configuration.engine->configuration.wifi_and_cell_id_reporting_state
+                      = value ?
+                          cul::WifiAndCellIdReportingState::on :
+                          cul::WifiAndCellIdReportingState::off;
+              }),
+          does_satellite_based_positioning().changed().connect(
+              [this](bool value)
+              {
+                  configuration.engine->configuration.satellite_based_positioning_state
+                          = value ?
+                              cul::SatelliteBasedPositioningState::on :
+                              cul::SatelliteBasedPositioningState::off;
+              }),
+          configuration.engine->configuration.engine_state.changed().connect(
+              [this](Engine::Status status)
+              {
+                  is_online() =
+                          status == Engine::Status::on ||
+                          status == Engine::Status::active;
+              }),
+          configuration.engine->configuration.satellite_based_positioning_state.changed().connect(
+              [this](cul::SatelliteBasedPositioningState state)
+              {
+                  does_satellite_based_positioning() =
+                          state == cul::SatelliteBasedPositioningState::on;
+              }),
+          configuration.engine->updates.visible_space_vehicles.changed().connect(
+              [this](const std::map<cul::SpaceVehicle::Key, cul::SpaceVehicle>&svs)
+              {
+                  visible_space_vehicles() = svs;
+              }),
+          configuration.engine->updates.reference_location.changed().connect(
+              [this](const cul::Update<cul::Position>& update)
+              {
+                  harvester.report_position_update(update);
+              })
+      }
 {
     if (!configuration.bus)
         throw std::runtime_error("Cannot create service for null bus.");
@@ -56,59 +106,12 @@ culs::Implementation::Implementation(const culs::Implementation::Configuration& 
     is_online() =
             configuration.engine->configuration.engine_state == Engine::Status::on ||
             configuration.engine->configuration.engine_state == Engine::Status::active;
-    is_online().changed().connect(
-                [this](bool value)
-                {
-                    configuration.engine->configuration.engine_state
-                            = value ?
-                                Engine::Status::on :
-                                Engine::Status::off;
-                });
     does_report_cell_and_wifi_ids() =
             configuration.engine->configuration.wifi_and_cell_id_reporting_state ==
             cul::WifiAndCellIdReportingState::on;
-    does_report_cell_and_wifi_ids().changed().connect(
-                [this](bool value)
-                {
-                    configuration.engine->configuration.wifi_and_cell_id_reporting_state
-                            = value ?
-                                cul::WifiAndCellIdReportingState::on :
-                                cul::WifiAndCellIdReportingState::off;
-                });
     does_satellite_based_positioning() =
             configuration.engine->configuration.satellite_based_positioning_state ==
             cul::SatelliteBasedPositioningState::on;
-    does_satellite_based_positioning().changed().connect(
-                [this](bool value)
-                {
-                    configuration.engine->configuration.satellite_based_positioning_state
-                            = value ?
-                                cul::SatelliteBasedPositioningState::on :
-                                cul::SatelliteBasedPositioningState::off;
-                });
-    configuration.engine->configuration.engine_state.changed().connect(
-                [this](Engine::Status status)
-                {
-                    is_online() =
-                            status == Engine::Status::on ||
-                            status == Engine::Status::active;
-                });
-    configuration.engine->configuration.satellite_based_positioning_state.changed().connect(
-                [this](cul::SatelliteBasedPositioningState state)
-                {
-                    does_satellite_based_positioning() =
-                            state == cul::SatelliteBasedPositioningState::on;
-                });
-    configuration.engine->updates.visible_space_vehicles.changed().connect(
-                [this](const std::map<cul::SpaceVehicle::Key, cul::SpaceVehicle>&svs)
-                {
-                    visible_space_vehicles() = svs;
-                });
-
-    configuration.engine->updates.reference_location.changed().connect([this](const cul::Update<cul::Position>& update)
-    {
-        harvester.report_position_update(update);
-    });
 
     harvester.start();
 }

@@ -37,6 +37,8 @@ class ProviderSelectionPolicy
 public:
     typedef std::shared_ptr<ProviderSelectionPolicy> Ptr;
 
+    static const Provider::Ptr& null_provider();
+
     ProviderSelectionPolicy(const ProviderSelectionPolicy&) = delete;
     ProviderSelectionPolicy& operator=(const ProviderSelectionPolicy&) = delete;
     virtual ~ProviderSelectionPolicy() = default;

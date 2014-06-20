@@ -60,13 +60,16 @@ culs::Stub::~Stub() noexcept
 
 culss::Interface::Ptr culs::Stub::create_session_for_criteria(const cul::Criteria& criteria)
 {
-    auto op = d->object->invoke_method_synchronously<
+    auto op = d->object->transact_method<
             culs::Interface::CreateSessionForCriteria,
             culs::Interface::CreateSessionForCriteria::ResultType
             >(criteria);
 
     if (op.is_error())
-        throw std::runtime_error(op.error().print());
+    {
+        std::stringstream ss; ss << __PRETTY_FUNCTION__ << ": " << op.error().print();
+        throw std::runtime_error(ss.str());
+    }
 
     return culss::Interface::Ptr(new culss::Stub{d->bus, op.value()});
 }

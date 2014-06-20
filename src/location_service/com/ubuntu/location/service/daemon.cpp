@@ -160,6 +160,8 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         trap->stop();
     });
 
+    const location::Configuration empty_provider_configuration;
+
     std::set<location::Provider::Ptr> instantiated_providers;
 
     for (const std::string& provider : config.providers)
@@ -170,7 +172,8 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         {
             auto p = location::ProviderFactory::instance().create_provider_for_name_with_config(
                         provider,
-                        config.provider_options.at(provider));
+                        config.provider_options.count(provider) > 0 ?
+                            config.provider_options.at(provider) : empty_provider_configuration);
 
             if (p)
                 instantiated_providers.insert(p);

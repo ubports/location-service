@@ -25,36 +25,26 @@ namespace cul = com::ubuntu::location;
 
 cul::ProxyProvider::ProxyProvider(const cul::ProviderSelection& selection)
     : Provider(selection.to_feature_flags()),
-      position_updates_provider(selection.position_updates_provider),
-      heading_updates_provider(selection.heading_updates_provider),
-      velocity_updates_provider(selection.velocity_updates_provider)
+      providers(selection),
+      connections
+      {
+          providers.position_updates_provider->updates().position.connect(
+              [this](const cul::Update<cul::Position>& u)
+              {
+                  mutable_updates().position(u);
+              }),
+          providers.heading_updates_provider->updates().heading.connect(
+              [this](const cul::Update<cul::Heading>& u)
+              {
+                  mutable_updates().heading(u);
+              }),
+          providers.velocity_updates_provider->updates().velocity.connect(
+              [this](const cul::Update<cul::Velocity>& u)
+              {
+                  mutable_updates().velocity(u);
+              })
+      }
 {
-    if (position_updates_provider)
-    {
-        position_updates_provider->updates().position.connect(
-                    [this](const cul::Update<cul::Position>& u)
-                    {
-                        mutable_updates().position(u);
-                    });
-    }
-
-    if (heading_updates_provider)
-    {
-        heading_updates_provider->updates().heading.connect(
-                    [this](const cul::Update<cul::Heading>& u)
-                    {
-                        mutable_updates().heading(u);
-                    });
-    }
-
-    if (velocity_updates_provider)
-    {
-        velocity_updates_provider->updates().velocity.connect(
-                    [this](const cul::Update<cul::Velocity>& u)
-                    {
-                        mutable_updates().velocity(u);
-                    });
-    }
 }
 
 cul::ProxyProvider::~ProxyProvider() noexcept
@@ -63,36 +53,30 @@ cul::ProxyProvider::~ProxyProvider() noexcept
 
 void cul::ProxyProvider::start_position_updates()
 {
-    if (position_updates_provider)
-        position_updates_provider->state_controller()->start_position_updates();
+    providers.position_updates_provider->state_controller()->start_position_updates();
 }
 
 void cul::ProxyProvider::stop_position_updates()
 {
-    if (position_updates_provider)
-        position_updates_provider->state_controller()->stop_position_updates();
+    providers.position_updates_provider->state_controller()->stop_position_updates();
 }
 
 void cul::ProxyProvider::start_velocity_updates()
 {
-    if (velocity_updates_provider)
-        velocity_updates_provider->state_controller()->start_velocity_updates();
+    providers.velocity_updates_provider->state_controller()->start_velocity_updates();
 }
 
 void cul::ProxyProvider::stop_velocity_updates()
 {
-    if (velocity_updates_provider)
-        velocity_updates_provider->state_controller()->stop_velocity_updates();
+    providers.velocity_updates_provider->state_controller()->stop_velocity_updates();
 }    
 
 void cul::ProxyProvider::start_heading_updates()
 {
-    if (heading_updates_provider)
-        heading_updates_provider->state_controller()->start_heading_updates();
+    providers.heading_updates_provider->state_controller()->start_heading_updates();
 }
 
 void cul::ProxyProvider::stop_heading_updates()
 {
-    if (heading_updates_provider)
-        heading_updates_provider->state_controller()->stop_heading_updates();
+    providers.heading_updates_provider->state_controller()->stop_heading_updates();
 }

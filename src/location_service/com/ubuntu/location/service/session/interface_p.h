@@ -92,7 +92,7 @@ struct com::ubuntu::location::service::session::Interface::StartPositionUpdates
 
     typedef void ResultType;
 
-    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
+    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{5}; }
 };
 
 struct com::ubuntu::location::service::session::Interface::StopPositionUpdates
@@ -110,7 +110,7 @@ struct com::ubuntu::location::service::session::Interface::StopPositionUpdates
 
     typedef void ResultType;
 
-    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
+    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{5}; }
 };
 
 struct com::ubuntu::location::service::session::Interface::StartVelocityUpdates
@@ -128,7 +128,7 @@ struct com::ubuntu::location::service::session::Interface::StartVelocityUpdates
 
     typedef void ResultType;
 
-    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
+    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{5}; }
 };
 
 struct com::ubuntu::location::service::session::Interface::StopVelocityUpdates
@@ -146,7 +146,7 @@ struct com::ubuntu::location::service::session::Interface::StopVelocityUpdates
 
     typedef void ResultType;
 
-    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
+    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{5}; }
 };
 
 struct com::ubuntu::location::service::session::Interface::StartHeadingUpdates
@@ -164,7 +164,7 @@ struct com::ubuntu::location::service::session::Interface::StartHeadingUpdates
 
     typedef void ResultType;
 
-    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
+    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{5}; }
 };
 
 struct com::ubuntu::location::service::session::Interface::StopHeadingUpdates
@@ -182,7 +182,7 @@ struct com::ubuntu::location::service::session::Interface::StopHeadingUpdates
 
     typedef void ResultType;
 
-    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
+    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{5}; }
 };
 
 struct com::ubuntu::location::service::session::Interface::Errors::ErrorParsingUpdate

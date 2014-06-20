@@ -17,6 +17,8 @@
  */
 #include <com/ubuntu/location/service/session/skeleton.h>
 
+#include <com/ubuntu/location/logging.h>
+
 #include "interface_p.h"
 
 #include <core/dbus/message.h>
@@ -43,6 +45,13 @@ struct culss::Skeleton::Private
         dbus::Service::Ptr service;
         dbus::Object::Ptr session;
     } remote;
+
+    struct
+    {
+        core::ScopedConnection position_changed;
+        core::ScopedConnection heading_changed;
+        core::ScopedConnection velocity_changed;
+    } connections;
 };
 
 culss::Skeleton::Skeleton(
@@ -58,11 +67,56 @@ culss::Skeleton::Skeleton(
           bus,
           session_path,
           access_service()->add_object_for_path(session_path),
-          { service, session }
+          { service, session },
+          {
+              instance->updates().position.changed().connect([this](const cul::Update<cul::Position>& position)
+              {
+                  try
+                  {
+                      d->remote.session->invoke_method_synchronously<culs::session::Interface::UpdatePosition, void>(position);
+                  } catch(const std::exception&)
+                  {
+                      // We consider the session to be dead once we hit an exception here.
+                      // We thus remove it from the central and end its lifetime.
+                      // on_session_died();
+                  } catch(...)
+                  {
+                  }
+              }),
+              instance->updates().heading.changed().connect([this](const cul::Update<cul::Heading>& heading)
+              {
+                  try
+                  {
+                      d->remote.session->invoke_method_synchronously<culs::session::Interface::UpdateHeading, void>(heading);
+                  } catch(const std::exception&)
+                  {
+                      // We consider the session to be dead once we hit an exception here.
+                      // We thus remove it from the central and end its lifetime.
+                      //on_session_died();
+                  } catch(...)
+                  {
+                  }
+              }),
+              instance->updates().velocity.changed().connect([this](const cul::Update<cul::Velocity>& velocity)
+              {
+                  try
+                  {
+                      d->remote.session->invoke_method_synchronously<culs::session::Interface::UpdateVelocity, void>(velocity);
+                  } catch(const std::runtime_error&)
+                  {
+                      // We consider the session to be dead once we hit an exception here.
+                      // We thus remove it from the central and end its lifetime.
+                      // on_session_died();
+                  } catch(...)
+                  {
+                  }
+              })
+          }
       })
 {
     d->object->install_method_handler<Interface::StartPositionUpdates>([this, bus](const dbus::Message::Ptr& msg)
     {
+        VLOG(10) << "MethodHandler for Interface::StartPositionUpdates";
         try
         {
             d->instance->updates().position_status = culss::Interface::Updates::Status::enabled;
@@ -77,13 +131,21 @@ culss::Skeleton::Skeleton(
 
     d->object->install_method_handler<Interface::StopPositionUpdates>([this, bus](const dbus::Message::Ptr& msg)
     {
-        d->instance->updates().position_status = culss::Interface::Updates::Status::disabled;
-        auto reply = core::dbus::Message::make_method_return(msg);
-        bus->send(reply);
+        VLOG(10) << "MethodHandler for Interface::StopPositionUpdates";
+        try
+        {
+            d->instance->updates().position_status = culss::Interface::Updates::Status::disabled;
+            auto reply = core::dbus::Message::make_method_return(msg);
+            bus->send(reply);
+        } catch(const std::exception& e)
+        {
+            LOG(ERROR) << e.what();
+        }
     });
 
     d->object->install_method_handler<Interface::StartVelocityUpdates>([this, bus](const dbus::Message::Ptr& msg)
     {
+        VLOG(10) << "MethodHandler for Interface::StartVelocityUpdates";
         try
         {
             d->instance->updates().velocity_status = culss::Interface::Updates::Status::enabled;
@@ -98,13 +160,21 @@ culss::Skeleton::Skeleton(
 
     d->object->install_method_handler<Interface::StopVelocityUpdates>([this, bus](const dbus::Message::Ptr& msg)
     {
-        d->instance->updates().velocity_status = culss::Interface::Updates::Status::disabled;
-        auto reply = core::dbus::Message::make_method_return(msg);
-        bus->send(reply);
+        VLOG(10) << "MethodHandler for Interface::StopVelocityUpdates";
+        try
+        {
+            d->instance->updates().velocity_status = culss::Interface::Updates::Status::disabled;
+            auto reply = core::dbus::Message::make_method_return(msg);
+            bus->send(reply);
+        } catch(const std::exception& e)
+        {
+            LOG(ERROR) << e.what();
+        }
     });
 
     d->object->install_method_handler<Interface::StartHeadingUpdates>([this, bus](const dbus::Message::Ptr& msg)
     {
+        VLOG(10) << "MethodHandler for Interface::StartHeadingUpdates";
         try
         {
             d->instance->updates().heading_status = culss::Interface::Updates::Status::enabled;
@@ -119,48 +189,15 @@ culss::Skeleton::Skeleton(
 
     d->object->install_method_handler<Interface::StopHeadingUpdates>([this, bus](const dbus::Message::Ptr& msg)
     {
-
-        d->instance->updates().heading_status = culss::Interface::Updates::Status::disabled;
-        auto reply = core::dbus::Message::make_method_return(msg);
-        bus->send(reply);
-    });
-
-    instance->updates().position.changed().connect([this](const cul::Update<cul::Position>& position)
-    {
+        VLOG(10) << "MethodHandler for Interface::StopHeadingUpdates";
         try
         {
-            d->remote.session->invoke_method_synchronously<culs::session::Interface::UpdatePosition, void>(position);
-        } catch(const std::runtime_error&)
+            d->instance->updates().heading_status = culss::Interface::Updates::Status::disabled;
+            auto reply = core::dbus::Message::make_method_return(msg);
+            bus->send(reply);
+        } catch(const std::exception& e)
         {
-            // We consider the session to be dead once we hit an exception here.
-            // We thus remove it from the central and end its lifetime.
-            // on_session_died();
-        }
-    });
-
-    instance->updates().heading.changed().connect([this](const cul::Update<cul::Heading>& heading)
-    {
-        try
-        {
-            d->remote.session->invoke_method_synchronously<culs::session::Interface::UpdateHeading, void>(heading);
-        } catch(const std::runtime_error&)
-        {
-            // We consider the session to be dead once we hit an exception here.
-            // We thus remove it from the central and end its lifetime.
-            //on_session_died();
-        }
-    });
-
-    instance->updates().velocity.changed().connect([this](const cul::Update<cul::Velocity>& velocity)
-    {
-        try
-        {
-            d->remote.session->invoke_method_synchronously<culs::session::Interface::UpdateVelocity, void>(velocity);
-        } catch(const std::runtime_error&)
-        {
-            // We consider the session to be dead once we hit an exception here.
-            // We thus remove it from the central and end its lifetime.
-            // on_session_died();
+            LOG(ERROR) << e.what();
         }
     });
 }
