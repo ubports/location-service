@@ -38,7 +38,7 @@ dbus::Message::Ptr the_empty_reply()
 
 culs::Skeleton::Skeleton(const culs::Skeleton::Configuration& configuration)
     : dbus::Skeleton<culs::Interface>(configuration.incoming),
-      permission_manager(configuration.permission_manager),
+      configuration(configuration),
       daemon(configuration.outgoing),
       object(access_service()->add_object_for_path(culs::Interface::path())),
       properties
@@ -64,7 +64,6 @@ void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr
 {
     VLOG(1) << __PRETTY_FUNCTION__;
 
-    auto bus = access_bus();
     auto sender = in->sender();
     auto reply = the_empty_reply();
 
@@ -79,14 +78,18 @@ void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr
             static_cast<uid_t>(daemon.get_connection_unix_user(sender))
         };
 
-        if (PermissionManager::Result::rejected == permission_manager->check_permission_for_credentials(criteria, credentials))
+        auto result = configuration.permission_manager->check_permission_for_credentials(
+                    criteria,
+                    credentials);
+
+        if (PermissionManager::Result::rejected == result)
             throw std::runtime_error("Client lacks permissions to access the service with the given criteria");
 
         // TODO(tvoss): Factor session path creation out into its own interface.
         std::stringstream ss; ss << "/sessions/" << credentials.pid;
         dbus::types::ObjectPath path{ss.str()};
 
-        auto stub = dbus::Service::use_service(bus, sender);
+        auto stub = dbus::Service::use_service(configuration.outgoing, sender);
 
         culss::Skeleton::Configuration config
         {
@@ -94,7 +97,7 @@ void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr
             culss::Skeleton::Local
             {
                 create_session_for_criteria(criteria),
-                bus
+                configuration.incoming
             },
             culss::Skeleton::Remote
             {
@@ -132,7 +135,7 @@ void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr
     // We are done processing the request and try to send out the result to the client.
     try
     {
-        access_bus()->send(reply);
+        configuration.outgoing->send(reply);
     } catch(const std::exception& e)
     {
         // We log the error for debugging purposes.

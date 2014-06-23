@@ -27,16 +27,6 @@
 namespace com { namespace ubuntu { namespace location { namespace providers { namespace gps { namespace android {
 struct NetCppGpsXtraDownloader : public GpsXtraDownloader
 {
-    static constexpr const char* x_wap_profile_key
-    {
-        "x-wap-profile"
-    };
-
-    static constexpr const char* x_wap_profile_value
-    {
-        "http://www.openmobilealliance.org/tech/profiles/UAPROF/ccppschema-20021212#"
-    };
-
     NetCppGpsXtraDownloader() : http_client{core::net::http::make_client()}
     {
     }

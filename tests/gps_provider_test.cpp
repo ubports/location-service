@@ -317,7 +317,18 @@ TEST(GpsXtraDownloader, downloading_xtra_data_from_known_host_works)
         [](mg_connection* conn)
         {
             static char data[data_size];
-            for (int i = 0; i < data_size; i++) data[i] = i%2;
+            for (int i = 0; i < data_size; i++)
+                data[i] = i%2;
+
+            core::net::http::Header header;
+            for (int i = 0; i < conn->num_headers; i++)
+                header.add(conn->http_headers[i].name, conn->http_headers[i].value);
+
+            EXPECT_TRUE(header.has("Accept", "*/*"));
+            EXPECT_TRUE(header.has("Accept", "application/vnd.wap.mms-message"));
+            EXPECT_TRUE(header.has("Accept", "application/vnd.wap.sic"));
+            EXPECT_TRUE(header.has(gps::android::GpsXtraDownloader::x_wap_profile_key,
+                                   gps::android::GpsXtraDownloader::x_wap_profile_value));
 
             mg_send_status(conn, 200);
             mg_send_data(conn, &data, data_size);

@@ -72,9 +72,8 @@ private:
             const core::dbus::types::ObjectPath& path,
             const session::Interface::Ptr& session);
 
-    // Queried for incoming message calls to make sure that callers are allowed
-    // to access requested resources.
-    PermissionManager::Ptr permission_manager;
+    // Stores the configuration passed in at creation time.
+    Configuration configuration;
     // DBus-daemon stub for resolving credentials (pid, uid) for incoming message calls.
     core::dbus::DBus daemon;
     // The skeleton object representing com.ubuntu.location.service.Interface on the bus.

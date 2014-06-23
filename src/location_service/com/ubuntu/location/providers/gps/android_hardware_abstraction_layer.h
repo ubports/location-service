@@ -30,6 +30,16 @@ namespace android
 /** @brief Models a downloader for GPS xtra data from HTTP sources. */
 struct GpsXtraDownloader
 {
+    static constexpr const char* x_wap_profile_key
+    {
+        "x-wap-profile"
+    };
+
+    static constexpr const char* x_wap_profile_value
+    {
+        "http://www.openmobilealliance.org/tech/profiles/UAPROF/ccppschema-20021212#"
+    };
+
     /** @brief Configuration options specific to a GpsXtraDownloader implementation. */
     struct Configuration
     {
