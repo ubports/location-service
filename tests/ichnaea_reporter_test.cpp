@@ -152,6 +152,8 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
         "nick_name"
     };
 
+    core::testing::CrossProcessSync cps; // server - ready -> client
+
     testing::web::server::Configuration web_server_configuration
     {
         5000,
@@ -212,8 +214,9 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
             return MG_TRUE;
         }
     };
+
     core::posix::ChildProcess server = core::posix::fork(
-                testing::a_web_server(web_server_configuration),
+                std::bind(testing::a_web_server(web_server_configuration), cps),
                 core::posix::StandardStream::empty);
 
     using namespace ::testing;
@@ -238,7 +241,7 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
     reporter.start();
     reporter.report(reference_position_update, {wireless_network}, {ref_cell});
 
-    std::this_thread::sleep_for(std::chrono::milliseconds{500});
+    cps.wait_for_signal_ready_for(std::chrono::seconds{2});
 
     server.send_signal_or_throw(core::posix::Signal::sig_term);
     auto result = server.wait_for(core::posix::wait::Flags::untraced);

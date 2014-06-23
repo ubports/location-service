@@ -19,6 +19,7 @@
 #include <core/posix/exit.h>
 #include <core/posix/signal.h>
 
+#include <core/testing/cross_process_sync.h>
 #include <gtest/gtest.h>
 
 #include <cstdint>
@@ -45,9 +46,9 @@ struct Configuration
 }
 }
 // Returns an executable web-server for the given configuration.
-inline std::function<core::posix::exit::Status()> a_web_server(const web::server::Configuration& configuration)
+inline std::function<core::posix::exit::Status(core::testing::CrossProcessSync& cps)> a_web_server(const web::server::Configuration& configuration)
 {
-    return [configuration]()
+    return [configuration](core::testing::CrossProcessSync& cps)
     {
         bool terminated = false;
 
@@ -99,6 +100,8 @@ inline std::function<core::posix::exit::Status()> a_web_server(const web::server
         auto server = mg_create_server(&context, Context::on_request);
         // Setup the port on which the server should be exposed.
         mg_set_option(server, "listening_port", std::to_string(configuration.port).c_str());
+        // Notify framework that we are good to go
+        cps.try_signal_ready_for(std::chrono::milliseconds{500});
         // Start the polling loop
         for (;;)
         {

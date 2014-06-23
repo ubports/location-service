@@ -25,6 +25,8 @@
 #include <core/posix/fork.h>
 #include <core/posix/this_process.h>
 
+#include <core/testing/cross_process_sync.h>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -311,10 +313,12 @@ TEST(GpsXtraDownloader, downloading_xtra_data_from_known_host_works)
 {
     static const int data_size{200};
 
+    core::testing::CrossProcessSync cps; // server - ready -> client
+
     testing::web::server::Configuration configuration
     {
         5000,
-        [](mg_connection* conn)
+        [&cps](mg_connection* conn)
         {
             static char data[data_size];
             for (int i = 0; i < data_size; i++)
@@ -338,10 +342,10 @@ TEST(GpsXtraDownloader, downloading_xtra_data_from_known_host_works)
     };
 
     auto server = core::posix::fork(
-                testing::a_web_server(configuration),
+                std::bind(testing::a_web_server(configuration), cps),
                 core::posix::StandardStream::empty);
 
-    std::this_thread::sleep_for(std::chrono::seconds{1});
+    cps.wait_for_signal_ready_for(std::chrono::seconds{2});
 
     gps::android::GpsXtraDownloader::Configuration config;
     config.xtra_hosts.push_back("http://127.0.0.1:5000");
@@ -374,11 +378,13 @@ TEST(GpsXtraDownloader, download_attempt_throws_if_timeout_is_reached)
         }
     };
 
+    core::testing::CrossProcessSync cps; // server - ready -> client
+
     auto server = core::posix::fork(
-                testing::a_web_server(web_serverconfiguration),
+                std::bind(testing::a_web_server(web_serverconfiguration), cps),
                 core::posix::StandardStream::empty);
 
-    std::this_thread::sleep_for(std::chrono::seconds{1});
+    cps.wait_for_signal_ready_for(std::chrono::seconds{2});
 
     gps::android::GpsXtraDownloader::Configuration download_config;
     download_config.xtra_hosts.push_back("http://127.0.0.1:5000");
