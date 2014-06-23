@@ -29,19 +29,18 @@ namespace location
 struct Criteria;
 namespace service
 {
-/**
- * @brief Credentials of a remote session.
- */
+/** @brief Credentials of a remote session. */
 struct Credentials
 {
-    /** The process id of the remote peer. */
+    /** @brief The process id of the remote peer. */
     pid_t pid;
-    /** The user id the remote peer runs under. */
+    /** @brief The user id the remote peer runs under. */
     uid_t uid;
 };
 
 /**
- * @brief The PermissionManager class is an interface to check whether an application is allowed to access the location services.
+ * @brief The PermissionManager class is an interface to check whether an application
+ * is allowed to access the location services.
  */
 class PermissionManager
 {

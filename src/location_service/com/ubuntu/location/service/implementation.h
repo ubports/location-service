@@ -44,7 +44,9 @@ public:
     struct Configuration
     {
         // The bus connection to expose the service upon.
-        core::dbus::Bus::Ptr bus;
+        core::dbus::Bus::Ptr incoming;
+        // The bus connection for querying other services.
+        core::dbus::Bus::Ptr outgoing;
         // The positioning Engine that the service should use.
         Engine::Ptr engine;
         // The permission manager that the service should use.

@@ -181,10 +181,14 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
             trap->stop();
         });
 
-        auto bus = session_bus();
-        bus->install_executor(core::dbus::asio::make_executor(bus));
+        auto incoming = session_bus();
+        auto outgoing = session_bus();
 
-        std::thread t{[bus](){bus->run();}};
+        incoming->install_executor(core::dbus::asio::make_executor(incoming));
+        outgoing->install_executor(core::dbus::asio::make_executor(outgoing));
+
+        std::thread t1{[incoming](){incoming->run();}};
+        std::thread t2{[outgoing](){outgoing->run();}};
 
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
@@ -192,7 +196,8 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
         cul::service::DefaultConfiguration config;
         cul::service::Implementation::Configuration configuration
         {
-            bus,
+            incoming,
+            outgoing,
             config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
             config.the_permission_manager(),
             cul::service::Harvester::Configuration
@@ -213,10 +218,14 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
 
         trap->run();
 
-        bus->stop();
+        incoming->stop();
+        outgoing->stop();
 
-        if (t.joinable())
-            t.join();
+        if (t1.joinable())
+            t1.join();
+
+        if (t2.joinable())
+            t2.join();
 
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
@@ -295,15 +304,20 @@ TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
             trap->stop();
         });
 
-        auto bus = session_bus();
-        bus->install_executor(dbus::asio::make_executor(bus));
+        auto incoming = session_bus();
+        auto outgoing = session_bus();
+
+        incoming->install_executor(core::dbus::asio::make_executor(incoming));
+        outgoing->install_executor(core::dbus::asio::make_executor(outgoing));
+
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
 
         cul::service::DefaultConfiguration config;
         cul::service::Implementation::Configuration configuration
         {
-            bus,
+            incoming,
+            outgoing,
             config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
             config.the_permission_manager(),
             cul::service::Harvester::Configuration
@@ -317,14 +331,19 @@ TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
-        std::thread t{[bus](){bus->run();}};
+        std::thread t1{[incoming](){incoming->run();}};
+        std::thread t2{[outgoing](){outgoing->run();}};
 
         trap->run();
 
-        bus->stop();
+        incoming->stop();
+        outgoing->stop();
 
-        if (t.joinable())
-            t.join();
+        if (t1.joinable())
+            t1.join();
+
+        if (t2.joinable())
+            t2.join();
 
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
@@ -364,8 +383,11 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
             trap->stop();
         });
 
-        auto bus = session_bus();
-        bus->install_executor(dbus::asio::make_executor(bus));
+        auto incoming = session_bus();
+        auto outgoing = session_bus();
+
+        incoming->install_executor(core::dbus::asio::make_executor(incoming));
+        outgoing->install_executor(core::dbus::asio::make_executor(outgoing));
 
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
@@ -373,7 +395,8 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
         cul::service::DefaultConfiguration config;
         cul::service::Implementation::Configuration configuration
         {
-            bus,
+            incoming,
+            outgoing,
             config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
             config.the_permission_manager(),
             cul::service::Harvester::Configuration
@@ -387,14 +410,19 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
-        std::thread t{[bus](){bus->run();}};
+        std::thread t1{[incoming](){incoming->run();}};
+        std::thread t2{[outgoing](){outgoing->run();}};
 
         trap->run();
 
-        bus->stop();
+        incoming->stop();
+        outgoing->stop();
 
-        if (t.joinable())
-            t.join();
+        if (t1.joinable())
+            t1.join();
+
+        if (t2.joinable())
+            t2.join();
 
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
@@ -433,15 +461,20 @@ TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdu
             trap->stop();
         });
 
-        auto bus = session_bus();
-        bus->install_executor(dbus::asio::make_executor(bus));
+        auto incoming = session_bus();
+        auto outgoing = session_bus();
+
+        incoming->install_executor(core::dbus::asio::make_executor(incoming));
+        outgoing->install_executor(core::dbus::asio::make_executor(outgoing));
+
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
 
         cul::service::DefaultConfiguration config;
         cul::service::Implementation::Configuration configuration
         {
-            bus,
+            incoming,
+            outgoing,
             config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
             config.the_permission_manager(),
             cul::service::Harvester::Configuration
@@ -452,16 +485,21 @@ TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdu
         };
         cul::service::Implementation location_service{configuration};
 
-        std::thread t{[bus](){bus->run();}};
+        std::thread t1{[incoming](){incoming->run();}};
+        std::thread t2{[outgoing](){outgoing->run();}};
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
         trap->run();
 
-        bus->stop();
+        incoming->stop();
+        outgoing->stop();
 
-        if (t.joinable())
-            t.join();
+        if (t1.joinable())
+            t1.join();
+
+        if (t2.joinable())
+            t2.join();
 
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
@@ -509,15 +547,20 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
             trap->stop();
         });
 
-        auto bus = session_bus();
-        bus->install_executor(dbus::asio::make_executor(bus));
+        auto incoming = session_bus();
+        auto outgoing = session_bus();
+
+        incoming->install_executor(core::dbus::asio::make_executor(incoming));
+        outgoing->install_executor(core::dbus::asio::make_executor(outgoing));
+
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
 
         cul::service::DefaultConfiguration config;
         cul::service::Implementation::Configuration configuration
         {
-            bus,
+            incoming,
+            outgoing,
             config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
             config.the_permission_manager(),
             cul::service::Harvester::Configuration
@@ -530,16 +573,21 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
 
         configuration.engine->updates.visible_space_vehicles.set(visible_space_vehicles);
 
-        std::thread t{[bus](){bus->run();}};
+        std::thread t1{[incoming](){incoming->run();}};
+        std::thread t2{[outgoing](){outgoing->run();}};
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
         trap->run();
 
-        bus->stop();
+        incoming->stop();
+        outgoing->stop();
 
-        if (t.joinable())
-            t.join();
+        if (t1.joinable())
+            t1.join();
+
+        if (t2.joinable())
+            t2.join();
 
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
@@ -701,7 +749,8 @@ TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingW
         };
 
         cul::service::Daemon::Configuration config;
-        config.bus = session_bus();
+        config.incoming = session_bus();
+        config.outgoing = session_bus();
         config.is_testing_enabled = false;
         config.providers = {cul::providers::dummy::Provider::class_name()};
         config.provider_options = provider_config;

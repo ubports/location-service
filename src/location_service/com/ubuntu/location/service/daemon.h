@@ -151,8 +151,12 @@ struct Daemon
                 char** argv,
                 DBusConnectionFactory factory = default_dbus_connection_factory());
 
-        /** @brief The bus to connect to. */
-        core::dbus::Bus::Ptr bus;
+        /** @brief The bus to expose the service upon. */
+        core::dbus::Bus::Ptr incoming;
+
+        /** @brief The bus to use for querying other services. */
+        core::dbus::Bus::Ptr outgoing;
+
         /** @brief Configures the daemon for testing mode. */
         bool is_testing_enabled
         {

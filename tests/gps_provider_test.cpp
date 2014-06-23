@@ -25,8 +25,6 @@
 #include <core/posix/fork.h>
 #include <core/posix/this_process.h>
 
-#include "mongoose.h"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -39,6 +37,8 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+
+#include "web_server.h"
 
 namespace gps = com::ubuntu::location::providers::gps;
 namespace location = com::ubuntu::location;
@@ -307,17 +307,43 @@ TEST(GpsXtraDownloader, throws_for_missing_xtra_hosts)
     EXPECT_ANY_THROW(downloader.download_xtra_data(gps::android::GpsXtraDownloader::Configuration{}));
 }
 
-TEST(GpsXtraDownloader, DISABLED_downloading_xtra_data_from_known_host_works)
+TEST(GpsXtraDownloader, downloading_xtra_data_from_known_host_works)
 {
+    static const int data_size{200};
+
+    testing::web::server::Configuration configuration
+    {
+        5000,
+        [](mg_connection* conn)
+        {
+            static char data[data_size];
+            for (int i = 0; i < data_size; i++) data[i] = i%2;
+
+            mg_send_status(conn, 200);
+            mg_send_data(conn, &data, data_size);
+
+            return MG_TRUE;
+        }
+    };
+
+    auto server = core::posix::fork(
+                testing::a_web_server(configuration),
+                core::posix::StandardStream::empty);
+
+    std::this_thread::sleep_for(std::chrono::seconds{1});
+
     gps::android::GpsXtraDownloader::Configuration config;
-    config.xtra_hosts.push_back("http://xtra1.gpsonextra.net/xtra2.bin");
+    config.xtra_hosts.push_back("http://127.0.0.1:5000");
 
     gps::android::NetCppGpsXtraDownloader downloader;
     auto result = downloader.download_xtra_data(config);
-    EXPECT_GT(result.size(), 0);
+
+    EXPECT_EQ(data_size, result.size());
+    for (int i = 0; i < data_size; i++)
+        EXPECT_EQ(i%2, result[i]);
 }
 
-TEST(GpsXtraDownloader, download_attempt_throws_for_unreachable_host)
+TEST(GpsXtraDownloader, throws_for_unreachable_host)
 {
     gps::android::GpsXtraDownloader::Configuration config;
     config.xtra_hosts.push_back("http://does_not_exist.host.com/");
@@ -328,78 +354,26 @@ TEST(GpsXtraDownloader, download_attempt_throws_for_unreachable_host)
 
 TEST(GpsXtraDownloader, download_attempt_throws_if_timeout_is_reached)
 {
-    auto server = core::posix::fork([]()
+    testing::web::server::Configuration web_serverconfiguration
     {
-        bool terminated = false;
-
-        auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_term});
-        trap->signal_raised().connect([trap, &terminated](core::posix::Signal)
+        5000,
+        [](mg_connection*)
         {
-            trap->stop();
-            terminated = true;
-        });
-
-        struct Handler
-        {
-            static int on_request(mg_connection* conn, mg_event ev)
-            {
-                auto thiz = static_cast<Handler*>(conn->server_param);
-
-                switch (ev)
-                {
-                case MG_REQUEST:
-                    return thiz->handle_request(conn);
-                case MG_AUTH:
-                    return MG_TRUE;
-                default:
-                    return MG_FALSE;
-                }
-
-                return MG_FALSE;
-            }
-
-            int handle_request(mg_connection* conn)
-            {
-                core::net::http::Header header;
-                return MG_TRUE;
-            }
-        } handler;
-
-        std::thread trap_worker
-        {
-            [trap]()
-            {
-                trap->run();
-            }
-        };
-
-        auto server = mg_create_server(&handler, Handler::on_request);
-        mg_set_option(server, "listening_port", "5000");
-
-        for (;;)
-        {
-            mg_poll_server(server, 200);
-
-            if (terminated)
-                break;
+            return MG_TRUE;
         }
+    };
 
-        // Cleanup, and free server instance
-        mg_destroy_server(&server);
-
-        if (trap_worker.joinable())
-            trap_worker.join();
-
-        return HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
-    }, core::posix::StandardStream::empty);
+    auto server = core::posix::fork(
+                testing::a_web_server(web_serverconfiguration),
+                core::posix::StandardStream::empty);
 
     std::this_thread::sleep_for(std::chrono::seconds{1});
 
-    gps::android::GpsXtraDownloader::Configuration config;
-    config.xtra_hosts.push_back("http://127.0.0.1:5000");
+    gps::android::GpsXtraDownloader::Configuration download_config;
+    download_config.xtra_hosts.push_back("http://127.0.0.1:5000");
 
     gps::android::NetCppGpsXtraDownloader downloader;
-    EXPECT_ANY_THROW(downloader.download_xtra_data(config));
+    EXPECT_ANY_THROW(downloader.download_xtra_data(download_config));
 }
 /*****************************************************************
  *                                                               *

@@ -47,7 +47,8 @@ std::function<core::posix::exit::Status()> testing_daemon(DaemonAndCli& fixture)
     {
         location::service::Daemon::Configuration config;
 
-        config.bus = fixture.session_bus();
+        config.incoming = fixture.session_bus();
+        config.outgoing = fixture.session_bus();
         config.is_testing_enabled = true;
 
         auto result = location::service::Daemon::main(config);

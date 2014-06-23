@@ -18,7 +18,7 @@
 
 #include <com/ubuntu/location/service/ichnaea_reporter.h>
 
-#include "mongoose.h"
+#include "web_server.h"
 
 #include <core/posix/fork.h>
 #include <core/posix/signal.h>
@@ -152,120 +152,69 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
         "nick_name"
     };
 
-    core::posix::ChildProcess server = core::posix::fork([]()
+    testing::web::server::Configuration web_server_configuration
     {
-        bool terminated = false;
-
-        auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_term});
-        trap->signal_raised().connect([trap, &terminated](core::posix::Signal)
+        5000,
+        [](mg_connection* conn)
         {
-            trap->stop();
-            terminated = true;
-        });
+            core::net::http::Header header;
 
-        struct Handler
-        {
-            static int on_request(mg_connection* conn, mg_event ev)
+            for (int i = 0; i < conn->num_headers; i++)
             {
-                auto thiz = static_cast<Handler*>(conn->server_param);
-
-                switch (ev)
-                {
-                case MG_REQUEST:
-                    return thiz->handle_request(conn);
-                case MG_AUTH:
-                    return MG_TRUE;
-                default:
-                    return MG_FALSE;
-                }
-
-                return MG_FALSE;
+                header.add(conn->http_headers[i].name, conn->http_headers[i].value);
             }
 
-            int handle_request(mg_connection* conn)
-            {
-                core::net::http::Header header;
+            EXPECT_TRUE(header.has(location::service::ichnaea::Reporter::nick_name_header));
+            EXPECT_STREQ("/v1/submit", conn->uri);
+            EXPECT_STREQ("POST", conn->request_method);
+            EXPECT_EQ("key=" + api_key, conn->query_string);
+            EXPECT_NE(nullptr, conn->content);
+            EXPECT_GT(conn->content_len, 0);
 
-                for (int i = 0; i < conn->num_headers; i++)
-                {
-                    header.add(conn->http_headers[i].name, conn->http_headers[i].value);
-                }
+            using namespace location::service::ichnaea;
 
-                EXPECT_TRUE(header.has(location::service::ichnaea::Reporter::nick_name_header));
-                EXPECT_STREQ("/v1/submit", conn->uri);
-                EXPECT_STREQ("POST", conn->request_method);
-                EXPECT_EQ("key=" + api_key, conn->query_string);
-                EXPECT_NE(nullptr, conn->content);
-                EXPECT_GT(conn->content_len, 0);
+            json::Reader reader;
+            json::Value result;
 
-                using namespace location::service::ichnaea;
+            EXPECT_TRUE(reader.parse(conn->content, result));
 
-                json::Reader reader;
-                json::Value result;
+            auto items = result[Reporter::Json::items];
+            EXPECT_EQ(1u, items.size());
 
-                EXPECT_TRUE(reader.parse(conn->content, result));
+            auto item = items[0];
+            EXPECT_EQ("gsm", item[Reporter::Json::radio].asString());
 
-                auto items = result[Reporter::Json::items];
-                EXPECT_EQ(1u, items.size());
+            EXPECT_DOUBLE_EQ(
+                        reference_position_update.value.latitude.value.value(),
+                        item[Reporter::Json::lat].asDouble());
+            EXPECT_DOUBLE_EQ(
+                        reference_position_update.value.longitude.value.value(),
+                        item[Reporter::Json::lon].asDouble());
 
-                auto item = items[0];
-                EXPECT_EQ("gsm", item[Reporter::Json::radio].asString());
+            auto wifis = item[Reporter::Json::wifi];
+            EXPECT_EQ(1u, wifis.size());
 
-                EXPECT_DOUBLE_EQ(
-                            reference_position_update.value.latitude.value.value(),
-                            item[Reporter::Json::lat].asDouble());
-                EXPECT_DOUBLE_EQ(
-                            reference_position_update.value.longitude.value.value(),
-                            item[Reporter::Json::lon].asDouble());
+            auto wifi = wifis[0];
+            EXPECT_EQ(ref_bssid.get(), wifi[Reporter::Json::Wifi::key].asString());
+            EXPECT_EQ(ref_frequency->get(), wifi[Reporter::Json::Wifi::frequency].asInt());
 
-                auto wifis = item[Reporter::Json::wifi];
-                EXPECT_EQ(1u, wifis.size());
+            auto cells = item[Reporter::Json::cell];
+            EXPECT_EQ(1u, cells.size());
 
-                auto wifi = wifis[0];
-                EXPECT_EQ(ref_bssid.get(), wifi[Reporter::Json::Wifi::key].asString());
-                EXPECT_EQ(ref_frequency->get(), wifi[Reporter::Json::Wifi::frequency].asInt());
+            auto cell = cells[0];
+            EXPECT_EQ(ref_cell->gsm().mobile_country_code.get(), cell[Reporter::Json::Cell::mcc].asInt());
+            EXPECT_EQ(ref_cell->gsm().mobile_network_code.get(), cell[Reporter::Json::Cell::mnc].asInt());
+            EXPECT_EQ(ref_cell->gsm().location_area_code.get(), cell[Reporter::Json::Cell::lac].asInt());
+            EXPECT_EQ(ref_cell->gsm().id.get(), cell[Reporter::Json::Cell::cid].asInt());
+            EXPECT_EQ(ref_cell->gsm().strength.get(), cell[Reporter::Json::Cell::asu].asInt());
 
-                auto cells = item[Reporter::Json::cell];
-                EXPECT_EQ(1u, cells.size());
-
-                auto cell = cells[0];
-                EXPECT_EQ(ref_cell->gsm().mobile_country_code.get(), cell[Reporter::Json::Cell::mcc].asInt());
-                EXPECT_EQ(ref_cell->gsm().mobile_network_code.get(), cell[Reporter::Json::Cell::mnc].asInt());
-                EXPECT_EQ(ref_cell->gsm().location_area_code.get(), cell[Reporter::Json::Cell::lac].asInt());
-                EXPECT_EQ(ref_cell->gsm().id.get(), cell[Reporter::Json::Cell::cid].asInt());
-                EXPECT_EQ(ref_cell->gsm().strength.get(), cell[Reporter::Json::Cell::asu].asInt());
-
-                mg_send_status(conn, static_cast<int>(submit::success));
-                return MG_TRUE;
-            }
-        } handler;
-
-        std::thread trap_worker
-        {
-            [trap]()
-            {
-                trap->run();
-            }
-        };
-
-        auto server = mg_create_server(&handler, Handler::on_request);
-        mg_set_option(server, "listening_port", "5000");
-
-        for (;;) {
-            mg_poll_server(server, 200);
-
-            if (terminated)
-                break;
+            mg_send_status(conn, static_cast<int>(submit::success));
+            return MG_TRUE;
         }
-
-        // Cleanup, and free server instance
-        mg_destroy_server(&server);
-
-        if (trap_worker.joinable())
-            trap_worker.join();
-
-        return HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
-    }, core::posix::StandardStream::empty);
+    };
+    core::posix::ChildProcess server = core::posix::fork(
+                testing::a_web_server(web_server_configuration),
+                core::posix::StandardStream::empty);
 
     using namespace ::testing;
 

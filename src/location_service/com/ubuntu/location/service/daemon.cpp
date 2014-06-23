@@ -86,7 +86,7 @@ location::ProgramOptions& mutable_daemon_options()
 
 location::service::Daemon::Configuration location::service::Daemon::Configuration::from_command_line_args(
         int argc,
-        char **argv,
+        char** argv,
         location::service::Daemon::DBusConnectionFactory factory)
 {
     location::service::Daemon::Configuration result;
@@ -94,7 +94,8 @@ location::service::Daemon::Configuration location::service::Daemon::Configuratio
     if (!mutable_daemon_options().parse_from_command_line_args(argc, (const char**)argv))
         throw std::runtime_error{"Could not parse command-line, aborting..."};
 
-    result.bus = factory(mutable_daemon_options().bus());
+    result.incoming = factory(mutable_daemon_options().bus());
+    result.outgoing= factory(mutable_daemon_options().bus());
 
     if (mutable_daemon_options().value_count_for_key("testing") == 0 && mutable_daemon_options().value_count_for_key("provider") == 0)
     {
@@ -187,12 +188,14 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         }
     }
 
-    config.bus->install_executor(dbus::asio::make_executor(config.bus));
+    config.incoming->install_executor(dbus::asio::make_executor(config.incoming));
+    config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing));
 
     location::service::DefaultConfiguration dc;
     location::service::Implementation::Configuration configuration
     {
-        config.bus,
+        config.incoming,
+        config.outgoing,
         dc.the_engine(instantiated_providers, dc.the_provider_selection_policy()),
         dc.the_permission_manager(),
         location::service::Harvester::Configuration
@@ -207,14 +210,19 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         configuration
     };
 
-    std::thread t{[&config](){config.bus->run();}};
+    std::thread t1{[&config](){config.incoming->run();}};
+    std::thread t2{[&config](){config.outgoing->run();}};
 
     trap->run();
 
-    config.bus->stop();
+    config.incoming->stop();
+    config.outgoing->stop();
 
-    if (t.joinable())
-        t.join();
+    if (t1.joinable())
+        t1.join();
+
+    if (t2.joinable())
+        t2.join();
 
     return EXIT_SUCCESS;
 }

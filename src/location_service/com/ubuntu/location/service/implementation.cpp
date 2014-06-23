@@ -42,7 +42,7 @@ namespace culs = com::ubuntu::location::service;
 namespace dbus = core::dbus;
 
 culs::Implementation::Implementation(const culs::Implementation::Configuration& config)
-    : Skeleton(config.bus, config.permission_manager),
+    : Skeleton(Skeleton::Configuration{config.incoming, config.outgoing, config.permission_manager}),
       configuration(config),
       harvester(config.harvester),
       connections
@@ -96,7 +96,9 @@ culs::Implementation::Implementation(const culs::Implementation::Configuration& 
               })
       }
 {
-    if (!configuration.bus)
+    if (!configuration.incoming)
+        throw std::runtime_error("Cannot create service for null bus.");
+    if (!configuration.outgoing)
         throw std::runtime_error("Cannot create service for null bus.");
     if (!configuration.engine)
         throw std::runtime_error("Cannot create service for null engine.");
