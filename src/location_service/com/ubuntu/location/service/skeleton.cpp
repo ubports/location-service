@@ -135,7 +135,7 @@ void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr
     // We are done processing the request and try to send out the result to the client.
     try
     {
-        configuration.outgoing->send(reply);
+        configuration.incoming->send(reply);
     } catch(const std::exception& e)
     {
         // We log the error for debugging purposes.
