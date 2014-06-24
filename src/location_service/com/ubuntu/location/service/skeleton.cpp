@@ -54,7 +54,7 @@ culs::Skeleton::DBusDaemonCredentialsResolver::resolve_credentials_for_incoming_
 core::dbus::types::ObjectPath culs::Skeleton::ObjectPathGenerator::object_path_for_caller_credentials(const culs::Credentials&)
 {
     static std::uint32_t index{0};
-    std::stringstream ss; ss << "/sessions/" << index;
+    std::stringstream ss; ss << "/sessions/" << index++;
 
     return core::dbus::types::ObjectPath{ss.str()};
 }
