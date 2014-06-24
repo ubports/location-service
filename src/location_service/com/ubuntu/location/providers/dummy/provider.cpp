@@ -171,5 +171,8 @@ void dummy::Provider::stop_position_updates()
     VLOG(1) << __PRETTY_FUNCTION__ << ": stopping";
 
     d->stop_requested = true;
+
+    if (d->worker.joinable())
+        d->worker.join();
 }
 
