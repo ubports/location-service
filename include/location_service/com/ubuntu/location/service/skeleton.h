@@ -42,12 +42,64 @@ class Skeleton
 public:
     typedef std::shared_ptr<Skeleton> Ptr;
 
+    // Models resolution of an incoming dbus message to the credentials of the message sender.
+    struct CredentialsResolver
+    {
+        typedef std::shared_ptr<CredentialsResolver> Ptr;
+
+        CredentialsResolver() = default;
+        virtual ~CredentialsResolver() = default;
+
+        // Resolves the sender of msg to the respective credentials.
+        virtual Credentials resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg) = 0;
+    };
+
+    // Implements CredentialsResolver by reaching out to the dbus daemon and
+    // invoking:
+    //   * GetConnectionUnixProcessID
+    //   * GetConnectionUnixUser
+    struct DBusDaemonCredentialsResolver : public CredentialsResolver
+    {
+        // Sets up a new instance for the given bus connection.
+        DBusDaemonCredentialsResolver(const core::dbus::Bus::Ptr& bus);
+
+        // Resolves the sender of msg to pid, uid by calling out to the dbus daemon.
+        Credentials resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg);
+
+        // Stub for accessing the dbus daemon.
+        core::dbus::DBus daemon;
+    };
+
+    // Models the generation of stable and unique object paths for client-specific sessions.
+    // The requirements for the resulting object path are:
+    //   * Unique for the entire system over its complete lifetime
+    //   * Stable with respect to an app. That is, one app is always assigned the same object path.
+    struct ObjectPathGenerator
+    {
+        typedef std::shared_ptr<ObjectPathGenerator> Ptr;
+
+        ObjectPathGenerator() = default;
+        virtual ~ObjectPathGenerator() = default;
+
+        // Calculates an object path from pid and uid. The default implementation
+        // creates the path according to the following steps:
+        //    [1.] Query the AppArmor profile name for pid in credentials.
+        //    [1.1] If the process is running unconfined, rely on a counter to assemble the session name.
+        //    [1.2] If the process is confined, use the AppArmor profile name to generate the path.
+        virtual core::dbus::types::ObjectPath object_path_for_caller_credentials(const Credentials& credentials);
+    };
+
     struct Configuration
     {
         // DBus connection set up for handling requests to the service.
         core::dbus::Bus::Ptr incoming;
         // DBus connection for reaching out to other services in a non-blocking way.
         core::dbus::Bus::Ptr outgoing;
+        // An implementation of CredentialsResolver for resolving incoming message sender
+        // to Credentials = uid, pid.
+        CredentialsResolver::Ptr credentials_resolver;
+        // An implementation of ObjectPathGenerator for generating session names.
+        ObjectPathGenerator::Ptr object_path_generator;
         // Permission manager implementation for verifying incoming requests.
         PermissionManager::Ptr permission_manager;
     };
@@ -74,8 +126,6 @@ private:
 
     // Stores the configuration passed in at creation time.
     Configuration configuration;
-    // DBus-daemon stub for resolving credentials (pid, uid) for incoming message calls.
-    core::dbus::DBus daemon;
     // The skeleton object representing com.ubuntu.location.service.Interface on the bus.
     core::dbus::Object::Ptr object;
     // DBus properties as exposed on the bus for com.ubuntu.location.service.Interface

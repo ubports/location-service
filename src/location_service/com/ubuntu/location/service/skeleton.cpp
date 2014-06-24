@@ -36,10 +36,33 @@ dbus::Message::Ptr the_empty_reply()
 }
 }
 
+culs::Skeleton::DBusDaemonCredentialsResolver::DBusDaemonCredentialsResolver(const dbus::Bus::Ptr& bus)
+    : daemon(bus)
+{
+}
+
+culs::Credentials
+culs::Skeleton::DBusDaemonCredentialsResolver::resolve_credentials_for_incoming_message(const dbus::Message::Ptr& msg)
+{
+    return culs::Credentials
+    {
+        daemon.get_connection_unix_process_id(msg->sender()),
+        daemon.get_connection_unix_user(msg->sender())
+    };
+}
+
+core::dbus::types::ObjectPath culs::Skeleton::ObjectPathGenerator::object_path_for_caller_credentials(const culs::Credentials&)
+{
+    static std::uint32_t index{0};
+    std::stringstream ss; ss << "/sessions/" << index;
+
+    return core::dbus::types::ObjectPath{ss.str()};
+}
+
+
 culs::Skeleton::Skeleton(const culs::Skeleton::Configuration& configuration)
     : dbus::Skeleton<culs::Interface>(configuration.incoming),
       configuration(configuration),
-      daemon(configuration.outgoing),
       object(access_service()->add_object_for_path(culs::Interface::path())),
       properties
       {
@@ -72,24 +95,22 @@ void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr
         Criteria criteria;
         in->reader() >> criteria;
 
-        Credentials credentials
+        auto credentials =
+            configuration.credentials_resolver->resolve_credentials_for_incoming_message(in);
+
+        auto result =
+            configuration.permission_manager->check_permission_for_credentials(criteria, credentials);
+
+        if (PermissionManager::Result::rejected == result) throw std::runtime_error
         {
-            static_cast<pid_t>(daemon.get_connection_unix_process_id(sender)),
-            static_cast<uid_t>(daemon.get_connection_unix_user(sender))
+            "Client lacks permissions to access the service with the given criteria"
         };
 
-        auto result = configuration.permission_manager->check_permission_for_credentials(
-                    criteria,
-                    credentials);
+        auto path =
+            configuration.object_path_generator->object_path_for_caller_credentials(credentials);
 
-        if (PermissionManager::Result::rejected == result)
-            throw std::runtime_error("Client lacks permissions to access the service with the given criteria");
-
-        // TODO(tvoss): Factor session path creation out into its own interface.
-        std::stringstream ss; ss << "/sessions/" << credentials.pid;
-        dbus::types::ObjectPath path{ss.str()};
-
-        auto stub = dbus::Service::use_service(configuration.outgoing, sender);
+        auto stub =
+            dbus::Service::use_service(configuration.outgoing, sender);
 
         culss::Skeleton::Configuration config
         {
@@ -105,7 +126,10 @@ void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr
             }
         };
 
-        auto session = culss::Interface::Ptr{new culss::Skeleton{config}};
+        culss::Interface::Ptr session
+        {
+            new culss::Skeleton{config}
+        };
 
         if (not add_to_session_store_for_path(path, session))
         {

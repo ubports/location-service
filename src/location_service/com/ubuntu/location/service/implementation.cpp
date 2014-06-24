@@ -42,7 +42,26 @@ namespace culs = com::ubuntu::location::service;
 namespace dbus = core::dbus;
 
 culs::Implementation::Implementation(const culs::Implementation::Configuration& config)
-    : Skeleton(Skeleton::Configuration{config.incoming, config.outgoing, config.permission_manager}),
+    : Skeleton
+      {
+          Skeleton::Configuration
+          {
+              config.incoming,
+              config.outgoing,
+              culs::Skeleton::CredentialsResolver::Ptr
+              {
+                  new culs::Skeleton::DBusDaemonCredentialsResolver
+                  {
+                      config.outgoing
+                  }
+              },
+              culs::Skeleton::ObjectPathGenerator::Ptr
+              {
+                  new culs::Skeleton::ObjectPathGenerator{}
+              },
+              config.permission_manager
+          }
+      },
       configuration(config),
       harvester(config.harvester),
       connections

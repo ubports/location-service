@@ -318,7 +318,7 @@ void culss::Skeleton::on_velocity_changed(const cul::Update<cul::Velocity>& velo
     try
     {
         configuration.remote.object->invoke_method_synchronously<culs::session::Interface::UpdateVelocity, void>(velocity);
-    } catch(const std::runtime_error&)
+    } catch(const std::exception&)
     {
         // We consider the session to be dead once we hit an exception here.
         // We thus remove it from the central and end its lifetime.
