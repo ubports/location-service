@@ -79,7 +79,8 @@ Description: location service aggregating position/velocity/heading
 
 Package: ubuntu-location-service-bin
 Architecture: any
-Depends: ${misc:Depends},
+Depends: libubuntu-location-service1 (= ${binary:Version}),
+         ${misc:Depends},
          ${shlibs:Depends},
 Breaks: ubuntu-location-service-examples (<< 0.0.2),
 Replaces: ubuntu-location-service-examples (<< 0.0.2),
@@ -91,7 +92,8 @@ Description: location service aggregating position/velocity/heading
 Package: ubuntu-location-service-examples
 Architecture: any
 Multi-Arch: same
-Depends: ${misc:Depends},
+Depends: libubuntu-location-service1 (= ${binary:Version}),
+         ${misc:Depends},
          ${shlibs:Depends},
          ubuntu-location-service-doc,
 Description: location service aggregating position/velocity/heading
