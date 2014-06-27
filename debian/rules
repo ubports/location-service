@@ -13,6 +13,13 @@ DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 
 export DPKG_GENSYMBOLS_CHECK_LEVEL=4
 
+include /usr/share/dpkg/default.mk
+
+# Explicitly selecting a G{CC,++}-version here to avoid accidental
+# ABI breaks introduced by toolchain updates.
+export CC=$(DEB_HOST_GNU_TYPE)-gcc-4.9
+export CXX=$(DEB_HOST_GNU_TYPE)-g++-4.9
+
 %:
 	dh $@ --parallel --fail-missing
 
@@ -20,4 +27,4 @@ override_dh_install:
 	dh_install -Xubuntu-location-service.1 --fail-missing
 
 override_dh_auto_configure:
-	dh_auto_configure -- -DCMAKE_INSTALL_LIBEXECDIR=/usr/lib/$(DEB_HOST_MULTIARCH)/ubuntu-location-service
+	dh_auto_configure -- -DCMAKE_INSTALL_LIBEXECDIR=/usr/lib/$(DEB_HOST_MULTIARCH)/ubuntu-location-service -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX)
