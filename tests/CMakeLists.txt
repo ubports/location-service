@@ -74,9 +74,9 @@ LOCATION_SERVICE_ADD_TEST(default_permission_manager_test default_permission_man
 LOCATION_SERVICE_ADD_TEST(engine_test engine_test.cpp)
 LOCATION_SERVICE_ADD_TEST(harvester_test harvester_test.cpp)
 
-if (NET_CPP_FOUND)
+if (NET_CPP_FOUND AND JSONCPP_FOUND)
   LOCATION_SERVICE_ADD_TEST(ichnaea_reporter_test ichnaea_reporter_test.cpp)
-endif (NET_CPP_FOUND)
+endif()
 
 LOCATION_SERVICE_ADD_TEST(position_test position_test.cpp)
 LOCATION_SERVICE_ADD_TEST(provider_selection_policy_test provider_selection_policy_test.cpp)

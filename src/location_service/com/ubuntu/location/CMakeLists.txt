@@ -1,8 +1,9 @@
-if (${NET_CPP_FOUND})
+if (NET_CPP_FOUND AND JSONCPP_FOUND)
   add_definitions(-DCOM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP=1)
+  add_definitions(-DCOM_UBUNTU_LOCATION_SERVICE_HAVE_JSON_CPP=1)
 
   set(ICHNAEA_REPORTER_SRCS service/ichnaea_reporter.cpp)
-endif (${NET_CPP_FOUND})
+endif()
 
 add_subdirectory(providers)
 

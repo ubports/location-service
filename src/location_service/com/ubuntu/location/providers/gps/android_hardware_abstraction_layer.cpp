@@ -18,8 +18,11 @@
 
 #include "android_hardware_abstraction_layer.h"
 
+#if defined(COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP)
 #include "net_cpp_gps_xtra_downloader.h"
+#else
 #include "null_gps_xtra_downloader.h"
+#endif
 
 #include <com/ubuntu/location/clock.h>
 #include <com/ubuntu/location/configuration.h>

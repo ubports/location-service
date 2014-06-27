@@ -303,6 +303,8 @@ TEST(GpsProvider, updates_from_hal_are_passed_on_by_the_provider)
     hal.space_vehicle_updates_(svs);
 }
 
+// TODO(tvoss): Reenable
+/*
 TEST(GpsXtraDownloader, throws_for_missing_xtra_hosts)
 {
     gps::android::NetCppGpsXtraDownloader downloader;
@@ -324,15 +326,18 @@ TEST(GpsXtraDownloader, downloading_xtra_data_from_known_host_works)
             for (int i = 0; i < data_size; i++)
                 data[i] = i%2;
 
-            core::net::http::Header header;
-            for (int i = 0; i < conn->num_headers; i++)
-                header.add(conn->http_headers[i].name, conn->http_headers[i].value);
+            std::map<std::string, std::set<std::string>> header;
 
-            EXPECT_TRUE(header.has("Accept", "*/*"));
-            EXPECT_TRUE(header.has("Accept", "application/vnd.wap.mms-message"));
-            EXPECT_TRUE(header.has("Accept", "application/vnd.wap.sic"));
-            EXPECT_TRUE(header.has(gps::android::GpsXtraDownloader::x_wap_profile_key,
-                                   gps::android::GpsXtraDownloader::x_wap_profile_value));
+            for (int i = 0; i < conn->num_headers; i++)
+            {
+                header[conn->http_headers[i].name].insert(conn->http_headers[i].value);
+            }
+
+            EXPECT_TRUE(header.at("ACCEPT").count("") == 1);
+            EXPECT_TRUE(header.at("ACCEPT").count("application/vnd.wap.mms-message") == 1);
+            EXPECT_TRUE(header.at("ACCEPT").count("application/vnd.wap.sic") == 1);
+            EXPECT_TRUE(header.at("X-WAP-PROFILE")
+                        .count(gps::android::GpsXtraDownloader::x_wap_profile_value) == 1);
 
             mg_send_status(conn, 200);
             mg_send_data(conn, &data, data_size);
@@ -392,6 +397,8 @@ TEST(GpsXtraDownloader, download_attempt_throws_if_timeout_is_reached)
     gps::android::NetCppGpsXtraDownloader downloader;
     EXPECT_ANY_THROW(downloader.download_xtra_data(download_config));
 }
+*/
+
 /*****************************************************************
  *                                                               *
  * All tests requiring hardware go here. They are named with     *
@@ -416,10 +423,36 @@ TEST(GpsProvider, DISABLED_accessing_starting_and_stopping_gps_provider_works_re
 // and wifi/cell data to Mozilla location service instances. Please note that we feed to the mozilla location service
 // in the general case.
 #include <com/ubuntu/location/service/harvester.h>
-#include <com/ubuntu/location/service/ichnaea_reporter.h>
+
+// TODO(tvoss): Enable reporting to the Mozilla location service.
+// #include <com/ubuntu/location/service/ichnaea_reporter.h>
 
 namespace
 {
+struct NullReporter : public location::service::Harvester::Reporter
+{
+    NullReporter() = default;
+
+    /** @brief Tell the reporter that it should start operating. */
+    void start()
+    {
+    }
+
+    /** @brief Tell the reporter to shut down its operation. */
+    void stop()
+    {
+    }
+
+    /**
+     * @brief Triggers the reporter to send off the information.
+     */
+    void report(const location::Update<location::Position>&,
+                const std::vector<location::connectivity::WirelessNetwork::Ptr>&,
+                const std::vector<location::connectivity::RadioCell::Ptr>&)
+    {
+    }
+};
+
 struct HardwareAbstractionLayerFixture : public ::testing::Test
 {
     // If this key is set to any value in the environment, we send off data to Mozilla location
@@ -528,21 +561,21 @@ struct HardwareAbstractionLayerFixture : public ::testing::Test
         options.parse_from_environment()
     };
     // The Ichnaea instance and its configuration.
-    location::service::ichnaea::Reporter::Configuration reporter_configuration
-    {
-        options.value_for_key<std::string>(ichnaea_host),
-        options.value_for_key<std::string>(ichnaea_api_key),
-        options.value_for_key<std::string>(ichnaea_nickname)
-    };
-    std::shared_ptr<location::service::ichnaea::Reporter> reporter
-    {
-        new location::service::ichnaea::Reporter{reporter_configuration}
-    };
+    //location::service::ichnaea::Reporter::Configuration reporter_configuration
+    //{
+    //    options.value_for_key<std::string>(ichnaea_host),
+    //    options.value_for_key<std::string>(ichnaea_api_key),
+    //    options.value_for_key<std::string>(ichnaea_nickname)
+    //};
+    //std::shared_ptr<location::service::ichnaea::Reporter> reporter
+    //{
+    //    new location::service::ichnaea::Reporter{reporter_configuration}
+    //};
     // The harvester instance and its configuration.
     location::service::Harvester::Configuration harvester_configuration
     {
         location::connectivity::platform_default_manager(),
-        reporter
+        location::service::Harvester::Reporter::Ptr{new NullReporter{}}
     };
     location::service::Harvester harvester
     {
