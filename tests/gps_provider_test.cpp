@@ -17,7 +17,9 @@
  */
 #include <com/ubuntu/location/providers/gps/provider.h>
 #include <com/ubuntu/location/providers/gps/android_hardware_abstraction_layer.h>
-#include <com/ubuntu/location/providers/gps/net_cpp_gps_xtra_downloader.h>
+
+//TODO(tvoss) Reenable
+//#include <com/ubuntu/location/providers/gps/net_cpp_gps_xtra_downloader.h>
 
 #include <com/ubuntu/location/logging.h>
 #include <com/ubuntu/location/service/program_options.h>
