@@ -7,20 +7,6 @@ namespace cul = com::ubuntu::location;
 
 namespace
 {
-struct LoggingInitializer
-{
-    LoggingInitializer()
-    {
-        google::InitGoogleLogging("com.ubuntu.location");
-    }
-
-    ~LoggingInitializer()
-    {
-        google::ShutdownGoogleLogging();
-    }
-};
-
-static LoggingInitializer logging_initializer;
 }
 
 void cul::init(int* argc, char*** argv)

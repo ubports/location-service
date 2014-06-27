@@ -133,8 +133,6 @@ culs::Implementation::Implementation(const culs::Implementation::Configuration& 
     does_satellite_based_positioning() =
             configuration.engine->configuration.satellite_based_positioning_state ==
             cul::SatelliteBasedPositioningState::on;
-
-    harvester.start();
 }
 
 culs::session::Interface::Ptr culs::Implementation::create_session_for_criteria(const cul::Criteria& criteria)

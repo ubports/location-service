@@ -18,10 +18,19 @@
 
 #include "daemon.h"
 
+#include <com/ubuntu/location/logging.h>
+
 namespace location = com::ubuntu::location;
 
 int main(int argc, char** argv)
 {
+    // Setup logging for the daemon.
+    FLAGS_log_dir = "/var/log/ubuntu-location-service";
+    FLAGS_stop_logging_if_full_disk = true;
+    FLAGS_max_log_size = 5;
+
+    google::InitGoogleLogging("com.ubuntu.location");
+
     location::service::Daemon::Configuration config;
     try
     {

@@ -18,6 +18,8 @@
 
 #include "daemon.h"
 
+#include <com/ubuntu/location/logging.h>
+
 #include <iostream>
 #include <stdexcept>
 
@@ -25,6 +27,10 @@ namespace location = com::ubuntu::location;
 
 int main(int argc, char** argv)
 {
+    // Setup logging for the CLI.
+    FLAGS_logtostderr = true;
+    google::InitGoogleLogging("com.ubuntu.location");
+
     location::service::Daemon::Cli::Configuration config;
     try
     {
