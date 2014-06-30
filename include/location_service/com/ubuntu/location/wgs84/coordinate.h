@@ -18,7 +18,7 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_WGS84_COORDINATE_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_WGS84_COORDINATE_H_
 
-#include "com/ubuntu/location/units/units.h"
+#include <com/ubuntu/location/units/units.h>
 
 #include <ostream>
 
@@ -39,12 +39,14 @@ struct CoordinateTraits
 };
 
 template<typename Tag, typename UnitType>
-struct Coordinate
+class Coordinate
 {
+public:
     typedef UnitType Unit;
     typedef units::Quantity<Unit> Quantity;
 
-    explicit Coordinate(const Quantity& value = Quantity()) : value(value)
+    explicit Coordinate(const Quantity& value = Quantity())
+        : value(value)
     {
         CoordinateTraits<Coordinate<Tag,UnitType>>::check_and_throw_if_invalid(value);
     }

@@ -15,27 +15,10 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_CHANNEL_H_
-#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_CHANNEL_H_
 
-#include <boost/signals2.hpp>
+#include "set_name_for_thread.h"
 
-#include <memory>
-#include <set>
-
-namespace com
+void com::ubuntu::location::set_name_for_thread(std::thread& t, const char* name)
 {
-namespace ubuntu
-{
-namespace location
-{
-template<typename T>
-using Channel = boost::signals2::signal<void(const T&)>;
-
-typedef boost::signals2::scoped_connection ScopedChannelConnection;
-typedef boost::signals2::connection ChannelConnection;
+    pthread_setname_np(t.native_handle(), name);
 }
-}
-}
-
-#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_CHANNEL_H_

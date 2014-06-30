@@ -18,8 +18,8 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_SKYHOOK_PROVIDER_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_SKYHOOK_PROVIDER_H_
 
-#include "com/ubuntu/location/provider.h"
-#include "com/ubuntu/location/provider_factory.h"
+#include <com/ubuntu/location/provider.h>
+#include <com/ubuntu/location/provider_factory.h>
 
 #include <memory>
 

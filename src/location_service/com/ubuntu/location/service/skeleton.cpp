@@ -15,13 +15,11 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/service/skeleton.h"
+#include <com/ubuntu/location/service/skeleton.h>
+#include <com/ubuntu/location/service/session/skeleton.h>
 
-#include "com/ubuntu/location/logging.h"
+#include <com/ubuntu/location/logging.h>
 
-#include <core/dbus/dbus.h>
-#include <core/dbus/object.h>
-#include <core/dbus/skeleton.h>
 #include <core/dbus/types/object_path.h>
 
 namespace cul = com::ubuntu::location;
@@ -32,220 +30,169 @@ namespace dbus = core::dbus;
 
 namespace
 {
-
-template<typename SessionType>
-struct SessionStore
+dbus::Message::Ptr the_empty_reply()
 {
-    typedef std::shared_ptr<SessionStore> Ptr;
-
-    SessionStore() = default;
-    SessionStore(const SessionStore&) = delete;
-    SessionStore& operator=(const SessionStore&) = delete;
-    virtual ~SessionStore() = default;
-
-    virtual void remove_session(const std::shared_ptr<SessionType>& session) = 0;
-};
-
-struct SessionWrapper : public std::enable_shared_from_this<SessionWrapper>
-{
-    typedef std::shared_ptr<SessionWrapper> Ptr;
-
-    SessionWrapper(const SessionStore<SessionWrapper>::Ptr& session_store,
-		   const culss::Interface::Ptr& session,
-		   core::dbus::Service::Ptr service,
-		   core::dbus::Object::Ptr object)
-	    : session_store(session_store),
-	      session{session},
-	      remote(service, object)
-    {
-	session->install_position_updates_handler(std::bind(&SessionWrapper::on_position_update, this, std::placeholders::_1));
-	session->install_velocity_updates_handler(std::bind(&SessionWrapper::on_velocity_update, this, std::placeholders::_1));
-	session->install_heading_updates_handler(std::bind(&SessionWrapper::on_heading_update, this, std::placeholders::_1));
-    }
-
-    const core::dbus::types::ObjectPath& path() const
-    {
-	return session->path();
-    }
-
-    void on_session_died() noexcept
-    {
-        std::cout << __PRETTY_FUNCTION__ << std::endl;
-	VLOG(1) << "Session died, removing from store and stopping all updates.";
-
-	auto thiz = shared_from_this();
-	try
-	{
-	    session_store->remove_session(thiz);
-	    session->stop_position_updates();
-	    session->stop_heading_updates();
-	    session->stop_velocity_updates();
-	} catch(const std::runtime_error& e)
-	{
-	    LOG(ERROR) << "Error while stopping updates for died session: " << e.what();
-	}
-    }
-
-    void on_position_update(const cul::Update<cul::Position>& position)
-    {
-	try
-	{
-        auto result = remote.session->transact_method<culs::session::Interface::UpdatePosition, void>(position);
-        if (result.is_error())
-        {
-            LOG(ERROR) << result.error().print();
-            on_session_died();
-        }
-	} catch(const std::runtime_error& e)
-	{
-	    // We consider the session to be dead once we hit an exception here.
-	    // We thus remove it from the central and end its lifetime.
-        on_session_died();
-	}
-    }
-
-    void on_velocity_update(const cul::Update<cul::Velocity>& velocity)
-    {
-	try
-	{
-        auto result = remote.session->transact_method<culs::session::Interface::UpdateVelocity, void>(velocity);
-        if (result.is_error())
-        {
-            LOG(ERROR) << result.error().print();
-            on_session_died();
-        }
-	} catch(const std::runtime_error& e)
-	{
-	    // We consider the session to be dead once we hit an exception here.
-	    // We thus remove it from the central and end its lifetime.
-        on_session_died();
-	}
-    }
-
-    void on_heading_update(const cul::Update<cul::Heading>& heading)
-    {
-	try
-	{
-        auto result = remote.session->transact_method<culs::session::Interface::UpdateHeading, void>(heading);
-        if (result.is_error())
-        {
-            LOG(ERROR) << result.error().print();
-            on_session_died();
-        }
-	} catch(const std::runtime_error& e)
-	{
-	    // We consider the session to be dead once we hit an exception here.
-	    // We thus remove it from the central and end its lifetime.
-        on_session_died();
-	}
-    }
-
-    SessionStore<SessionWrapper>::Ptr session_store;
-    culs::session::Interface::Ptr session;
-    struct Remote
-    {
-	explicit Remote(const dbus::Service::Ptr& service,
-			const dbus::Object::Ptr& session)
-		: service(service),
-		  session(session)
-	{
-	}
-	
-	dbus::Service::Ptr service;
-	dbus::Object::Ptr session;
-    } remote;
-};
+    return dbus::Message::Ptr{};
+}
 }
 
-struct culs::Skeleton::Private : public SessionStore<SessionWrapper>, std::enable_shared_from_this<culs::Skeleton::Private>
+culs::Skeleton::DBusDaemonCredentialsResolver::DBusDaemonCredentialsResolver(const dbus::Bus::Ptr& bus)
+    : daemon(bus)
 {
-    Private(Skeleton* parent, const dbus::Bus::Ptr& connection, const culs::PermissionManager::Ptr& permission_manager)
-	: parent(parent),
-	  permission_manager(permission_manager),
-	  daemon(connection),
-	  object(parent->access_service()->add_object_for_path(culs::Interface::path()))
+}
+
+culs::Credentials
+culs::Skeleton::DBusDaemonCredentialsResolver::resolve_credentials_for_incoming_message(const dbus::Message::Ptr& msg)
+{
+    return culs::Credentials
     {
-	object->install_method_handler<culs::Interface::CreateSessionForCriteria>(
-	    std::bind(&culs::Skeleton::Private::handle_create_session_for_criteria, this, std::placeholders::_1));
-    }
+        daemon.get_connection_unix_process_id(msg->sender()),
+        daemon.get_connection_unix_user(msg->sender())
+    };
+}
 
-    ~Private() noexcept {}
-
-    void handle_create_session_for_criteria(const core::dbus::Message::Ptr& in);
-    void remove_session(const std::shared_ptr<SessionWrapper>& session);
-
-    Skeleton* parent;
-    PermissionManager::Ptr permission_manager;
-    dbus::DBus daemon;
-    dbus::Object::Ptr object;
-    std::mutex guard;
-    std::map<dbus::types::ObjectPath, std::shared_ptr<SessionWrapper>> session_store;
-};
-
-culs::Skeleton::Skeleton(const dbus::Bus::Ptr& connection, const culs::PermissionManager::Ptr& permission_manager)
-	: dbus::Skeleton<culs::Interface>(connection), d{new Private{this, connection, permission_manager}}
+core::dbus::types::ObjectPath culs::Skeleton::ObjectPathGenerator::object_path_for_caller_credentials(const culs::Credentials&)
 {
+    static std::uint32_t index{0};
+    std::stringstream ss; ss << "/sessions/" << index++;
+
+    return core::dbus::types::ObjectPath{ss.str()};
+}
+
+
+culs::Skeleton::Skeleton(const culs::Skeleton::Configuration& configuration)
+    : dbus::Skeleton<culs::Interface>(configuration.incoming),
+      configuration(configuration),
+      object(access_service()->add_object_for_path(culs::Interface::path())),
+      properties
+      {
+          object->get_property<culs::Interface::Properties::DoesSatelliteBasedPositioning>(),
+          object->get_property<culs::Interface::Properties::DoesReportCellAndWifiIds>(),
+          object->get_property<culs::Interface::Properties::IsOnline>(),
+          object->get_property<culs::Interface::Properties::VisibleSpaceVehicles>()
+      }
+{
+    object->install_method_handler<culs::Interface::CreateSessionForCriteria>([this](const dbus::Message::Ptr& msg)
+    {
+        handle_create_session_for_criteria(msg);
+    });
 }
 
 culs::Skeleton::~Skeleton() noexcept
 {
+    object->uninstall_method_handler<culs::Interface::CreateSessionForCriteria>();
 }
 
-void culs::Skeleton::Private::handle_create_session_for_criteria(const core::dbus::Message::Ptr& in)
+void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr& in)
 {
+    VLOG(1) << __PRETTY_FUNCTION__;
+
     auto sender = in->sender();
+    auto reply = the_empty_reply();
 
     try
     {
-	Criteria criteria;
-	in->reader() >> criteria;
+        Criteria criteria;
+        in->reader() >> criteria;
 
-	Credentials credentials
-	{
-	    static_cast<pid_t>(daemon.get_connection_unix_process_id(sender)),
-	    static_cast<uid_t>(daemon.get_connection_unix_user(sender))
-	};
+        auto credentials =
+            configuration.credentials_resolver->resolve_credentials_for_incoming_message(in);
 
-	if (PermissionManager::Result::rejected == permission_manager->check_permission_for_credentials(criteria, credentials))
-	    throw std::runtime_error("Client lacks permissions to access the service with the given criteria");
+        auto result =
+            configuration.permission_manager->check_permission_for_credentials(criteria, credentials);
 
-	auto session = parent->create_session_for_criteria(criteria);
+        if (PermissionManager::Result::rejected == result) throw std::runtime_error
+        {
+            "Client lacks permissions to access the service with the given criteria"
+        };
 
-    auto service = dbus::Service::use_service(parent->access_bus(), in->sender());
-    auto object = service->object_for_path(session->path());
+        auto path =
+            configuration.object_path_generator->object_path_for_caller_credentials(credentials);
 
+        auto stub =
+            dbus::Service::use_service(configuration.outgoing, sender);
+
+        culss::Skeleton::Configuration config
+        {
+            path,
+            culss::Skeleton::Local
+            {
+                create_session_for_criteria(criteria),
+                configuration.incoming
+            },
+            culss::Skeleton::Remote
+            {
+                stub->object_for_path(path)
+            }
+        };
+
+        culss::Interface::Ptr session
+        {
+            new culss::Skeleton{config}
+        };
+
+        if (not add_to_session_store_for_path(path, session))
+        {
+            reply = dbus::Message::make_error(
+                        in,
+                        culs::Interface::Errors::CreatingSession::name(),
+                        "Refused to create second session for same process");
+        } else
+        {
+            reply = dbus::Message::make_method_return(in);
+            reply->writer() << path;
+        }
+
+    } catch(const std::exception& e)
     {
-        std::lock_guard<std::mutex> lg(guard);
-
-        auto wrapper = SessionWrapper::Ptr{new SessionWrapper{shared_from_this(), session, service, object}};
-
-        bool inserted = false;
-        std::tie(std::ignore, inserted) = session_store.insert(std::make_pair(session->path(), wrapper));
-
-        auto reply = dbus::Message::make_method_return(in);
-        reply->writer() << session->path();
-        parent->access_bus()->send(reply);
-
-        if (!inserted)
-            throw std::runtime_error("Could not insert duplicate session into store.");
+        // We only send a very generic error message to the client to avoid
+        // leaking any sort of internal error handling details to untrusted
+        // apps.
+        reply = dbus::Message::make_error(
+                    in,
+                    culs::Interface::Errors::CreatingSession::name(),
+                    "Error creating session");
+        // We log the error for debugging purposes.
+        LOG(ERROR) << "Error creating session: " << e.what();
     }
 
-    } catch(const std::runtime_error& e)
+    // We are done processing the request and try to send out the result to the client.
+    try
     {
-    parent->access_bus()->send(
-        dbus::Message::make_error(
-            in,
-            culs::Interface::Errors::CreatingSession::name(),
-            e.what()));
-
-    LOG(ERROR) << "Error creating session: " << e.what();
+        configuration.incoming->send(reply);
+    } catch(const std::exception& e)
+    {
+        // We log the error for debugging purposes.
+        LOG(ERROR) << "Error sending reply to session creation request: " << e.what();
     }
 }
 
-void culs::Skeleton::Private::remove_session(const SessionWrapper::Ptr& session)
+bool culs::Skeleton::add_to_session_store_for_path(
+        const core::dbus::types::ObjectPath& path,
+        const culss::Interface::Ptr& session)
 {
     std::lock_guard<std::mutex> lg(guard);
-    session_store.erase(session->path());
+    bool inserted = false;
+    std::tie(std::ignore, inserted) = session_store.insert(std::make_pair(path, session));
+    return inserted;
+}
 
-    VLOG(1) << "# of session in session store: " << session_store.size() << std::endl;
+core::Property<bool>& culs::Skeleton::does_satellite_based_positioning()
+{
+    return *properties.does_satellite_based_positioning;
+}
+
+core::Property<bool>& culs::Skeleton::does_report_cell_and_wifi_ids()
+{
+    return *properties.does_report_cell_and_wifi_ids;
+}
+
+core::Property<bool>& culs::Skeleton::is_online()
+{
+    return *properties.is_online;
+}
+
+core::Property<std::map<cul::SpaceVehicle::Key, cul::SpaceVehicle>>& culs::Skeleton::visible_space_vehicles()
+{
+    return *properties.visible_space_vehicles;
 }

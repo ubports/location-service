@@ -1,0 +1,16 @@
+{
+global:
+    extern "C++" {
+        com::ubuntu::location::*;
+        typeinfo?for?com::ubuntu::location::*;
+        typeinfo?name?for?com::ubuntu::location::*;
+        VTT?for?com::ubuntu::location::*;
+        virtual?thunk?to?com::ubuntu::location::*;
+        vtable?for?com::ubuntu::location::*;
+	std::hash*;
+    };
+local:
+    extern "C++" {
+        *;
+    };
+};

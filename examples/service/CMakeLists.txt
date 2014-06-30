@@ -1,13 +1,8 @@
-find_package(PkgConfig)
-find_package(Boost COMPONENTS system)
-find_package(Threads)
-
-pkg_check_modules(DBUS dbus-1)
-pkg_check_modules(DBUS_CPP dbus-cpp)
+message(STATUS ${Boost_LIBRARIES})
 include_directories(
     ${Boost_INCLUDE_DIRS}
     ${DBUS_INCLUDE_DIRS}
-    ${DBUS_CPP_INCLUDE_DIRS}/dbus
+    ${DBUS_CPP_INCLUDE_DIRS}
 
 )
 

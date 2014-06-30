@@ -1,4 +1,4 @@
-#include "com/ubuntu/location/provider_selection_policy.h"
+#include <com/ubuntu/location/provider_selection_policy.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -7,17 +7,36 @@ namespace cul = com::ubuntu::location;
 
 namespace
 {
-class DummyProvider : public com::ubuntu::location::Provider
+struct ProviderSetEnumerator : public cul::ProviderEnumerator
+{
+    ProviderSetEnumerator(const std::set<std::shared_ptr<cul::Provider>>& providers)
+        : providers(providers)
+    {
+    }
+
+    void for_each_provider(const std::function<void(const std::shared_ptr<cul::Provider>&)>& f) const
+    {
+        for (const auto& provider : providers)
+            f(provider);
+    }
+
+    std::set<std::shared_ptr<cul::Provider>> providers;
+};
+
+class DummyProvider : public cul::Provider
 {
 public:
-    DummyProvider(com::ubuntu::location::Provider::FeatureFlags feature_flags = com::ubuntu::location::Provider::FeatureFlags {},
-                  com::ubuntu::location::Provider::RequirementFlags requirement_flags = com::ubuntu::location::Provider::RequirementFlags {})
-        : com::ubuntu::location::Provider(feature_flags, requirement_flags)
+    DummyProvider(cul::Provider::Features feats = cul::Provider::Features::none,
+                  cul::Provider::Requirements requs= cul::Provider::Requirements::none)
+        : com::ubuntu::location::Provider(feats, requs)
     {
     }
 
     MOCK_METHOD1(matches_criteria, bool(const cul::Criteria&));
 };
+
+static const cul::Provider::Features all_features
+    = cul::Provider::Features::heading | cul::Provider::Features::position | cul::Provider::Features::velocity;
 }
 
 TEST(ProviderSelection, feature_flags_calculation_works_correctly)
@@ -26,10 +45,10 @@ TEST(ProviderSelection, feature_flags_calculation_works_correctly)
 
     cul::ProviderSelection selection{provider, provider, provider};
 
-    EXPECT_EQ(cul::Provider::FeatureFlags{"111"}, selection.to_feature_flags());
+    EXPECT_EQ(all_features, selection.to_feature_flags());
 }
 
-#include "com/ubuntu/location/default_provider_selection_policy.h"
+#include <com/ubuntu/location/default_provider_selection_policy.h>
 
 TEST(DefaultProviderSelectionPolicy, if_no_provider_matches_criteria_null_is_returned)
 {
@@ -45,14 +64,23 @@ TEST(DefaultProviderSelectionPolicy, if_no_provider_matches_criteria_null_is_ret
     providers.insert(cul::Provider::Ptr{&provider1, [](cul::Provider*){}});
     providers.insert(cul::Provider::Ptr{&provider2, [](cul::Provider*){}});
 
-    EXPECT_EQ(cul::Provider::Ptr{}, 
-              policy.determine_position_updates_provider(cul::Criteria{}, providers));
-    EXPECT_EQ(cul::Provider::Ptr{}, 
-              policy.determine_heading_updates_provider(cul::Criteria{}, providers));
-    EXPECT_EQ(cul::Provider::Ptr{}, 
-              policy.determine_velocity_updates_provider(cul::Criteria{}, providers));
-    EXPECT_EQ(cul::ProviderSelection{},
-              policy.determine_provider_selection_from_set_for_criteria(cul::Criteria{}, providers));
+    ProviderSetEnumerator enumerator{providers};
+
+    EXPECT_EQ(cul::ProviderSelectionPolicy::null_provider(),
+              policy.determine_position_updates_provider(cul::Criteria{}, enumerator));
+    EXPECT_EQ(cul::ProviderSelectionPolicy::null_provider(),
+              policy.determine_heading_updates_provider(cul::Criteria{}, enumerator));
+    EXPECT_EQ(cul::ProviderSelectionPolicy::null_provider(),
+              policy.determine_velocity_updates_provider(cul::Criteria{}, enumerator));
+
+    cul::ProviderSelection empty_selection
+    {
+        cul::ProviderSelectionPolicy::null_provider(),
+        cul::ProviderSelectionPolicy::null_provider(),
+        cul::ProviderSelectionPolicy::null_provider()
+    };
+    EXPECT_EQ(empty_selection,
+              policy.determine_provider_selection_for_criteria(cul::Criteria{}, enumerator));
 }
 
 TEST(DefaultProviderSelectionPolicy, an_already_running_provider_is_preferred)
@@ -73,13 +101,15 @@ TEST(DefaultProviderSelectionPolicy, an_already_running_provider_is_preferred)
     cul::Provider::Ptr p2{&provider2, [](cul::Provider*){}};
     
     std::set<cul::Provider::Ptr> providers{{p1, p2}};
+    ProviderSetEnumerator enumerator{providers};
 
     EXPECT_EQ(p1,
-              policy.determine_position_updates_provider(cul::Criteria{}, providers));
+              policy.determine_position_updates_provider(cul::Criteria{}, enumerator));
     EXPECT_EQ(p1,
-              policy.determine_heading_updates_provider(cul::Criteria{}, providers));
+              policy.determine_heading_updates_provider(cul::Criteria{}, enumerator));
     EXPECT_EQ(p1,
-              policy.determine_velocity_updates_provider(cul::Criteria{}, providers));
-    EXPECT_EQ(cul::ProviderSelection(p1, p1, p1),
-              policy.determine_provider_selection_from_set_for_criteria(cul::Criteria{}, providers));
+              policy.determine_velocity_updates_provider(cul::Criteria{}, enumerator));
+    cul::ProviderSelection ps{p1, p1, p1};
+    EXPECT_EQ(ps,
+              policy.determine_provider_selection_for_criteria(cul::Criteria{}, enumerator));
 }

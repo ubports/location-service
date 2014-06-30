@@ -17,10 +17,10 @@
  */
 #include "program_options.h"
 
-#include "com/ubuntu/location/provider_factory.h"
+#include <com/ubuntu/location/provider_factory.h>
 
-#include "com/ubuntu/location/service/default_configuration.h"
-#include "com/ubuntu/location/service/implementation.h"
+#include <com/ubuntu/location/service/default_configuration.h>
+#include <com/ubuntu/location/service/implementation.h>
 
 #include <core/dbus/announcer.h>
 #include <core/dbus/asio/executor.h>
@@ -30,6 +30,33 @@
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 namespace dbus = core::dbus;
+
+namespace
+{
+struct NullReporter : public culs::Harvester::Reporter
+{
+    NullReporter() = default;
+
+    /** @brief Tell the reporter that it should start operating. */
+    void start() override
+    {
+    }
+
+    /** @brief Tell the reporter to shut down its operation. */
+    void stop()
+    {
+    }
+
+    /**
+     * @brief Triggers the reporter to send off the information.
+     */
+    void report(const cul::Update<cul::Position>&,
+                const std::vector<cul::connectivity::WirelessNetwork::Ptr>&,
+                const std::vector<cul::connectivity::RadioCell::Ptr>&)
+    {
+    }
+};
+}
 
 int main(int argc, char** argv)
 {
@@ -119,30 +146,43 @@ int main(int argc, char** argv)
         {"system", dbus::WellKnownBus::system},
     };
 
-    dbus::Bus::Ptr bus
+    dbus::Bus::Ptr incoming
     {
         new dbus::Bus{lut.at(options.value_for_key<std::string>("bus"))}
     };
+    incoming->install_executor(dbus::asio::make_executor(incoming));
 
-    bus->install_executor(dbus::asio::make_executor(bus));
+    dbus::Bus::Ptr outgoing
+    {
+        new dbus::Bus{lut.at(options.value_for_key<std::string>("bus"))}
+    };
+    outgoing->install_executor(dbus::asio::make_executor(outgoing));
 
     culs::DefaultConfiguration config;
+
+    culs::Implementation::Configuration configuration
+    {
+        incoming,
+        outgoing,
+        config.the_engine(instantiated_providers, config.the_provider_selection_policy()),
+        config.the_permission_manager(),
+        culs::Harvester::Configuration
+        {
+            cul::connectivity::platform_default_manager(),
+            std::make_shared<NullReporter>()
+        }
+    };
+
+    auto location_service = std::make_shared<culs::Implementation>(configuration);
     
-    auto location_service =
-            dbus::announce_service_on_bus<
-                culs::Interface, 
-                culs::Implementation
-            >(
-                bus,
-                config.the_engine(
-                    instantiated_providers,
-                    config.the_provider_selection_policy()),
-                config.the_permission_manager());
+    std::thread t1{[incoming](){incoming->run();}};
+    std::thread t2{[outgoing](){outgoing->run();}};
     
-    std::thread t{[bus](){bus->run();}};
-    
-    if (t.joinable())
-        t.join();
+    if (t1.joinable())
+        t1.join();
+
+    if (t2.joinable())
+        t2.join();
 
     return EXIT_SUCCESS;
 }

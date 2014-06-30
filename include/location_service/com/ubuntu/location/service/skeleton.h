@@ -18,10 +18,13 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SKELETON_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SKELETON_H_
 
-#include "com/ubuntu/location/service/interface.h"
-#include "com/ubuntu/location/service/permission_manager.h"
-#include "com/ubuntu/location/service/session/interface.h"
+#include <com/ubuntu/location/service/interface.h>
+#include <com/ubuntu/location/service/permission_manager.h>
+#include <com/ubuntu/location/service/session/interface.h>
 
+#include <core/dbus/dbus.h>
+#include <core/dbus/object.h>
+#include <core/dbus/property.h>
 #include <core/dbus/skeleton.h>
 
 namespace com
@@ -32,20 +35,111 @@ namespace location
 {
 namespace service
 {
-class Skeleton : public core::dbus::Skeleton<com::ubuntu::location::service::Interface>,
-                 public std::enable_shared_from_this<Skeleton>
+class Skeleton
+        : public core::dbus::Skeleton<com::ubuntu::location::service::Interface>,
+          public std::enable_shared_from_this<Skeleton>
 {
-  public:
+public:
     typedef std::shared_ptr<Skeleton> Ptr;
-    
-    Skeleton(const dbus::Bus::Ptr& connection, const PermissionManager::Ptr& permission_manager);
-    Skeleton(const Skeleton&) = delete;
-    Skeleton& operator=(const Skeleton&) = delete;
+
+    // Models resolution of an incoming dbus message to the credentials of the message sender.
+    struct CredentialsResolver
+    {
+        typedef std::shared_ptr<CredentialsResolver> Ptr;
+
+        CredentialsResolver() = default;
+        virtual ~CredentialsResolver() = default;
+
+        // Resolves the sender of msg to the respective credentials.
+        virtual Credentials resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg) = 0;
+    };
+
+    // Implements CredentialsResolver by reaching out to the dbus daemon and
+    // invoking:
+    //   * GetConnectionUnixProcessID
+    //   * GetConnectionUnixUser
+    struct DBusDaemonCredentialsResolver : public CredentialsResolver
+    {
+        // Sets up a new instance for the given bus connection.
+        DBusDaemonCredentialsResolver(const core::dbus::Bus::Ptr& bus);
+
+        // Resolves the sender of msg to pid, uid by calling out to the dbus daemon.
+        Credentials resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg);
+
+        // Stub for accessing the dbus daemon.
+        core::dbus::DBus daemon;
+    };
+
+    // Models the generation of stable and unique object paths for client-specific sessions.
+    // The requirements for the resulting object path are:
+    //   * Unique for the entire system over its complete lifetime
+    //   * Stable with respect to an app. That is, one app is always assigned the same object path.
+    struct ObjectPathGenerator
+    {
+        typedef std::shared_ptr<ObjectPathGenerator> Ptr;
+
+        ObjectPathGenerator() = default;
+        virtual ~ObjectPathGenerator() = default;
+
+        // Calculates an object path from pid and uid. The default implementation
+        // creates the path according to the following steps:
+        //    [1.] Query the AppArmor profile name for pid in credentials.
+        //    [1.1] If the process is running unconfined, rely on a counter to assemble the session name.
+        //    [1.2] If the process is confined, use the AppArmor profile name to generate the path.
+        virtual core::dbus::types::ObjectPath object_path_for_caller_credentials(const Credentials& credentials);
+    };
+
+    struct Configuration
+    {
+        // DBus connection set up for handling requests to the service.
+        core::dbus::Bus::Ptr incoming;
+        // DBus connection for reaching out to other services in a non-blocking way.
+        core::dbus::Bus::Ptr outgoing;
+        // An implementation of CredentialsResolver for resolving incoming message sender
+        // to Credentials = uid, pid.
+        CredentialsResolver::Ptr credentials_resolver;
+        // An implementation of ObjectPathGenerator for generating session names.
+        ObjectPathGenerator::Ptr object_path_generator;
+        // Permission manager implementation for verifying incoming requests.
+        PermissionManager::Ptr permission_manager;
+    };
+
+    Skeleton(const Configuration& configuration);
     ~Skeleton() noexcept;
 
-  private:
-    struct Private;
-    std::shared_ptr<Private> d;
+    // From com::ubuntu::location::service::Interface
+    core::Property<bool>& does_satellite_based_positioning();
+    core::Property<bool>& does_report_cell_and_wifi_ids();
+    core::Property<bool>& is_online();
+    core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles();
+
+private:
+    // Handles incoming message calls for create_session_for_criteria.
+    // Dispatches to the actual implementation, and manages object lifetimes.
+    void handle_create_session_for_criteria(const core::dbus::Message::Ptr& msg);
+
+    // Tries to register the given session under the given path in the session store.
+    // Returns true iff the session has been added to the store.
+    bool add_to_session_store_for_path(
+            const core::dbus::types::ObjectPath& path,
+            const session::Interface::Ptr& session);
+
+    // Stores the configuration passed in at creation time.
+    Configuration configuration;
+    // The skeleton object representing com.ubuntu.location.service.Interface on the bus.
+    core::dbus::Object::Ptr object;
+    // DBus properties as exposed on the bus for com.ubuntu.location.service.Interface
+    struct
+    {
+        std::shared_ptr< core::dbus::Property<Interface::Properties::DoesSatelliteBasedPositioning> > does_satellite_based_positioning;
+        std::shared_ptr< core::dbus::Property<Interface::Properties::DoesReportCellAndWifiIds> > does_report_cell_and_wifi_ids;
+        std::shared_ptr< core::dbus::Property<Interface::Properties::IsOnline> > is_online;
+        std::shared_ptr< dbus::Property<Interface::Properties::VisibleSpaceVehicles> > visible_space_vehicles;
+    } properties;
+    // Guards the session store.
+    std::mutex guard;
+    // Keeps track of running sessions, keying them by their unique object path.
+    std::map<dbus::types::ObjectPath, std::shared_ptr<session::Interface>> session_store;
 };
 }
 }

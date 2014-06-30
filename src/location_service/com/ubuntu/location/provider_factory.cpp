@@ -15,8 +15,8 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/provider_factory.h"
-#include "com/ubuntu/location/provider.h"
+#include <com/ubuntu/location/provider_factory.h>
+#include <com/ubuntu/location/provider.h>
 
 #include <functional>
 #include <map>

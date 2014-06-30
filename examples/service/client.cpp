@@ -17,7 +17,7 @@
  */
 #include "program_options.h"
 
-#include "com/ubuntu/location/service/stub.h"
+#include <com/ubuntu/location/service/stub.h>
 
 #include <core/dbus/resolver.h>
 #include <core/dbus/asio/executor.h>
@@ -26,6 +26,7 @@
 
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
+namespace culss = com::ubuntu::location::service::session;
 namespace dbus = core::dbus;
 
 int main(int argc, char** argv)
@@ -53,34 +54,34 @@ int main(int argc, char** argv)
         {"system", dbus::WellKnownBus::system},
     };
 
-    core::dbus::Bus::Ptr bus
+    dbus::Bus::Ptr bus
     {
-        new core::dbus::Bus{lut.at(options.value_for_key<std::string>("bus"))}
+        new dbus::Bus{lut.at(options.value_for_key<std::string>("bus"))}
     };
-    bus->install_executor(core::dbus::asio::make_executor(bus));
+    bus->install_executor(dbus::asio::make_executor(bus));
     std::thread t{[bus](){bus->run();}};
     
     auto location_service = 
-            core::dbus::resolve_service_on_bus<culs::Interface, culs::Stub>(bus);
+            dbus::resolve_service_on_bus<culs::Interface, culs::Stub>(bus);
         
-    auto s1 = location_service->create_session_for_criteria(com::ubuntu::location::Criteria{});
+    auto s1 = location_service->create_session_for_criteria(cul::Criteria{});
         
-    s1->install_position_updates_handler(
-        [&](const com::ubuntu::location::Update<com::ubuntu::location::Position>& new_position) {
+    s1->updates().position.changed().connect(
+        [&](const cul::Update<cul::Position>& new_position) {
             std::cout << "On position updated: " << new_position << std::endl;
         });
-    s1->install_velocity_updates_handler(
-        [&](const com::ubuntu::location::Update<com::ubuntu::location::Velocity>& new_velocity) {
+    s1->updates().velocity.changed().connect(
+        [&](const cul::Update<cul::Velocity>& new_velocity) {
             std::cout << "On velocity_changed " << new_velocity << std::endl;
         });
-    s1->install_heading_updates_handler(
-        [&](const com::ubuntu::location::Update<com::ubuntu::location::Heading>& new_heading) {
+    s1->updates().heading.changed().connect(
+        [&](const cul::Update<cul::Heading>& new_heading) {
             std::cout << "On heading changed: " << new_heading << std::endl;
         });
         
-    s1->start_position_updates();
-    s1->start_velocity_updates();
-    s1->start_heading_updates();
+    s1->updates().position_status = culss::Interface::Updates::Status::enabled;
+    s1->updates().heading_status = culss::Interface::Updates::Status::enabled;
+    s1->updates().velocity_status = culss::Interface::Updates::Status::enabled;
         
     if (t.joinable())
         t.join();

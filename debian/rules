@@ -19,5 +19,8 @@ export DPKG_GENSYMBOLS_CHECK_LEVEL=4
 override_dh_install:
 	dh_install -Xubuntu-location-service.1 --fail-missing
 
+override_dh_strip:
+	dh_strip --dbg-package=libubuntu-location-service-dbg
+
 override_dh_auto_configure:
 	dh_auto_configure -- -DCMAKE_INSTALL_LIBEXECDIR=/usr/lib/$(DEB_HOST_MULTIARCH)/ubuntu-location-service

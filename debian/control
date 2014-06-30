@@ -6,7 +6,6 @@ XSBC-Original-Maintainer: Thomas Voß <thomas.voss@canonical.com>
 Build-Depends: cmake,
                curl,
                libdbus-cpp-dev (>= 3.0.0),
-               dbus-test-runner,
                debhelper (>= 9),
                doxygen,
                geoclue-ubuntu-geoip,
@@ -15,9 +14,11 @@ Build-Depends: cmake,
                libboost-program-options-dev,
                libboost-system-dev,
                libdbus-1-dev,
+               libdbus-cpp-dev,
                libgoogle-glog-dev,
                libgtest-dev,
                libiw-dev,
+               libprocess-cpp-dev,
                libubuntu-platform-hardware-api-headers,
                libubuntu-platform-hardware-api-dev,
                libproperties-cpp-dev,
@@ -28,7 +29,7 @@ Homepage: http://launchpad.net/location-service
 Vcs-Bzr: https://code.launchpad.net/~phablet-team/location-service/trunk
 Vcs-Browser: http://bazaar.launchpad.net/~phablet-team/location-service/trunk/files
 
-Package: libubuntu-location-service0
+Package: libubuntu-location-service1
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -45,7 +46,7 @@ Section: libdevel
 Architecture: any
 Multi-Arch: foreign
 Recommends: ubuntu-location-service-doc,
-Depends: libubuntu-location-service0 (= ${binary:Version}),
+Depends: libubuntu-location-service1 (= ${binary:Version}),
          ${misc:Depends},
 Suggests: ubuntu-location-service-doc,
 Description: location service aggregating position/velocity/heading
@@ -54,9 +55,30 @@ Description: location service aggregating position/velocity/heading
  Contains header files required to develop clients talking to the ubuntu
  location service.
 
-Package: ubuntu-location-service-bin
+Package: libubuntu-location-service-dbg
+Section: debug
+Architecture: any
+Multi-Arch: foreign
+Depends: libubuntu-location-service1 (= ${binary:Version}),
+         ${misc:Depends},
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains debug symbols.
+
+Package: ubuntu-location-service-tests
 Architecture: any
 Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains all test executables
+
+Package: ubuntu-location-service-bin
+Architecture: any
+Depends: libubuntu-location-service1 (= ${binary:Version}),
+         ${misc:Depends},
          ${shlibs:Depends},
 Breaks: ubuntu-location-service-examples (<< 0.0.2),
 Replaces: ubuntu-location-service-examples (<< 0.0.2),
@@ -68,7 +90,8 @@ Description: location service aggregating position/velocity/heading
 Package: ubuntu-location-service-examples
 Architecture: any
 Multi-Arch: same
-Depends: ${misc:Depends},
+Depends: libubuntu-location-service1 (= ${binary:Version}),
+         ${misc:Depends},
          ${shlibs:Depends},
          ubuntu-location-service-doc,
 Description: location service aggregating position/velocity/heading

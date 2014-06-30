@@ -18,16 +18,8 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_CRITERIA_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_CRITERIA_H_
 
-#include "com/ubuntu/location/accuracy.h"
-#include "com/ubuntu/location/heading.h"
-#include "com/ubuntu/location/velocity.h"
-#include "com/ubuntu/location/wgs84/altitude.h"
-#include "com/ubuntu/location/wgs84/latitude.h"
-#include "com/ubuntu/location/wgs84/longitude.h"
-
-#include <limits>
-#include <ostream>
-#include <stdexcept>
+#include <com/ubuntu/location/optional.h>
+#include <com/ubuntu/location/units/units.h>
 
 namespace com
 {
@@ -35,22 +27,40 @@ namespace ubuntu
 {
 namespace location
 {
+/**
+ * @brief Summarizes criteria of a client session with respect to functionality
+ * and accuracy for position, velocity and heading measurements.
+ */
 struct Criteria
 {
-    Criteria() : latitude_accuracy(),
-                 longitude_accuracy(),
-                 altitude_accuracy(),
-                 velocity_accuracy(),
-                 heading_accuracy()
+    /**
+     * @brief satisfies checks whether this instance also satisfies another criteria instance.
+     * @param rhs The other criteria instance
+     * @return true iff this instance also satisfies the other instance, else false.
+     */
+    bool satisfies(const Criteria& rhs) const;
+
+    struct Requires
     {
-    }
-    
-    Accuracy<wgs84::Latitude> latitude_accuracy;
-    Accuracy<wgs84::Longitude> longitude_accuracy;
-    Accuracy<wgs84::Altitude> altitude_accuracy;
-    Accuracy<Velocity> velocity_accuracy;
-    Accuracy<Heading> heading_accuracy;
+        bool position = true; ///< The client needs position measurements.
+        bool altitude = false; ///< The client needs altitude measurements.
+        bool velocity = false; ///< The client needs velocity measurments.
+        bool heading = false; ///< The client needs heading measurements.
+    } requires = Requires{};
+
+    struct Accuracy
+    {
+        units::Quantity<units::Length> horizontal = 3000 * units::Meters; ///< The client requires measurements of at least this horizontal accuracy.
+        Optional<units::Quantity<units::Length>> vertical; ///< The client requires measurements of at least this vertical accuracy.
+        Optional<units::Quantity<units::Velocity>> velocity; ///< The client requires measurements of at least this velocity accuracy.
+        Optional<units::Quantity<units::PlaneAngle>> heading; ///< The client requires measurements of at least this heading accuracy.
+    } accuracy = Accuracy{};
 };
+
+/**
+ * @brief operator + merges lhs and rhs such that satisfying the new criteria satisfies lhs and rhs.
+ */
+Criteria operator+(const Criteria& lhs, const Criteria& rhs);
 }
 }
 }

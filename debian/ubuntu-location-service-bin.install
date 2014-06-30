@@ -1,4 +1,4 @@
 etc/dbus-1/system.d/
 etc/init/*
 usr/bin/ubuntu-location-serviced
-
+usr/bin/ubuntu-location-serviced-cli

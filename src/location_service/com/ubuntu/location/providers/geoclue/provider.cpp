@@ -15,8 +15,12 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/providers/geoclue/provider.h"
-#include "com/ubuntu/location/providers/geoclue/geoclue.h"
+#include <com/ubuntu/location/providers/geoclue/provider.h>
+
+#include <com/ubuntu/location/providers/geoclue/geoclue.h>
+
+#include <core/dbus/object.h>
+#include <core/dbus/signal.h>
 
 #include "core/dbus/object.h"
 #include "core/dbus/signal.h"
@@ -39,6 +43,16 @@ dbus::Bus::Ptr the_session_bus()
 
 struct culpg::Provider::Private
 {
+    typedef dbus::Signal<
+        org::freedesktop::Geoclue::Position::Signals::PositionChanged,
+        org::freedesktop::Geoclue::Position::Signals::PositionChanged::ArgumentType
+    > PositionChanged;
+
+    typedef dbus::Signal<
+        org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged,
+        org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged::ArgumentType
+    > VelocityChanged;
+
     Private(const culpg::Provider::Configuration& config) 
             : bus(the_session_bus()),
               service(dbus::Service::use_service(bus, config.name)),
@@ -64,27 +78,10 @@ struct culpg::Provider::Private
     dbus::Bus::Ptr bus;
     dbus::Service::Ptr service;
     dbus::Object::Ptr object;
-    dbus::Signal<
-        org::freedesktop::Geoclue::Position::Signals::PositionChanged, 
-        org::freedesktop::Geoclue::Position::Signals::PositionChanged::ArgumentType
-        >::Ptr signal_position_changed;
-    dbus::Signal<
-        org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged, 
-        org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged::ArgumentType
-        >::Ptr signal_velocity_changed;
-
-    typedef typename dbus::Signal<
-        org::freedesktop::Geoclue::Position::Signals::PositionChanged,
-        org::freedesktop::Geoclue::Position::Signals::PositionChanged::ArgumentType
-    >::SubscriptionToken SignalPositionChangedSubscription;
-
-    typedef typename dbus::Signal<
-        org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged,
-        org::freedesktop::Geoclue::Velocity::Signals::VelocityChanged::ArgumentType
-    >::SubscriptionToken SignalVelocityChangedSubscription;
-
-    SignalPositionChangedSubscription position_updates_connection;
-    SignalVelocityChangedSubscription velocity_updates_connection;
+    PositionChanged::Ptr signal_position_changed;
+    VelocityChanged::Ptr signal_velocity_changed;
+    PositionChanged::SubscriptionToken position_updates_connection;
+    VelocityChanged::SubscriptionToken velocity_updates_connection;
 
     std::thread worker;
 };
@@ -97,18 +94,6 @@ cul::Provider::Ptr culpg::Provider::create_instance(const cul::ProviderFactory::
     return cul::Provider::Ptr{new culpg::Provider{pConfig}};
 }
 
-const cul::Provider::FeatureFlags& culpg::Provider::default_feature_flags()
-{
-    static const cul::Provider::FeatureFlags flags{"001"};
-    return flags;
-}
-
-const cul::Provider::RequirementFlags& culpg::Provider::default_requirement_flags()
-{
-    static const cul::Provider::RequirementFlags flags{"1010"};
-    return flags;
-}
-
 culpg::Provider::Provider(const culpg::Provider::Configuration& config) 
         : com::ubuntu::location::Provider(config.features, config.requirements),
           d(new Private(config))
@@ -118,19 +103,19 @@ culpg::Provider::Provider(const culpg::Provider::Configuration& config)
                 [this](const org::freedesktop::Geoclue::Position::Signals::PositionChanged::ArgumentType& arg)
                 {
                     org::freedesktop::Geoclue::Position::FieldFlags flags{static_cast<unsigned long>(std::get<0>(arg))};
-                    cul::Update<cul::Position> update
+                    cul::Position pos
                     {
-                        {
-                            flags.test(org::freedesktop::Geoclue::Position::Field::latitude) ? 
-                                    cul::wgs84::Latitude{std::get<2>(arg)* cul::units::Degrees} : cul::wgs84::Latitude{},
-                            flags.test(org::freedesktop::Geoclue::Position::Field::longitude) ? 
-                                    cul::wgs84::Longitude{std::get<3>(arg)* cul::units::Degrees} : cul::wgs84::Longitude{},
-                            flags.test(org::freedesktop::Geoclue::Position::Field::altitude) ? 
-                                    cul::wgs84::Altitude{std::get<4>(arg)* cul::units::Meters} : cul::wgs84::Altitude{}
-                        },
-                        cul::Clock::now()
+                        flags.test(org::freedesktop::Geoclue::Position::Field::latitude) ?
+                                cul::wgs84::Latitude{std::get<2>(arg)* cul::units::Degrees} : cul::wgs84::Latitude{},
+                        flags.test(org::freedesktop::Geoclue::Position::Field::longitude) ?
+                                cul::wgs84::Longitude{std::get<3>(arg)* cul::units::Degrees} : cul::wgs84::Longitude{}
                     };
-                    this->deliver_position_updates(update);
+
+                    if (flags.test(org::freedesktop::Geoclue::Position::Field::altitude))
+                        pos.altitude = cul::wgs84::Altitude{std::get<4>(arg)* cul::units::Meters};
+
+                    cul::Update<cul::Position> update(pos);
+                    this->mutable_updates().position(update);
                 });
 
     d->velocity_updates_connection = 
@@ -147,7 +132,7 @@ culpg::Provider::Provider(const culpg::Provider::Configuration& config)
                             std::get<2>(arg) * cul::units::MetersPerSecond,
                             cul::Clock::now()
                         };
-                        this->deliver_velocity_updates(update);
+                        this->mutable_updates().velocity(update);
                     }
 
                     if (flags.test(org::freedesktop::Geoclue::Velocity::Field::direction))
@@ -158,7 +143,7 @@ culpg::Provider::Provider(const culpg::Provider::Configuration& config)
                             cul::Clock::now()
                         };
                             
-                        this->deliver_heading_updates(update);
+                        this->mutable_updates().heading(update);
                     }
                 });
 

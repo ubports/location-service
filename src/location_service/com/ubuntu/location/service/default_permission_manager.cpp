@@ -15,7 +15,9 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/service/default_permission_manager.h"
+#include <com/ubuntu/location/service/default_permission_manager.h>
+
+#include <iostream>
 
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;

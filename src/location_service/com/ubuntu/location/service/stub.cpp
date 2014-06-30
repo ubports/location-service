@@ -15,10 +15,12 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/service/stub.h"
-#include "com/ubuntu/location/service/session/stub.h"
+#include <com/ubuntu/location/service/stub.h>
+#include <com/ubuntu/location/service/session/stub.h>
 
-#include "com/ubuntu/location/logging.h"
+#include <com/ubuntu/location/logging.h>
+
+#include <core/dbus/property.h>
 
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
@@ -28,8 +30,25 @@ namespace dbus = core::dbus;
 
 struct culs::Stub::Private
 {
-    core::dbus::Bus::Ptr bus;
-    core::dbus::Object::Ptr object;
+    Private(const dbus::Bus::Ptr& connection,
+            const dbus::Object::Ptr& object)
+        : bus(connection),
+          object(object),
+          does_satellite_based_positioning(object->get_property<culs::Interface::Properties::DoesSatelliteBasedPositioning>()),
+          does_report_cell_and_wifi_ids(object->get_property<culs::Interface::Properties::DoesReportCellAndWifiIds>()),
+          is_online(object->get_property<culs::Interface::Properties::IsOnline>()),
+          visible_space_vehicles(object->get_property<culs::Interface::Properties::VisibleSpaceVehicles>())
+    {
+        FLAGS_logtostderr = true;
+        google::InitGoogleLogging("com.ubuntu.location");
+    }
+
+    dbus::Bus::Ptr bus;
+    dbus::Object::Ptr object;
+    std::shared_ptr<dbus::Property<culs::Interface::Properties::DoesSatelliteBasedPositioning>> does_satellite_based_positioning;
+    std::shared_ptr<dbus::Property<culs::Interface::Properties::DoesReportCellAndWifiIds>> does_report_cell_and_wifi_ids;
+    std::shared_ptr<dbus::Property<culs::Interface::Properties::IsOnline>> is_online;
+    std::shared_ptr<dbus::Property<culs::Interface::Properties::VisibleSpaceVehicles>> visible_space_vehicles;
 };
 
 culs::Stub::Stub(const dbus::Bus::Ptr& connection) : dbus::Stub<culs::Interface>(connection),
@@ -44,12 +63,35 @@ culs::Stub::~Stub() noexcept
 culss::Interface::Ptr culs::Stub::create_session_for_criteria(const cul::Criteria& criteria)
 {
     auto op = d->object->transact_method<
-	culs::Interface::CreateSessionForCriteria,
-	culs::Interface::CreateSessionForCriteria::ResultType
-    >(criteria);
+            culs::Interface::CreateSessionForCriteria,
+            culs::Interface::CreateSessionForCriteria::ResultType
+            >(criteria);
 
     if (op.is_error())
-        throw std::runtime_error(op.error().print());
+    {
+        std::stringstream ss; ss << __PRETTY_FUNCTION__ << ": " << op.error().print();
+        throw std::runtime_error(ss.str());
+    }
 
     return culss::Interface::Ptr(new culss::Stub{d->bus, op.value()});
+}
+
+core::Property<bool>& culs::Stub::does_satellite_based_positioning()
+{
+    return *d->does_satellite_based_positioning;
+}
+
+core::Property<bool>& culs::Stub::does_report_cell_and_wifi_ids()
+{
+    return *d->does_report_cell_and_wifi_ids;
+}
+
+core::Property<bool>& culs::Stub::is_online()
+{
+    return *d->is_online;
+}
+
+core::Property<std::map<cul::SpaceVehicle::Key, cul::SpaceVehicle>>& culs::Stub::visible_space_vehicles()
+{
+    return *d->visible_space_vehicles;
 }

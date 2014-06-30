@@ -1,4 +1,4 @@
-#include "com/ubuntu/location/provider_factory.h"
+#include <com/ubuntu/location/provider_factory.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

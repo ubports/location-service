@@ -1,0 +1,12 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${exec_prefix}/include
+ 
+Name: ubuntu-location-service-connectivity
+Description: A location service aggregating position/velocity/heading
+ updates and exporting them over dbus, wifi and cell id query interfaces.
+Version: @UBUNTU_LOCATION_SERVICE_VERSION_MAJOR@.@UBUNTU_LOCATION_SERVICE_VERSION_MINOR@.@UBUNTU_LOCATION_SERVICE_VERSION_PATCH@
+Libs: -L${libdir} -lubuntu-location-service-connectivity
+Cflags: -I${includedir}/ubuntu-location-service-@UBUNTU_LOCATION_SERVICE_VERSION_MAJOR@
+Requires: dbus-cpp

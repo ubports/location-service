@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/provider.h"
+#include <com/ubuntu/location/provider.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -24,54 +24,66 @@ namespace cul = com::ubuntu::location;
 
 namespace
 {
+template<typename T>
+cul::Update<T> update_as_of_now(const T& value = T())
+{
+    return cul::Update<T>{value, cul::Clock::now()};
+}
+
 class DummyProvider : public com::ubuntu::location::Provider
 {
 public:
-    DummyProvider(com::ubuntu::location::Provider::FeatureFlags feature_flags = com::ubuntu::location::Provider::FeatureFlags {},
-                  com::ubuntu::location::Provider::RequirementFlags requirement_flags = com::ubuntu::location::Provider::RequirementFlags {})
-        : com::ubuntu::location::Provider(feature_flags, requirement_flags)
+    DummyProvider(cul::Provider::Features feats = cul::Provider::Features::none,
+                  cul::Provider::Requirements requs= cul::Provider::Requirements::none)
+        : com::ubuntu::location::Provider(feats, requs)
     {
     }
 
     void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Position>& update)
     {
-        deliver_position_updates(update);
+        mutable_updates().position(update);
     }
 
     void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Velocity>& update)
     {
-        deliver_velocity_updates(update);
+        mutable_updates().velocity(update);
     }
 
     void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Heading>& update)
     {
-        deliver_heading_updates(update);
+        mutable_updates().heading(update);
     }
 };
 }
 
 TEST(Provider, requirement_flags_passed_at_construction_are_correctly_stored)
 {
-    com::ubuntu::location::Provider::FeatureFlags feature_flags;
-    com::ubuntu::location::Provider::RequirementFlags requirement_flags;
-    requirement_flags.set();
-    DummyProvider provider(feature_flags, requirement_flags);
+    cul::Provider::Features features = cul::Provider::Features::none;
+    cul::Provider::Requirements requirements =
+            cul::Provider::Requirements::cell_network |
+            cul::Provider::Requirements::data_network |
+            cul::Provider::Requirements::monetary_spending |
+            cul::Provider::Requirements::satellites;
 
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirement::satellites));
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirement::cell_network));
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirement::data_network));
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirement::monetary_spending));
+    DummyProvider provider(features, requirements);
+
+    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::satellites));
+    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::cell_network));
+    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::data_network));
+    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::monetary_spending));
 }
 
 TEST(Provider, feature_flags_passed_at_construction_are_correctly_stored)
 {
-    com::ubuntu::location::Provider::FeatureFlags flags;
-    flags.set();
-    DummyProvider provider(flags);
+    cul::Provider::Features all_features
+        = cul::Provider::Features::heading |
+          cul::Provider::Features::position |
+          cul::Provider::Features::velocity;
+    DummyProvider provider(all_features);
 
-    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Feature::position));
-    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Feature::velocity));
-    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Feature::heading));
+    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Features::position));
+    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Features::velocity));
+    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Features::heading));
 }
 
 TEST(Provider, delivering_a_message_invokes_subscribers)
@@ -81,24 +93,27 @@ TEST(Provider, delivering_a_message_invokes_subscribers)
     bool heading_update_triggered {false};
     bool velocity_update_triggered {false};
 
-    dp.subscribe_to_position_updates([&](const com::ubuntu::location::Update<com::ubuntu::location::Position>&)
-    {
-        position_update_triggered = true;
-    });
+    auto c1 = dp.updates().position.connect(
+        [&](const com::ubuntu::location::Update<com::ubuntu::location::Position>&)
+        {
+            position_update_triggered = true;
+        });
 
-    dp.subscribe_to_heading_updates([&](const com::ubuntu::location::Update<com::ubuntu::location::Heading>&)
-    {
-        heading_update_triggered = true;
-    });
+    auto c2 = dp.updates().heading.connect(
+        [&](const com::ubuntu::location::Update<com::ubuntu::location::Heading>&)
+        {
+            heading_update_triggered = true;
+        });
 
-    dp.subscribe_to_velocity_updates([&](const com::ubuntu::location::Update<com::ubuntu::location::Velocity>&)
-    {
-        velocity_update_triggered = true;
-    });
+    auto c3 = dp.updates().velocity.connect(
+        [&](const com::ubuntu::location::Update<com::ubuntu::location::Velocity>&)
+        {
+            velocity_update_triggered = true;
+        });
 
-    dp.inject_update(com::ubuntu::location::Update<com::ubuntu::location::Position>());
-    dp.inject_update(com::ubuntu::location::Update<com::ubuntu::location::Heading>());
-    dp.inject_update(com::ubuntu::location::Update<com::ubuntu::location::Velocity>());
+    dp.inject_update(update_as_of_now<cul::Position>());
+    dp.inject_update(update_as_of_now<cul::Heading>());
+    dp.inject_update(update_as_of_now<cul::Velocity>());
 
     EXPECT_TRUE(position_update_triggered);
     EXPECT_TRUE(heading_update_triggered);
@@ -109,13 +124,24 @@ namespace
 {
 struct MockProvider : public com::ubuntu::location::Provider
 {
-    MockProvider()
+    MockProvider() : cul::Provider()
     {
     }
 
-    MOCK_METHOD1(subscribe_to_position_updates, cul::ChannelConnection (std::function<void(const cul::Update<cul::Position>&)>));
-    MOCK_METHOD1(subscribe_to_heading_updates, cul::ChannelConnection (std::function<void(const cul::Update<cul::Heading>&)>));
-    MOCK_METHOD1(subscribe_to_velocity_updates, cul::ChannelConnection (std::function<void(const cul::Update<cul::Velocity>&)> f));
+    void inject_update(const cul::Update<cul::Position>& update)
+    {
+        mutable_updates().position(update);
+    }
+
+    void inject_update(const cul::Update<cul::Velocity>& update)
+    {
+        mutable_updates().velocity(update);
+    }
+
+    void inject_update(const cul::Update<cul::Heading>& update)
+    {
+        mutable_updates().heading(update);
+    }
 
     MOCK_METHOD0(start_position_updates, void());
     MOCK_METHOD0(stop_position_updates, void());
@@ -160,32 +186,7 @@ TEST(Provider, starting_and_stopping_multiple_times_results_in_exactly_one_call_
     EXPECT_FALSE(provider.state_controller()->are_velocity_updates_running());
 }
 
-#include "com/ubuntu/location/proxy_provider.h"
-
-TEST(ProxyProvider, start_and_stop_does_not_throw_for_null_providers)
-{
-    cul::ProviderSelection selection;
-    cul::ProxyProvider pp{selection};
-
-    EXPECT_NO_THROW(pp.start_position_updates());
-    EXPECT_NO_THROW(pp.stop_position_updates());
-
-    EXPECT_NO_THROW(pp.start_heading_updates());
-    EXPECT_NO_THROW(pp.stop_heading_updates());
-
-    EXPECT_NO_THROW(pp.start_velocity_updates());
-    EXPECT_NO_THROW(pp.stop_velocity_updates());
-}
-
-TEST(ProxyProvider, setting_up_signal_connections_does_not_throw_for_null_providers)
-{
-    cul::ProviderSelection selection;
-    cul::ProxyProvider pp{selection};
-
-    EXPECT_NO_THROW(pp.subscribe_to_position_updates([](const cul::Update<cul::Position>&){}));
-    EXPECT_NO_THROW(pp.subscribe_to_heading_updates([](const cul::Update<cul::Heading>&){}));
-    EXPECT_NO_THROW(pp.subscribe_to_velocity_updates([](const cul::Update<cul::Velocity>&){}));
-}
+#include <com/ubuntu/location/proxy_provider.h>
 
 TEST(ProxyProvider, start_and_stop_of_updates_propagates_to_correct_providers)
 {
@@ -217,14 +218,18 @@ TEST(ProxyProvider, start_and_stop_of_updates_propagates_to_correct_providers)
     pp.stop_velocity_updates();
 }
 
+struct MockEventConsumer
+{
+    MOCK_METHOD1(on_new_position, void(const cul::Update<cul::Position>&));
+    MOCK_METHOD1(on_new_velocity, void(const cul::Update<cul::Velocity>&));
+    MOCK_METHOD1(on_new_heading, void(const cul::Update<cul::Heading>&));
+};
+
 TEST(ProxyProvider, update_signals_are_routed_from_correct_providers)
 {
     using namespace ::testing;
     
     NiceMock<MockProvider> mp1, mp2, mp3;
-    EXPECT_CALL(mp1, subscribe_to_position_updates(_)).Times(Exactly(1)).WillRepeatedly(Return(cul::ChannelConnection{}));
-    EXPECT_CALL(mp2, subscribe_to_heading_updates(_)).Times(Exactly(1)).WillRepeatedly(Return(cul::ChannelConnection{}));
-    EXPECT_CALL(mp3, subscribe_to_velocity_updates(_)).Times(Exactly(1)).WillRepeatedly(Return(cul::ChannelConnection{}));
 
     cul::Provider::Ptr p1{std::addressof(mp1), [](cul::Provider*){}};
     cul::Provider::Ptr p2{std::addressof(mp2), [](cul::Provider*){}};
@@ -234,7 +239,16 @@ TEST(ProxyProvider, update_signals_are_routed_from_correct_providers)
 
     cul::ProxyProvider pp{selection};
 
-    mp1.subscribe_to_position_updates([](const cul::Update<cul::Position>&){});
-    mp2.subscribe_to_heading_updates([](const cul::Update<cul::Heading>&){});
-    mp3.subscribe_to_velocity_updates([](const cul::Update<cul::Velocity>&){});
+    NiceMock<MockEventConsumer> mec;
+    EXPECT_CALL(mec, on_new_position(_)).Times(1);
+    EXPECT_CALL(mec, on_new_velocity(_)).Times(1);
+    EXPECT_CALL(mec, on_new_heading(_)).Times(1);
+
+    pp.updates().position.connect([&mec](const cul::Update<cul::Position>& p){mec.on_new_position(p);});
+    pp.updates().heading.connect([&mec](const cul::Update<cul::Heading>& h){mec.on_new_heading(h);});
+    pp.updates().velocity.connect([&mec](const cul::Update<cul::Velocity>& v){mec.on_new_velocity(v);});
+
+    mp1.inject_update(cul::Update<cul::Position>());
+    mp2.inject_update(cul::Update<cul::Heading>());
+    mp3.inject_update(cul::Update<cul::Velocity>());
 }

@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/provider.h"
+#include <com/ubuntu/location/provider.h>
 
 #include <atomic>
 #include <bitset>
@@ -86,95 +86,27 @@ bool cul::Provider::Controller::are_velocity_updates_running() const
     return velocity_updates_counter > 0;
 }
 
-const cul::Provider::Controller::Cache<cul::Update<cul::Position>>& cul::Provider::Controller::cached_position_update() const
-{
-    return cached.position;
-}
-
-const cul::Provider::Controller::Cache<cul::Update<cul::Heading>>& cul::Provider::Controller::cached_heading_update() const
-{
-    return cached.heading;
-}
-
-const cul::Provider::Controller::Cache<cul::Update<cul::Velocity>>& cul::Provider::Controller::cached_velocity_update() const
-{
-    return cached.velocity;
-}
-
 cul::Provider::Controller::Controller(cul::Provider& instance)
     : instance(instance),
       position_updates_counter(0),
       heading_updates_counter(0),
-      velocity_updates_counter(0),
-      cached
-      {
-          Cache<Update<Position>>{},
-          Cache<Update<Velocity>>{},
-          Cache<Update<Heading>>{}
-      }
+      velocity_updates_counter(0)
 {
-    position_update_connection =
-            instance.subscribe_to_position_updates(
-                std::bind(&Controller::on_position_updated,
-                          this,
-                          std::placeholders::_1));
-
-    velocity_update_connection =
-            instance.subscribe_to_velocity_updates(
-                std::bind(&Controller::on_velocity_updated,
-                          this,
-                          std::placeholders::_1));
-
-    heading_update_connection =
-            instance.subscribe_to_heading_updates(
-                std::bind(&Controller::on_heading_updated,
-                          this,
-                          std::placeholders::_1));
-}
-
-void cul::Provider::Controller::on_position_updated(const cul::Update<cul::Position>& position)
-{
-    cached.position.update(position);
-}
-
-void cul::Provider::Controller::on_velocity_updated(const cul::Update<cul::Velocity>& velocity)
-{
-    cached.velocity.update(velocity);
-}
-
-void cul::Provider::Controller::on_heading_updated(const cul::Update<cul::Heading>& heading)
-{
-    cached.heading.update(heading);
 }
 
 const cul::Provider::Controller::Ptr& cul::Provider::state_controller() const
 {
-    return controller;
+    return d.controller;
 }
 
-cul::ChannelConnection cul::Provider::subscribe_to_position_updates(std::function<void(const cul::Update<cul::Position>&)> f)
+bool cul::Provider::supports(const cul::Provider::Features& f) const
 {
-    return position_updates_channel.connect(f);
+    return (d.features & f) != Features::none;
 }
 
-cul::ChannelConnection cul::Provider::subscribe_to_heading_updates(std::function<void(const cul::Update<cul::Heading>&)> f)
+bool cul::Provider::requires(const cul::Provider::Requirements& r) const
 {
-    return heading_updates_channel.connect(f);
-}
-
-cul::ChannelConnection cul::Provider::subscribe_to_velocity_updates(std::function<void(const cul::Update<cul::Velocity>&)> f)
-{
-    return velocity_updates_channel.connect(f);
-}
-
-bool cul::Provider::supports(const cul::Provider::Feature& f) const
-{
-    return feature_flags.test(static_cast<std::size_t>(f));
-}
-
-bool cul::Provider::requires(const cul::Provider::Requirement& r) const
-{
-    return requirement_flags.test(static_cast<std::size_t>(r));
+    return (d.requirements & r) != Requirements::none;
 }
 
 bool cul::Provider::matches_criteria(const cul::Criteria&)
@@ -182,28 +114,39 @@ bool cul::Provider::matches_criteria(const cul::Criteria&)
     return false;
 }
 
+const cul::Provider::Updates& cul::Provider::updates() const
+{
+    return d.updates;
+}
+
 cul::Provider::Provider(
-    const cul::Provider::FeatureFlags& feature_flags,
-    const cul::Provider::RequirementFlags& requirement_flags)
-    : feature_flags(feature_flags),
-      requirement_flags(requirement_flags),
-      controller(new Controller(*this))
+    const cul::Provider::Features& features,
+    const cul::Provider::Requirements& requirements)
+{
+    d.features = features;
+    d.requirements = requirements;
+    d.controller = std::shared_ptr<Provider::Controller>(new Provider::Controller(*this));
+}
+
+cul::Provider::Updates& cul::Provider::mutable_updates()
+{
+    return d.updates;
+}
+
+void cul::Provider::on_wifi_and_cell_reporting_state_changed(cul::WifiAndCellIdReportingState)
 {
 }
 
-void cul::Provider::deliver_position_updates(const cul::Update<cul::Position>& update)
+void cul::Provider::on_reference_location_updated(const cul::Update<cul::Position>&)
 {
-    position_updates_channel(update);
 }
 
-void cul::Provider::deliver_heading_updates(const cul::Update<cul::Heading>& update)
+void cul::Provider::on_reference_velocity_updated(const cul::Update<cul::Velocity>&)
 {
-    heading_updates_channel(update);
 }
 
-void cul::Provider::deliver_velocity_updates(const cul::Update<cul::Velocity>& update)
+void cul::Provider::on_reference_heading_updated(const cul::Update<cul::Heading>&)
 {
-    velocity_updates_channel(update);
 }
 
 void cul::Provider::start_position_updates() {}
@@ -212,3 +155,23 @@ void cul::Provider::start_heading_updates() {}
 void cul::Provider::stop_heading_updates() {}
 void cul::Provider::start_velocity_updates() {}
 void cul::Provider::stop_velocity_updates() {}
+
+cul::Provider::Features cul::operator|(cul::Provider::Features lhs, cul::Provider::Features rhs)
+{
+    return static_cast<cul::Provider::Features>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+cul::Provider::Features cul::operator&(cul::Provider::Features lhs, cul::Provider::Features rhs)
+{
+    return static_cast<cul::Provider::Features>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}
+
+cul::Provider::Requirements cul::operator|(cul::Provider::Requirements lhs, cul::Provider::Requirements rhs)
+{
+    return static_cast<cul::Provider::Requirements>(static_cast<unsigned int>(lhs) | static_cast<unsigned int>(rhs));
+}
+
+cul::Provider::Requirements cul::operator&(cul::Provider::Requirements lhs, cul::Provider::Requirements rhs)
+{
+    return static_cast<cul::Provider::Requirements>(static_cast<unsigned int>(lhs) & static_cast<unsigned int>(rhs));
+}

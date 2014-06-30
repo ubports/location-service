@@ -18,7 +18,7 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_UPDATE_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_UPDATE_H_
 
-#include "com/ubuntu/location/clock.h"
+#include <com/ubuntu/location/clock.h>
 
 #include <ostream>
 
@@ -28,27 +28,56 @@ namespace ubuntu
 {
 namespace location
 {
+/**
+ * @brief Templated class that wraps a value and timestamp.
+ * @tparam T The contained value.
+ */
 template<typename T>
 struct Update
 {
-    Update(const T& value = T{}, const Clock::Timestamp& when = Clock::Timestamp{}) : value{value}, when{when}
+    /**
+      * @brief Constructs a valid update with the given value and timestamp.
+      * @param [in] value The value delivered with this update.
+      * @param [in] when The timestamp when the value was measured.
+      */
+    inline Update(const T& value = T{},
+           const Clock::Timestamp& when = Clock::now())
+        : value{value}, when{when}
     {
     }
 
-    bool operator==(const Update<T>& rhs) const
+    /**
+     * @brief operator == checks if two updates are equal.
+     * @param [in] rhs The update to check against.
+     * @return true iff this instance equals rhs.
+     */
+    inline bool operator==(const Update<T>& rhs) const
     {
         return value == rhs.value && when == rhs.when;
     }
 
-    bool operator!=(const Update<T>& rhs) const
+    /**
+     * @brief operator != checks if two updates are unequal.
+     * @param [in] rhs The update to check against.
+     * @return true iff this instance does not equal rhs.
+     */
+    inline bool operator!=(const Update<T>& rhs) const
     {
         return !(value == rhs.value && when == rhs.when);
     }
 
+    /** The value delivered with this update. */
     T value;
-    Clock::Timestamp when;
+
+    /** Time when the updated value was measured. */
+    Clock::Timestamp when = Clock::beginning_of_time();
 };
 
+/**
+ * @brief Pretty-prints the update to the provided output stream.
+ * @param out The stream to write to.
+ * @param update The value to be printed.
+ */
 template<typename T>
 inline std::ostream& operator<<(std::ostream& out, const Update<T>& update)
 {
