@@ -443,6 +443,11 @@ com::ubuntu::location::connectivity::Characteristics impl::OfonoNmConnectivityMa
     {
         ac.enumerate_devices([&characteristics](const xdg::NetworkManager::Device& device)
         {
+            // We interpret a primary connection over a modem device as
+            // having monetary costs (for the data plan), as well as being
+            // bandwidth and volume limited. While this is not true in all
+            // cases, it is good enough as a heuristic and for disabling certain
+            // types of functionality if the data connection goes via a modem device.
             if (device.type() == xdg::NetworkManager::Device::Type::modem)
                 characteristics = all_characteristics();
         });
