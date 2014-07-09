@@ -336,6 +336,10 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
 
     // Query the initial connectivity state
     state.set(from_nm_property(network_manager->properties.state->get()));
+    // Determine the initial connection characteristics
+    active_connection_characteristics.set(
+                characteristics_for_connection(
+                    network_manager->properties.primary_connection->get()));
 
     // And we wire up to property changes here
     network_manager->signals.properties_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
@@ -359,35 +363,11 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
 
                 auto path = pair.second.as<core::dbus::types::ObjectPath>();
 
+                // We dispatch determining the connection characteristics to unblock
+                // the bus here.
                 dispatcher.service.post([this, path]()
                 {
-                    xdg::NetworkManager::ActiveConnection ac
-                    {
-                        network_manager->service,
-                        network_manager->service->object_for_path(path)
-                    };
-
-                    com::ubuntu::location::connectivity::Characteristics characteristics
-                    {
-                        com::ubuntu::location::connectivity::Characteristics::none
-                    };
-
-                    // We try to enumerate all devices, and might fail if the active connection
-                    // went away under our feet. For that, we simply catch all possible exceptions
-                    // and silently drop them. In that case, we reset the characteristics to 'none'.
-                    try
-                    {
-                        ac.enumerate_devices([&characteristics](const xdg::NetworkManager::Device& device)
-                        {
-                            if (device.type() == xdg::NetworkManager::Device::Type::modem)
-                                characteristics = all_characteristics();
-                        });
-                    } catch(...)
-                    {
-                        // Empty on purpose.
-                    }
-
-                    active_connection_characteristics.set(characteristics);
+                    active_connection_characteristics = characteristics_for_connection(path);
                 });
             }
         }
@@ -441,6 +421,37 @@ void impl::OfonoNmConnectivityManager::Private::on_access_point_removed(const co
     // Let API consumers know that an AP disappeared. The lock on the cache is
     // not held to prevent from deadlocks.
     ul.unlock(); signals.wireless_network_removed(wifi);
+}
+
+com::ubuntu::location::connectivity::Characteristics impl::OfonoNmConnectivityManager::Private::characteristics_for_connection(const core::dbus::types::ObjectPath& path)
+{
+    xdg::NetworkManager::ActiveConnection ac
+    {
+        network_manager->service,
+        network_manager->service->object_for_path(path)
+    };
+
+    com::ubuntu::location::connectivity::Characteristics characteristics
+    {
+        com::ubuntu::location::connectivity::Characteristics::none
+    };
+
+    // We try to enumerate all devices, and might fail if the active connection
+    // went away under our feet. For that, we simply catch all possible exceptions
+    // and silently drop them. In that case, we reset the characteristics to 'none'.
+    try
+    {
+        ac.enumerate_devices([&characteristics](const xdg::NetworkManager::Device& device)
+        {
+            if (device.type() == xdg::NetworkManager::Device::Type::modem)
+                characteristics = all_characteristics();
+        });
+    } catch(...)
+    {
+        // Empty on purpose.
+    }
+
+    return characteristics;
 }
 
 const std::shared_ptr<connectivity::Manager>& connectivity::platform_default_manager()
