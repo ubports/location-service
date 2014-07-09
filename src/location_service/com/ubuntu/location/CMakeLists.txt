@@ -46,6 +46,7 @@ add_library(
 
   set_name_for_thread.cpp
 
+  connectivity/manager.cpp
   connectivity/radio_cell.cpp
   connectivity/wireless_network.cpp
   connectivity/ofono_nm_connectivity_manager.cpp

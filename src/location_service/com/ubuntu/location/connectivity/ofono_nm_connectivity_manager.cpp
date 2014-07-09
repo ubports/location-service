@@ -21,32 +21,22 @@
 namespace connectivity = com::ubuntu::location::connectivity;
 namespace dbus = core::dbus;
 namespace xdg = org::freedesktop;
+
 namespace
 {
 connectivity::State from_nm_property(std::uint32_t value)
 {
-    connectivity::State result{connectivity::State::unknown};
-
-    switch (value)
+    return connectivity::State
     {
-    case xdg::NetworkManager::Properties::Connectivity::Values::unknown:
-        result = connectivity::State::unknown;
-        break;
-    case xdg::NetworkManager::Properties::Connectivity::Values::none:
-        result = connectivity::State::none;
-        break;
-    case xdg::NetworkManager::Properties::Connectivity::Values::portal:
-        result = connectivity::State::portal;
-        break;
-    case xdg::NetworkManager::Properties::Connectivity::Values::limited:
-        result = connectivity::State::limited;
-        break;
-    case xdg::NetworkManager::Properties::Connectivity::Values::full:
-        result = connectivity::State::full;
-        break;
-    }
+        static_cast<connectivity::State>(value)
+    };
+}
 
-    return result;
+connectivity::Characteristics all_characteristics()
+{
+    return connectivity::Characteristics::connection_has_monetary_costs |
+           connectivity::Characteristics::connection_is_bandwith_limited |
+           connectivity::Characteristics::connection_is_volume_limited;
 }
 }
 
@@ -102,6 +92,11 @@ void impl::OfonoNmConnectivityManager::enumerate_connected_radio_cells(const std
         f(cell.second);
 }
 
+const core::Property<com::ubuntu::location::connectivity::Characteristics>& impl::OfonoNmConnectivityManager::active_connection_characteristics() const
+{
+    return d.active_connection_characteristics;
+}
+
 impl::OfonoNmConnectivityManager::Private::Private()
 {
     try
@@ -134,6 +129,11 @@ impl::OfonoNmConnectivityManager::Private::~Private()
 
     if (worker.joinable())
         worker.join();
+
+    dispatcher.service.stop();
+
+    if (dispatcher.worker.joinable())
+        dispatcher.worker.join();
 }
 
 void impl::OfonoNmConnectivityManager::Private::setup_radio_stack_access()
@@ -335,7 +335,7 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
     });
 
     // Query the initial connectivity state
-    state.set(from_nm_property(network_manager->properties.connectivity->get()));
+    state.set(from_nm_property(network_manager->properties.state->get()));
 
     // And we wire up to property changes here
     network_manager->signals.properties_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
@@ -345,11 +345,48 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
             VLOG(1) << "Property has changed: " << std::endl
                     << "  " << pair.first;
 
-            if (xdg::NetworkManager::Properties::Connectivity::name() == pair.first)
+            if (xdg::NetworkManager::Properties::State::name() == pair.first)
             {
-                state.set(from_nm_property(pair.second.as<xdg::NetworkManager::Properties::Connectivity::ValueType>()));
+                state.set(from_nm_property(pair.second.as<xdg::NetworkManager::Properties::State::ValueType>()));
+            }
+
+            if (xdg::NetworkManager::Properties::PrimaryConnection::name() == pair.first)
+            {
+                // The primary connection object changed. We iterate over all the devices associated with
+                // the primary connection and determine whether a wwan device is present. If so, we adjust
+                // the characteristics of the connection to have monetary costs associated and to be
+                // bandwidth and volume limited.
+
+                auto path = pair.second.as<core::dbus::types::ObjectPath>();
+
+                dispatcher.service.post([this, path]()
+                {
+                    xdg::NetworkManager::ActiveConnection ac
+                    {
+                        network_manager->service,
+                        network_manager->service->object_for_path(path)
+                    };
+
+                    com::ubuntu::location::connectivity::Characteristics characteristics
+                    {
+                        com::ubuntu::location::connectivity::Characteristics::none
+                    };
+
+                    ac.enumerate_devices([&characteristics](const xdg::NetworkManager::Device& device)
+                    {
+                        if (device.type() == xdg::NetworkManager::Device::Type::modem)
+                            characteristics = all_characteristics();
+                    });
+
+                    active_connection_characteristics.set(characteristics);
+                });
             }
         }
+    });
+
+    network_manager->signals.state_changed->connect([this](std::uint32_t s)
+    {
+        state.set(from_nm_property(s));
     });
 }
 

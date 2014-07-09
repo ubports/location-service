@@ -33,6 +33,12 @@ struct MockConnectivityManager : public com::ubuntu::location::connectivity::Man
     MOCK_CONST_METHOD0(state, const core::Property<com::ubuntu::location::connectivity::State>&());
 
     /**
+     * @brief Returns a getable/observable property that describes the characteristics
+     * of the active network connection.
+     */
+    MOCK_CONST_METHOD0(active_connection_characteristics, const core::Property<com::ubuntu::location::connectivity::Characteristics>&());
+
+    /**
      * @brief request_scan_for_wireless_networks schedules a scan for visible wireless networks.
      */
     MOCK_METHOD0(request_scan_for_wireless_networks, void());

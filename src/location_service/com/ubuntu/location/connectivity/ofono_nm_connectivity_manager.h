@@ -43,6 +43,8 @@
 
 #include "../set_name_for_thread.h"
 
+#include <boost/asio.hpp>
+
 #include <chrono>
 
 namespace dbus = core::dbus;
@@ -65,6 +67,8 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
     const core::Signal<com::ubuntu::location::connectivity::RadioCell::Ptr>& connected_cell_removed() const override;
 
     void enumerate_connected_radio_cells(const std::function<void(const com::ubuntu::location::connectivity::RadioCell::Ptr&)>& f) const override;
+
+    const core::Property<com::ubuntu::location::connectivity::Characteristics>& active_connection_characteristics() const;
 
     struct Private
     {
@@ -90,11 +94,31 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
 
         struct
         {
+            // The io-service instance we use for dispatching invocations.
+            boost::asio::io_service service;
+
+            // We keep the io_service object alive until someone stops it.
+            boost::asio::io_service::work keep_alive
+            {
+                service
+            };
+
+            // And a dedicated worker thread.
+            std::thread worker
+            {
+                [this]() { service.run(); }
+            };
+        } dispatcher;
+
+        struct
+        {
             mutable std::mutex guard;
             std::map<core::dbus::types::ObjectPath, CachedRadioCell::Ptr> cells;
             std::map<core::dbus::types::ObjectPath, org::Ofono::Manager::Modem> modems;
             std::map<core::dbus::types::ObjectPath, CachedWirelessNetwork::Ptr> wifis;
             std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device> wireless_devices;
+            std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::ActiveConnection> primary_connection;
+            std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device> primary_connection_devices;
         } cached;
 
         struct
@@ -107,6 +131,7 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
         } signals;
 
         core::Property<com::ubuntu::location::connectivity::State> state;
+        core::Property<com::ubuntu::location::connectivity::Characteristics> active_connection_characteristics;
     } d;
 };
 }
