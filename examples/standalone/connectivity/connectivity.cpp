@@ -43,13 +43,13 @@ int main(int argc, char** argv)
     cm->state().changed().connect([](location::connectivity::State state)
     {
         std::cout << "Connectivity state changed: " << state << std::endl;
-    })
+    });
 
     // Subscribe to connection characteristics changes
     cm->active_connection_characteristics().changed().connect([](location::connectivity::Characteristics flags)
     {
         std::cout << "Characteristics for the primary network connection have changed: " << flags << std::endl;
-    })
+    });
 
     // Subscribe to wifi added/removed signals.
     cm->wireless_network_added().connect([](const location::connectivity::WirelessNetwork::Ptr& wifi)
@@ -61,8 +61,6 @@ int main(int argc, char** argv)
         {
             wifi
         };
-
-
 
         // Subscribe to signal strength and last_seen updates. Please note that this is not considering
         // the case of subscribing to already known wifis. We leave this up
