@@ -372,11 +372,20 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
                         com::ubuntu::location::connectivity::Characteristics::none
                     };
 
-                    ac.enumerate_devices([&characteristics](const xdg::NetworkManager::Device& device)
+                    // We try to enumerate all devices, and might fail if the active connection
+                    // went away under our feet. For that, we simply catch all possible exceptions
+                    // and silently drop them. In that case, we reset the characteristics to 'none'.
+                    try
                     {
-                        if (device.type() == xdg::NetworkManager::Device::Type::modem)
-                            characteristics = all_characteristics();
-                    });
+                        ac.enumerate_devices([&characteristics](const xdg::NetworkManager::Device& device)
+                        {
+                            if (device.type() == xdg::NetworkManager::Device::Type::modem)
+                                characteristics = all_characteristics();
+                        });
+                    } catch(...)
+                    {
+                        // Empty on purpose.
+                    }
 
                     active_connection_characteristics.set(characteristics);
                 });
