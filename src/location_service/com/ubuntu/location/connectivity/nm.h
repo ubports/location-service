@@ -368,7 +368,7 @@ struct NetworkManager
             {
                 static const std::string& name()
                 {
-                    static const std::string s{"Properties"};
+                    static const std::string s{"Devices"};
                     return s;
                 }
 
