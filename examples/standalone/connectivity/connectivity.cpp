@@ -45,6 +45,27 @@ int main(int argc, char** argv)
         std::cout << "Connectivity state changed: " << state << std::endl;
     });
 
+    // Subscribe to wifi/wwan state changes
+    cm->is_wifi_enabled().changed().connect([](bool enabled)
+    {
+        std::cout << "Wifi is " << (enabled ? "" : "not") << " enabled" << std::endl;
+    });
+
+    cm->is_wwan_enabled().changed().connect([](bool enabled)
+    {
+        std::cout << "Wwan is " << (enabled ? "" : "not") << " enabled" << std::endl;
+    });
+
+    cm->is_wifi_hardware_enabled().changed().connect([](bool enabled)
+    {
+        std::cout << "Wifi h/w is " << (enabled ? "" : "not") << " enabled" << std::endl;
+    });
+
+    cm->is_wwan_hardware_enabled().changed().connect([](bool enabled)
+    {
+        std::cout << "Wwan h/w is " << (enabled ? "" : "not") << " enabled" << std::endl;
+    });
+
     // Subscribe to connection characteristics changes
     cm->active_connection_characteristics().changed().connect([](location::connectivity::Characteristics flags)
     {

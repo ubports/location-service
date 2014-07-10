@@ -55,6 +55,14 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
 {
     const core::Property<com::ubuntu::location::connectivity::State>& state() const override;
 
+    const core::Property<bool>& is_wifi_enabled() const override;
+
+    const core::Property<bool>& is_wwan_enabled() const override;
+
+    const core::Property<bool>& is_wifi_hardware_enabled() const override;
+
+    const core::Property<bool>& is_wwan_hardware_enabled() const override;
+
     void request_scan_for_wireless_networks() override;
 
     const core::Signal<>& wireless_network_scan_finished() const override;

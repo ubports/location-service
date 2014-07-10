@@ -117,14 +117,37 @@ public:
 
     /**
      * @brief Returns the getable/observable connectivity state of the system.
-     *
-     * Please note that this requires the underlying networking state to
-     * support connectivity state tracking. Right now, e.g. NetworkManager needs
-     * custom entries in /etc/NetworkManager/NetworkManager.conf to enable this
-     * functionality.
-     *
      */
     virtual const core::Property<State>& state() const = 0;
+
+    /**
+      * @brief Returns a getable/observable boolean property that indicates the state of the wifi subsystem.
+      *
+      * If the property's value is false, the Wifi subsystem is turned off (e.g., in flight mode).
+      */
+    virtual const core::Property<bool>& is_wifi_enabled() const = 0;
+
+    /**
+      * @brief Returns a getable/observable boolean property that indicates the state of the wwan subsystem.
+      *
+      * If the property's value is false, the WWan subsystem is turned off (e.g., in flight mode).
+      */
+    virtual const core::Property<bool>& is_wwan_enabled() const = 0;
+
+    /**
+      * @brief Returns a getable/observable boolean property that indicates the state of the wifi hardware.
+      *
+      * If the property's value is false, the Wifi HW is turned off.
+      */
+    virtual const core::Property<bool>& is_wifi_hardware_enabled() const = 0;
+
+    /**
+      * @brief Returns a getable/observable boolean property that indicates the state of the wwan hardware.
+      *
+      * If the property's value is false, the WWan HW is turned off.
+      */
+    virtual const core::Property<bool>& is_wwan_hardware_enabled() const = 0;
+
 
     /**
      * @brief Returns a getable/observable property that describes the characteristics

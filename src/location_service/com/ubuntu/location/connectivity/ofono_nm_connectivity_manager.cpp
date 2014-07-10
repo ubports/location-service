@@ -45,6 +45,26 @@ const core::Property<connectivity::State>& impl::OfonoNmConnectivityManager::sta
     return d.state;
 }
 
+const core::Property<bool>& impl::OfonoNmConnectivityManager::is_wifi_enabled() const
+{
+    return *d.network_manager->properties.is_wifi_enabled;
+}
+
+const core::Property<bool>& impl::OfonoNmConnectivityManager::is_wwan_enabled() const
+{
+    return *d.network_manager->properties.is_wwan_enabled;
+}
+
+const core::Property<bool>& impl::OfonoNmConnectivityManager::is_wifi_hardware_enabled() const
+{
+    return *d.network_manager->properties.is_wifi_hardware_enabled;
+}
+
+const core::Property<bool>& impl::OfonoNmConnectivityManager::is_wwan_hardware_enabled() const
+{
+    return *d.network_manager->properties.is_wwan_hardware_enabled;
+}
+
 void impl::OfonoNmConnectivityManager::request_scan_for_wireless_networks()
 {
     std::lock_guard<std::mutex> lg(d.cached.guard);
