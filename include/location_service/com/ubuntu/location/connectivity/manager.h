@@ -68,17 +68,17 @@ enum class Characteristics : std::uint32_t
     /** @brief Nothing special about the characteristics. */
     none = 0,
     /** @brief The connection goes via wifi. */
-    connection_goes_via_wifi,
+    connection_goes_via_wifi = 1 << 0,
     /** @brief The connection goes via a mobile-broadband connection. */
-    connection_goes_via_wwan,
+    connection_goes_via_wwan = 1 << 1,
     /** @brief The connection goes via a roaming mobile-broadband connection. */
-    connection_is_roaming,
+    connection_is_roaming = 1 << 2,
     /** @brief The connection has monetary costs. No data should be transfered. */
-    connection_has_monetary_costs = 1 << 0,
+    connection_has_monetary_costs = 1 << 3,
     /** @brief The connection is volume limited. No large files should be transfered. */
-    connection_is_volume_limited = 1 << 1,
+    connection_is_volume_limited = 1 << 4,
     /** @brief the connection is bandwidth limited. Large transfer should be postponed. */
-    connection_is_bandwith_limited = 1 << 2
+    connection_is_bandwith_limited = 1 << 5
 };
 
 /** @brief Bitwise or operator for Characteristics flags. */
