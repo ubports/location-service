@@ -112,7 +112,7 @@ void impl::OfonoNmConnectivityManager::enumerate_connected_radio_cells(const std
         f(cell.second);
 }
 
-const core::Property<com::ubuntu::location::connectivity::Characteristics>& impl::OfonoNmConnectivityManager::active_connection_characteristics() const
+const core::Property<connectivity::Characteristics>& impl::OfonoNmConnectivityManager::active_connection_characteristics() const
 {
     return d.active_connection_characteristics;
 }
@@ -443,7 +443,7 @@ void impl::OfonoNmConnectivityManager::Private::on_access_point_removed(const co
     ul.unlock(); signals.wireless_network_removed(wifi);
 }
 
-com::ubuntu::location::connectivity::Characteristics impl::OfonoNmConnectivityManager::Private::characteristics_for_connection(const core::dbus::types::ObjectPath& path)
+connectivity::Characteristics impl::OfonoNmConnectivityManager::Private::characteristics_for_connection(const core::dbus::types::ObjectPath& path)
 {
     xdg::NetworkManager::ActiveConnection ac
     {
@@ -451,9 +451,9 @@ com::ubuntu::location::connectivity::Characteristics impl::OfonoNmConnectivityMa
         network_manager->service->object_for_path(path)
     };
 
-    com::ubuntu::location::connectivity::Characteristics characteristics
+    connectivity::Characteristics characteristics
     {
-        com::ubuntu::location::connectivity::Characteristics::none
+        connectivity::Characteristics::none
     };
 
     // We try to enumerate all devices, and might fail if the active connection
@@ -461,15 +461,35 @@ com::ubuntu::location::connectivity::Characteristics impl::OfonoNmConnectivityMa
     // and silently drop them. In that case, we reset the characteristics to 'none'.
     try
     {
-        ac.enumerate_devices([&characteristics](const xdg::NetworkManager::Device& device)
+        ac.enumerate_devices([this, &characteristics](const xdg::NetworkManager::Device& device)
         {
+            auto type = device.type();
+
             // We interpret a primary connection over a modem device as
             // having monetary costs (for the data plan), as well as being
             // bandwidth and volume limited. While this is not true in all
             // cases, it is good enough as a heuristic and for disabling certain
             // types of functionality if the data connection goes via a modem device.
-            if (device.type() == xdg::NetworkManager::Device::Type::modem)
-                characteristics = all_characteristics();
+            if (type == xdg::NetworkManager::Device::Type::modem)
+            {
+                characteristics = characteristics | connectivity::Characteristics::connection_goes_via_wwan;
+
+                std::lock_guard<std::mutex> lg(cached.guard);
+
+                for (const auto& pair : cached.modems)
+                {
+                    auto status = pair.second.network_registration.get<org::Ofono::Manager::Modem::NetworkRegistration::Status>();
+
+                    if (org::Ofono::Manager::Modem::NetworkRegistration::Status::roaming == status)
+                        characteristics = characteristics | connectivity::Characteristics::connection_is_roaming;
+                }
+
+                characteristics = characteristics | all_characteristics();
+            } else if (type == xdg::NetworkManager::Device::Type::wifi)
+            {
+                characteristics = characteristics | connectivity::Characteristics::connection_goes_via_wifi;
+            }
+
         });
     } catch(...)
     {

@@ -53,8 +53,14 @@ std::ostream& connectivity::operator<<(std::ostream& out, connectivity::Characte
 
     out << "[";
 
+    if ((characteristics & connectivity::Characteristics::connection_goes_via_wifi) != connectivity::Characteristics::none)
+        out << "connection_goes_via_wifi"; first = false;
+    if ((characteristics & connectivity::Characteristics::connection_goes_via_wwan) != connectivity::Characteristics::none)
+        out << (first ? "" : ", ") << "connection_goes_via_wwan"; first = false;
+    if ((characteristics & connectivity::Characteristics::connection_is_roaming) != connectivity::Characteristics::none)
+        out << (first ? "" : ", ") << "connection_is_roaming"; first = false;
     if ((characteristics & connectivity::Characteristics::connection_has_monetary_costs) != connectivity::Characteristics::none)
-        out << "connection_has_monetary_costs"; first = false;
+        out << (first ? "" : ", ") << "connection_has_monetary_costs"; first = false;
     if ((characteristics & connectivity::Characteristics::connection_is_bandwith_limited) != connectivity::Characteristics::none)
         out << (first ? "" : ", ") << "connection_is_bandwidth_limited"; first = false;
     if ((characteristics & connectivity::Characteristics::connection_is_volume_limited) != connectivity::Characteristics::none)
