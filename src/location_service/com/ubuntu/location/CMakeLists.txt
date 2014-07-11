@@ -1,4 +1,4 @@
-if (NET_CPP_FOUND AND JSONCPP_FOUND)
+if (NET_CPP_FOUND)
   add_definitions(-DCOM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP=1)
   add_definitions(-DCOM_UBUNTU_LOCATION_SERVICE_HAVE_JSON_CPP=1)
 
@@ -98,7 +98,7 @@ target_link_libraries(
   ${Boost_LIBRARIES}
   ${DBUS_LIBRARIES}
   ${DBUS_CPP_LDFLAGS}
-  ${JSON_CPP_LDFLAGS}
+  ${JSON_C_LDFLAGS}
   ${NET_CPP_LDFLAGS}
   ${GLog_LIBRARY}
   ${GFlags_LIBRARY}
@@ -175,4 +175,3 @@ install(
   TARGETS ubuntu-location-serviced-cli
   DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-

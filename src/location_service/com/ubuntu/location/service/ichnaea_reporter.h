@@ -26,11 +26,95 @@
 #include <core/net/http/response.h>
 #include <core/net/http/status.h>
 
-#include <json/json.h>
-
 #include <thread>
 
-namespace json = Json;
+// Forward declare the opaque json_object handle from json-c here.
+struct json_object;
+
+// We are wrapping libjson-c and introduce a generic Object type for that purpose.
+namespace json
+{
+// For internal purposes only
+class Object
+{
+public:
+    // Parses a new object from the given string.
+    // Throws std::runtime_error in case of parsing errors.
+    static Object parse_from_string(const std::string& s);
+    // Creates a new object of type array.
+    static Object create_array();
+    // Creates a new object of type object.
+    static Object create_object();
+
+    // Shallow copy, only increments reference count.
+    Object(const Object& rhs);
+    // Decrements the reference count of the object.
+    ~Object();
+
+    // Shallow copy, decrements reference count of this object,
+    // increments reference count of object contained in rhs.
+    Object& operator=(const Object& rhs);
+
+    // Encodes this object instance as a valid JSON string without any
+    // unneccessary whitespace
+    std::string to_plain_string();
+
+    // Resolves the object with the given name.
+    // Throws std::out_of_range if no object with the given name is known.
+    Object get(const std::string& name) const;
+
+    // Attempts to resolve the object to a boolean value.
+    // Throws std::logic_error in case of type mismatches.
+    bool to_bool() const;
+    // Attempts to resolve the object to an integer value of 32bit width.
+    // Throws std::logic_error in case of type mismatches.
+    std::int32_t to_int32() const;
+    // Attempts to resolve the object to an integer value of 64bit width.
+    // Throws std::logic_error in case of type mismatches.
+    std::int64_t to_int64() const;
+    // Attempts to resolve the object to a floating point value.
+    // Throws std::logic_error in case of type mismatches.
+    double to_double() const;
+    // Attempts to resolve the object to a string value.
+    // Throws std::logic_error in case of type mismatches.
+    std::string to_string() const;
+
+    // Adds the given array under the given name to this object instance.
+    void put_array(const std::string& name, Object array);
+    // Adds the given object under the given name to this object instance.
+    void put_object(const std::string& name, Object other);
+    // Adds the given boolean under the given name to this object instance.
+    void put_boolean(const std::string& name, bool value);
+    // Adds the given integer under the given name to this object instance.
+    void put_int32(const std::string& name, std::int32_t value);
+    // Adds the given integer under the given name to this object instance.
+    void put_int64(const std::string& name, std::int64_t value);
+    // Adds the given floating point value under the given name to this object instance.
+    void put_double(const std::string& name, double value);
+    // Adds the given string value under the given name to this object instance.
+    void put_string(const std::string& name, const std::string& value);
+
+    // Only valid for array objects
+    // Returns the size of the array, throws std::logic_error if the object
+    // does not represent an array.
+    std::size_t array_size() const;
+    // Appends an object to the end of the array, throws std::logic_error if
+    // the object does not represent an array.
+    void append(Object other);
+    // Replaces the object at index 'index' with the given instance.
+    // Throws std::logic_error if the object does not represent an array.
+    // Throws std::out_of_range if the index exceeds the bounds of the array.
+    void put_object_for_index(std::size_t index, Object other);
+    // Queries the object at index 'index'.
+    // Throws std::logic_error if the object does not represent an array.
+    // Throws std::out_of_range if the index exceeds the bounds of the array.
+    Object get_object_for_index(std::size_t index);
+
+private:
+    Object(json_object* object);
+    json_object* object;
+};
+}
 
 namespace com{namespace ubuntu{namespace location{namespace service
 {
@@ -132,15 +216,17 @@ struct Reporter : public Harvester::Reporter
             const std::vector<connectivity::WirelessNetwork::Ptr>& wifis,
             const std::vector<connectivity::RadioCell::Ptr>& cells) override;
 
+
+
     /** @brief Encodes a collection of wifis into the Mozilla loation service JSON dialect. */
     static void convert_wifis_to_json(
             const std::vector<connectivity::WirelessNetwork::Ptr>& wifis,
-            json::Value& destination);
+            json::Object& destination);
 
     /** @brief Encodes a collection of radio cells into the Mozilla loation service JSON dialect. */
     static void convert_cells_to_json(
             const std::vector<connectivity::RadioCell::Ptr>& cells,
-            json::Value& destination);
+            json::Object& destination);
 
     /** @brief The http request configuration for submissions to the mozilla location service. */
     core::net::http::Request::Configuration submit_request_config;
