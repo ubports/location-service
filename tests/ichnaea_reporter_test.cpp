@@ -26,7 +26,7 @@
 #include <core/testing/cross_process_sync.h>
 #include <core/testing/fork_and_run.h>
 
-#include <json/json.h>
+#include <json.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
