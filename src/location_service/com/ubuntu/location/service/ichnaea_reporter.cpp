@@ -16,7 +16,7 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <json/json.h>
+#include <json.h>
 
 #include <com/ubuntu/location/service/ichnaea_reporter.h>
 
