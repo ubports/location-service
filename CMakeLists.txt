@@ -28,7 +28,7 @@ pkg_check_modules(DBUS dbus-1 REQUIRED)
 pkg_check_modules(DBUS_CPP dbus-cpp REQUIRED)
 pkg_check_modules(JSON_C json-c REQUIRED)
 # TODO(tvoss): Re-enable once net-cpp hits the archive.
-pkg_check_modules(NET_CPP net-cpp)
+pkg_check_modules(NET_CPP net-cpp REQUIRED)
 pkg_check_modules(PROCESS_CPP process-cpp REQUIRED)
 pkg_check_modules(PROPERTIES_CPP properties-cpp REQUIRED)
 #####################################################################
