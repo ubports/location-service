@@ -39,8 +39,6 @@ struct culs::Stub::Private
           is_online(object->get_property<culs::Interface::Properties::IsOnline>()),
           visible_space_vehicles(object->get_property<culs::Interface::Properties::VisibleSpaceVehicles>())
     {
-        FLAGS_logtostderr = true;
-        google::InitGoogleLogging("com.ubuntu.location");
     }
 
     dbus::Bus::Ptr bus;
