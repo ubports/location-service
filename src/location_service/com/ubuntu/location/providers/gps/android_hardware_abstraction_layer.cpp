@@ -30,8 +30,6 @@
 
 #include <com/ubuntu/location/connectivity/manager.h>
 
-#include <ubuntu/hardware/gps.h>
-
 #include <boost/property_tree/ini_parser.hpp>
 
 #include <random>

@@ -26,9 +26,9 @@ find_package(GFlags)
 find_package(Threads)
 pkg_check_modules(DBUS dbus-1 REQUIRED)
 pkg_check_modules(DBUS_CPP dbus-cpp REQUIRED)
-pkg_check_modules(JSON_CPP jsoncpp)
+pkg_check_modules(JSON_C json-c REQUIRED)
 # TODO(tvoss): Re-enable once net-cpp hits the archive.
-pkg_check_modules(NET_CPP net-cpp)
+pkg_check_modules(NET_CPP net-cpp REQUIRED)
 pkg_check_modules(PROCESS_CPP process-cpp REQUIRED)
 pkg_check_modules(PROPERTIES_CPP properties-cpp REQUIRED)
 #####################################################################
@@ -55,7 +55,7 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
   ${DBUS_INCLUDE_DIRS}
   ${DBUS_CPP_INCLUDE_DIRS}
-  ${JSON_CPP_INCLUDE_DIRS}
+  ${JSON_C_INCLUDE_DIRS}
   ${NET_CPP_INCLUDE_DIRS}
   ${PROPERTIES_CPP_INCLUDE_DIRS}
   ${PROCESS_CPP_INCLUDE_DIRS}
