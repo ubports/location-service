@@ -1,4 +1,4 @@
-usr/include/ubuntu-location-service-1
+usr/include/ubuntu-location-service-2
 usr/lib/*/libubuntu-location-service.so
 usr/lib/*/libubuntu-location-service-connectivity.so
 usr/lib/*/pkgconfig/ubuntu-location-service.pc
