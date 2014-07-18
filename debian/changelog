@@ -1,3 +1,23 @@
+location-service (1.0.0+14.10.20140717.1-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Switch to json-c for json parsing/generation purposes.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 17 Jul 2014 20:38:22 +0000
+
+location-service (1.0.0+14.10.20140715-0ubuntu1) utopic; urgency=low
+
+  * New rebuild forced
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 15 Jul 2014 14:13:06 +0000
+
+location-service (1.0.0+14.10.20140630-0ubuntu1) utopic; urgency=medium
+
+  [ Thomas Voß ]
+  * Bump major version.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 30 Jun 2014 08:57:56 +0000
+
 location-service (1.0.0) UNRELEASED; urgency=medium
 
   * Bump major revision and so name to account for toolchain update.

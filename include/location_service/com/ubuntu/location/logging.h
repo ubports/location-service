@@ -19,6 +19,7 @@
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_LOGGING_H_
 
 #include <glog/logging.h>
+#include <glog/vlog_is_on.h>
 
 #endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_LOGGING_H_
 

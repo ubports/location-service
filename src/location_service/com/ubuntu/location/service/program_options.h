@@ -19,6 +19,8 @@
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
 
+#include <core/dbus/well_known_bus.h>
+
 #include <functional>
 #include <iostream>
 
@@ -28,8 +30,21 @@ namespace location {
 
 struct ProgramOptions
 {
+    struct Errors
+    {
+        struct OptionNotSet {};
+    };
+
+    struct Options
+    {
+        static const char* bus() { return "bus"; }
+    };
+
     ProgramOptions(bool do_allow_unregistered = true) : allow_unregistered(do_allow_unregistered)
     {
+        add(Options::bus(),
+            "The well-known bus to connect to the service upon",
+            std::string{"session"});
     }
 
     ProgramOptions& add(const char* name, const char* desc)
@@ -65,7 +80,7 @@ struct ProgramOptions
         return *this;
     }
 
-    bool parse_from_command_line_args(int argc, char** argv)
+    bool parse_from_command_line_args(int argc, char const** argv)
     {
         try
         {
@@ -86,8 +101,47 @@ struct ProgramOptions
         return true;
     }
 
+    bool parse_from_environment()
+    {
+        try
+        {
+            auto parsed = boost::program_options::parse_environment(od, env_prefix);
+            boost::program_options::store(parsed, vm);
+            vm.notify();
+        } catch(const std::runtime_error& e)
+        {
+            std::cerr << e.what() << std::endl;
+            return false;
+        }
+
+        return true;
+    }
+
+    ProgramOptions& environment_prefix(const std::string& prefix)
+    {
+        env_prefix = prefix;
+        return *this;
+    }
+
+    core::dbus::WellKnownBus bus()
+    {
+        static const std::map<std::string, core::dbus::WellKnownBus> lut =
+        {
+            {"session", core::dbus::WellKnownBus::session},
+            {"system", core::dbus::WellKnownBus::system},
+        };
+
+        return lut.at(value_for_key<std::string>(Options::bus()));
+    }
+
     template<typename T>
     T value_for_key(const std::string& key)
+    {
+        return vm[key].as<T>();
+    }
+
+    template<typename T>
+    T value_for_key(const std::string& key) const
     {
         return vm[key].as<T>();
     }
@@ -103,12 +157,19 @@ struct ProgramOptions
             enumerator(s);
     }
 
+    void print(std::ostream& out) const
+    {
+        for (const auto& pair : vm)
+            out << pair.first << ": " << (pair.second.defaulted() ? "default" : "set") << std::endl;
+    }
+
     void print_help(std::ostream& out)
     {
         out << od;
     }
 
     bool allow_unregistered;
+    std::string env_prefix;
     boost::program_options::options_description od;
     boost::program_options::variables_map vm;
     std::vector<std::string> unrecognized;

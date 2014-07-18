@@ -15,21 +15,22 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/accuracy.h"
+#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_WIFI_AND_CELL_REPORTING_STATE_H_
+#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_WIFI_AND_CELL_REPORTING_STATE_H_
 
-#include "com/ubuntu/location/heading.h"
-#include "com/ubuntu/location/velocity.h"
-#include "com/ubuntu/location/wgs84/altitude.h"
-#include "com/ubuntu/location/wgs84/latitude.h"
-#include "com/ubuntu/location/wgs84/longitude.h"
-
-namespace cul = com::ubuntu::location;
-
-TEST(HeadingAccuracy, classification_of_min_and_max_values_works_correctly)
+namespace com
 {
-    cul::Accuracy<cul::Heading> acc_max{cul::Heading{cul::Heading::max()}};
-    EXPECT_EQ(cul::AccuracyLevel::worst = acc.classify());
-
-    cul::Accuracy<cul::Heading> acc_min{cul::Heading{cul::Heading::min()}};
-    EXPECT_EQ(cul::AccuracyLevel::best = acc.classify());
+namespace ubuntu
+{
+namespace location
+{
+enum class WifiAndCellIdReportingState
+{
+    on, ///< Wifi and Cell Ids might be reported to online location services.
+    off ///< Wifi and Cell Ids are _not_ reported. This is the default value.
+};
 }
+}
+}
+
+#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_WIFI_AND_CELL_REPORTING_STATE_H_

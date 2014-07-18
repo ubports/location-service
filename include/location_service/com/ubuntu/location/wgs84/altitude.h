@@ -18,8 +18,8 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_WGS84_ALTITUDE_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_WGS84_ALTITUDE_H_
 
-#include "com/ubuntu/location/units/units.h"
-#include "com/ubuntu/location/wgs84/coordinate.h"
+#include <com/ubuntu/location/units/units.h>
+#include <com/ubuntu/location/wgs84/coordinate.h>
 
 namespace com
 {

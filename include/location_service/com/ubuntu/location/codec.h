@@ -18,16 +18,16 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_CODEC_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_CODEC_H_
 
-#include "com/ubuntu/location/accuracy.h"
-#include "com/ubuntu/location/criteria.h"
-#include "com/ubuntu/location/heading.h"
-#include "com/ubuntu/location/position.h"
-#include "com/ubuntu/location/update.h"
-#include "com/ubuntu/location/velocity.h"
-#include "com/ubuntu/location/units/units.h"
-#include "com/ubuntu/location/wgs84/altitude.h"
-#include "com/ubuntu/location/wgs84/latitude.h"
-#include "com/ubuntu/location/wgs84/longitude.h"
+#include <com/ubuntu/location/criteria.h>
+#include <com/ubuntu/location/heading.h>
+#include <com/ubuntu/location/position.h>
+#include <com/ubuntu/location/space_vehicle.h>
+#include <com/ubuntu/location/update.h>
+#include <com/ubuntu/location/velocity.h>
+#include <com/ubuntu/location/units/units.h>
+#include <com/ubuntu/location/wgs84/altitude.h>
+#include <com/ubuntu/location/wgs84/latitude.h>
+#include <com/ubuntu/location/wgs84/longitude.h>
 
 #include <core/dbus/codec.h>
 
@@ -44,6 +44,7 @@ struct TypeMapper<com::ubuntu::location::units::Quantity<T>>
     {
         return ArgumentType::floating_point;
     }
+
     constexpr static bool is_basic_type()
     {
         return true;
@@ -62,317 +63,283 @@ struct TypeMapper<com::ubuntu::location::units::Quantity<T>>
 }
 
 template<typename T>
+struct Codec<com::ubuntu::location::Optional<T>>
+{
+    static void encode_argument(Message::Writer& writer, const com::ubuntu::location::Optional<T>& in)
+    {
+        bool has_value{in};
+        Codec<bool>::encode_argument(writer, has_value);
+        if (has_value)
+            Codec<typename com::ubuntu::location::Optional<T>::value_type>::encode_argument(writer, *in);
+    }
+
+    static void decode_argument(Message::Reader& reader, com::ubuntu::location::Optional<T>& in)
+    {
+        bool has_value{false};
+        Codec<bool>::decode_argument(reader, has_value);
+        if (has_value)
+        {
+            typename com::ubuntu::location::Optional<T>::value_type value;
+            Codec<typename com::ubuntu::location::Optional<T>::value_type>::decode_argument(reader, value);
+            in = value;
+        } else
+        {
+            in.reset();
+        }
+    }
+};
+
+template<typename T>
 struct Codec<com::ubuntu::location::units::Quantity<T>>
 {
-    static void encode_argument(core::dbus::Message::Writer& out, const com::ubuntu::location::units::Quantity<T>& in)
+    static void encode_argument(Message::Writer& writer, const com::ubuntu::location::units::Quantity<T>& in)
     {
-        Codec<typename com::ubuntu::location::units::Quantity<T>::value_type>::encode_argument(out, in.value());
+        Codec<typename com::ubuntu::location::units::Quantity<T>::value_type>::encode_argument(writer, in.value());
     }
 
-    static void decode_argument(core::dbus::Message::Reader& out, com::ubuntu::location::units::Quantity<T>& in)
+    static void decode_argument(Message::Reader& reader, com::ubuntu::location::units::Quantity<T>& in)
     {
         typename com::ubuntu::location::units::Quantity<T>::value_type value;
-        Codec<typename com::ubuntu::location::units::Quantity<T>::value_type>::decode_argument(out, value);
+        Codec<typename com::ubuntu::location::units::Quantity<T>::value_type>::decode_argument(reader, value);
         in = com::ubuntu::location::units::Quantity<T>::from_value(value);
-    }    
-};
-
-namespace helper
-{
-template<typename T, typename U>
-struct TypeMapper<com::ubuntu::location::wgs84::Coordinate<T,U>>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::structure;
-    }
-    constexpr static bool is_basic_type()
-    {
-        return false;
-    }
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s =
-            DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
-                TypeMapper<com::ubuntu::location::units::Quantity<U>>::signature() +
-            DBUS_STRUCT_END_CHAR_AS_STRING;
-        return s;
     }
 };
-}
 
 template<typename T, typename U>
 struct Codec<com::ubuntu::location::wgs84::Coordinate<T,U>>
 {
-    static void encode_argument(core::dbus::Message::Writer& out, const com::ubuntu::location::wgs84::Coordinate<T, U>& in)
+    static void encode_argument(Message::Writer& writer, const com::ubuntu::location::wgs84::Coordinate<T, U>& in)
     {
-        Codec<com::ubuntu::location::units::Quantity<U>>::encode_argument(out, in.value);
+        Codec<com::ubuntu::location::units::Quantity<U>>::encode_argument(writer, in.value);
     }
 
-    static void decode_argument(core::dbus::Message::Reader& out, com::ubuntu::location::wgs84::Coordinate<T, U>& in)
+    static void decode_argument(Message::Reader& reader, com::ubuntu::location::wgs84::Coordinate<T, U>& in)
     {
-        Codec<com::ubuntu::location::units::Quantity<U>>::decode_argument(out, in.value);
-    }    
-};
-
-namespace helper
-{
-template<>
-struct TypeMapper<com::ubuntu::location::Position>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::structure;
-    }
-    constexpr static bool is_basic_type()
-    {
-        return false;
-    }
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s =
-                TypeMapper<uint64_t>::signature() + 
-                TypeMapper<com::ubuntu::location::wgs84::Latitude>::signature() +
-                TypeMapper<com::ubuntu::location::wgs84::Longitude>::signature() +
-                TypeMapper<com::ubuntu::location::wgs84::Altitude>::signature();
-        return s;
+        Codec<com::ubuntu::location::units::Quantity<U>>::decode_argument(reader, in.value);
     }
 };
-}
 
 template<>
 struct Codec<com::ubuntu::location::Position>
 {
-    static void encode_argument(core::dbus::Message::Writer& out, const com::ubuntu::location::Position& in)
+    typedef com::ubuntu::location::Position::Accuracy::Horizontal HorizontalAccuracy;
+    typedef com::ubuntu::location::Position::Accuracy::Vertical VerticalAccuracy;
+
+    static void encode_argument(Message::Writer& writer, const com::ubuntu::location::Position& in)
     {
-        Codec<uint64_t>::encode_argument(out, in.flags().to_ulong());
-        if (in.has_latitude())
-            Codec<com::ubuntu::location::wgs84::Latitude>::encode_argument(out, in.latitude());
-        if (in.has_longitude())
-            Codec<com::ubuntu::location::wgs84::Longitude>::encode_argument(out, in.longitude());
-        if (in.has_altitude())
-            Codec<com::ubuntu::location::wgs84::Altitude>::encode_argument(out, in.altitude());
+        Codec<com::ubuntu::location::wgs84::Latitude>::encode_argument(writer, in.latitude);
+        Codec<com::ubuntu::location::wgs84::Longitude>::encode_argument(writer, in.longitude);
+        Codec<com::ubuntu::location::Optional<com::ubuntu::location::wgs84::Altitude>>::encode_argument(writer, in.altitude);
+
+        Codec<com::ubuntu::location::Optional<HorizontalAccuracy>>::encode_argument(writer, in.accuracy.horizontal);
+        Codec<com::ubuntu::location::Optional<VerticalAccuracy>>::encode_argument(writer, in.accuracy.vertical);
     }
 
-    static void decode_argument(core::dbus::Message::Reader& out, com::ubuntu::location::Position& in)
+    static void decode_argument(Message::Reader& reader, com::ubuntu::location::Position& in)
     {
-        com::ubuntu::location::wgs84::Latitude lat;
-        com::ubuntu::location::wgs84::Longitude lon;
-        com::ubuntu::location::wgs84::Altitude alt;
-        uint64_t flags_on_wire;
-        Codec<uint64_t>::decode_argument(out, flags_on_wire);
+        Codec<com::ubuntu::location::wgs84::Latitude>::decode_argument(reader, in.latitude);
+        Codec<com::ubuntu::location::wgs84::Longitude>::decode_argument(reader, in.longitude);
+        Codec<com::ubuntu::location::Optional<com::ubuntu::location::wgs84::Altitude>>::decode_argument(reader, in.altitude);
 
-        com::ubuntu::location::Position::Flags flags{flags_on_wire};
-        if (flags.test(com::ubuntu::location::Position::latitude_flag))
+        Codec<com::ubuntu::location::Optional<HorizontalAccuracy>>::decode_argument(reader, in.accuracy.horizontal);
+        Codec<com::ubuntu::location::Optional<VerticalAccuracy>>::decode_argument(reader, in.accuracy.vertical);
+    }
+};
+
+
+namespace helper
+{
+template<>
+struct TypeMapper<com::ubuntu::location::SpaceVehicle::Key>
+{
+    constexpr static ArgumentType type_value()
+    {
+        return ArgumentType::structure;
+    }
+    constexpr static bool is_basic_type()
+    {
+        return false;
+    }
+    constexpr static bool requires_signature()
+    {
+        return true;
+    }
+
+    static std::string signature()
+    {
+        static const std::string s =
+                helper::TypeMapper<std::uint32_t>::signature() +
+                helper::TypeMapper<std::uint32_t>::signature();
+        return s;
+    }
+};
+template<>
+struct TypeMapper<com::ubuntu::location::SpaceVehicle>
+{
+    constexpr static ArgumentType type_value()
+    {
+        return ArgumentType::structure;
+    }
+    constexpr static bool is_basic_type()
+    {
+        return false;
+    }
+    constexpr static bool requires_signature()
+    {
+        return true;
+    }
+
+    inline static std::string signature()
+    {
+        std::string s =
+            DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
+                helper::TypeMapper<com::ubuntu::location::SpaceVehicle::Key>::signature() +
+                helper::TypeMapper<float>::signature() +
+                helper::TypeMapper<bool>::signature() +
+                helper::TypeMapper<bool>::signature() +
+                helper::TypeMapper<bool>::signature() +
+                helper::TypeMapper<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::signature() +
+                helper::TypeMapper<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::signature() +
+            DBUS_STRUCT_END_CHAR_AS_STRING;
+        return s;
+    }
+};
+}
+
+template<>
+struct Codec<com::ubuntu::location::SpaceVehicle::Key>
+{
+    static void encode_argument(Message::Writer& writer, const com::ubuntu::location::SpaceVehicle::Key& in)
+    {
+        writer.push_uint32(static_cast<std::uint32_t>(in.type));
+        writer.push_uint32(in.id);
+    }
+
+    static void decode_argument(Message::Reader& reader, com::ubuntu::location::SpaceVehicle::Key& in)
+    {
+        in.type = static_cast<com::ubuntu::location::SpaceVehicle::Type>(reader.pop_uint32());
+        in.id = reader.pop_uint32();
+    }
+};
+
+template<>
+struct Codec<com::ubuntu::location::SpaceVehicle>
+{
+    inline static void encode_argument(Message::Writer& writer, const com::ubuntu::location::SpaceVehicle& in)
+    {
+        auto sub = writer.open_structure();
+
+        Codec<com::ubuntu::location::SpaceVehicle::Key>::encode_argument(sub, in.key);
+        sub.push_floating_point(in.snr);
+        sub.push_boolean(in.has_almanac_data);
+        sub.push_boolean(in.has_ephimeris_data);
+        sub.push_boolean(in.used_in_fix);
+        Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::encode_argument(sub, in.azimuth);
+        Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::encode_argument(sub, in.elevation);
+
+        writer.close_structure(std::move(sub));
+    }
+
+    inline static void decode_argument(Message::Reader& reader, com::ubuntu::location::SpaceVehicle& in)
+    {
+        auto sub = reader.pop_structure();
+
+        Codec<com::ubuntu::location::SpaceVehicle::Key>::decode_argument(sub, in.key);
+        in.snr = sub.pop_floating_point();
+        in.has_almanac_data = sub.pop_boolean();
+        in.has_ephimeris_data = sub.pop_boolean();
+        in.used_in_fix = sub.pop_boolean();
+        Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::decode_argument(sub, in.azimuth);
+        Codec<com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle>>::decode_argument(sub, in.elevation);
+    }
+};
+
+namespace helper
+{
+template<>
+struct TypeMapper<std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle>>
+{
+    constexpr static ArgumentType type_value()
+    {
+        return ArgumentType::array;
+    }
+    constexpr static bool is_basic_type()
+    {
+        return false;
+    }
+    constexpr static bool requires_signature()
+    {
+        return true;
+    }
+
+    static std::string signature()
+    {
+        static const std::string s = DBUS_TYPE_ARRAY_AS_STRING + TypeMapper<com::ubuntu::location::SpaceVehicle>::signature();
+        return s;
+    }
+};
+}
+template<>
+struct Codec<std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle>>
+{
+    inline static void encode_argument(Message::Writer& writer, const std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle>& arg)
+    {
+        types::Signature signature(helper::TypeMapper<com::ubuntu::location::SpaceVehicle>::signature());
+        auto sub = writer.open_array(signature);
+
+        for(const auto& element : arg)
         {
-            Codec<com::ubuntu::location::wgs84::Latitude>::decode_argument(out, lat);
-            in.latitude(lat);
+            Codec<com::ubuntu::location::SpaceVehicle>::encode_argument(sub, element.second);
         }
-        if (flags.test(com::ubuntu::location::Position::latitude_flag))
+
+        writer.close_array(std::move(sub));
+    }
+
+    inline static void decode_argument(Message::Reader& reader, std::map<com::ubuntu::location::SpaceVehicle::Key, com::ubuntu::location::SpaceVehicle>& out)
+    {
+        auto sub = reader.pop_array();
+        while (sub.type() != ArgumentType::invalid)
         {
-            Codec<com::ubuntu::location::wgs84::Longitude>::decode_argument(out, lon);
-            in.longitude(lon);
-        }
-        if (flags.test(com::ubuntu::location::Position::altitude_flag))
-        {       
-            Codec<com::ubuntu::location::wgs84::Altitude>::decode_argument(out, alt);
-            in.altitude(alt);
+            com::ubuntu::location::SpaceVehicle sv;
+            Codec<com::ubuntu::location::SpaceVehicle>::decode_argument(sub, sv);
+            out.insert(std::make_pair(sv.key, sv));
         }
     }
 };
-
-namespace helper
-{
-template<>
-struct TypeMapper<com::ubuntu::location::Velocity>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::structure;
-    }
-    constexpr static bool is_basic_type()
-    {
-        return false;
-    }
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s =
-            DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
-                TypeMapper<typename com::ubuntu::location::Velocity::Quantity>::signature() +
-            DBUS_STRUCT_END_CHAR_AS_STRING;
-        return s;
-    }
-};
-}
-
-template<>
-struct Codec<com::ubuntu::location::Velocity>
-{
-    static void encode_argument(core::dbus::Message::Writer& out, const com::ubuntu::location::Velocity& in)
-    {
-        Codec<typename com::ubuntu::location::Velocity::Quantity>::encode_argument(out, in.value);
-    }
-
-    static void decode_argument(core::dbus::Message::Reader& out, com::ubuntu::location::Velocity& in)
-    {
-        Codec<typename com::ubuntu::location::Velocity::Quantity>::decode_argument(out, in.value);
-    }
-};
-
-namespace helper
-{
-template<>
-struct TypeMapper<com::ubuntu::location::Heading>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::structure;
-    }
-    constexpr static bool is_basic_type()
-    {
-        return false;
-    }
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s =
-            DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
-                TypeMapper<typename com::ubuntu::location::Heading::Quantity>::signature() +
-            DBUS_STRUCT_END_CHAR_AS_STRING;
-        return s;
-    }
-};
-}
-
-template<>
-struct Codec<com::ubuntu::location::Heading>
-{
-    static void encode_argument(core::dbus::Message::Writer& out, const com::ubuntu::location::Heading& in)
-    {
-        Codec<typename com::ubuntu::location::Heading::Quantity>::encode_argument(out, in.value);
-    }
-
-    static void decode_argument(core::dbus::Message::Reader& out, com::ubuntu::location::Heading& in)
-    {
-        Codec<typename com::ubuntu::location::Heading::Quantity>::decode_argument(out, in.value);
-    }
-};
-
-namespace helper
-{
-template<typename T>
-struct TypeMapper<com::ubuntu::location::Accuracy<T>>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::structure;
-    }
-    constexpr static bool is_basic_type()
-    {
-        return false;
-    }
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s =
-            DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
-            TypeMapper<T>::signature() +
-            DBUS_STRUCT_END_CHAR_AS_STRING;
-        return s;
-    }
-};
-}
-
-template<typename T>
-struct Codec<com::ubuntu::location::Accuracy<T>>
-{
-    static void encode_argument(core::dbus::Message::Writer& out, const com::ubuntu::location::Accuracy<T>& in)
-    {
-        Codec<T>::encode_argument(out, in.value);
-    }
-
-    static void decode_argument(core::dbus::Message::Reader& out, com::ubuntu::location::Accuracy<T>& in)
-    {
-        Codec<T>::decode_argument(out, in.value);
-    }    
-};
-
-namespace helper
-{
-template<>
-struct TypeMapper<com::ubuntu::location::Criteria>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::structure;
-    }
-    constexpr static bool is_basic_type()
-    {
-        return false;
-    }
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s =
-            DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
-                helper::TypeMapper<com::ubuntu::location::Accuracy<com::ubuntu::location::wgs84::Latitude>>::signature() +
-                helper::TypeMapper<com::ubuntu::location::Accuracy<com::ubuntu::location::wgs84::Longitude>>::signature() +
-                helper::TypeMapper<com::ubuntu::location::Accuracy<com::ubuntu::location::wgs84::Altitude>>::signature() +
-                helper::TypeMapper<com::ubuntu::location::Accuracy<com::ubuntu::location::Velocity>>::signature() +
-                helper::TypeMapper<com::ubuntu::location::Accuracy<com::ubuntu::location::Heading>>::signature() +
-            DBUS_STRUCT_END_CHAR_AS_STRING;
-        return s;
-    }
-};
-}
 
 template<>
 struct Codec<com::ubuntu::location::Criteria>
 {
-    static void encode_argument(core::dbus::Message::Writer& out, const com::ubuntu::location::Criteria& in)
+    typedef com::ubuntu::location::units::Quantity<com::ubuntu::location::units::Length> HorizontalAccuracy;
+    typedef com::ubuntu::location::units::Quantity<com::ubuntu::location::units::Length> VerticalAccuracy;
+    typedef com::ubuntu::location::units::Quantity<com::ubuntu::location::units::Velocity> VelocityAccuracy;
+    typedef com::ubuntu::location::units::Quantity<com::ubuntu::location::units::PlaneAngle> HeadingAccuracy;
+
+    static void encode_argument(Message::Writer& writer, const com::ubuntu::location::Criteria& in)
     {
-        Codec<com::ubuntu::location::Accuracy<com::ubuntu::location::wgs84::Latitude>>::encode_argument(out, in.latitude_accuracy);
-        Codec<com::ubuntu::location::Accuracy<com::ubuntu::location::wgs84::Longitude>>::encode_argument(out, in.longitude_accuracy);
-        Codec<com::ubuntu::location::Accuracy<com::ubuntu::location::wgs84::Altitude>>::encode_argument(out, in.altitude_accuracy);
-        Codec<com::ubuntu::location::Accuracy<com::ubuntu::location::Velocity>>::encode_argument(out, in.velocity_accuracy);
-        Codec<com::ubuntu::location::Accuracy<com::ubuntu::location::Heading>>::encode_argument(out, in.heading_accuracy);
+        Codec<bool>::encode_argument(writer, in.requires.position);
+        Codec<bool>::encode_argument(writer, in.requires.altitude);
+        Codec<bool>::encode_argument(writer, in.requires.heading);
+        Codec<bool>::encode_argument(writer, in.requires.velocity);
+
+        Codec<HorizontalAccuracy>::encode_argument(writer, in.accuracy.horizontal);
+        Codec<com::ubuntu::location::Optional<VerticalAccuracy>>::encode_argument(writer, in.accuracy.vertical);
+        Codec<com::ubuntu::location::Optional<VelocityAccuracy>>::encode_argument(writer, in.accuracy.velocity);
+        Codec<com::ubuntu::location::Optional<HeadingAccuracy>>::encode_argument(writer, in.accuracy.heading);
     }
 
-    static void decode_argument(core::dbus::Message::Reader& out, com::ubuntu::location::Criteria& in)
+    static void decode_argument(Message::Reader& reader, com::ubuntu::location::Criteria& in)
     {
-        Codec<com::ubuntu::location::Accuracy<com::ubuntu::location::wgs84::Latitude>>::decode_argument(out, in.latitude_accuracy);
-        Codec<com::ubuntu::location::Accuracy<com::ubuntu::location::wgs84::Longitude>>::decode_argument(out, in.longitude_accuracy);
-        Codec<com::ubuntu::location::Accuracy<com::ubuntu::location::wgs84::Altitude>>::decode_argument(out, in.altitude_accuracy);
-        Codec<com::ubuntu::location::Accuracy<com::ubuntu::location::Velocity>>::decode_argument(out, in.velocity_accuracy);
-        Codec<com::ubuntu::location::Accuracy<com::ubuntu::location::Heading>>::decode_argument(out, in.heading_accuracy);
-    }    
+        Codec<bool>::decode_argument(reader, in.requires.position);
+        Codec<bool>::decode_argument(reader, in.requires.altitude);
+        Codec<bool>::decode_argument(reader, in.requires.heading);
+        Codec<bool>::decode_argument(reader, in.requires.velocity);
+
+        Codec<HorizontalAccuracy>::decode_argument(reader, in.accuracy.horizontal);
+        Codec<com::ubuntu::location::Optional<VerticalAccuracy>>::decode_argument(reader, in.accuracy.vertical);
+        Codec<com::ubuntu::location::Optional<VelocityAccuracy>>::decode_argument(reader, in.accuracy.velocity);
+        Codec<com::ubuntu::location::Optional<HeadingAccuracy>>::decode_argument(reader, in.accuracy.heading);
+    }
 };
 namespace helper
 {
@@ -405,18 +372,16 @@ struct TypeMapper<com::ubuntu::location::Update<T>>
 template<typename T>
 struct Codec<com::ubuntu::location::Update<T>>
 {
-    static void encode_argument(core::dbus::Message::Writer& out, const com::ubuntu::location::Update<T>& in)
+    static void encode_argument(Message::Writer& writer, const com::ubuntu::location::Update<T>& in)
     {
-        Codec<T>::encode_argument(out, in.value);
-        Codec<int64_t>::encode_argument(out, in.when.time_since_epoch().count());
+        Codec<T>::encode_argument(writer, in.value);
+        Codec<int64_t>::encode_argument(writer, in.when.time_since_epoch().count());
     }
 
-    static void decode_argument(core::dbus::Message::Reader& out, com::ubuntu::location::Update<T>& in)
+    static void decode_argument(Message::Reader& reader, com::ubuntu::location::Update<T>& in)
     {
-        Codec<T>::decode_argument(out, in.value);
-        int64_t value;
-        Codec<int64_t>::decode_argument(out, value);
-        in.when = com::ubuntu::location::Clock::Timestamp(com::ubuntu::location::Clock::Duration(value));
+        Codec<T>::decode_argument(reader, in.value);
+        in.when = com::ubuntu::location::Clock::Timestamp(com::ubuntu::location::Clock::Duration(reader.pop_int64()));
     }    
 };
 }

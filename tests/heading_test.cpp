@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/heading.h"
+#include <com/ubuntu/location/heading.h>
 
 #include <gtest/gtest.h>
 

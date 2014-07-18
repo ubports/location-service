@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/providers/geoclue_provider.h"
+#include <com/ubuntu/location/providers/geoclue_provider.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -23,7 +23,7 @@
 TEST(GeoclueProvider, accessing_ubuntu_geo_ip_works)
 {
     const std::string name{"org.freedesktop.Geoclue.Providers.UbuntuGeoIP"};
-    const std::string path{"/core/Geoclue/Providers/UbuntuGeoIP"};
+    const std::string path{"/org/freedesktop/Geoclue/Providers/UbuntuGeoIP"};
     
     com::ubuntu::location::geoclue::Provider::Configuration config
     {

@@ -18,9 +18,9 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SESSION_IMPLEMENTATION_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SESSION_IMPLEMENTATION_H_
 
-#include "com/ubuntu/location/service/session/skeleton.h"
+#include <com/ubuntu/location/service/session/skeleton.h>
 
-#include "com/ubuntu/location/provider.h"
+#include <com/ubuntu/location/provider.h>
 
 #include <memory>
 
@@ -34,13 +34,10 @@ namespace service
 {
 namespace session
 {
-class Implementation : public Skeleton
+class Implementation : public Interface
 {
   public:
-    Implementation(
-        const core::dbus::Bus::Ptr& bus,
-        const core::dbus::types::ObjectPath& session_path,
-        const Provider::Ptr& provider);
+    Implementation(const Provider::Ptr& provider);
     Implementation(const Implementation&) = delete;
     virtual ~Implementation() noexcept;
     Implementation& operator=(const Implementation&) = delete;

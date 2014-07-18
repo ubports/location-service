@@ -18,8 +18,8 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_STUB_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_STUB_H_
 
-#include "com/ubuntu/location/service/interface.h"
-#include "com/ubuntu/location/service/session/interface.h"
+#include <com/ubuntu/location/service/interface.h>
+#include <com/ubuntu/location/service/session/interface.h>
 
 #include <core/dbus/stub.h>
 
@@ -40,6 +40,10 @@ class Stub : public core::dbus::Stub<Interface>
     ~Stub() noexcept;
 
     session::Interface::Ptr create_session_for_criteria(const Criteria& criteria);
+    core::Property<bool>& does_satellite_based_positioning();
+    core::Property<bool>& does_report_cell_and_wifi_ids();
+    core::Property<bool>& is_online();    
+    core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles();
 
   private:
     struct Private;

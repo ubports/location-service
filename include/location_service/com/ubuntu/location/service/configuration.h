@@ -18,11 +18,11 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_CONFIGURATION_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_CONFIGURATION_H_
 
-#include "com/ubuntu/location/service/permission_manager.h"
+#include <com/ubuntu/location/service/permission_manager.h>
 
-#include "com/ubuntu/location/engine.h"
-#include "com/ubuntu/location/provider.h"
-#include "com/ubuntu/location/provider_selection_policy.h"
+#include <com/ubuntu/location/engine.h>
+#include <com/ubuntu/location/provider.h>
+#include <com/ubuntu/location/provider_selection_policy.h>
 
 #include <set>
 

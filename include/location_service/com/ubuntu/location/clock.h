@@ -26,14 +26,40 @@ namespace ubuntu
 {
 namespace location
 {
+/**
+ * @brief Defines the timebase of the location service.
+ */
 struct Clock
 {
+    /** @brief The underlying clock we are assuming for all time-stamping purposes. */
+    typedef std::chrono::high_resolution_clock Type;
+
+    /**
+     * @brief Duration type of the location service clock.
+     */
     typedef std::chrono::high_resolution_clock::duration Duration;
+
+    /**
+     * @brief Timestamp type of the location service clock.
+     */
     typedef std::chrono::high_resolution_clock::time_point Timestamp;
 
+    /**
+     * @brief Samples a timestamp from the clock.
+     * @return The current time.
+     */
     static inline Timestamp now()
     {
         return std::chrono::high_resolution_clock::now();
+    }
+
+    /**
+     * @brief Samples a timestamp from the clock.
+     * @return The minimum point in time representable by this clock.
+     */
+    static inline Timestamp beginning_of_time()
+    {
+        return std::chrono::high_resolution_clock::time_point::min();
     }
 };
 }

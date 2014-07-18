@@ -26,5 +26,8 @@ export CXX=$(DEB_HOST_GNU_TYPE)-g++-4.9
 override_dh_install:
 	dh_install -Xubuntu-location-service.1 --fail-missing
 
+override_dh_strip:
+	dh_strip --dbg-package=libubuntu-location-service-dbg
+
 override_dh_auto_configure:
 	dh_auto_configure -- -DCMAKE_INSTALL_LIBEXECDIR=/usr/lib/$(DEB_HOST_MULTIARCH)/ubuntu-location-service -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX)

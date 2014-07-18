@@ -15,128 +15,23 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/providers/gps/provider.h"
 
-#include "com/ubuntu/location/logging.h"
+#include "provider.h"
+
+#include "hardware_abstraction_layer.h"
+
+#include <com/ubuntu/location/logging.h>
+#include <com/ubuntu/location/connectivity/manager.h>
 
 #include <ubuntu/hardware/gps.h>
 
 namespace cul = com::ubuntu::location;
 namespace culg = com::ubuntu::location::providers::gps;
 
-namespace
-{
-static const std::map<uint16_t, std::string> status_lut = 
-{
-    {U_HARDWARE_GPS_STATUS_NONE, "U_HARDWARE_GPS_STATUS_NONE"},
-    {U_HARDWARE_GPS_STATUS_SESSION_BEGIN, "U_HARDWARE_GPS_STATUS_SESSION_BEGIN"},
-    {U_HARDWARE_GPS_STATUS_SESSION_END, "U_HARDWARE_GPS_STATUS_SESSION_END"},
-    {U_HARDWARE_GPS_STATUS_ENGINE_ON, "U_HARDWARE_GPS_STATUS_ENGINE_ON"},
-    {U_HARDWARE_GPS_STATUS_ENGINE_OFF, "U_HARDWARE_GPS_STATUS_ENGINE_OFF"}
-};
-}
-
 struct culg::Provider::Private
 {
-
-static void on_location_update(UHardwareGpsLocation* location, void* context)
-{
-    auto thiz = static_cast<culg::Provider*>(context);
-        
-    if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_LAT_LONG)
-    {
-        VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_LAT_LONG";
-
-        cul::Position pos;
-        pos.latitude(cul::wgs84::Latitude{location->latitude * cul::units::Degrees});
-        pos.longitude(cul::wgs84::Longitude{location->longitude * cul::units::Degrees});
-        if(location->flags & U_HARDWARE_GPS_LOCATION_HAS_ALTITUDE)
-            pos.altitude(cul::wgs84::Altitude{location->altitude * cul::units::Meters});
-        
-        thiz->deliver_position_updates(cul::Update<cul::Position>{pos, cul::Clock::now()});
-    }
-    
-    if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_SPEED)
-    {
-        VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_SPEED";
-        
-        cul::Velocity v{location->speed * cul::units::MetersPerSecond};
-        thiz->deliver_velocity_updates(cul::Update<cul::Velocity>{v, cul::Clock::now()});
-    }
-
-    if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_BEARING)
-    {
-        VLOG(1) << "location->flags & U_HARDWARE_GPS_LOCATION_HAS_BEARING";
-        
-        cul::Heading h{location->bearing * cul::units::Degrees};
-        thiz->deliver_heading_updates(cul::Update<cul::Heading>{h, cul::Clock::now()});
-    }
-}
-
-static void on_status_update(uint16_t status, void* /*context*/)
-{
-    SYSLOG(INFO) << "Status = " << status_lut.at(status);
-}
-
-static void on_sv_status_update(UHardwareGpsSvStatus* sv_info, void* /*context*/)
-{
-    SYSLOG_EVERY_N(INFO, 20) << "SV status update: [#svs: " << sv_info->num_svs << "]";
-}
-    
-static void on_nmea_update(int64_t /*timestamp*/, const char* /*nmea*/, int /*length*/, void* /*context*/)
-{
-}
-
-static void on_set_capabilities(uint32_t capabilities, void* /*context*/)
-{
-    VLOG(1) << __PRETTY_FUNCTION__ << ": " << capabilities;
-}
-
-static void on_request_utc_time(void* /*context*/)
-{
-    VLOG(1) << __PRETTY_FUNCTION__;
-}
-
-static void on_agps_status_update(UHardwareGpsAGpsStatus* /*status*/, void* /*context*/)
-{
-    VLOG(1) << __PRETTY_FUNCTION__;
-}
-
-static void on_gps_ni_notification(UHardwareGpsNiNotification* /*notification*/, void* /*context*/)
-{
-    VLOG(1) << __PRETTY_FUNCTION__;
-}
-    
-static void on_agps_ril_request_set_id(uint32_t /*flags*/, void* /*context*/)
-{
-    VLOG(1) << __PRETTY_FUNCTION__;
-}
-
-static void on_agps_ril_request_ref_lock(uint32_t /*flags*/, void* /*context*/)
-{
-    VLOG(1) << __PRETTY_FUNCTION__;
-}
-
-    static void on_gps_xtra_download_request(void*)
-    {
-        VLOG(1) << __PRETTY_FUNCTION__;
-    }
-
-    void start() 
-    { 
-        u_hardware_gps_start(gps_handle);
-    }
-    
-    void stop() 
-    { 
-        u_hardware_gps_stop(gps_handle);
-    }
-
-    UHardwareGpsParams gps_params;
-    UHardwareGps gps_handle;
+    std::shared_ptr<HardwareAbstractionLayer> hal;
 };
-
-
 
 std::string culg::Provider::class_name()
 {
@@ -145,63 +40,41 @@ std::string culg::Provider::class_name()
 
 cul::Provider::Ptr culg::Provider::create_instance(const cul::ProviderFactory::Configuration&)
 {
-    return cul::Provider::Ptr{new culg::Provider{}};
+    return cul::Provider::Ptr{new culg::Provider{culg::HardwareAbstractionLayer::create_default_instance()}};
 }
 
-const cul::Provider::FeatureFlags& culg::Provider::default_feature_flags()
+culg::Provider::Provider(const std::shared_ptr<HardwareAbstractionLayer>& hal)
+    : cul::Provider(
+          cul::Provider::Features::position | cul::Provider::Features::velocity | cul::Provider::Features::heading,
+          cul::Provider::Requirements::satellites),
+      d(new Private())
 {
-    static const cul::Provider::FeatureFlags flags{"001"};
-    return flags;
-}
+    d->hal = hal;
 
-const cul::Provider::RequirementFlags& culg::Provider::default_requirement_flags()
-{
-    static const cul::Provider::RequirementFlags flags{"1010"};
-    return flags;
-}
+    d->hal->position_updates().connect([this](const location::Position& pos)
+    {
+        mutable_updates().position(Update<Position>(pos));
+    });
 
-culg::Provider::Provider()
-        : cul::Provider(
-              culg::Provider::default_feature_flags(), 
-              culg::Provider::default_requirement_flags()),
-          d(new Private())
-{
-    d->gps_params.location_cb = culg::Provider::Private::on_location_update;
-    d->gps_params.status_cb = culg::Provider::Private::on_status_update;
-    d->gps_params.sv_status_cb = culg::Provider::Private::on_sv_status_update;
-    d->gps_params.nmea_cb = culg::Provider::Private::on_nmea_update;
-    d->gps_params.set_capabilities_cb = culg::Provider::Private::on_set_capabilities;
-    d->gps_params.request_utc_time_cb = culg::Provider::Private::on_request_utc_time;
-    d->gps_params.xtra_download_request_cb = culg::Provider::Private::on_gps_xtra_download_request;
-    
-    d->gps_params.agps_status_cb = culg::Provider::Private::on_agps_status_update;
-    
-    d->gps_params.gps_ni_notify_cb = culg::Provider::Private::on_gps_ni_notification;
-    
-    d->gps_params.request_setid_cb = culg::Provider::Private::on_agps_ril_request_set_id;
-    d->gps_params.request_refloc_cb = culg::Provider::Private::on_agps_ril_request_ref_lock;
-    d->gps_params.context = this;
-    
-    d->gps_handle = u_hardware_gps_new(std::addressof(d->gps_params));
+    d->hal->heading_updates().connect([this](const location::Heading& heading)
+    {
+        mutable_updates().heading(Update<Heading>(heading));
+    });
 
-    static const std::chrono::milliseconds minimum_interval{500};
-    static const uint32_t preferred_accuracy{0};
-    static const uint32_t preferred_time_to_first_fix{0};
+    d->hal->velocity_updates().connect([this](const location::Velocity& velocity)
+    {
+        mutable_updates().velocity(Update<Velocity>(velocity));
+    });
 
-    u_hardware_gps_set_position_mode(
-                d->gps_handle,
-                U_HARDWARE_GPS_POSITION_MODE_MS_BASED,
-                U_HARDWARE_GPS_POSITION_RECURRENCE_PERIODIC,
-                minimum_interval.count(),
-                preferred_accuracy,
-                preferred_time_to_first_fix
-                );
+    d->hal->space_vehicle_updates().connect([this](const std::set<location::SpaceVehicle>& svs)
+    {
+        mutable_updates().svs(Update<std::set<location::SpaceVehicle>>(svs));
+    });
 }
 
 culg::Provider::~Provider() noexcept
 {
-    d->stop();
-    u_hardware_gps_delete(d->gps_handle);
+    d->hal->stop_positioning();
 }
 
 bool culg::Provider::matches_criteria(const cul::Criteria&)
@@ -211,30 +84,36 @@ bool culg::Provider::matches_criteria(const cul::Criteria&)
 
 void culg::Provider::start_position_updates()
 {
-    d->start();
+    d->hal->start_positioning();
 }
 
 void culg::Provider::stop_position_updates()
 {
-    d->stop();
+    d->hal->stop_positioning();
 }
 
 void culg::Provider::start_velocity_updates()
 {
-    d->start();
+    d->hal->start_positioning();
 }
 
 void culg::Provider::stop_velocity_updates()
 {
-    d->stop();
+    d->hal->stop_positioning();
 }    
 
 void culg::Provider::start_heading_updates()
 {
-    d->start();
+    d->hal->start_positioning();
 }
 
 void culg::Provider::stop_heading_updates()
 {
-    d->stop();
+    d->hal->stop_positioning();
 }
+
+void culg::Provider::on_reference_location_updated(const cul::Update<cul::Position>& position)
+{
+    d->hal->inject_reference_position(position.value);
+}
+

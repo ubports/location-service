@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/service/session/interface.h"
+#include <com/ubuntu/location/service/session/interface.h>
 
 #include <core/dbus/codec.h>
 #include <core/dbus/service.h>
@@ -30,9 +30,7 @@ namespace dbus = core::dbus;
 
 struct culss::Interface::Private
 {
-    cul::Channel<cul::Update<cul::Position>> position_updates_channel;
-    cul::Channel<cul::Update<cul::Heading>> heading_updates_channel;
-    cul::Channel<cul::Update<cul::Velocity>> velocity_updates_channel;
+    culss::Interface::Updates updates;
 };
 
 culss::Interface::Interface() : d{new Private{}}
@@ -43,32 +41,7 @@ culss::Interface::~Interface() noexcept
 {
 }
 
-cul::ChannelConnection culss::Interface::install_position_updates_handler(std::function<void(const cul::Update<cul::Position>&)> handler)
+culss::Interface::Updates& culss::Interface::updates()
 {
-    return d->position_updates_channel.connect(handler);
-}
-
-cul::ChannelConnection culss::Interface::install_velocity_updates_handler(std::function<void(const cul::Update<cul::Velocity>&)> handler)
-{
-    return d->velocity_updates_channel.connect(handler);
-}
-
-cul::ChannelConnection culss::Interface::install_heading_updates_handler(std::function<void(const cul::Update<cul::Heading>&)> handler)
-{
-    return d->heading_updates_channel.connect(handler);
-}
-
-cul::Channel<cul::Update<cul::Position>>& culss::Interface::access_position_updates_channel()
-{
-    return d->position_updates_channel;
-}
-
-cul::Channel<cul::Update<cul::Heading>>& culss::Interface::access_heading_updates_channel()
-{
-    return d->heading_updates_channel;
-}
-
-cul::Channel<cul::Update<cul::Velocity>>& culss::Interface::access_velocity_updates_channel()
-{
-    return d->velocity_updates_channel;
+    return d->updates;
 }

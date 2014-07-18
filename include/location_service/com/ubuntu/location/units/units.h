@@ -57,6 +57,12 @@ typedef boost::units::si::dimensionless Dimensionless;
 using boost::units::sin;
 using boost::units::cos;
 using boost::units::atan2;
+
+template<typename Unit>
+inline bool roughly_equals(const Quantity<Unit>& lhs, const Quantity<Unit>& rhs)
+{
+    return std::fabs(lhs.value()-rhs.value()) <= std::numeric_limits<double>::epsilon();
+}
 }
 }
 }

@@ -15,10 +15,10 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include "com/ubuntu/location/service/default_configuration.h"
-#include "com/ubuntu/location/service/default_permission_manager.h"
+#include <com/ubuntu/location/service/default_configuration.h>
+#include <com/ubuntu/location/service/default_permission_manager.h>
 
-#include "com/ubuntu/location/default_provider_selection_policy.h"
+#include <com/ubuntu/location/default_provider_selection_policy.h>
 
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
@@ -35,7 +35,11 @@ cul::Engine::Ptr culs::DefaultConfiguration::the_engine(
     const std::set<cul::Provider::Ptr>& provider_set,
     const cul::ProviderSelectionPolicy::Ptr& provider_selection_policy)
 {
-    return Engine::Ptr {new Engine{provider_set, provider_selection_policy}};
+    auto engine = std::make_shared<cul::Engine>(provider_selection_policy);
+    for (const auto& provider : provider_set)
+        engine->add_provider(provider);
+
+    return engine;
 }
 
 cul::ProviderSelectionPolicy::Ptr culs::DefaultConfiguration::the_provider_selection_policy()

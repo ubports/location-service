@@ -19,12 +19,21 @@ configure_file(
 )
 
 configure_file(
+  ubuntu-location-service-connectivity.pc.in ubuntu-location-service-connectivity.pc @ONLY
+)
+
+configure_file(
   ubuntu-location-service.conf.in ubuntu-location-service.conf @ONLY
 )
 
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/ubuntu-location-service.pc
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/pkgconfig
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)
+
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/ubuntu-location-service-connectivity.pc
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
 )
 
 install(
