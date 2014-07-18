@@ -1,3 +1,9 @@
+location-service (2.0.0) UNRELEASED; urgency=medium
+
+  * Bump major revision and so name to account for toolchain update.
+
+ -- Thomas Voß <thomas.voss@canonical.com>  Fri, 27 Jun 2014 11:22:56 +0200
+
 location-service (1.0.0+14.10.20140717.1-0ubuntu1) utopic; urgency=low
 
   [ thomas-voss ]
@@ -17,12 +23,6 @@ location-service (1.0.0+14.10.20140630-0ubuntu1) utopic; urgency=medium
   * Bump major version.
 
  -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 30 Jun 2014 08:57:56 +0000
-
-location-service (1.0.0) UNRELEASED; urgency=medium
-
-  * Bump major revision and so name to account for toolchain update.
-
- -- Thomas Voß <thomas.voss@canonical.com>  Fri, 27 Jun 2014 11:22:56 +0200
 
 location-service (0.0.3+14.10.20140612-0ubuntu1) utopic; urgency=low
 
