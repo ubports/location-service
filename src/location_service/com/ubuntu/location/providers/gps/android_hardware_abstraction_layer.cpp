@@ -147,9 +147,19 @@ void android::HardwareAbstractionLayer::on_xtra_download_request(void* context)
 
     auto thiz = static_cast<android::HardwareAbstractionLayer*>(context);
 
-    auto xtra_gps_data = thiz->impl.gps_xtra_downloader->download_xtra_data(thiz->impl.gps_xtra_configuration);
-    if (not xtra_gps_data.empty())
-        u_hardware_gps_inject_xtra_data(thiz->impl.gps_handle, &xtra_gps_data.front(), xtra_gps_data.size());
+    try
+    {
+        auto xtra_gps_data = thiz->impl.gps_xtra_downloader->download_xtra_data(thiz->impl.gps_xtra_configuration);
+        if (not xtra_gps_data.empty())
+            u_hardware_gps_inject_xtra_data(thiz->impl.gps_handle, &xtra_gps_data.front(), xtra_gps_data.size());
+    } catch(const std::exception& e)
+    {
+        LOG(ERROR) << "Error downloading GPS Xtra data: " << e.what();
+    } catch(...)
+    {
+        LOG(ERROR) << "Error downloading GPS Xtra data.";
+    }
+
 }
 
 void android::HardwareAbstractionLayer::on_gps_ni_notify(UHardwareGpsNiNotification* notification, void* context)
@@ -608,6 +618,33 @@ bool android::HardwareAbstractionLayer::Impl::dispatch_updated_modes_to_driver()
 namespace
 {
 std::ifstream etc_gps_conf{"/etc/gps.conf"};
+
+android::GpsXtraDownloader::Configuration gps_xtra_downloader_configuration(std::istream& in)
+{
+    android::GpsXtraDownloader::Configuration config;
+
+    try
+    {
+        config = android::GpsXtraDownloader::Configuration::from_gps_conf_ini_file(etc_gps_conf);
+        return config;
+    } catch(const std::exception& e)
+    {
+        // TODO(tvoss): We should log the error here
+        // For now, we silently fallback to a set of default options.
+    } catch(...)
+    {
+        // For now, we silently fallback to a set of default options.
+    }
+
+    config.xtra_hosts =
+    {
+        "http://xtra1.gpsonextra.net/xtra2.bin",
+        "http://xtra2.gpsonextra.net/xtra2.bin",
+        "http://xtra3.gpsonextra.net/xtra2.bin"
+    };
+
+    return config;
+}
 }
 
 std::shared_ptr<gps::HardwareAbstractionLayer> gps::HardwareAbstractionLayer::create_default_instance()
@@ -616,7 +653,7 @@ std::shared_ptr<gps::HardwareAbstractionLayer> gps::HardwareAbstractionLayer::cr
     {
         {
             create_xtra_downloader(),
-            android::GpsXtraDownloader::Configuration::from_gps_conf_ini_file(etc_gps_conf)
+            gps_xtra_downloader_configuration(etc_gps_conf)
         }
     };
 
