@@ -46,8 +46,8 @@ culs::Skeleton::DBusDaemonCredentialsResolver::resolve_credentials_for_incoming_
 {
     return culs::Credentials
     {
-        daemon.get_connection_unix_process_id(msg->sender()),
-        daemon.get_connection_unix_user(msg->sender())
+        static_cast<pid_t>(daemon.get_connection_unix_process_id(msg->sender())),
+        static_cast<uid_t>(daemon.get_connection_unix_user(msg->sender()))
     };
 }
 
