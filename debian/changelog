@@ -1,3 +1,11 @@
+location-service (2.0.1-0ubuntu1) UNRELEASED; urgency=medium
+
+  [ Pete Woods ]
+  * Add libdbus-cpp and libdbus as dependencies on devel package.
+  * Enable building on arm64, powerpc and ppc64el.
+
+ -- Pete Woods <pete.woods@canonical.com>  Mon, 28 Jul 2014 10:48:27 +0100
+
 location-service (2.0.0+14.10.20140718.2-0ubuntu2) utopic; urgency=medium
 
   * No-change rebuild to get dbgsyms for all binaries onto
