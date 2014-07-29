@@ -25,8 +25,8 @@ Build-Depends: cmake,
                libjson-c-dev,
                libnet-cpp-dev,
                libprocess-cpp-dev,
-               libubuntu-platform-hardware-api-headers,
-               libubuntu-platform-hardware-api-dev,
+               libubuntu-platform-hardware-api-headers [!arm64 !ppc64el !powerpc],
+               libubuntu-platform-hardware-api-dev [!arm64 !ppc64el !powerpc],
                libproperties-cpp-dev,
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/location-service
