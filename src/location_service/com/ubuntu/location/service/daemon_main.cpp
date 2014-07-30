@@ -30,7 +30,7 @@ namespace
 constexpr const char* log_dir{"/var/log/ubuntu-location-service"};
 }
 
-int main(int argc, char** argv)
+int main(int argc, const char** argv)
 {
     // Setup logging for the daemon.
     boost::system::error_code ec;

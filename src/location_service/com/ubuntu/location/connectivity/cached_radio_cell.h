@@ -22,7 +22,7 @@
 
 #include "ofono.h"
 
-namespace
+namespace detail
 {
 
 struct CachedRadioCell : public com::ubuntu::location::connectivity::RadioCell
@@ -259,6 +259,8 @@ struct CachedRadioCell : public com::ubuntu::location::connectivity::RadioCell
                     detail.lte.strength.reset();
                     detail.lte.id.reset();
                     break;
+                default:
+                    break;
                 }
                 break;
             case com::ubuntu::location::connectivity::RadioCell::Type::umts:
@@ -278,6 +280,8 @@ struct CachedRadioCell : public com::ubuntu::location::connectivity::RadioCell
                     detail.lte.strength.reset();
                     detail.lte.id.reset();
                     break;
+                default:
+                    break;
                 }
                 break;
             case com::ubuntu::location::connectivity::RadioCell::Type::lte:
@@ -296,6 +300,8 @@ struct CachedRadioCell : public com::ubuntu::location::connectivity::RadioCell
                     detail.umts.mobile_country_code = detail.lte.mobile_country_code;
                     detail.umts.strength.reset();
                     detail.umts.id.reset();
+                    break;
+                default:
                     break;
                 }
             default:
