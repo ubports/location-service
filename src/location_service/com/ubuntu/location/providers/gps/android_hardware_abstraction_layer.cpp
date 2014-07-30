@@ -617,15 +617,13 @@ bool android::HardwareAbstractionLayer::Impl::dispatch_updated_modes_to_driver()
 
 namespace
 {
-std::ifstream etc_gps_conf{"/etc/gps.conf"};
-
 android::GpsXtraDownloader::Configuration gps_xtra_downloader_configuration(std::istream& in)
 {
     android::GpsXtraDownloader::Configuration config;
 
     try
     {
-        config = android::GpsXtraDownloader::Configuration::from_gps_conf_ini_file(etc_gps_conf);
+        config = android::GpsXtraDownloader::Configuration::from_gps_conf_ini_file(in);
         return config;
     } catch(const std::exception& e)
     {
@@ -649,11 +647,13 @@ android::GpsXtraDownloader::Configuration gps_xtra_downloader_configuration(std:
 
 std::shared_ptr<gps::HardwareAbstractionLayer> gps::HardwareAbstractionLayer::create_default_instance()
 {
+    static std::ifstream in{"/etc/gps.conf"};
+
     static android::HardwareAbstractionLayer::Configuration config
     {
         {
             create_xtra_downloader(),
-            gps_xtra_downloader_configuration(etc_gps_conf)
+            gps_xtra_downloader_configuration(in)
         }
     };
 
