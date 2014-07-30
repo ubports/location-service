@@ -17,19 +17,12 @@
  */
 #include <com/ubuntu/location/service/default_configuration.h>
 #include <com/ubuntu/location/service/default_permission_manager.h>
+#include <com/ubuntu/location/service/trust_store_permission_manager.h>
 
 #include <com/ubuntu/location/default_provider_selection_policy.h>
 
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
-
-culs::DefaultConfiguration::DefaultConfiguration()
-{
-}
-
-culs::DefaultConfiguration::~DefaultConfiguration() noexcept
-{
-}
 
 cul::Engine::Ptr culs::DefaultConfiguration::the_engine(
     const std::set<cul::Provider::Ptr>& provider_set,
@@ -53,8 +46,8 @@ std::set<cul::Provider::Ptr> culs::DefaultConfiguration::the_provider_set(
     return std::set<cul::Provider::Ptr>{seed};
 }
 
-culs::PermissionManager::Ptr culs::DefaultConfiguration::the_permission_manager()
+culs::PermissionManager::Ptr culs::DefaultConfiguration::the_permission_manager(const core::dbus::Bus::Ptr& bus)
 {
-    return DefaultPermissionManager::Ptr(new DefaultPermissionManager());
+    return culs::TrustStorePermissionManager::create_default_instance_with_bus(bus);
 }
 

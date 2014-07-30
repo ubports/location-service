@@ -165,7 +165,7 @@ int main(int argc, char** argv)
         incoming,
         outgoing,
         config.the_engine(instantiated_providers, config.the_provider_selection_policy()),
-        config.the_permission_manager(),
+        config.the_permission_manager(incoming),
         culs::Harvester::Configuration
         {
             cul::connectivity::platform_default_manager(),

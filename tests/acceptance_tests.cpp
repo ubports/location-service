@@ -199,7 +199,7 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
             incoming,
             outgoing,
             config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
-            config.the_permission_manager(),
+            config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
                 cul::connectivity::platform_default_manager(),
@@ -319,7 +319,7 @@ TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
             incoming,
             outgoing,
             config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
-            config.the_permission_manager(),
+            config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
                 cul::connectivity::platform_default_manager(),
@@ -398,7 +398,7 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
             incoming,
             outgoing,
             config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
-            config.the_permission_manager(),
+            config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
                 cul::connectivity::platform_default_manager(),
@@ -476,7 +476,7 @@ TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdu
             incoming,
             outgoing,
             config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
-            config.the_permission_manager(),
+            config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
                 cul::connectivity::platform_default_manager(),
@@ -562,7 +562,7 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
             incoming,
             outgoing,
             config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
-            config.the_permission_manager(),
+            config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
                 cul::connectivity::platform_default_manager(),

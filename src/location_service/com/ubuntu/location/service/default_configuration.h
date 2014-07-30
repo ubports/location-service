@@ -22,6 +22,8 @@
 
 #include <set>
 
+#include <core/dbus/bus.h>
+
 namespace com
 {
 namespace ubuntu
@@ -30,24 +32,27 @@ namespace location
 {
 namespace service
 {
+// A helper class to create dependencies of the service implementation.
 class DefaultConfiguration
 {
 public:
-    DefaultConfiguration();
-    DefaultConfiguration(const DefaultConfiguration&) = delete;
-    DefaultConfiguration& operator=(const DefaultConfiguration&) = delete;
-    ~DefaultConfiguration() noexcept;
+    DefaultConfiguration() = default;
+    virtual ~DefaultConfiguration() = default;
 
+    // Creates a policy instance for selecting a set of providers given a criteria
+    // as specified by a client application.
+    virtual ProviderSelectionPolicy::Ptr the_provider_selection_policy();
+
+    // Returns a set of providers, seeded with the seed provider if it is not null.
+    virtual std::set<Provider::Ptr> the_provider_set(const Provider::Ptr& seed = Provider::Ptr {});
+
+    // Creates an engine instance given a set of providers and a provider selection policy.
     virtual Engine::Ptr the_engine(
         const std::set<Provider::Ptr>& provider_set,
-        const ProviderSelectionPolicy::Ptr& provider_selection_policy);
+        const ProviderSelectionPolicy::Ptr& provider_selection_policy);    
 
-    ProviderSelectionPolicy::Ptr the_provider_selection_policy();
-
-    std::set<Provider::Ptr> the_provider_set(
-        const Provider::Ptr& seed = Provider::Ptr {});
-
-    PermissionManager::Ptr the_permission_manager();
+    // Instantiates an instance of the permission manager.
+    virtual PermissionManager::Ptr the_permission_manager(const std::shared_ptr<core::dbus::Bus>& bus);
 };
 }
 }

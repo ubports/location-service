@@ -6,6 +6,10 @@ endif()
 
 add_subdirectory(providers)
 
+configure_file(
+  service/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/service/config.h @ONLY
+)
+
 add_library(
   ubuntu-location-service SHARED
 
@@ -25,6 +29,7 @@ add_library(
   service/default_configuration.cpp
   service/default_permission_manager.cpp
   service/harvester.cpp
+  service/trust_store_permission_manager.cpp
 
   service/implementation.cpp
   service/skeleton.cpp
@@ -98,7 +103,9 @@ target_link_libraries(
   ${DBUS_LIBRARIES}
   ${DBUS_CPP_LDFLAGS}
   ${JSON_C_LDFLAGS}
+  ${LIBAPPARMOR_LDFLAGS}
   ${NET_CPP_LDFLAGS}
+  ${TRUST_STORE_LDFLAGS}
   ${GLog_LIBRARY}
   ${GFlags_LIBRARY}
 )

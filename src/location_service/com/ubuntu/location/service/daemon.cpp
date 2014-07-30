@@ -192,12 +192,13 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
     config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing));
 
     location::service::DefaultConfiguration dc;
+
     location::service::Implementation::Configuration configuration
     {
         config.incoming,
         config.outgoing,
         dc.the_engine(instantiated_providers, dc.the_provider_selection_policy()),
-        dc.the_permission_manager(),
+        dc.the_permission_manager(config.incoming),
         location::service::Harvester::Configuration
         {
             location::connectivity::platform_default_manager(),
