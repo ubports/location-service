@@ -16,6 +16,7 @@ Build-Depends: cmake,
 # version.
                g++-4.9,
                libapparmor-dev,
+               libboost-filesystem-dev,
                libboost-program-options-dev,
                libboost-system-dev,
                libdbus-1-dev,
@@ -27,8 +28,8 @@ Build-Depends: cmake,
                libnet-cpp-dev,
                libprocess-cpp-dev,
                libtrust-store-dev,
-               libubuntu-platform-hardware-api-headers,
-               libubuntu-platform-hardware-api-dev,
+               libubuntu-platform-hardware-api-headers [!arm64 !ppc64el !powerpc],
+               libubuntu-platform-hardware-api-dev [!arm64 !ppc64el !powerpc],
                libproperties-cpp-dev,
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/location-service
@@ -55,6 +56,8 @@ Architecture: any
 Multi-Arch: foreign
 Recommends: ubuntu-location-service-doc,
 Depends: libubuntu-location-service2 (= ${binary:Version}),
+         libdbus-1-dev,
+         libdbus-cpp-dev,
          ${misc:Depends},
 Suggests: ubuntu-location-service-doc,
 Description: location service aggregating position/velocity/heading

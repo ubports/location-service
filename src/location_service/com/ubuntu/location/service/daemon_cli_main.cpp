@@ -25,7 +25,7 @@
 
 namespace location = com::ubuntu::location;
 
-int main(int argc, char** argv)
+int main(int argc, const char** argv)
 {
     // Setup logging for the CLI.
     FLAGS_logtostderr = true;

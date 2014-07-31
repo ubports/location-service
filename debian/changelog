@@ -1,3 +1,23 @@
+location-service (2.0.1+14.10.20140730.1-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Make sure that logging directories are created on service startup.
+    (LP: #1349704)
+  * Fix build warnings.
+  * Add a vanilla gps.conf file and install it to /etc/gps.conf. Make
+    sure that expections thrown while trying to download GPS Xtra data
+    do not abort the service. (LP: #1347887)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 30 Jul 2014 14:17:04 +0000
+
+location-service (2.0.1+14.10.20140729.1-0ubuntu1) utopic; urgency=medium
+
+  [ Pete Woods ]
+  * Add libdbus-cpp and libdbus as dependencies on devel package.
+  * Enable building on arm64, powerpc and ppc64el.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 29 Jul 2014 09:21:00 +0000
+
 location-service (2.0.0+14.10.20140718.2-0ubuntu2) utopic; urgency=medium
 
   * No-change rebuild to get dbgsyms for all binaries onto

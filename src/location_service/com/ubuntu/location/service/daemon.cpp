@@ -86,7 +86,7 @@ location::ProgramOptions& mutable_daemon_options()
 
 location::service::Daemon::Configuration location::service::Daemon::Configuration::from_command_line_args(
         int argc,
-        char** argv,
+        const char** argv,
         location::service::Daemon::DBusConnectionFactory factory)
 {
     location::service::Daemon::Configuration result;
@@ -257,7 +257,7 @@ location::ProgramOptions& mutable_cli_options()
 
 location::service::Daemon::Cli::Configuration location::service::Daemon::Cli::Configuration::from_command_line_args(
         int argc,
-        char** argv,
+        const char** argv,
         location::service::Daemon::DBusConnectionFactory factory)
 {
     location::service::Daemon::Cli::Configuration result;
