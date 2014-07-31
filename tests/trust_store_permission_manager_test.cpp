@@ -70,10 +70,16 @@ TEST(TrustStorePermissionManager, calls_out_to_agent)
             .Times(1)
             .WillRepeatedly(Return(core::trust::Request::Answer::denied));
 
-    service::TrustStorePermissionManager pm{mock_agent, service::TrustStorePermissionManager::libapparmor_profile_resolver()};
+    service::TrustStorePermissionManager pm
+    {
+        mock_agent,
+        service::TrustStorePermissionManager::libapparmor_profile_resolver()
+    };
 
     EXPECT_EQ(service::PermissionManager::Result::rejected,
-              pm.check_permission_for_credentials(default_criteria, location::service::Credentials{42, 42}));
+              pm.check_permission_for_credentials(
+                  default_criteria,
+                  location::service::Credentials{::getpid(), ::getuid()}));
 }
 
 TEST(TrustStorePermissionManager, returns_rejected_for_throwing_agent)
@@ -89,15 +95,15 @@ TEST(TrustStorePermissionManager, returns_rejected_for_throwing_agent)
     service::TrustStorePermissionManager pm{mock_agent, service::TrustStorePermissionManager::libapparmor_profile_resolver()};
 
     EXPECT_EQ(service::PermissionManager::Result::rejected,
-              pm.check_permission_for_credentials(default_criteria, location::service::Credentials{42, 42}));
+              pm.check_permission_for_credentials(default_criteria, location::service::Credentials{::getpid(), ::getuid()}));
 }
 
 TEST(TrustStorePermissionManager, resolves_app_id)
 {
     using namespace ::testing;
 
-    const pid_t pid = 42;
-    const uid_t uid = 42;
+    const pid_t pid = ::getpid();
+    const uid_t uid = ::getuid();
 
     auto mock_agent = std::make_shared<MockAgent>();
 
@@ -124,8 +130,8 @@ TEST(TrustStorePermissionManager, returns_rejected_for_throwing_app_id_resolver)
 {
     using namespace ::testing;
 
-    const pid_t pid = 42;
-    const uid_t uid = 42;
+    const pid_t pid = ::getpid();
+    const uid_t uid = ::getuid();
 
     auto mock_agent = std::make_shared<MockAgent>();
 
