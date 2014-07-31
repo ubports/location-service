@@ -41,8 +41,9 @@ namespace service
 // A PermmissionManager implementation leveraging the trust-store
 // infrastructure to cache a user's answer and to dispatch
 // to user-specific trust-store instances.
-struct TrustStorePermissionManager : public PermissionManager
+class TrustStorePermissionManager : public PermissionManager
 {
+public:
     // Just a convenience typedef.
     typedef std::shared_ptr<TrustStorePermissionManager> Ptr;
 
@@ -68,6 +69,7 @@ struct TrustStorePermissionManager : public PermissionManager
     // From PermissionManager
     Result check_permission_for_credentials(const Criteria&, const Credentials& credentials) override;
 
+private:
     // The agent instance we leverage to authenticate
     // permission requests.
     std::shared_ptr<core::trust::Agent> agent;

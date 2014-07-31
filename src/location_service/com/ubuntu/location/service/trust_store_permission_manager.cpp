@@ -18,6 +18,7 @@
 
 #include <com/ubuntu/location/service/trust_store_permission_manager.h>
 
+#include <com/ubuntu/location/logging.h>
 #include <com/ubuntu/location/service/config.h>
 
 #include <core/trust/dbus_agent.h>
@@ -100,7 +101,19 @@ service::PermissionManager::Result service::TrustStorePermissionManager::check_p
         const location::Criteria&,
         const service::Credentials& credentials)
 {
-    auto profile = app_armor_profile_resolver(core::trust::Pid{credentials.pid});
+    std::string profile;
+    try
+    {
+        profile = app_armor_profile_resolver(core::trust::Pid{credentials.pid});
+    } catch(const std::exception& e)
+    {
+        LOG(ERROR) << "Could not resolve PID " << credentials.pid << " to apparmor profile: " << e.what();
+        return service::PermissionManager::Result::rejected;
+    } catch(...)
+    {
+        LOG(ERROR) << "Could not resolve PID " << credentials.pid << " to apparmor profile.";
+        return service::PermissionManager::Result::rejected;
+    }
 
     std::string description;
 
@@ -116,7 +129,7 @@ service::PermissionManager::Result service::TrustStorePermissionManager::check_p
     {
         core::trust::Uid{credentials.uid},
         core::trust::Pid{credentials.pid},
-        app_armor_profile_resolver(core::trust::Pid{credentials.pid}),
+        profile,
         TrustStorePermissionManager::default_feature(),
         description
     };
