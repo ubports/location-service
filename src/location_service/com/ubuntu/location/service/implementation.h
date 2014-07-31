@@ -20,6 +20,7 @@
 
 #include <com/ubuntu/location/engine.h>
 #include <com/ubuntu/location/connectivity/manager.h>
+#include <com/ubuntu/location/service/dispatcher.h>
 #include <com/ubuntu/location/service/harvester.h>
 #include <com/ubuntu/location/service/skeleton.h>
 
@@ -53,6 +54,8 @@ public:
         PermissionManager::Ptr permission_manager;
         // All harvesting specific options.
         Harvester::Configuration harvester;
+        // For dispatching tasks to an executor.
+        Dispatcher dispatcher;
     };
 
     // Creates a new instance of the service with the given configuration.

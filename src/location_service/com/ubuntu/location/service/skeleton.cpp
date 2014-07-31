@@ -74,7 +74,10 @@ culs::Skeleton::Skeleton(const culs::Skeleton::Configuration& configuration)
 {
     object->install_method_handler<culs::Interface::CreateSessionForCriteria>([this](const dbus::Message::Ptr& msg)
     {
-        handle_create_session_for_criteria(msg);
+        Skeleton::configuration.dispatcher([this, msg]()
+        {
+            handle_create_session_for_criteria(msg);
+        });
     });
 }
 

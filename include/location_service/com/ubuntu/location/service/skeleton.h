@@ -18,6 +18,7 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SKELETON_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SKELETON_H_
 
+#include <com/ubuntu/location/service/dispatcher.h>
 #include <com/ubuntu/location/service/interface.h>
 #include <com/ubuntu/location/service/permission_manager.h>
 #include <com/ubuntu/location/service/session/interface.h>
@@ -102,6 +103,8 @@ public:
         ObjectPathGenerator::Ptr object_path_generator;
         // Permission manager implementation for verifying incoming requests.
         PermissionManager::Ptr permission_manager;
+        // For dispatching tasks to an executor.
+        Dispatcher dispatcher;
     };
 
     Skeleton(const Configuration& configuration);
