@@ -43,6 +43,8 @@
 
 #include "../set_name_for_thread.h"
 
+#include <boost/asio.hpp>
+
 #include <chrono>
 
 namespace dbus = core::dbus;
@@ -52,6 +54,14 @@ namespace impl
 struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::Manager
 {
     const core::Property<com::ubuntu::location::connectivity::State>& state() const override;
+
+    const core::Property<bool>& is_wifi_enabled() const override;
+
+    const core::Property<bool>& is_wwan_enabled() const override;
+
+    const core::Property<bool>& is_wifi_hardware_enabled() const override;
+
+    const core::Property<bool>& is_wwan_hardware_enabled() const override;
 
     void request_scan_for_wireless_networks() override;
 
@@ -66,6 +76,8 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
 
     void enumerate_connected_radio_cells(const std::function<void(const com::ubuntu::location::connectivity::RadioCell::Ptr&)>& f) const override;
 
+    const core::Property<com::ubuntu::location::connectivity::Characteristics>& active_connection_characteristics() const;
+
     struct Private
     {
         Private();
@@ -76,9 +88,11 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
         void on_modem_removed(const core::dbus::types::ObjectPath& path);
         void on_modem_interfaces_changed(const core::dbus::types::ObjectPath& path, const std::vector<std::string>& interfaces);
 
+        // All network stack specific functionality goes here.
         void setup_network_stack_access();
         void on_access_point_added(const core::dbus::types::ObjectPath& ap_path, const core::dbus::types::ObjectPath& device_path);
         void on_access_point_removed(const core::dbus::types::ObjectPath& ap_path);
+        com::ubuntu::location::connectivity::Characteristics characteristics_for_connection(const core::dbus::types::ObjectPath& path);
 
         core::dbus::Bus::Ptr system_bus;
         core::dbus::Executor::Ptr executor;
@@ -90,11 +104,31 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
 
         struct
         {
+            // The io-service instance we use for dispatching invocations.
+            boost::asio::io_service service;
+
+            // We keep the io_service object alive until someone stops it.
+            boost::asio::io_service::work keep_alive
+            {
+                service
+            };
+
+            // And a dedicated worker thread.
+            std::thread worker
+            {
+                [this]() { service.run(); }
+            };
+        } dispatcher;
+
+        struct
+        {
             mutable std::mutex guard;
             std::map<core::dbus::types::ObjectPath, detail::CachedRadioCell::Ptr> cells;
             std::map<core::dbus::types::ObjectPath, org::Ofono::Manager::Modem> modems;
             std::map<core::dbus::types::ObjectPath, detail::CachedWirelessNetwork::Ptr> wifis;
             std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device> wireless_devices;
+            std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::ActiveConnection> primary_connection;
+            std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device> primary_connection_devices;
         } cached;
 
         struct
@@ -107,6 +141,7 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
         } signals;
 
         core::Property<com::ubuntu::location::connectivity::State> state;
+        core::Property<com::ubuntu::location::connectivity::Characteristics> active_connection_characteristics;
     } d;
 };
 }

@@ -21,38 +21,48 @@
 namespace connectivity = com::ubuntu::location::connectivity;
 namespace dbus = core::dbus;
 namespace xdg = org::freedesktop;
+
 namespace
 {
 connectivity::State from_nm_property(std::uint32_t value)
 {
-    connectivity::State result{connectivity::State::unknown};
-
-    switch (value)
+    return connectivity::State
     {
-    case xdg::NetworkManager::Properties::Connectivity::Values::unknown:
-        result = connectivity::State::unknown;
-        break;
-    case xdg::NetworkManager::Properties::Connectivity::Values::none:
-        result = connectivity::State::none;
-        break;
-    case xdg::NetworkManager::Properties::Connectivity::Values::portal:
-        result = connectivity::State::portal;
-        break;
-    case xdg::NetworkManager::Properties::Connectivity::Values::limited:
-        result = connectivity::State::limited;
-        break;
-    case xdg::NetworkManager::Properties::Connectivity::Values::full:
-        result = connectivity::State::full;
-        break;
-    }
+        static_cast<connectivity::State>(value)
+    };
+}
 
-    return result;
+connectivity::Characteristics all_characteristics()
+{
+    return connectivity::Characteristics::connection_has_monetary_costs |
+           connectivity::Characteristics::connection_is_bandwith_limited |
+           connectivity::Characteristics::connection_is_volume_limited;
 }
 }
 
 const core::Property<connectivity::State>& impl::OfonoNmConnectivityManager::state() const
 {
     return d.state;
+}
+
+const core::Property<bool>& impl::OfonoNmConnectivityManager::is_wifi_enabled() const
+{
+    return *d.network_manager->properties.is_wifi_enabled;
+}
+
+const core::Property<bool>& impl::OfonoNmConnectivityManager::is_wwan_enabled() const
+{
+    return *d.network_manager->properties.is_wwan_enabled;
+}
+
+const core::Property<bool>& impl::OfonoNmConnectivityManager::is_wifi_hardware_enabled() const
+{
+    return *d.network_manager->properties.is_wifi_hardware_enabled;
+}
+
+const core::Property<bool>& impl::OfonoNmConnectivityManager::is_wwan_hardware_enabled() const
+{
+    return *d.network_manager->properties.is_wwan_hardware_enabled;
 }
 
 void impl::OfonoNmConnectivityManager::request_scan_for_wireless_networks()
@@ -102,6 +112,11 @@ void impl::OfonoNmConnectivityManager::enumerate_connected_radio_cells(const std
         f(cell.second);
 }
 
+const core::Property<connectivity::Characteristics>& impl::OfonoNmConnectivityManager::active_connection_characteristics() const
+{
+    return d.active_connection_characteristics;
+}
+
 impl::OfonoNmConnectivityManager::Private::Private()
 {
     try
@@ -134,6 +149,11 @@ impl::OfonoNmConnectivityManager::Private::~Private()
 
     if (worker.joinable())
         worker.join();
+
+    dispatcher.service.stop();
+
+    if (dispatcher.worker.joinable())
+        dispatcher.worker.join();
 }
 
 void impl::OfonoNmConnectivityManager::Private::setup_radio_stack_access()
@@ -335,7 +355,11 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
     });
 
     // Query the initial connectivity state
-    state.set(from_nm_property(network_manager->properties.connectivity->get()));
+    state.set(from_nm_property(network_manager->properties.state->get()));
+    // Determine the initial connection characteristics
+    active_connection_characteristics.set(
+                characteristics_for_connection(
+                    network_manager->properties.primary_connection->get()));
 
     // And we wire up to property changes here
     network_manager->signals.properties_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
@@ -345,11 +369,33 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
             VLOG(1) << "Property has changed: " << std::endl
                     << "  " << pair.first;
 
-            if (xdg::NetworkManager::Properties::Connectivity::name() == pair.first)
+            if (xdg::NetworkManager::Properties::State::name() == pair.first)
             {
-                state.set(from_nm_property(pair.second.as<xdg::NetworkManager::Properties::Connectivity::ValueType>()));
+                state.set(from_nm_property(pair.second.as<xdg::NetworkManager::Properties::State::ValueType>()));
+            }
+
+            if (xdg::NetworkManager::Properties::PrimaryConnection::name() == pair.first)
+            {
+                // The primary connection object changed. We iterate over all the devices associated with
+                // the primary connection and determine whether a wwan device is present. If so, we adjust
+                // the characteristics of the connection to have monetary costs associated and to be
+                // bandwidth and volume limited.
+
+                auto path = pair.second.as<core::dbus::types::ObjectPath>();
+
+                // We dispatch determining the connection characteristics to unblock
+                // the bus here.
+                dispatcher.service.post([this, path]()
+                {
+                    active_connection_characteristics = characteristics_for_connection(path);
+                });
             }
         }
+    });
+
+    network_manager->signals.state_changed->connect([this](std::uint32_t s)
+    {
+        state.set(from_nm_property(s));
     });
 }
 
@@ -395,6 +441,62 @@ void impl::OfonoNmConnectivityManager::Private::on_access_point_removed(const co
     // Let API consumers know that an AP disappeared. The lock on the cache is
     // not held to prevent from deadlocks.
     ul.unlock(); signals.wireless_network_removed(wifi);
+}
+
+connectivity::Characteristics impl::OfonoNmConnectivityManager::Private::characteristics_for_connection(const core::dbus::types::ObjectPath& path)
+{
+    xdg::NetworkManager::ActiveConnection ac
+    {
+        network_manager->service,
+        network_manager->service->object_for_path(path)
+    };
+
+    connectivity::Characteristics characteristics
+    {
+        connectivity::Characteristics::none
+    };
+
+    // We try to enumerate all devices, and might fail if the active connection
+    // went away under our feet. For that, we simply catch all possible exceptions
+    // and silently drop them. In that case, we reset the characteristics to 'none'.
+    try
+    {
+        ac.enumerate_devices([this, &characteristics](const xdg::NetworkManager::Device& device)
+        {
+            auto type = device.type();
+
+            // We interpret a primary connection over a modem device as
+            // having monetary costs (for the data plan), as well as being
+            // bandwidth and volume limited. While this is not true in all
+            // cases, it is good enough as a heuristic and for disabling certain
+            // types of functionality if the data connection goes via a modem device.
+            if (type == xdg::NetworkManager::Device::Type::modem)
+            {
+                characteristics = characteristics | connectivity::Characteristics::connection_goes_via_wwan;
+
+                std::lock_guard<std::mutex> lg(cached.guard);
+
+                for (const auto& pair : cached.modems)
+                {
+                    auto status = pair.second.network_registration.get<org::Ofono::Manager::Modem::NetworkRegistration::Status>();
+
+                    if (org::Ofono::Manager::Modem::NetworkRegistration::Status::roaming == status)
+                        characteristics = characteristics | connectivity::Characteristics::connection_is_roaming;
+                }
+
+                characteristics = characteristics | all_characteristics();
+            } else if (type == xdg::NetworkManager::Device::Type::wifi)
+            {
+                characteristics = characteristics | connectivity::Characteristics::connection_goes_via_wifi;
+            }
+
+        });
+    } catch(...)
+    {
+        // Empty on purpose.
+    }
+
+    return characteristics;
 }
 
 const std::shared_ptr<connectivity::Manager>& connectivity::platform_default_manager()

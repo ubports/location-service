@@ -39,19 +39,56 @@ namespace connectivity
 enum class State
 {
     /** The state is unknown. */
-    unknown,
-    /** The system is not connected to any network. */
-    none,
-    /** The system is behind a captive portal and cannot reach the full internet. */
-    portal,
+    unknown = 0,
+    /** @brief Networking is inactive and all devices are disabled. */
+    asleep = 10,
+    /** @brief There is no active network connection. */
+    disconnected = 20,
+    /** @brief Network connections are being cleaned up. */
+    disconnecting = 30,
     /**
-     * The system is connected to a network, but does not appear to be able to reach
-     * the full internet.
+     * @brief A network device is connecting to a network and there is no other
+     * available network connection.
      */
-    limited,
-    /** The system is connected to a network, and appears to be able to reach the full internet. */
-    full
+    connecting = 40,
+    /** @brief A network device is connected, but there is only link-local connectivity. */
+    connected_local = 50,
+    /** @brief A network device is connected, but there is only site-local connectivity. */
+    connected_site = 60,
+    /** @brief A network device is connected, with global network connectivity. */
+    connected_global = 70
 };
+
+/** @brief Pretty prints the given state to the given output stream */
+std::ostream& operator<<(std::ostream& out, State state);
+
+/** @brief Summarizes characteristics of network connections. */
+enum class Characteristics : std::uint32_t
+{
+    /** @brief Nothing special about the characteristics. */
+    none = 0,
+    /** @brief The connection goes via wifi. */
+    connection_goes_via_wifi = 1 << 0,
+    /** @brief The connection goes via a mobile-broadband connection. */
+    connection_goes_via_wwan = 1 << 1,
+    /** @brief The connection goes via a roaming mobile-broadband connection. */
+    connection_is_roaming = 1 << 2,
+    /** @brief The connection has monetary costs. No data should be transfered. */
+    connection_has_monetary_costs = 1 << 3,
+    /** @brief The connection is volume limited. No large files should be transfered. */
+    connection_is_volume_limited = 1 << 4,
+    /** @brief the connection is bandwidth limited. Large transfer should be postponed. */
+    connection_is_bandwith_limited = 1 << 5
+};
+
+/** @brief Bitwise or operator for Characteristics flags. */
+Characteristics operator|(Characteristics l, Characteristics r);
+
+/** @brief Bitwise and operator for Characteristics flags. */
+Characteristics operator&(Characteristics l, Characteristics r);
+
+/** @brief Pretty prints the given charateristics to the given output stream */
+std::ostream& operator<<(std::ostream& out, Characteristics characteristics);
 
 /**
  * @brief The Manager class encapsulates access to network/radio information
@@ -86,14 +123,43 @@ public:
 
     /**
      * @brief Returns the getable/observable connectivity state of the system.
-     *
-     * Please note that this requires the underlying networking state to
-     * support connectivity state tracking. Right now, e.g. NetworkManager needs
-     * custom entries in /etc/NetworkManager/NetworkManager.conf to enable this
-     * functionality.
-     *
      */
     virtual const core::Property<State>& state() const = 0;
+
+    /**
+      * @brief Returns a getable/observable boolean property that indicates the state of the wifi subsystem.
+      *
+      * If the property's value is false, the Wifi subsystem is turned off (e.g., in flight mode).
+      */
+    virtual const core::Property<bool>& is_wifi_enabled() const = 0;
+
+    /**
+      * @brief Returns a getable/observable boolean property that indicates the state of the wwan subsystem.
+      *
+      * If the property's value is false, the WWan subsystem is turned off (e.g., in flight mode).
+      */
+    virtual const core::Property<bool>& is_wwan_enabled() const = 0;
+
+    /**
+      * @brief Returns a getable/observable boolean property that indicates the state of the wifi hardware.
+      *
+      * If the property's value is false, the Wifi HW is turned off.
+      */
+    virtual const core::Property<bool>& is_wifi_hardware_enabled() const = 0;
+
+    /**
+      * @brief Returns a getable/observable boolean property that indicates the state of the wwan hardware.
+      *
+      * If the property's value is false, the WWan HW is turned off.
+      */
+    virtual const core::Property<bool>& is_wwan_hardware_enabled() const = 0;
+
+
+    /**
+     * @brief Returns a getable/observable property that describes the characteristics
+     * of the active network connection.
+     */
+    virtual const core::Property<Characteristics>& active_connection_characteristics() const = 0;
 
     /**
      * @brief request_scan_for_wireless_networks schedules a scan for visible wireless networks.

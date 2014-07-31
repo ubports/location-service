@@ -354,6 +354,62 @@ struct NetworkManager
         } signals;
     };
 
+    struct ActiveConnection
+    {
+        static const std::string& name()
+        {
+            static const std::string s{"org.freedesktop.NetworkManager.Connection.Active"};
+            return s;
+        }
+
+        struct Properties
+        {
+            struct Devices
+            {
+                static const std::string& name()
+                {
+                    static const std::string s{"Devices"};
+                    return s;
+                }
+
+                typedef ActiveConnection Interface;
+                typedef std::vector<core::dbus::types::ObjectPath> ValueType;
+                static const bool readable = true;
+                static const bool writable = false;
+            };
+        };
+
+        ActiveConnection(const std::shared_ptr<core::dbus::Service>& service,
+                         const std::shared_ptr<core::dbus::Object>& object)
+            : service{service},
+              object{object},
+              properties
+              {
+                  object->get_property<Properties::Devices>()
+              }
+        {
+        }
+
+        void enumerate_devices(const std::function<void(const NetworkManager::Device& device)>& functor)
+        {
+            auto device_paths = properties.devices->get();
+
+            for (const auto& device_path : device_paths)
+                functor(NetworkManager::Device
+                        {
+                            service,
+                            service->object_for_path(device_path)
+                        });
+        }
+
+        std::shared_ptr<core::dbus::Service> service;
+        std::shared_ptr<core::dbus::Object> object;
+        struct
+        {
+            std::shared_ptr<core::dbus::Property<Properties::Devices> > devices;
+        } properties;
+    };
+
     static const std::string& name()
     {
         static const std::string s{"org.freedesktop.NetworkManager"};
@@ -400,6 +456,102 @@ struct NetworkManager
             static const bool readable = true;
             static const bool writable = false;
         };
+
+        struct State
+        {
+            enum Values
+            {
+                unknown = 0,
+                asleep = 10,
+                disconnected = 20,
+                disconnecting = 30,
+                connecting = 40,
+                connected_local = 50,
+                connected_site = 60,
+                connected_global = 70
+            };
+
+            static const std::string& name()
+            {
+                static const std::string s{"State"};
+                return s;
+            }
+
+            typedef NetworkManager Interface;
+            typedef std::uint32_t ValueType;
+            static const bool readable = true;
+            static const bool writable = false;
+        };
+
+        struct PrimaryConnection
+        {
+            static const std::string& name()
+            {
+                static const std::string s{"PrimaryConnection"};
+                return s;
+            }
+
+            typedef NetworkManager Interface;
+            typedef core::dbus::types::ObjectPath ValueType;
+            static const bool readable = true;
+            static const bool writable = false;
+        };
+
+        struct IsWifiEnabled
+        {
+            static const std::string& name()
+            {
+                static const std::string s{"IsWifiEnabled"};
+                return s;
+            }
+
+            typedef NetworkManager Interface;
+            typedef bool ValueType;
+            static const bool readable = true;
+            static const bool writable = false;
+        };
+
+        struct IsWifiHardwareEnabled
+        {
+            static const std::string& name()
+            {
+                static const std::string s{"IsWifiHardwareEnabled"};
+                return s;
+            }
+
+            typedef NetworkManager Interface;
+            typedef bool ValueType;
+            static const bool readable = true;
+            static const bool writable = false;
+        };
+
+        struct IsWwanEnabled
+        {
+            static const std::string& name()
+            {
+                static const std::string s{"IsWwanEnabled"};
+                return s;
+            }
+
+            typedef NetworkManager Interface;
+            typedef bool ValueType;
+            static const bool readable = true;
+            static const bool writable = false;
+        };
+
+        struct IsWwanHardwareEnabled
+        {
+            static const std::string& name()
+            {
+                static const std::string s{"IsWwanHardwareEnabled"};
+                return s;
+            }
+
+            typedef NetworkManager Interface;
+            typedef bool ValueType;
+            static const bool readable = true;
+            static const bool writable = false;
+        };
     };
 
     struct Signals
@@ -439,6 +591,18 @@ struct NetworkManager
 
             typedef std::map<std::string, core::dbus::types::Variant> ArgumentType;
         };
+
+        struct StateChanged
+        {
+            inline static std::string name()
+            {
+                return "StateChanged";
+            }
+
+            typedef NetworkManager Interface;
+
+            typedef std::uint32_t ArgumentType;
+        };
     };
 
     NetworkManager(const core::dbus::Bus::Ptr& bus)
@@ -446,13 +610,20 @@ struct NetworkManager
           object(service->object_for_path(core::dbus::types::ObjectPath("/org/freedesktop/NetworkManager"))),
           properties
           {
-              object->get_property<Properties::Connectivity>()
+              object->get_property<Properties::Connectivity>(),
+              object->get_property<Properties::PrimaryConnection>(),
+              object->get_property<Properties::State>(),
+              object->get_property<Properties::IsWifiEnabled>(),
+              object->get_property<Properties::IsWifiHardwareEnabled>(),
+              object->get_property<Properties::IsWwanEnabled>(),
+              object->get_property<Properties::IsWwanHardwareEnabled>()
           },
           signals
           {
               object->get_signal<Signals::DeviceAdded>(),
               object->get_signal<Signals::DeviceRemoved>(),
-              object->get_signal<Signals::PropertiesChanged>()
+              object->get_signal<Signals::PropertiesChanged>(),
+              object->get_signal<Signals::StateChanged>()
           }
     {
     }
@@ -505,12 +676,19 @@ struct NetworkManager
     struct
     {
         std::shared_ptr<core::dbus::Property<Properties::Connectivity> > connectivity;
+        std::shared_ptr<core::dbus::Property<Properties::PrimaryConnection> > primary_connection;
+        std::shared_ptr<core::dbus::Property<Properties::State> > state;
+        std::shared_ptr<core::dbus::Property<Properties::IsWifiEnabled> > is_wifi_enabled;
+        std::shared_ptr<core::dbus::Property<Properties::IsWifiHardwareEnabled> > is_wifi_hardware_enabled;
+        std::shared_ptr<core::dbus::Property<Properties::IsWwanEnabled> > is_wwan_enabled;
+        std::shared_ptr<core::dbus::Property<Properties::IsWwanHardwareEnabled> > is_wwan_hardware_enabled;
     } properties;
     struct
     {
         core::dbus::Signal<Signals::DeviceAdded, Signals::DeviceAdded::ArgumentType>::Ptr device_added;
         core::dbus::Signal<Signals::DeviceRemoved, Signals::DeviceRemoved::ArgumentType>::Ptr device_removed;
         core::dbus::Signal<Signals::PropertiesChanged, Signals::PropertiesChanged::ArgumentType>::Ptr properties_changed;
+        core::dbus::Signal<Signals::StateChanged, Signals::StateChanged::ArgumentType>::Ptr state_changed;
     } signals;
 };
 }

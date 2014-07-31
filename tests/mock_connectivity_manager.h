@@ -33,6 +33,40 @@ struct MockConnectivityManager : public com::ubuntu::location::connectivity::Man
     MOCK_CONST_METHOD0(state, const core::Property<com::ubuntu::location::connectivity::State>&());
 
     /**
+      * @brief Returns a getable/observable boolean property that indicates the state of the wifi subsystem.
+      *
+      * If the property's value is false, the Wifi subsystem is turned off (e.g., in flight mode).
+      */
+    MOCK_CONST_METHOD0(is_wifi_enabled, const core::Property<bool>&());
+
+    /**
+      * @brief Returns a getable/observable boolean property that indicates the state of the wwan subsystem.
+      *
+      * If the property's value is false, the WWan subsystem is turned off (e.g., in flight mode).
+      */
+    MOCK_CONST_METHOD0(is_wwan_enabled, const core::Property<bool>&());
+
+    /**
+      * @brief Returns a getable/observable boolean property that indicates the state of the wifi hardware.
+      *
+      * If the property's value is false, the Wifi HW is turned off.
+      */
+    MOCK_CONST_METHOD0(is_wifi_hardware_enabled, const core::Property<bool>&());
+
+    /**
+      * @brief Returns a getable/observable boolean property that indicates the state of the wwan hardware.
+      *
+      * If the property's value is false, the WWan HW is turned off.
+      */
+    MOCK_CONST_METHOD0(is_wwan_hardware_enabled, const core::Property<bool>&());
+
+    /**
+     * @brief Returns a getable/observable property that describes the characteristics
+     * of the active network connection.
+     */
+    MOCK_CONST_METHOD0(active_connection_characteristics, const core::Property<com::ubuntu::location::connectivity::Characteristics>&());
+
+    /**
      * @brief request_scan_for_wireless_networks schedules a scan for visible wireless networks.
      */
     MOCK_METHOD0(request_scan_for_wireless_networks, void());
