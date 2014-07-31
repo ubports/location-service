@@ -1,4 +1,5 @@
 etc/dbus-1/system.d/
 etc/init/*
+usr/share/upstart/sessions/ubuntu-location-service-trust-stored.conf
 usr/bin/ubuntu-location-serviced
 usr/bin/ubuntu-location-serviced-cli
