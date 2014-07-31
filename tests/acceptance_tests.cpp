@@ -64,6 +64,15 @@ namespace dbus = core::dbus;
 
 namespace
 {
+
+bool setup_trust_store_permission_manager_for_testing()
+{
+    core::posix::this_process::env::set_or_throw("TRUST_STORE_PERMISSION_MANAGER_IS_RUNNING_UNDER_TESTING", "1");
+    return true;
+}
+
+static const bool trust_store_is_set_up_for_testing = setup_trust_store_permission_manager_for_testing();
+
 struct NullReporter : public culs::Harvester::Reporter
 {
     NullReporter() = default;
@@ -168,6 +177,8 @@ cul::Update<cul::Heading> reference_heading_update
 
 TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
 {
+    EXPECT_TRUE(trust_store_is_set_up_for_testing);
+
     core::testing::CrossProcessSync sync_start;
     core::testing::CrossProcessSync sync_session_created;
 
@@ -293,6 +304,8 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
 
 TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
 {
+    EXPECT_TRUE(trust_store_is_set_up_for_testing);
+
     core::testing::CrossProcessSync sync_start;
 
     auto server = [this, &sync_start]()
@@ -371,6 +384,8 @@ TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
 
 TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjusted)
 {
+    EXPECT_TRUE(trust_store_is_set_up_for_testing);
+
     core::testing::CrossProcessSync sync_start;
 
     auto server = [this, &sync_start]()
@@ -450,6 +465,8 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
 
 TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdusted)
 {
+    EXPECT_TRUE(trust_store_is_set_up_for_testing);
+
     core::testing::CrossProcessSync sync_start;
 
     auto server = [this, &sync_start]()
@@ -527,6 +544,8 @@ TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdu
 
 TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
 {
+    EXPECT_TRUE(trust_store_is_set_up_for_testing);
+
     core::testing::CrossProcessSync sync_start;
 
     cul::SpaceVehicle sv;
@@ -713,6 +732,8 @@ struct LocationServiceStandaloneLoad : public LocationServiceStandalone
 
 TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingWorks)
 {
+    EXPECT_TRUE(trust_store_is_set_up_for_testing);
+
     options.print(LOG(INFO));
 
     auto server = core::posix::fork([this]()

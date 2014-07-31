@@ -26,10 +26,23 @@
 #include <core/dbus/bus.h>
 #include <core/dbus/asio/executor.h>
 
+#include <core/posix/this_process.h>
+
 #include <sys/apparmor.h>
 
 namespace location = com::ubuntu::location;
 namespace service = com::ubuntu::location::service;
+
+namespace
+{
+bool is_running_under_testing()
+{
+    return core::posix::this_process::env::get(
+                "TRUST_STORE_PERMISSION_MANAGER_IS_RUNNING_UNDER_TESTING",
+                "0") == "1";
+
+}
+}
 
 service::TrustStorePermissionManager::AppArmorProfileResolver service::TrustStorePermissionManager::libapparmor_profile_resolver()
 {
@@ -101,6 +114,11 @@ service::PermissionManager::Result service::TrustStorePermissionManager::check_p
         const location::Criteria&,
         const service::Credentials& credentials)
 {
+    // This is ugly and we should get rid of it. Ideally, we would be able
+    // inject a mocked trust-store into our acceptance testing.
+    if (is_running_under_testing())
+        return Result::granted;
+
     std::string profile;
     try
     {
