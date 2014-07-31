@@ -216,7 +216,7 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_added(const core::dbus:
     });
 
     // And update our cache of modems and registered cells.
-    auto cell = std::make_shared<CachedRadioCell>(modem);
+    auto cell = std::make_shared<detail::CachedRadioCell>(modem);
     {
         std::lock_guard<std::mutex> lg(cached.guard);
         cached.modems.insert(std::make_pair(modem.object->path(), modem));
@@ -229,7 +229,7 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_added(const core::dbus:
 
 void impl::OfonoNmConnectivityManager::Private::on_modem_removed(const core::dbus::types::ObjectPath& path)
 {
-    CachedRadioCell::Ptr cell;
+    detail::CachedRadioCell::Ptr cell;
     {
         std::lock_guard<std::mutex> lg(cached.guard);
 
@@ -289,7 +289,7 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_interfaces_changed(
     {
         // A new network registration is coming in and we have to create
         // a corresponding cell instance.
-        auto cell = std::make_shared<CachedRadioCell>(itm->second);
+        auto cell = std::make_shared<detail::CachedRadioCell>(itm->second);
         cached.cells.insert(std::make_pair(path,cell));
         // Cache is up to date now and we announce the new cell to
         // API customers, with the lock on the cache not being held.
@@ -416,7 +416,7 @@ void impl::OfonoNmConnectivityManager::Private::on_access_point_added(
         network_manager->service->add_object_for_path(ap_path)
     };
 
-    auto wifi = std::make_shared<CachedWirelessNetwork>(itd->second, ap);
+    auto wifi = std::make_shared<detail::CachedWirelessNetwork>(itd->second, ap);
     cached.wifis[ap_path] = wifi;
 
     // Let API consumers know that an AP appeared. The lock on the cache is

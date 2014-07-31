@@ -1,0 +1,3 @@
+usr/lib/*/libubuntu-location-service.so.*
+usr/lib/*/libubuntu-location-service-connectivity.so.*
+/etc/gps.conf

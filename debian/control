@@ -5,12 +5,17 @@ Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 XSBC-Original-Maintainer: Thomas Voß <thomas.voss@canonical.com>
 Build-Depends: cmake,
                curl,
-               libdbus-cpp-dev (>= 3.0.0),
+               libdbus-cpp-dev (>= 4.0.0),
                debhelper (>= 9),
                doxygen,
                geoclue-ubuntu-geoip,
                google-mock (>= 1.6.0+svn437),
                graphviz,
+# We rely on C++11 features, and to prevent from ABI breaks
+# in libstdc++ causing us issues, we explicitly select a G++
+# version.
+               g++-4.9,
+               libboost-filesystem-dev,
                libboost-program-options-dev,
                libboost-system-dev,
                libdbus-1-dev,
@@ -18,9 +23,11 @@ Build-Depends: cmake,
                libgoogle-glog-dev,
                libgtest-dev,
                libiw-dev,
+               libjson-c-dev,
+               libnet-cpp-dev,
                libprocess-cpp-dev,
-               libubuntu-platform-hardware-api-headers,
-               libubuntu-platform-hardware-api-dev,
+               libubuntu-platform-hardware-api-headers [!arm64 !ppc64el !powerpc],
+               libubuntu-platform-hardware-api-dev [!arm64 !ppc64el !powerpc],
                libproperties-cpp-dev,
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/location-service
@@ -29,7 +36,7 @@ Homepage: http://launchpad.net/location-service
 Vcs-Bzr: https://code.launchpad.net/~phablet-team/location-service/trunk
 Vcs-Browser: http://bazaar.launchpad.net/~phablet-team/location-service/trunk/files
 
-Package: libubuntu-location-service1
+Package: libubuntu-location-service2
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -46,7 +53,9 @@ Section: libdevel
 Architecture: any
 Multi-Arch: foreign
 Recommends: ubuntu-location-service-doc,
-Depends: libubuntu-location-service1 (= ${binary:Version}),
+Depends: libubuntu-location-service2 (= ${binary:Version}),
+         libdbus-1-dev,
+         libdbus-cpp-dev,
          ${misc:Depends},
 Suggests: ubuntu-location-service-doc,
 Description: location service aggregating position/velocity/heading
@@ -59,7 +68,7 @@ Package: libubuntu-location-service-dbg
 Section: debug
 Architecture: any
 Multi-Arch: foreign
-Depends: libubuntu-location-service1 (= ${binary:Version}),
+Depends: libubuntu-location-service2 (= ${binary:Version}),
          ${misc:Depends},
 Description: location service aggregating position/velocity/heading
  updates and exporting them over dbus.
@@ -77,7 +86,7 @@ Description: location service aggregating position/velocity/heading
 
 Package: ubuntu-location-service-bin
 Architecture: any
-Depends: libubuntu-location-service1 (= ${binary:Version}),
+Depends: libubuntu-location-service2 (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends},
 Breaks: ubuntu-location-service-examples (<< 0.0.2),
@@ -90,7 +99,7 @@ Description: location service aggregating position/velocity/heading
 Package: ubuntu-location-service-examples
 Architecture: any
 Multi-Arch: same
-Depends: libubuntu-location-service1 (= ${binary:Version}),
+Depends: libubuntu-location-service2 (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends},
          ubuntu-location-service-doc,

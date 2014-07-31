@@ -102,7 +102,7 @@ struct Daemon
              */
             static Configuration from_command_line_args(
                     int argc,
-                    char** argv,
+                    const char** argv,
                     DBusConnectionFactory factory = default_dbus_connection_factory());
 
             /** @brief The bus to connect to. */
@@ -148,7 +148,7 @@ struct Daemon
          */
         static Configuration from_command_line_args(
                 int argc,
-                char** argv,
+                const char** argv,
                 DBusConnectionFactory factory = default_dbus_connection_factory());
 
         /** @brief The bus to expose the service upon. */

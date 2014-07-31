@@ -26,14 +26,13 @@
 #include <core/testing/cross_process_sync.h>
 #include <core/testing/fork_and_run.h>
 
-#include <json/json.h>
+#include <json.h>
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
 #include <condition_variable>
 
-namespace json = Json;
 namespace location = com::ubuntu::location;
 
 namespace
@@ -175,40 +174,37 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
 
             using namespace location::service::ichnaea;
 
-            json::Reader reader;
-            json::Value result;
+            json::Object object = json::Object::parse_from_string(conn->content);
 
-            EXPECT_TRUE(reader.parse(conn->content, result));
+            auto items = object.get(Reporter::Json::items);
+            EXPECT_EQ(1u, items.array_size());
 
-            auto items = result[Reporter::Json::items];
-            EXPECT_EQ(1u, items.size());
-
-            auto item = items[0];
-            EXPECT_EQ("gsm", item[Reporter::Json::radio].asString());
+            auto item = items.get_object_for_index(0);
+            EXPECT_EQ("gsm", item.get(Reporter::Json::radio).to_string());
 
             EXPECT_DOUBLE_EQ(
                         reference_position_update.value.latitude.value.value(),
-                        item[Reporter::Json::lat].asDouble());
+                        item.get(Reporter::Json::lat).to_double());
             EXPECT_DOUBLE_EQ(
                         reference_position_update.value.longitude.value.value(),
-                        item[Reporter::Json::lon].asDouble());
+                        item.get(Reporter::Json::lon).to_double());
 
-            auto wifis = item[Reporter::Json::wifi];
-            EXPECT_EQ(1u, wifis.size());
+            auto wifis = item.get(Reporter::Json::wifi);
+            EXPECT_EQ(1u, wifis.array_size());
 
-            auto wifi = wifis[0];
-            EXPECT_EQ(ref_bssid.get(), wifi[Reporter::Json::Wifi::key].asString());
-            EXPECT_EQ(ref_frequency->get(), wifi[Reporter::Json::Wifi::frequency].asInt());
+            auto wifi = wifis.get_object_for_index(0);
+            EXPECT_EQ(ref_bssid.get(), wifi.get(Reporter::Json::Wifi::key).to_string());
+            EXPECT_EQ(ref_frequency->get(), wifi.get(Reporter::Json::Wifi::frequency).to_int32());
 
-            auto cells = item[Reporter::Json::cell];
-            EXPECT_EQ(1u, cells.size());
+            auto cells = item.get(Reporter::Json::cell);
+            EXPECT_EQ(1u, cells.array_size());
 
-            auto cell = cells[0];
-            EXPECT_EQ(ref_cell->gsm().mobile_country_code.get(), cell[Reporter::Json::Cell::mcc].asInt());
-            EXPECT_EQ(ref_cell->gsm().mobile_network_code.get(), cell[Reporter::Json::Cell::mnc].asInt());
-            EXPECT_EQ(ref_cell->gsm().location_area_code.get(), cell[Reporter::Json::Cell::lac].asInt());
-            EXPECT_EQ(ref_cell->gsm().id.get(), cell[Reporter::Json::Cell::cid].asInt());
-            EXPECT_EQ(ref_cell->gsm().strength.get(), cell[Reporter::Json::Cell::asu].asInt());
+            auto cell = cells.get_object_for_index(0);
+            EXPECT_EQ(ref_cell->gsm().mobile_country_code.get(), cell.get(Reporter::Json::Cell::mcc).to_int32());
+            EXPECT_EQ(ref_cell->gsm().mobile_network_code.get(), cell.get(Reporter::Json::Cell::mnc).to_int32());
+            EXPECT_EQ(ref_cell->gsm().location_area_code.get(), cell.get(Reporter::Json::Cell::lac).to_int32());
+            EXPECT_EQ(ref_cell->gsm().id.get(), cell.get(Reporter::Json::Cell::cid).to_int32());
+            EXPECT_EQ(ref_cell->gsm().strength.get(), cell.get(Reporter::Json::Cell::asu).to_int32());
 
             mg_send_status(conn, static_cast<int>(submit::success));
             return MG_TRUE;

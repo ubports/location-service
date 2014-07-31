@@ -191,7 +191,7 @@ auto null_dbus_connection_factory = [](core::dbus::WellKnownBus)
 }
 TEST(DaemonCli, CommandLineArgsParsingWorksForCorrectArguments)
 {
-    char* args[] =
+    const char* args[] =
     {
         "--bus", "session",
         "--get",
@@ -206,7 +206,7 @@ TEST(DaemonCli, CommandLineArgsParsingWorksForCorrectArguments)
 
 TEST(DaemonCli, CommandLineArgsParsingThrowsForInvalidArguments)
 {
-    char* args[] =
+    const char* args[] =
     {
         "--bus", "session",
         "--get", "--set", // Both get and set specificed, expected to throw
@@ -218,7 +218,7 @@ TEST(DaemonCli, CommandLineArgsParsingThrowsForInvalidArguments)
 
 TEST(Daemon, CommandLineParsingThrowsForEmptyProviders)
 {
-    char* args[] =
+    const char* args[] =
     {
         "--bus", "session"
     };
@@ -228,7 +228,7 @@ TEST(Daemon, CommandLineParsingThrowsForEmptyProviders)
 
 TEST(Daemon, CommandLineParsingDoesNotThrowForEmptyProvidersInTesting)
 {
-    char* args[] =
+    const char* args[] =
     {
         "--bus", "session",
         "--testing"
@@ -239,7 +239,7 @@ TEST(Daemon, CommandLineParsingDoesNotThrowForEmptyProvidersInTesting)
 
 TEST(Daemon, CommandLineParsingWorksForProvidersAndProviderOptions)
 {
-    char* args[] =
+    const char* args[] =
     {
         "--bus", "session",
         "--provider", "does::not::exist::Provider",

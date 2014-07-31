@@ -16,6 +16,8 @@ if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
     add_library(
         gps
 
+        gps.conf
+
         android_hardware_abstraction_layer.h
         android_hardware_abstraction_layer.cpp
 
@@ -37,5 +39,7 @@ if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
       -DCOM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GPS ${ENABLED_PROVIDER_TARGETS_DEFINITIONS}
       PARENT_SCOPE
     )
+
+    install(FILES gps.conf DESTINATION /etc/)
   endif (UBUNTU_HARDWARE_GPS_H)
 endif (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)

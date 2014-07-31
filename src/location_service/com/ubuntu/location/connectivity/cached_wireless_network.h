@@ -24,7 +24,7 @@
 
 #include "nm.h"
 
-namespace
+namespace detail
 {
 std::string utf8_ssid_to_string(const org::freedesktop::NetworkManager::AccessPoint::Ssid::ValueType& ssid)
 {
@@ -111,11 +111,11 @@ struct CachedWirelessNetwork : public com::ubuntu::location::connectivity::Wirel
         mode_ = wifi_mode_from_ap_mode(access_point_.mode->get());
         frequency_ = com::ubuntu::location::connectivity::WirelessNetwork::Frequency
         {
-            access_point_.frequency->get()
+            static_cast<int>(access_point_.frequency->get())
         };
         signal_strength_ = com::ubuntu::location::connectivity::WirelessNetwork::SignalStrength
         {
-            int(access_point_.strength->get())
+            static_cast<int>(access_point_.strength->get())
         };
 
         // Wire up all the connections
@@ -160,7 +160,7 @@ struct CachedWirelessNetwork : public com::ubuntu::location::connectivity::Wirel
                 {
                     thiz.frequency_ = com::ubuntu::location::connectivity::WirelessNetwork::Frequency
                     {
-                        value.as<org::freedesktop::NetworkManager::AccessPoint::Frequency::ValueType>()
+                        static_cast<int>(value.as<org::freedesktop::NetworkManager::AccessPoint::Frequency::ValueType>())
                     };
                 }
             },

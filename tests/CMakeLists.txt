@@ -15,6 +15,10 @@ endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
 
 # Build mongoose as static library to leverage in location reporter testing
 add_library(mongoose mongoose.c)
+# Explicitly select c99 when compiling mongoose
+set_target_properties(
+    mongoose
+    PROPERTIES COMPILE_FLAGS "-std=c99")
 
 # Build with system gmock and embedded gtest
 set (GMOCK_INCLUDE_DIR "/usr/include/gmock/include" CACHE PATH "gmock source include directory")
@@ -74,7 +78,7 @@ LOCATION_SERVICE_ADD_TEST(default_permission_manager_test default_permission_man
 LOCATION_SERVICE_ADD_TEST(engine_test engine_test.cpp)
 LOCATION_SERVICE_ADD_TEST(harvester_test harvester_test.cpp)
 
-if (NET_CPP_FOUND AND JSONCPP_FOUND)
+if (NET_CPP_FOUND)
   LOCATION_SERVICE_ADD_TEST(ichnaea_reporter_test ichnaea_reporter_test.cpp)
 endif()
 
