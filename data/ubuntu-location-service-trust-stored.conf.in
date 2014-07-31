@@ -7,5 +7,6 @@ respawn
 exec /usr/bin/trust-stored-skeleton \
     --remote-agent DBusRemoteAgent --bus=system \
     --local-agent MirAgent \
+    --trusted-mir-socket=/var/run/user/$(id -u)/mir_socket_trusted \
     --for-service @UBUNTU_LOCATION_SERVICE_TRUST_STORE_SERVICE_NAME@ \
     --store-bus session

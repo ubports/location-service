@@ -212,7 +212,9 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
     };
 
     std::thread t1{[&config](){config.incoming->run();}};
-    std::thread t2{[&config](){config.outgoing->run();}};
+    std::thread t2{[&config](){config.incoming->run();}};
+    std::thread t3{[&config](){config.incoming->run();}};
+    std::thread t4{[&config](){config.outgoing->run();}};
 
     trap->run();
 
@@ -224,6 +226,12 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
 
     if (t2.joinable())
         t2.join();
+
+    if (t3.joinable())
+        t3.join();
+
+    if (t4.joinable())
+        t4.join();
 
     return EXIT_SUCCESS;
 }
