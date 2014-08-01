@@ -30,8 +30,6 @@
 
 #include <core/posix/signal.h>
 
-#include <boost/asio.hpp>
-
 #include <system_error>
 #include <thread>
 
@@ -190,16 +188,8 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         }
     }
 
-    boost::asio::io_service io_service;
-    boost::asio::io_service::work keep_alive{io_service};
-
-    std::vector<std::thread> thread_pool;
-
-    for (unsigned int i = 0; i < 10; i++)
-        thread_pool.push_back(std::thread{[&io_service](){io_service.run();}});
-
-    config.incoming->install_executor(dbus::asio::make_executor(config.incoming, io_service));
-    config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing, io_service));
+    config.incoming->install_executor(dbus::asio::make_executor(config.incoming));
+    config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing));
 
     location::service::DefaultConfiguration dc;
 
@@ -208,15 +198,11 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         config.incoming,
         config.outgoing,
         dc.the_engine(instantiated_providers, dc.the_provider_selection_policy()),
-        dc.the_permission_manager(config.incoming),
+        dc.the_permission_manager(config.outgoing),
         location::service::Harvester::Configuration
         {
             location::connectivity::platform_default_manager(),
             std::make_shared<NullReporter>()
-        },
-        [&io_service](com::ubuntu::location::service::Task task)
-        {
-            io_service.post(task);
         }
     };
 
@@ -225,15 +211,27 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         configuration
     };
 
+    std::thread t1{[&config](){config.incoming->run();}};
+    std::thread t2{[&config](){config.incoming->run();}};
+    std::thread t3{[&config](){config.incoming->run();}};
+    std::thread t4{[&config](){config.outgoing->run();}};
+
     trap->run();
 
     config.incoming->stop();
     config.outgoing->stop();
 
-    for (std::thread& thread : thread_pool)
-        if (thread.joinable())
-            thread.join();
+    if (t1.joinable())
+        t1.join();
 
+    if (t2.joinable())
+        t2.join();
+
+    if (t3.joinable())
+        t3.join();
+
+    if (t4.joinable())
+        t4.join();
 
     return EXIT_SUCCESS;
 }

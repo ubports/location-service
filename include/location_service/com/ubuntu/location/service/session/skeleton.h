@@ -20,8 +20,6 @@
 
 #include <com/ubuntu/location/service/session/interface.h>
 
-#include <com/ubuntu/location/service/dispatcher.h>
-
 #include <com/ubuntu/location/heading.h>
 #include <com/ubuntu/location/position.h>
 #include <com/ubuntu/location/provider.h>
@@ -69,8 +67,6 @@ public:
 
     struct Configuration
     {
-        // For dispatching tasks to an executor.
-        Dispatcher dispatcher;
         // The object path of the session object, shared between clients and service.
         core::dbus::types::ObjectPath path;
         // Local attributes

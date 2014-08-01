@@ -38,7 +38,7 @@ struct com::ubuntu::location::service::session::Interface::UpdatePosition
 
     typedef void ResultType;
 
-    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{5}; }
+    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
 };
 
 struct com::ubuntu::location::service::session::Interface::UpdateVelocity
@@ -56,7 +56,7 @@ struct com::ubuntu::location::service::session::Interface::UpdateVelocity
 
     typedef void ResultType;
 
-    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{5}; }
+    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
 };
 
 struct com::ubuntu::location::service::session::Interface::UpdateHeading
@@ -74,7 +74,7 @@ struct com::ubuntu::location::service::session::Interface::UpdateHeading
 
     typedef void ResultType;
 
-    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{5}; }
+    inline static const std::chrono::milliseconds default_timeout() { return std::chrono::seconds{1}; }
 };
 
 struct com::ubuntu::location::service::session::Interface::StartPositionUpdates

@@ -59,8 +59,7 @@ culs::Implementation::Implementation(const culs::Implementation::Configuration& 
               {
                   new culs::Skeleton::ObjectPathGenerator{}
               },
-              config.permission_manager,
-              config.dispatcher
+              config.permission_manager
           }
       },
       configuration(config),

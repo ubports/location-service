@@ -81,7 +81,7 @@ class Interface
 
         inline static const std::chrono::milliseconds default_timeout()
         {
-            return std::chrono::seconds{60};
+            return std::chrono::seconds{1};
         }
     };
 

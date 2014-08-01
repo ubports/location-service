@@ -20,13 +20,10 @@
 #include <com/ubuntu/location/provider_factory.h>
 
 #include <com/ubuntu/location/service/default_configuration.h>
-#include <com/ubuntu/location/service/dispatcher.h>
 #include <com/ubuntu/location/service/implementation.h>
 
 #include <core/dbus/announcer.h>
 #include <core/dbus/asio/executor.h>
-
-#include <boost/asio.hpp>
 
 #include <thread>
 
@@ -149,25 +146,17 @@ int main(int argc, char** argv)
         {"system", dbus::WellKnownBus::system},
     };
 
-    boost::asio::io_service io_service;
-    boost::asio::io_service::work keep_alive{io_service};
-
-    std::vector<std::thread> thread_pool;
-
-    for (unsigned int i = 0; i < 10; i++)
-        thread_pool.push_back(std::thread{[&io_service](){io_service.run();}});
-
     dbus::Bus::Ptr incoming
     {
         new dbus::Bus{lut.at(options.value_for_key<std::string>("bus"))}
     };
-    incoming->install_executor(dbus::asio::make_executor(incoming, io_service));
+    incoming->install_executor(dbus::asio::make_executor(incoming));
 
     dbus::Bus::Ptr outgoing
     {
         new dbus::Bus{lut.at(options.value_for_key<std::string>("bus"))}
     };
-    outgoing->install_executor(dbus::asio::make_executor(outgoing, io_service));
+    outgoing->install_executor(dbus::asio::make_executor(outgoing));
 
     culs::DefaultConfiguration config;
 
@@ -181,18 +170,19 @@ int main(int argc, char** argv)
         {
             cul::connectivity::platform_default_manager(),
             std::make_shared<NullReporter>()
-        },
-        [&io_service](com::ubuntu::location::service::Task task)
-        {
-            io_service.post(task);
         }
     };
 
     auto location_service = std::make_shared<culs::Implementation>(configuration);
     
-    for (std::thread& thread : thread_pool)
-        if (thread.joinable())
-            thread.join();
+    std::thread t1{[incoming](){incoming->run();}};
+    std::thread t2{[outgoing](){outgoing->run();}};
+    
+    if (t1.joinable())
+        t1.join();
+
+    if (t2.joinable())
+        t2.join();
 
     return EXIT_SUCCESS;
 }

@@ -50,8 +50,6 @@
 
 #include <gtest/gtest.h>
 
-#include <boost/asio.hpp>
-
 #include <bitset>
 #include <chrono>
 #include <iostream>
@@ -197,16 +195,11 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
         auto incoming = session_bus();
         auto outgoing = session_bus();
 
-        boost::asio::io_service io_service;
-        boost::asio::io_service::work keep_alive{io_service};
+        incoming->install_executor(core::dbus::asio::make_executor(incoming));
+        outgoing->install_executor(core::dbus::asio::make_executor(outgoing));
 
-        std::vector<std::thread> thread_pool;
-
-        for (unsigned int i = 0; i < 10; i++)
-            thread_pool.push_back(std::thread{[&io_service](){io_service.run();}});
-
-        incoming->install_executor(dbus::asio::make_executor(incoming, io_service));
-        outgoing->install_executor(dbus::asio::make_executor(outgoing, io_service));
+        std::thread t1{[incoming](){incoming->run();}};
+        std::thread t2{[outgoing](){outgoing->run();}};
 
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
@@ -222,10 +215,6 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
             {
                 cul::connectivity::platform_default_manager(),
                 std::make_shared<NullReporter>()
-            },
-            [&io_service](com::ubuntu::location::service::Task task)
-            {
-                io_service.post(task);
             }
         };
         cul::service::Implementation location_service{configuration};
@@ -243,9 +232,11 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
         incoming->stop();
         outgoing->stop();
 
-        for (std::thread& thread : thread_pool)
-            if (thread.joinable())
-                thread.join();
+        if (t1.joinable())
+            t1.join();
+
+        if (t2.joinable())
+            t2.join();
 
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
@@ -329,16 +320,8 @@ TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
         auto incoming = session_bus();
         auto outgoing = session_bus();
 
-        boost::asio::io_service io_service;
-        boost::asio::io_service::work keep_alive{io_service};
-
-        std::vector<std::thread> thread_pool;
-
-        for (unsigned int i = 0; i < 10; i++)
-            thread_pool.push_back(std::thread{[&io_service](){io_service.run();}});
-
-        incoming->install_executor(dbus::asio::make_executor(incoming, io_service));
-        outgoing->install_executor(dbus::asio::make_executor(outgoing, io_service));
+        incoming->install_executor(core::dbus::asio::make_executor(incoming));
+        outgoing->install_executor(core::dbus::asio::make_executor(outgoing));
 
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
@@ -354,10 +337,6 @@ TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
             {
                 cul::connectivity::platform_default_manager(),
                 std::make_shared<NullReporter>()
-            },
-            [&io_service](com::ubuntu::location::service::Task task)
-            {
-                io_service.post(task);
             }
         };
         configuration.engine->configuration.engine_state = cul::Engine::Status::on;
@@ -365,14 +344,19 @@ TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
+        std::thread t1{[incoming](){incoming->run();}};
+        std::thread t2{[outgoing](){outgoing->run();}};
+
         trap->run();
 
         incoming->stop();
         outgoing->stop();
 
-        for (std::thread& thread : thread_pool)
-            if (thread.joinable())
-                thread.join();
+        if (t1.joinable())
+            t1.join();
+
+        if (t2.joinable())
+            t2.join();
 
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
@@ -417,16 +401,8 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
         auto incoming = session_bus();
         auto outgoing = session_bus();
 
-        boost::asio::io_service io_service;
-        boost::asio::io_service::work keep_alive{io_service};
-
-        std::vector<std::thread> thread_pool;
-
-        for (unsigned int i = 0; i < 10; i++)
-            thread_pool.push_back(std::thread{[&io_service](){io_service.run();}});
-
-        incoming->install_executor(dbus::asio::make_executor(incoming, io_service));
-        outgoing->install_executor(dbus::asio::make_executor(outgoing, io_service));
+        incoming->install_executor(core::dbus::asio::make_executor(incoming));
+        outgoing->install_executor(core::dbus::asio::make_executor(outgoing));
 
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
@@ -442,10 +418,6 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
             {
                 cul::connectivity::platform_default_manager(),
                 std::make_shared<NullReporter>()
-            },
-            [&io_service](com::ubuntu::location::service::Task task)
-            {
-                io_service.post(task);
             }
         };
         configuration.engine->configuration.satellite_based_positioning_state.set(cul::SatelliteBasedPositioningState::on);
@@ -453,14 +425,19 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
+        std::thread t1{[incoming](){incoming->run();}};
+        std::thread t2{[outgoing](){outgoing->run();}};
+
         trap->run();
 
         incoming->stop();
         outgoing->stop();
 
-        for (std::thread& thread : thread_pool)
-            if (thread.joinable())
-                thread.join();
+        if (t1.joinable())
+            t1.join();
+
+        if (t2.joinable())
+            t2.join();
 
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
@@ -504,16 +481,8 @@ TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdu
         auto incoming = session_bus();
         auto outgoing = session_bus();
 
-        boost::asio::io_service io_service;
-        boost::asio::io_service::work keep_alive{io_service};
-
-        std::vector<std::thread> thread_pool;
-
-        for (unsigned int i = 0; i < 10; i++)
-            thread_pool.push_back(std::thread{[&io_service](){io_service.run();}});
-
-        incoming->install_executor(dbus::asio::make_executor(incoming, io_service));
-        outgoing->install_executor(dbus::asio::make_executor(outgoing, io_service));
+        incoming->install_executor(core::dbus::asio::make_executor(incoming));
+        outgoing->install_executor(core::dbus::asio::make_executor(outgoing));
 
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
@@ -529,13 +498,12 @@ TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdu
             {
                 cul::connectivity::platform_default_manager(),
                 std::make_shared<NullReporter>()
-            },
-            [&io_service](com::ubuntu::location::service::Task task)
-            {
-                io_service.post(task);
             }
         };
-        cul::service::Implementation location_service{configuration};        
+        cul::service::Implementation location_service{configuration};
+
+        std::thread t1{[incoming](){incoming->run();}};
+        std::thread t2{[outgoing](){outgoing->run();}};
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -544,9 +512,11 @@ TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdu
         incoming->stop();
         outgoing->stop();
 
-        for (std::thread& thread : thread_pool)
-            if (thread.joinable())
-                thread.join();
+        if (t1.joinable())
+            t1.join();
+
+        if (t2.joinable())
+            t2.join();
 
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
@@ -599,16 +569,8 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
         auto incoming = session_bus();
         auto outgoing = session_bus();
 
-        boost::asio::io_service io_service;
-        boost::asio::io_service::work keep_alive{io_service};
-
-        std::vector<std::thread> thread_pool;
-
-        for (unsigned int i = 0; i < 10; i++)
-            thread_pool.push_back(std::thread{[&io_service](){io_service.run();}});
-
-        incoming->install_executor(dbus::asio::make_executor(incoming, io_service));
-        outgoing->install_executor(dbus::asio::make_executor(outgoing, io_service));
+        incoming->install_executor(core::dbus::asio::make_executor(incoming));
+        outgoing->install_executor(core::dbus::asio::make_executor(outgoing));
 
         auto dummy = new DummyProvider();
         cul::Provider::Ptr helper(dummy);
@@ -624,15 +586,14 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
             {
                 cul::connectivity::platform_default_manager(),
                 std::make_shared<NullReporter>()
-            },
-            [&io_service](com::ubuntu::location::service::Task task)
-            {
-                io_service.post(task);
             }
         };
         cul::service::Implementation location_service{configuration};
 
         configuration.engine->updates.visible_space_vehicles.set(visible_space_vehicles);
+
+        std::thread t1{[incoming](){incoming->run();}};
+        std::thread t2{[outgoing](){outgoing->run();}};
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -641,9 +602,11 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
         incoming->stop();
         outgoing->stop();
 
-        for (std::thread& thread : thread_pool)
-            if (thread.joinable())
-                thread.join();
+        if (t1.joinable())
+            t1.join();
+
+        if (t2.joinable())
+            t2.join();
 
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
