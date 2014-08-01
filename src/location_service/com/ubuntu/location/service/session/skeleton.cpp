@@ -50,48 +50,75 @@ culss::Skeleton::Skeleton(const culss::Skeleton::Configuration& config)
               configuration.local.impl->updates().position.changed().connect(
                   [this](const cul::Update<cul::Position>& position)
                   {
-                      on_position_changed(position);
+                      Skeleton::configuration.dispatcher([this, position]()
+                      {
+                          on_position_changed(position);
+                      });
                   }),
               configuration.local.impl->updates().heading.changed().connect(
                   [this](const cul::Update<cul::Heading>& heading)
                   {
-                      on_heading_changed(heading);
+                      Skeleton::configuration.dispatcher([this, heading]()
+                      {
+                          on_heading_changed(heading);
+                      });
                   }),
               configuration.local.impl->updates().velocity.changed().connect(
                   [this](const cul::Update<cul::Velocity>& velocity)
                   {
-                      on_velocity_changed(velocity);
+                      Skeleton::configuration.dispatcher([this, velocity]()
+                      {
+                          on_velocity_changed(velocity);
+                      });
                   })
           }
 {
     object->install_method_handler<Interface::StartPositionUpdates>([this](const dbus::Message::Ptr& msg)
     {
-        on_start_position_updates(msg);
+        Skeleton::configuration.dispatcher([this, msg]()
+        {
+            on_start_position_updates(msg);
+        });
     });
 
     object->install_method_handler<Interface::StopPositionUpdates>([this](const dbus::Message::Ptr& msg)
     {
-        on_stop_position_updates(msg);
+        Skeleton::configuration.dispatcher([this, msg]()
+        {
+            on_stop_position_updates(msg);
+        });
     });
 
     object->install_method_handler<Interface::StartVelocityUpdates>([this](const dbus::Message::Ptr& msg)
     {
-        on_start_velocity_updates(msg);
+        Skeleton::configuration.dispatcher([this, msg]()
+        {
+            on_start_velocity_updates(msg);
+        });
     });
 
     object->install_method_handler<Interface::StopVelocityUpdates>([this](const dbus::Message::Ptr& msg)
     {
-        on_stop_velocity_updates(msg);
+        Skeleton::configuration.dispatcher([this, msg]()
+        {
+            on_stop_velocity_updates(msg);
+        });
     });
 
     object->install_method_handler<Interface::StartHeadingUpdates>([this](const dbus::Message::Ptr& msg)
     {
-        on_start_heading_updates(msg);
+        Skeleton::configuration.dispatcher([this, msg]()
+        {
+            on_start_heading_updates(msg);
+        });
     });
 
     object->install_method_handler<Interface::StopHeadingUpdates>([this](const dbus::Message::Ptr& msg)
     {
-        on_stop_heading_updates(msg);
+        Skeleton::configuration.dispatcher([this, msg]()
+        {
+            on_stop_heading_updates(msg);
+        });
     });
 }
 
@@ -281,9 +308,10 @@ void culss::Skeleton::on_stop_velocity_updates(const core::dbus::Message::Ptr& m
 void culss::Skeleton::on_position_changed(const cul::Update<cul::Position>& position)
 {
     VLOG(10) << __PRETTY_FUNCTION__;
+
     try
     {
-        configuration.remote.object->invoke_method_synchronously<culs::session::Interface::UpdatePosition, void>(position);
+        configuration.remote.object->invoke_method_asynchronously<culs::session::Interface::UpdatePosition, void>(position);
     } catch(const std::exception&)
     {
         // We consider the session to be dead once we hit an exception here.
@@ -300,7 +328,7 @@ void culss::Skeleton::on_heading_changed(const cul::Update<cul::Heading>& headin
     VLOG(10) << __PRETTY_FUNCTION__;
     try
     {
-        configuration.remote.object->invoke_method_synchronously<culs::session::Interface::UpdateHeading, void>(heading);
+        configuration.remote.object->invoke_method_asynchronously<culs::session::Interface::UpdateHeading, void>(heading);
     } catch(const std::exception&)
     {
         // We consider the session to be dead once we hit an exception here.
@@ -317,7 +345,7 @@ void culss::Skeleton::on_velocity_changed(const cul::Update<cul::Velocity>& velo
     VLOG(10) << __PRETTY_FUNCTION__;
     try
     {
-        configuration.remote.object->invoke_method_synchronously<culs::session::Interface::UpdateVelocity, void>(velocity);
+        configuration.remote.object->invoke_method_asynchronously<culs::session::Interface::UpdateVelocity, void>(velocity);
     } catch(const std::exception&)
     {
         // We consider the session to be dead once we hit an exception here.

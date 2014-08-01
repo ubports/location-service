@@ -117,6 +117,7 @@ void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr
 
         culss::Skeleton::Configuration config
         {
+            configuration.dispatcher,
             path,
             culss::Skeleton::Local
             {
