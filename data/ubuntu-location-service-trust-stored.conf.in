@@ -1,6 +1,7 @@
 description "Location Services Trust Store Daemon"
 
 start on started dbus
+stop on stopping dbus
 
 respawn
 
