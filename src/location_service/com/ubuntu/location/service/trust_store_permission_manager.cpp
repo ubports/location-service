@@ -147,7 +147,7 @@ service::PermissionManager::Result service::TrustStorePermissionManager::check_p
     {
         core::trust::Uid{credentials.uid},
         core::trust::Pid{credentials.pid},
-        "Location Service",
+        profile,
         TrustStorePermissionManager::default_feature(),
         description
     };
