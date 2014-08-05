@@ -31,6 +31,7 @@ Build-Depends: cmake,
                libubuntu-platform-hardware-api-headers [!arm64 !ppc64el !powerpc],
                libubuntu-platform-hardware-api-dev [!arm64 !ppc64el !powerpc],
                libproperties-cpp-dev,
+               trust-store-bin,
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/location-service
 # If you aren't a member of ~phablet-team but need to upload packaging changes,
@@ -91,6 +92,7 @@ Architecture: any
 Depends: libubuntu-location-service2 (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends},
+         trust-store-bin,
 Breaks: ubuntu-location-service-examples (<< 0.0.2),
 Replaces: ubuntu-location-service-examples (<< 0.0.2),
 Description: location service aggregating position/velocity/heading
