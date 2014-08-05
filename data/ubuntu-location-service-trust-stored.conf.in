@@ -1,7 +1,7 @@
 description "Location Services Trust Store Daemon"
 
-start on started dbus
-stop on stopping dbus
+start on started JOB=dbus and started JOB=unity8
+stop on stopping JOB=dbus or (:sys:stopped JOB=ubuntu-location-service)
 
 respawn
 
@@ -9,5 +9,5 @@ exec /usr/bin/trust-stored-skeleton \
     --remote-agent DBusRemoteAgent --bus=system \
     --local-agent MirAgent \
     --trusted-mir-socket=/var/run/user/$(id -u)/mir_socket_trusted \
-    --for-service @UBUNTU_LOCATION_SERVICE_TRUST_STORE_SERVICE_NAME@ \
+    --for-service UbuntuLocationService \
     --store-bus session
