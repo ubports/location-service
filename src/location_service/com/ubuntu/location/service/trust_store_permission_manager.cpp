@@ -137,17 +137,17 @@ service::PermissionManager::Result service::TrustStorePermissionManager::check_p
 
     if (profile == "unconfined")
     {
-        description = "An unconfined application is trying to access the location service.";
+        description = "An unconfined application wants to access your current location.";
     } else
     {
-        description = profile + " is trying to access the location service.";
+        description = profile + " wants to access your current location.";
     }
 
     core::trust::Agent::RequestParameters params
     {
         core::trust::Uid{credentials.uid},
         core::trust::Pid{credentials.pid},
-        profile,
+        "Location Service",
         TrustStorePermissionManager::default_feature(),
         description
     };
