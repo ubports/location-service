@@ -27,6 +27,8 @@
 #include <core/dbus/property.h>
 #include <core/dbus/skeleton.h>
 
+#include <core/dbus/interfaces/properties.h>
+
 namespace com
 {
 namespace ubuntu
@@ -124,18 +126,39 @@ private:
             const core::dbus::types::ObjectPath& path,
             const session::Interface::Ptr& session);
 
+    // Called whenever the value of the respective property changes.
+    void on_does_satellite_based_positioning_changed(bool value);
+    // Called whenever the value of the respective property changes.
+    void on_does_report_cell_and_wifi_ids_changed(bool value);
+    // Called whenever the value of the respective property changes.
+    void on_is_online_changed(bool value);
+
     // Stores the configuration passed in at creation time.
     Configuration configuration;
     // The skeleton object representing com.ubuntu.location.service.Interface on the bus.
     core::dbus::Object::Ptr object;
+    // We emit property changes manually.
+    core::dbus::Signal
+    <
+        core::dbus::interfaces::Properties::Signals::PropertiesChanged,
+        core::dbus::interfaces::Properties::Signals::PropertiesChanged::ArgumentType
+    >::Ptr properties_changed;
+
     // DBus properties as exposed on the bus for com.ubuntu.location.service.Interface
     struct
     {
         std::shared_ptr< core::dbus::Property<Interface::Properties::DoesSatelliteBasedPositioning> > does_satellite_based_positioning;
         std::shared_ptr< core::dbus::Property<Interface::Properties::DoesReportCellAndWifiIds> > does_report_cell_and_wifi_ids;
         std::shared_ptr< core::dbus::Property<Interface::Properties::IsOnline> > is_online;
-        std::shared_ptr< dbus::Property<Interface::Properties::VisibleSpaceVehicles> > visible_space_vehicles;
+        std::shared_ptr< core::dbus::Property<Interface::Properties::VisibleSpaceVehicles> > visible_space_vehicles;
     } properties;
+    // We sign up to property changes here, to be able to report them to the bus
+    struct
+    {
+        core::ScopedConnection does_satellite_based_positioning;
+        core::ScopedConnection does_report_cell_and_wifi_ids;
+        core::ScopedConnection is_online;
+    } connections;
     // Guards the session store.
     std::mutex guard;
     // Keeps track of running sessions, keying them by their unique object path.
