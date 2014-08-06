@@ -192,12 +192,13 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
     config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing));
 
     location::service::DefaultConfiguration dc;
+
     location::service::Implementation::Configuration configuration
     {
         config.incoming,
         config.outgoing,
         dc.the_engine(instantiated_providers, dc.the_provider_selection_policy()),
-        dc.the_permission_manager(),
+        dc.the_permission_manager(config.outgoing),
         location::service::Harvester::Configuration
         {
             location::connectivity::platform_default_manager(),
@@ -211,7 +212,9 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
     };
 
     std::thread t1{[&config](){config.incoming->run();}};
-    std::thread t2{[&config](){config.outgoing->run();}};
+    std::thread t2{[&config](){config.incoming->run();}};
+    std::thread t3{[&config](){config.incoming->run();}};
+    std::thread t4{[&config](){config.outgoing->run();}};
 
     trap->run();
 
@@ -223,6 +226,12 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
 
     if (t2.joinable())
         t2.join();
+
+    if (t3.joinable())
+        t3.join();
+
+    if (t4.joinable())
+        t4.join();
 
     return EXIT_SUCCESS;
 }

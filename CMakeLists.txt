@@ -6,6 +6,8 @@ set(UBUNTU_LOCATION_SERVICE_VERSION_MAJOR 2)
 set(UBUNTU_LOCATION_SERVICE_VERSION_MINOR 0)
 set(UBUNTU_LOCATION_SERVICE_VERSION_PATCH 0)
 
+set(UBUNTU_LOCATION_SERVICE_TRUST_STORE_SERVICE_NAME "UbuntuLocationService")
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wextra -fPIC")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fno-strict-aliasing -pedantic -Wextra -fPIC")
 
@@ -27,10 +29,11 @@ find_package(Threads)
 pkg_check_modules(DBUS dbus-1 REQUIRED)
 pkg_check_modules(DBUS_CPP dbus-cpp REQUIRED)
 pkg_check_modules(JSON_C json-c REQUIRED)
-# TODO(tvoss): Re-enable once net-cpp hits the archive.
+pkg_check_modules(LIBAPPARMOR libapparmor REQUIRED)
 pkg_check_modules(NET_CPP net-cpp REQUIRED)
 pkg_check_modules(PROCESS_CPP process-cpp REQUIRED)
 pkg_check_modules(PROPERTIES_CPP properties-cpp REQUIRED)
+pkg_check_modules(TRUST_STORE trust-store REQUIRED)
 #####################################################################
 # Enable code coverage calculation with gcov/gcovr/lcov
 # Usage:
@@ -56,14 +59,17 @@ include_directories(
   ${DBUS_INCLUDE_DIRS}
   ${DBUS_CPP_INCLUDE_DIRS}
   ${JSON_C_INCLUDE_DIRS}
+  ${LIBAPPARMOR_INCLUDE_DIRS}
   ${NET_CPP_INCLUDE_DIRS}
   ${PROPERTIES_CPP_INCLUDE_DIRS}
   ${PROCESS_CPP_INCLUDE_DIRS}
+  ${TRUST_STORE_INCLUDE_DIRS}
   ${GLog_INCLUDE_DIR}
   ${GFlags_INCLUDE_DIR}
 
   ${CMAKE_SOURCE_DIR}/include/location_service
   ${CMAKE_SOURCE_DIR}/src/location_service
+  ${CMAKE_BINARY_DIR}/src/location_service
 )
 
 file(GLOB_RECURSE UBUNTU_LOCATION_SERVICE_PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR} *.h)

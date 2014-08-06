@@ -283,7 +283,7 @@ void culss::Skeleton::on_position_changed(const cul::Update<cul::Position>& posi
     VLOG(10) << __PRETTY_FUNCTION__;
     try
     {
-        configuration.remote.object->invoke_method_synchronously<culs::session::Interface::UpdatePosition, void>(position);
+        configuration.remote.object->invoke_method_asynchronously<culs::session::Interface::UpdatePosition, void>(position);
     } catch(const std::exception&)
     {
         // We consider the session to be dead once we hit an exception here.
@@ -300,7 +300,7 @@ void culss::Skeleton::on_heading_changed(const cul::Update<cul::Heading>& headin
     VLOG(10) << __PRETTY_FUNCTION__;
     try
     {
-        configuration.remote.object->invoke_method_synchronously<culs::session::Interface::UpdateHeading, void>(heading);
+        configuration.remote.object->invoke_method_asynchronously<culs::session::Interface::UpdateHeading, void>(heading);
     } catch(const std::exception&)
     {
         // We consider the session to be dead once we hit an exception here.
@@ -317,7 +317,7 @@ void culss::Skeleton::on_velocity_changed(const cul::Update<cul::Velocity>& velo
     VLOG(10) << __PRETTY_FUNCTION__;
     try
     {
-        configuration.remote.object->invoke_method_synchronously<culs::session::Interface::UpdateVelocity, void>(velocity);
+        configuration.remote.object->invoke_method_asynchronously<culs::session::Interface::UpdateVelocity, void>(velocity);
     } catch(const std::exception&)
     {
         // We consider the session to be dead once we hit an exception here.

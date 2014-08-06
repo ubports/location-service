@@ -15,6 +15,7 @@ Build-Depends: cmake,
 # in libstdc++ causing us issues, we explicitly select a G++
 # version.
                g++-4.9,
+               libapparmor-dev,
                libboost-filesystem-dev,
                libboost-program-options-dev,
                libboost-system-dev,
@@ -26,9 +27,11 @@ Build-Depends: cmake,
                libjson-c-dev,
                libnet-cpp-dev,
                libprocess-cpp-dev,
+               libtrust-store-dev,
                libubuntu-platform-hardware-api-headers [!arm64 !ppc64el !powerpc],
                libubuntu-platform-hardware-api-dev [!arm64 !ppc64el !powerpc],
                libproperties-cpp-dev,
+               trust-store-bin,
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/location-service
 # If you aren't a member of ~phablet-team but need to upload packaging changes,
@@ -89,6 +92,7 @@ Architecture: any
 Depends: libubuntu-location-service2 (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends},
+         trust-store-bin,
 Breaks: ubuntu-location-service-examples (<< 0.0.2),
 Replaces: ubuntu-location-service-examples (<< 0.0.2),
 Description: location service aggregating position/velocity/heading

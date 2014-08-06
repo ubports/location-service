@@ -26,6 +26,10 @@ configure_file(
   ubuntu-location-service.conf.in ubuntu-location-service.conf @ONLY
 )
 
+configure_file(
+  ubuntu-location-service-trust-stored.conf.in ubuntu-location-service-trust-stored.conf @ONLY
+)
+
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/ubuntu-location-service.pc
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
@@ -44,4 +48,9 @@ install(
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/ubuntu-location-service.conf
   DESTINATION /etc/init/
+)
+
+install(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/ubuntu-location-service-trust-stored.conf
+  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/upstart/sessions/
 )
