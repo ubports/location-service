@@ -39,7 +39,7 @@ namespace
 {
 std::set<std::string> whitelisted_apps
 {
-    "com.ubuntu.camera_camera_3.0.0.335",
+    "com.ubuntu.camera_camera_3.0.0.342",
     "me.yohanboniface.osmtouch_OSMTouch_0.1.3"
 };
 
