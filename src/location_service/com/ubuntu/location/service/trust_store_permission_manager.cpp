@@ -30,11 +30,24 @@
 
 #include <sys/apparmor.h>
 
+#include <set>
+
 namespace location = com::ubuntu::location;
 namespace service = com::ubuntu::location::service;
 
 namespace
 {
+std::set<std::string> whitelisted_apps
+{
+    "com.ubuntu.camera_camera_3.0.0.342",
+    "me.yohanboniface.osmtouch_OSMTouch_0.1.3"
+};
+
+bool is_application_with_confinement_profile_whitelisted(const std::string& profile)
+{
+    return whitelisted_apps.count(profile) > 0;
+}
+
 bool is_running_under_testing()
 {
     return core::posix::this_process::env::get(
@@ -132,6 +145,12 @@ service::PermissionManager::Result service::TrustStorePermissionManager::check_p
         LOG(ERROR) << "Could not resolve PID " << credentials.pid << " to apparmor profile.";
         return service::PermissionManager::Result::rejected;
     }
+
+    // This is an ugly hack to prevent a revert. It will be removed as soon as
+    // https://bugs.launchpad.net/qtmir/+bug/1352977 is fixed. A separate bug tracks the removal
+    // of this hack: https://bugs.launchpad.net/location-service/+bug/1354080
+    if (is_application_with_confinement_profile_whitelisted(profile))
+        return Result::granted;
 
     std::string description;
 
