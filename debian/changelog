@@ -1,3 +1,13 @@
+location-service (2.0.1+14.10.20140807.1-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Add camera app and osm touch to the whitelist for permission mgmt.
+
+  [ Ubuntu daily release ]
+  * New rebuild forced
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 07 Aug 2014 20:45:31 +0000
+
 location-service (2.0.1+14.10.20140806-0ubuntu1) utopic; urgency=low
 
   [ thomas-voss ]
