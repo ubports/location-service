@@ -60,7 +60,21 @@ struct CachedRadioCell : public com::ubuntu::location::connectivity::RadioCell
     };
 
     CachedRadioCell(const org::Ofono::Manager::Modem& modem)
-        : RadioCell(), radio_type(Type::gsm), modem(modem), detail{Gsm()}
+        : RadioCell(),
+          radio_type(Type::gsm),
+          modem(modem),
+          connections
+          {
+              modem.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
+              {
+                  on_modem_property_changed(tuple);
+              }),
+              modem.network_registration.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
+              {
+                  on_network_registration_property_changed(tuple);
+              })
+          },
+          detail{Gsm()}
     {
         auto technology =
                 modem.network_registration.get<
@@ -159,16 +173,12 @@ struct CachedRadioCell : public com::ubuntu::location::connectivity::RadioCell
         default:
             break;
         }
+    }
 
-        modem.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-        {
-            on_modem_property_changed(tuple);
-        });
-
-        modem.network_registration.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-        {
-            on_network_registration_property_changed(tuple);
-        });
+    ~CachedRadioCell()
+    {
+        modem.signals.property_changed->disconnect(connections.modem_properties_changed);
+        modem.network_registration.signals.property_changed->disconnect(connections.network_registration_properties_changed);
     }
 
     const core::Signal<>& changed() const override
@@ -462,6 +472,21 @@ struct CachedRadioCell : public com::ubuntu::location::connectivity::RadioCell
     core::Signal<> on_changed;
     Type radio_type;
     org::Ofono::Manager::Modem modem;
+
+    struct
+    {
+        core::dbus::Signal
+        <
+            org::Ofono::Manager::Modem::PropertyChanged,
+            org::Ofono::Manager::Modem::PropertyChanged::ArgumentType
+        >::SubscriptionToken modem_properties_changed;
+
+        core::dbus::Signal
+        <
+            org::Ofono::Manager::Modem::NetworkRegistration::PropertyChanged,
+            org::Ofono::Manager::Modem::NetworkRegistration::PropertyChanged::ArgumentType
+        >::SubscriptionToken network_registration_properties_changed;
+    } connections;
 
     struct None {};
 
