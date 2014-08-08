@@ -1,3 +1,11 @@
+location-service (2.0.1+14.10.20140808.1-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Ensure that connections to events are properly cut on destruction.
+  * Adjust naming of properties as exposed by NetworkManager.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 08 Aug 2014 19:25:54 +0000
+
 location-service (2.0.1+14.10.20140808-0ubuntu1) utopic; urgency=low
 
   [ Nick Dedekind ]
