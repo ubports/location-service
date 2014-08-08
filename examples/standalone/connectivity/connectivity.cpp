@@ -39,6 +39,12 @@ int main(int argc, char** argv)
         std::exit(1);
     }
 
+    // Let's query some properties about wifi and wwan capabilities
+    std::cout << "Is wifi enabled: " << std::boolalpha << cm->is_wifi_enabled().get() << std::endl;
+    std::cout << "Is wifi hw enabled: " << std::boolalpha << cm->is_wifi_hardware_enabled().get() << std::endl;
+    std::cout << "Is wwan enabled: " << std::boolalpha << cm->is_wwan_enabled().get() << std::endl;
+    std::cout << "Is wwan hw enabled: " << std::boolalpha << cm->is_wwan_hardware_enabled().get() << std::endl;
+
     // Subscribe to state changes
     cm->state().changed().connect([](location::connectivity::State state)
     {

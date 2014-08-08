@@ -497,11 +497,11 @@ struct NetworkManager
             static const bool writable = false;
         };
 
-        struct IsWifiEnabled
+        struct WirelessEnabled
         {
             static const std::string& name()
             {
-                static const std::string s{"IsWifiEnabled"};
+                static const std::string s{"WirelessEnabled"};
                 return s;
             }
 
@@ -511,11 +511,11 @@ struct NetworkManager
             static const bool writable = false;
         };
 
-        struct IsWifiHardwareEnabled
+        struct WirelessHardwareEnabled
         {
             static const std::string& name()
             {
-                static const std::string s{"IsWifiHardwareEnabled"};
+                static const std::string s{"WirelessHardwareEnabled"};
                 return s;
             }
 
@@ -525,11 +525,11 @@ struct NetworkManager
             static const bool writable = false;
         };
 
-        struct IsWwanEnabled
+        struct WwanEnabled
         {
             static const std::string& name()
             {
-                static const std::string s{"IsWwanEnabled"};
+                static const std::string s{"WwanEnabled"};
                 return s;
             }
 
@@ -539,11 +539,11 @@ struct NetworkManager
             static const bool writable = false;
         };
 
-        struct IsWwanHardwareEnabled
+        struct WwanHardwareEnabled
         {
             static const std::string& name()
             {
-                static const std::string s{"IsWwanHardwareEnabled"};
+                static const std::string s{"WwanHardwareEnabled"};
                 return s;
             }
 
@@ -613,10 +613,10 @@ struct NetworkManager
               object->get_property<Properties::Connectivity>(),
               object->get_property<Properties::PrimaryConnection>(),
               object->get_property<Properties::State>(),
-              object->get_property<Properties::IsWifiEnabled>(),
-              object->get_property<Properties::IsWifiHardwareEnabled>(),
-              object->get_property<Properties::IsWwanEnabled>(),
-              object->get_property<Properties::IsWwanHardwareEnabled>()
+              object->get_property<Properties::WirelessEnabled>(),
+              object->get_property<Properties::WirelessHardwareEnabled>(),
+              object->get_property<Properties::WwanEnabled>(),
+              object->get_property<Properties::WwanHardwareEnabled>()
           },
           signals
           {
@@ -678,10 +678,10 @@ struct NetworkManager
         std::shared_ptr<core::dbus::Property<Properties::Connectivity> > connectivity;
         std::shared_ptr<core::dbus::Property<Properties::PrimaryConnection> > primary_connection;
         std::shared_ptr<core::dbus::Property<Properties::State> > state;
-        std::shared_ptr<core::dbus::Property<Properties::IsWifiEnabled> > is_wifi_enabled;
-        std::shared_ptr<core::dbus::Property<Properties::IsWifiHardwareEnabled> > is_wifi_hardware_enabled;
-        std::shared_ptr<core::dbus::Property<Properties::IsWwanEnabled> > is_wwan_enabled;
-        std::shared_ptr<core::dbus::Property<Properties::IsWwanHardwareEnabled> > is_wwan_hardware_enabled;
+        std::shared_ptr<core::dbus::Property<Properties::WirelessEnabled> > is_wifi_enabled;
+        std::shared_ptr<core::dbus::Property<Properties::WirelessHardwareEnabled> > is_wifi_hardware_enabled;
+        std::shared_ptr<core::dbus::Property<Properties::WwanEnabled> > is_wwan_enabled;
+        std::shared_ptr<core::dbus::Property<Properties::WwanHardwareEnabled> > is_wwan_hardware_enabled;
     } properties;
     struct
     {
