@@ -53,6 +53,7 @@ add_library(
   connectivity/manager.cpp
   connectivity/radio_cell.cpp
   connectivity/wireless_network.cpp
+
   connectivity/ofono_nm_connectivity_manager.cpp
 )
 
