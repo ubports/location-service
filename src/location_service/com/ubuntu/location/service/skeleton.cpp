@@ -30,6 +30,11 @@ namespace dbus = core::dbus;
 
 namespace
 {
+const std::vector<std::string>& the_empty_array_of_invalidated_properties()
+{
+    static const std::vector<std::string> v; return v;
+}
+
 dbus::Message::Ptr the_empty_reply()
 {
     return dbus::Message::Ptr{};
@@ -64,12 +69,28 @@ culs::Skeleton::Skeleton(const culs::Skeleton::Configuration& configuration)
     : dbus::Skeleton<culs::Interface>(configuration.incoming),
       configuration(configuration),
       object(access_service()->add_object_for_path(culs::Interface::path())),
+      properties_changed(object->get_signal<core::dbus::interfaces::Properties::Signals::PropertiesChanged>()),
       properties
       {
           object->get_property<culs::Interface::Properties::DoesSatelliteBasedPositioning>(),
           object->get_property<culs::Interface::Properties::DoesReportCellAndWifiIds>(),
           object->get_property<culs::Interface::Properties::IsOnline>(),
           object->get_property<culs::Interface::Properties::VisibleSpaceVehicles>()
+      },
+      connections
+      {
+          properties.does_satellite_based_positioning->changed().connect([this](bool value)
+          {
+              on_does_satellite_based_positioning_changed(value);
+          }),
+          properties.does_report_cell_and_wifi_ids->changed().connect([this](bool value)
+          {
+              on_does_report_cell_and_wifi_ids_changed(value);
+          }),
+          properties.is_online->changed().connect([this](bool value)
+          {
+              on_is_online_changed(value);
+          })
       }
 {
     object->install_method_handler<culs::Interface::CreateSessionForCriteria>([this](const dbus::Message::Ptr& msg)
@@ -175,6 +196,56 @@ bool culs::Skeleton::add_to_session_store_for_path(
     bool inserted = false;
     std::tie(std::ignore, inserted) = session_store.insert(std::make_pair(path, session));
     return inserted;
+}
+
+void culs::Skeleton::on_does_satellite_based_positioning_changed(bool value)
+{
+    std::map<std::string, core::dbus::types::Variant> dict
+    {
+        {
+            culs::Interface::Properties::DoesSatelliteBasedPositioning::name(),
+            core::dbus::types::Variant::encode(value)
+        }
+    };
+
+    properties_changed->emit(
+                std::tie(
+                    core::dbus::traits::Service<culs::Interface>::interface_name(),
+                    dict,
+                    the_empty_array_of_invalidated_properties()));
+}
+
+void culs::Skeleton::on_does_report_cell_and_wifi_ids_changed(bool value)
+{
+    std::map<std::string, core::dbus::types::Variant> dict
+    {
+        {
+            culs::Interface::Properties::DoesReportCellAndWifiIds::name(),
+            core::dbus::types::Variant::encode(value)
+        }
+    };
+
+    properties_changed->emit(
+            std::tie(
+                core::dbus::traits::Service<culs::Interface>::interface_name(),
+                dict,
+                the_empty_array_of_invalidated_properties()));
+}
+
+void culs::Skeleton::on_is_online_changed(bool value)
+{
+    std::map<std::string, core::dbus::types::Variant> dict
+    {
+        {
+            culs::Interface::Properties::IsOnline::name(),
+            core::dbus::types::Variant::encode(value)
+        }
+    };
+    properties_changed->emit(
+            std::tie(
+                core::dbus::traits::Service<culs::Interface>::interface_name(),
+                dict,
+                the_empty_array_of_invalidated_properties()));
 }
 
 core::Property<bool>& culs::Skeleton::does_satellite_based_positioning()
