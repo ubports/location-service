@@ -1,6 +1,6 @@
 description "Location Services Trust Store Daemon"
 
-start on started JOB=dbus and started JOB=unity8
+start on (started JOB=dbus and started JOB=unity8) and (:sys:started JOB=ubuntu-location-service)
 stop on stopping JOB=dbus or (:sys:stopped JOB=ubuntu-location-service)
 
 respawn
