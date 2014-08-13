@@ -29,6 +29,8 @@ add_library(
   service/default_configuration.cpp
   service/default_permission_manager.cpp
   service/harvester.cpp
+  service/demultiplexing_reporter.h
+  service/demultiplexing_reporter.cpp
   service/trust_store_permission_manager.cpp
 
   service/implementation.cpp

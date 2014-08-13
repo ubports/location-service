@@ -19,6 +19,7 @@
 #include <com/ubuntu/location/service/harvester.h>
 
 #include "mock_connectivity_manager.h"
+#include "mock_reporter.h"
 #include "null_provider_selection_policy.h"
 
 #include <gmock/gmock.h>
@@ -28,26 +29,6 @@ namespace location = com::ubuntu::location;
 
 namespace
 {
-struct MockReporter : public location::service::Harvester::Reporter
-{
-    MockReporter() = default;
-
-    /** @brief Tell the reporter that it should start operating. */
-    MOCK_METHOD0(start, void());
-
-    /** @brief Tell the reporter to shut down its operation. */
-    MOCK_METHOD0(stop, void());
-
-    /**
-     * @brief Triggers the reporter to send off the information.
-     */
-    MOCK_METHOD3(report,
-                 void(
-                     const location::Update<location::Position>&,
-                     const std::vector<location::connectivity::WirelessNetwork::Ptr>&,
-                     const std::vector<location::connectivity::RadioCell::Ptr>&));
-};
-
 location::Update<location::Position> reference_position_update
 {
     {

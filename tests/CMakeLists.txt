@@ -77,6 +77,7 @@ LOCATION_SERVICE_ADD_TEST(daemon_and_cli_tests daemon_and_cli_tests.cpp)
 LOCATION_SERVICE_ADD_TEST(default_permission_manager_test default_permission_manager_test.cpp)
 LOCATION_SERVICE_ADD_TEST(engine_test engine_test.cpp)
 LOCATION_SERVICE_ADD_TEST(harvester_test harvester_test.cpp)
+LOCATION_SERVICE_ADD_TEST(demultiplexing_reporter_test demultiplexing_reporter_test.cpp)
 
 if (NET_CPP_FOUND)
   LOCATION_SERVICE_ADD_TEST(ichnaea_reporter_test ichnaea_reporter_test.cpp)
