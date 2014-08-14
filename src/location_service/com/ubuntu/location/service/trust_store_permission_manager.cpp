@@ -125,11 +125,11 @@ service::PermissionManager::Result service::TrustStorePermissionManager::check_p
         profile = app_armor_profile_resolver(core::trust::Pid{credentials.pid});
     } catch(const std::exception& e)
     {
-        SYS_LOG(ERROR) << "Could not resolve PID " << credentials.pid << " to apparmor profile: " << e.what();
+        SYSLOG(ERROR) << "Could not resolve PID " << credentials.pid << " to apparmor profile: " << e.what();
         return service::PermissionManager::Result::rejected;
     } catch(...)
     {
-        SYS_LOG(ERROR) << "Could not resolve PID " << credentials.pid << " to apparmor profile.";
+        SYSLOG(ERROR) << "Could not resolve PID " << credentials.pid << " to apparmor profile.";
         return service::PermissionManager::Result::rejected;
     }
 

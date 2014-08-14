@@ -292,13 +292,13 @@ void location::service::ichnaea::Reporter::report(
                 .on_response([](const core::net::http::Response& response)
                 {
                     if (response.status != ichnaea::submit::success)
-                        SYS_LOG(ERROR) << "Error submitting to ichnaea: " << response.body;
+                        SYSLOG(ERROR) << "Error submitting to ichnaea: " << response.body;
                     else
                         VLOG(1) << "Succesfully submitted to ichnaea.";
                 })
                 .on_error([](const core::net::Error& e)
                 {
-                    SYS_LOG(ERROR) << "Networking error while submitting to ichnaea: " << e.what();
+                    SYSLOG(ERROR) << "Networking error while submitting to ichnaea: " << e.what();
                 }));
 }
 
