@@ -36,11 +36,11 @@ const std::map<std::string, com::ubuntu::location::connectivity::RadioCell::Type
         },
         {
             org::Ofono::Manager::Modem::NetworkRegistration::Technology::edge(),
-            com::ubuntu::location::connectivity::RadioCell::Type::unknown
+            com::ubuntu::location::connectivity::RadioCell::Type::gsm
         },
         {
             org::Ofono::Manager::Modem::NetworkRegistration::Technology::hspa(),
-            com::ubuntu::location::connectivity::RadioCell::Type::unknown
+            com::ubuntu::location::connectivity::RadioCell::Type::umts
         },
         {std::string(), com::ubuntu::location::connectivity::RadioCell::Type::unknown}
     };
