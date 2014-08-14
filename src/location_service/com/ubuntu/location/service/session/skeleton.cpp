@@ -123,7 +123,7 @@ void culss::Skeleton::on_start_position_updates(const core::dbus::Message::Ptr& 
                     msg,
                     Interface::Errors::ErrorStartingUpdate::name(),
                     "Could not enable position updates");
-        LOG(ERROR) << e.what();
+        SYS_LOG(ERROR) << e.what();
     }
 
     try
@@ -131,7 +131,7 @@ void culss::Skeleton::on_start_position_updates(const core::dbus::Message::Ptr& 
         configuration.local.bus->send(reply);
     } catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        SYS_LOG(ERROR) << e.what();
     }
 }
 
@@ -152,7 +152,7 @@ void culss::Skeleton::on_stop_position_updates(const core::dbus::Message::Ptr& m
                     msg,
                     Interface::Errors::ErrorStartingUpdate::name(),
                     "Could not disable position updates");
-        LOG(ERROR) << e.what();
+        SYS_LOG(ERROR) << e.what();
     }
 
     try
@@ -160,7 +160,7 @@ void culss::Skeleton::on_stop_position_updates(const core::dbus::Message::Ptr& m
         configuration.local.bus->send(reply);
     } catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        SYS_LOG(ERROR) << e.what();
     }
 }
 
@@ -181,7 +181,7 @@ void culss::Skeleton::on_start_heading_updates(const core::dbus::Message::Ptr& m
                     msg,
                     Interface::Errors::ErrorStartingUpdate::name(),
                     "Could not enable position updates");
-        LOG(ERROR) << e.what();
+        SYS_LOG(ERROR) << e.what();
     }
 
     try
@@ -189,7 +189,7 @@ void culss::Skeleton::on_start_heading_updates(const core::dbus::Message::Ptr& m
         configuration.local.bus->send(reply);
     } catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        SYS_LOG(ERROR) << e.what();
     }
 }
 
@@ -209,7 +209,7 @@ void culss::Skeleton::on_stop_heading_updates(const core::dbus::Message::Ptr& ms
                     msg,
                     Interface::Errors::ErrorStartingUpdate::name(),
                     "Could not enable position updates");
-        LOG(ERROR) << e.what();
+        SYS_LOG(ERROR) << e.what();
     }
 
     try
@@ -217,7 +217,7 @@ void culss::Skeleton::on_stop_heading_updates(const core::dbus::Message::Ptr& ms
         configuration.local.bus->send(reply);
     } catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        SYS_LOG(ERROR) << e.what();
     }
 }
 
@@ -237,7 +237,7 @@ void culss::Skeleton::on_start_velocity_updates(const core::dbus::Message::Ptr& 
                     msg,
                     Interface::Errors::ErrorStartingUpdate::name(),
                     "Could not enable position updates");
-        LOG(ERROR) << e.what();
+        SYS_LOG(ERROR) << e.what();
     }
 
     try
@@ -245,7 +245,7 @@ void culss::Skeleton::on_start_velocity_updates(const core::dbus::Message::Ptr& 
         configuration.local.bus->send(reply);
     } catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        SYS_LOG(ERROR) << e.what();
     }
 }
 
@@ -265,7 +265,7 @@ void culss::Skeleton::on_stop_velocity_updates(const core::dbus::Message::Ptr& m
                     msg,
                     Interface::Errors::ErrorStartingUpdate::name(),
                     "Could not enable position updates");
-        LOG(ERROR) << e.what();
+        SYS_LOG(ERROR) << e.what();
     }
 
     try
@@ -273,7 +273,7 @@ void culss::Skeleton::on_stop_velocity_updates(const core::dbus::Message::Ptr& m
         configuration.local.bus->send(reply);
     } catch(const std::exception& e)
     {
-        LOG(ERROR) << e.what();
+        SYS_LOG(ERROR) << e.what();
     }
 }
 

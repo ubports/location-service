@@ -154,7 +154,7 @@ void culss::Stub::stop_position_updates() noexcept
         }
     } catch(const std::runtime_error& e)
     {
-        LOG(WARNING) << e.what();
+        VLOG(1) << e.what();
     }
 }
 
@@ -185,7 +185,7 @@ void culss::Stub::stop_velocity_updates() noexcept
         }
     } catch(const std::runtime_error& e)
     {
-        LOG(WARNING) << e.what();
+        VLOG(1) << e.what();
     }
 }
 
@@ -216,7 +216,7 @@ void culss::Stub::stop_heading_updates() noexcept
         }
     } catch(const std::runtime_error& e)
     {
-        LOG(WARNING) << e.what();
+        VLOG(1) << e.what();
     }
 }
 

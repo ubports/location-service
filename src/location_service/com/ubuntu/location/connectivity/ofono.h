@@ -30,6 +30,8 @@
 #include <core/dbus/types/stl/tuple.h>
 #include <core/dbus/types/stl/vector.h>
 
+#include <com/ubuntu/location/logging.h>
+
 namespace org
 {
 struct Ofono
@@ -612,7 +614,7 @@ struct Manager
 
                 if (it == properties.end())
                 {
-                    LOG(WARNING) << "Could not find property for name " << Property::name();
+                    VLOG(1) << "Could not find property for name " << Property::name();
                     return typename Property::ValueType{};
                 }
 

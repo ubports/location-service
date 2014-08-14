@@ -154,10 +154,10 @@ void android::HardwareAbstractionLayer::on_xtra_download_request(void* context)
             u_hardware_gps_inject_xtra_data(thiz->impl.gps_handle, &xtra_gps_data.front(), xtra_gps_data.size());
     } catch(const std::exception& e)
     {
-        LOG(ERROR) << "Error downloading GPS Xtra data: " << e.what();
+        SYS_LOG(ERROR) << "Error downloading GPS Xtra data: " << e.what();
     } catch(...)
     {
-        LOG(ERROR) << "Error downloading GPS Xtra data.";
+        SYS_LOG(ERROR) << "Error downloading GPS Xtra data.";
     }
 
 }

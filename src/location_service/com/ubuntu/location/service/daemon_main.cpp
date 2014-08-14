@@ -43,7 +43,7 @@ int main(int argc, const char** argv)
     if (ec)
     {
         FLAGS_logtostderr = true;
-        LOG(WARNING) << "Problem creating directory for log files: " << ec << "."
+        VLOG(1) << "Problem creating directory for log files: " << ec << "."
                      << "Falling back to stderr logging.";
     }
 

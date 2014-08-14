@@ -174,7 +174,7 @@ void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr
                     culs::Interface::Errors::CreatingSession::name(),
                     "Error creating session");
         // We log the error for debugging purposes.
-        LOG(ERROR) << "Error creating session: " << e.what();
+        SYS_LOG(ERROR) << "Error creating session: " << e.what();
     }
 
     // We are done processing the request and try to send out the result to the client.
@@ -184,7 +184,7 @@ void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr
     } catch(const std::exception& e)
     {
         // We log the error for debugging purposes.
-        LOG(ERROR) << "Error sending reply to session creation request: " << e.what();
+        SYS_LOG(ERROR) << "Error sending reply to session creation request: " << e.what();
     }
 }
 
