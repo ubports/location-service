@@ -138,7 +138,7 @@ impl::OfonoNmConnectivityManager::Private::Private()
     }
     catch (const std::exception& e)
     {
-        LOG(ERROR) << "Error while setting up access to radio and network stack: " << e.what();
+        SYSLOG(ERROR) << "Error while setting up access to radio and network stack: " << e.what();
     }
 }
 
@@ -168,7 +168,7 @@ void impl::OfonoNmConnectivityManager::Private::setup_radio_stack_access()
         }
         catch(const std::runtime_error& e)
         {
-            LOG(WARNING) << "Exception while creating connected radio cell: " << e.what();
+            VLOG(1) << "Exception while creating connected radio cell: " << e.what();
         }
     });
 
@@ -180,7 +180,7 @@ void impl::OfonoNmConnectivityManager::Private::setup_radio_stack_access()
         }
         catch(const std::exception& e)
         {
-            LOG(WARNING) << "Exception while adding modem: " << e.what();
+            VLOG(1) << "Exception while adding modem: " << e.what();
         }
     });
 
@@ -192,7 +192,7 @@ void impl::OfonoNmConnectivityManager::Private::setup_radio_stack_access()
         }
         catch(const std::exception& e)
         {
-            LOG(WARNING) << "Exception while removing modem: " << e.what();
+            VLOG(1) << "Exception while removing modem: " << e.what();
         }
     });
 }
@@ -262,7 +262,7 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_interfaces_changed(
     auto itm = cached.modems.find(path);
     if (itm == cached.modems.end())
     {
-        LOG(WARNING) << "Could not find a modem for path " << path.as_string();
+        VLOG(1) << "Could not find a modem for path " << path.as_string();
         return;
     }
 
@@ -319,7 +319,7 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
                 }
                 catch (const std::exception& e)
                 {
-                    LOG(ERROR) << "Error while creating ap/wifi: " << e.what();
+                    VLOG(1) << "Error while creating ap/wifi: " << e.what();
                 }
             });
 
@@ -336,7 +336,7 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
                 }
                 catch (const std::exception& e)
                 {
-                    LOG(ERROR) << "Error while creating ap/wifi: " << e.what();
+                    VLOG(1) << "Error while creating ap/wifi: " << e.what();
                 }
             });
 
@@ -348,7 +348,7 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
                 }
                 catch (const std::exception& e)
                 {
-                    LOG(ERROR) << "Error while removing ap/wifi: " << e.what();
+                    VLOG(1) << "Error while removing ap/wifi: " << e.what();
                 }
             });
         }

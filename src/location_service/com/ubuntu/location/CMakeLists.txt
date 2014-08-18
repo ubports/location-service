@@ -52,6 +52,8 @@ add_library(
 
   set_name_for_thread.cpp
 
+  connectivity/cached_radio_cell.cpp
+  connectivity/cached_wireless_network.cpp
   connectivity/manager.cpp
   connectivity/radio_cell.cpp
   connectivity/wireless_network.cpp
