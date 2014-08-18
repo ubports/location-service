@@ -1,3 +1,18 @@
+location-service (2.0.1+14.10.20140818-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Add a demultiplexing reporter implementation. Adjust daemon config
+    to instantiate a demultiplexing reporter instance, together with two
+    ichnaea reporters feeding to Mozilla's and Ubuntu's location service
+    instances.
+  * Make sure the per-user trust-store instances are restarted on
+    location service restarts.
+  * Clean up CachedRadioCell and CachedWirelessNetwork. Switch to
+    logging to syslog. (LP: #1356814)
+  * Map edge -> gsm. Map hspa -> umts. (LP: #1357042)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 18 Aug 2014 08:11:55 +0000
+
 location-service (2.0.1+14.10.20140811-0ubuntu1) utopic; urgency=low
 
   [ thomas-voss ]
