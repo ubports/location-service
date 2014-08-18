@@ -81,6 +81,11 @@ culs::Implementation::Implementation(const culs::Implementation::Configuration& 
                       = value ?
                           cul::WifiAndCellIdReportingState::on :
                           cul::WifiAndCellIdReportingState::off;
+
+                  if (value)
+                      harvester.start();
+                  else
+                      harvester.stop();
               }),
           does_satellite_based_positioning().changed().connect(
               [this](bool value)
