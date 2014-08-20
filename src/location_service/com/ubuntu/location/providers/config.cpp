@@ -68,3 +68,11 @@ static FactoryInjector skyhook_injector
 };
 #endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_SKYHOOK
 
+#if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_ESPOO)
+#include <com/ubuntu/location/providers/espoo/provider.h>
+static FactoryInjector espoo_injector
+{
+    "espoo::Provider", 
+    com::ubuntu::location::providers::espoo::Provider::create_instance
+};
+#endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_ESPOO
