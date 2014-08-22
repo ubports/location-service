@@ -15,8 +15,8 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include <com/ubuntu/location/providers/espoo/provider.h>
-#include <com/ubuntu/location/providers/espoo/espoo.h>
+#include <com/ubuntu/location/providers/remote/provider.h>
+#include <com/ubuntu/location/providers/remote/remote_interface.h>
 
 #include <com/ubuntu/location/logging.h>
 
@@ -24,13 +24,10 @@
 #include <core/dbus/signal.h>
 #include <core/dbus/asio/executor.h>
 
-#include "core/dbus/object.h"
-#include "core/dbus/signal.h"
-
 #include <thread>
 
 namespace cul = com::ubuntu::location;
-namespace culpe = com::ubuntu::location::providers::espoo;
+namespace culpr = com::ubuntu::location::providers::remote;
 
 namespace dbus = core::dbus;
 
@@ -43,18 +40,18 @@ dbus::Bus::Ptr the_system_bus()
 }
 }
 
-struct culpe::Provider::Private
+struct culpr::Provider::Private
 {
     typedef core::dbus::Signal<
-        com::ubuntu::espoo::Espoo::Signals::PositionChanged,
-	com::ubuntu::espoo::Espoo::Signals::PositionChanged::ArgumentType
+        com::ubuntu::remote::RemoteInterface::Signals::PositionChanged,
+	com::ubuntu::remote::RemoteInterface::Signals::PositionChanged::ArgumentType
     > PositionChanged;
 
-    Private(const culpe::Provider::Configuration& config)
+    Private(const culpr::Provider::Configuration& config)
             : bus(the_system_bus()),
               service(dbus::Service::use_service(bus, config.name)),
               object(service->object_for_path(config.path)),
-              signal_position_changed(object->get_signal<com::ubuntu::espoo::Espoo::Signals::PositionChanged>())
+              signal_position_changed(object->get_signal<com::ubuntu::remote::RemoteInterface::Signals::PositionChanged>())
     {
     }
 
@@ -83,26 +80,26 @@ struct culpe::Provider::Private
     std::thread worker;
 };
 
-std::string culpe::Provider::class_name()
+std::string culpr::Provider::class_name()
 {
-    return "espoo::Provider";
+    return "remote::Provider";
 }
 
-cul::Provider::Ptr culpe::Provider::create_instance(const cul::ProviderFactory::Configuration& config)
+cul::Provider::Ptr culpr::Provider::create_instance(const cul::ProviderFactory::Configuration& config)
 {
-    culpe::Provider::Configuration pConfig;
+    culpr::Provider::Configuration pConfig;
     pConfig.name = config.count(Configuration::key_name()) > 0 ? config.get<std::string>(Configuration::key_name()) : throw std::runtime_error("Missing bus-name");
     pConfig.path = config.count(Configuration::key_path()) > 0 ? config.get<std::string>(Configuration::key_path()) : throw std::runtime_error("Missing bus-path");
-    return cul::Provider::Ptr{new culpe::Provider{pConfig}};
+    return cul::Provider::Ptr{new culpr::Provider{pConfig}};
 }
 
-culpe::Provider::Provider(const culpe::Provider::Configuration& config) 
+culpr::Provider::Provider(const culpr::Provider::Configuration& config) 
         : com::ubuntu::location::Provider(config.features, config.requirements),
           d(new Private(config))
 {
     d->position_updates_connection = 
             d->signal_position_changed->connect(
-                [this](const com::ubuntu::espoo::Espoo::Signals::PositionChanged::ArgumentType& arg)
+                [this](const com::ubuntu::remote::RemoteInterface::Signals::PositionChanged::ArgumentType& arg)
                 {
 		    std::cout << "Got new update!\n"; 
                     auto longitude = std::get<0>(arg);
@@ -125,25 +122,25 @@ culpe::Provider::Provider(const culpe::Provider::Configuration& config)
 
 }
 
-culpe::Provider::~Provider() noexcept
+culpr::Provider::~Provider() noexcept
 {
     d->stop();
 }
 
-bool culpe::Provider::matches_criteria(const cul::Criteria&)
+bool culpr::Provider::matches_criteria(const cul::Criteria&)
 {
     return true;
 
 }
 
-void culpe::Provider::start_position_updates()
+void culpr::Provider::start_position_updates()
 {
-    VLOG(10) << "Starting espoo provider\n";
+    VLOG(10) << "Starting remote provider\n";
     d->start();
 }
 
-void culpe::Provider::stop_position_updates()
+void culpr::Provider::stop_position_updates()
 {
-    VLOG(10) << "Stopping espoo provider\n";
+    VLOG(10) << "Stopping remote provider\n";
     d->stop();
 }

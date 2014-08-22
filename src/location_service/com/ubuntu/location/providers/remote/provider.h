@@ -23,17 +23,13 @@
 
 namespace com
 {
-
 namespace ubuntu
 {
-
 namespace location
 {
-
 namespace providers
 {
-
-namespace espoo
+namespace remote
 {
 
 class Provider : public com::ubuntu::location::Provider
@@ -46,7 +42,7 @@ class Provider : public com::ubuntu::location::Provider
     // from the provided property bundle.
     static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
 
-    // structure that represents the configuration used in the espoo provider
+    // structure that represents the configuration used in the remote provider
     struct Configuration
     {
         static std::string key_name() { return "name"; }
@@ -71,13 +67,9 @@ class Provider : public com::ubuntu::location::Provider
     std::unique_ptr<Private> d;
 };
 
-}  // espoo
-
+}  // remote
 }  // providers
-
 }  // location
-
 }  // ubuntu
-
 }  // com
 #endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GEOCLUE_PROVIDER_H_

@@ -19,33 +19,30 @@
 #ifndef CORE_UBUNTU_ESPOO_PROVIDER_P_H_
 #define CORE_UBUNTU_ESPOO_PROVIDER_P_H_
 
-#include <com/ubuntu/location/providers/espoo/macros.h>
+#include <core/dbus/macros.h>
 #include <core/dbus/traits/service.h>
 
 namespace com
 {
-
 namespace ubuntu
 {
-
-namespace espoo
+namespace remote
 {
-
-struct Espoo
+struct RemoteInterface
 {
 
     static const std::string& name()
     {
-        static const std::string s{"com.ubuntu.espoo.Service.Provider"};
+        static const std::string s{"com.ubuntu.remote.Service.Provider"};
         return s;
     }
 
-    METHOD(StartPositionUpdates, Espoo, void)
-    METHOD(StopPositionUpdates, Espoo, void)
-    METHOD(StartHeadingUpdates, Espoo, void)
-    METHOD(StopHeadingUpdates, Espoo, void)
-    METHOD(StartVelocityUpdates, Espoo, void)
-    METHOD(StopvVelocityUpdates, Espoo, void)
+    DBUS_CPP_METHOD_DEF(StartPositionUpdates, RemoteInterface)
+    DBUS_CPP_METHOD_DEF(StopPositionUpdates, RemoteInterface)
+    DBUS_CPP_METHOD_DEF(StartHeadingUpdates, RemoteInterface)
+    DBUS_CPP_METHOD_DEF(StopHeadingUpdates, RemoteInterface)
+    DBUS_CPP_METHOD_DEF(StartVelocityUpdates, RemoteInterface)
+    DBUS_CPP_METHOD_DEF(StopvVelocityUpdates, RemoteInterface)
 
     struct Signals
     {
@@ -55,35 +52,31 @@ struct Espoo
             {
                 return "PositionChanged";
             };
-            typedef Espoo Interface;
+            typedef RemoteInterface Interface;
             typedef std::tuple<double, double, double, double, uint32_t> ArgumentType;
         };
 
-        SIGNAL(HeadingChanged, Espoo, double)
-        SIGNAL(VelocityChanged, Espoo, double)
+        DBUS_CPP_SIGNAL_DEF(HeadingChanged, RemoteInterface, double)
+        DBUS_CPP_SIGNAL_DEF(VelocityChanged, RemoteInterface, double)
     };
 
     struct Properties
     {
-        READABLE_PROPERTY(HasPosition, Espoo, bool)
-        READABLE_PROPERTY(HasVelocity, Espoo, bool)
-        READABLE_PROPERTY(HasHeading, Espoo, bool)
-        READABLE_PROPERTY(RequiresSatellites, Espoo, bool)
-        READABLE_PROPERTY(RequiresCellNetwork, Espoo, bool)
-        READABLE_PROPERTY(RequiresDataNetwork, Espoo, bool)
-        READABLE_PROPERTY(RequiresMonetarySpending, Espoo, bool)
-        READABLE_PROPERTY(ArePositionUpdatesRunning, Espoo, bool)
-        READABLE_PROPERTY(AreHeadingUpdatesRunning, Espoo, bool)
-        READABLE_PROPERTY(AreVelocityUpdatesRunning, Espoo, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(HasPosition, RemoteInterface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(HasVelocity, RemoteInterface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(HasHeading, RemoteInterface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresSatellites, RemoteInterface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresCellNetwork, RemoteInterface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresDataNetwork, RemoteInterface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresMonetarySpending, RemoteInterface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(ArePositionUpdatesRunning, RemoteInterface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(AreHeadingUpdatesRunning, RemoteInterface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(AreVelocityUpdatesRunning, RemoteInterface, bool)
     };
 
 };
-
-
-} // espoo
-
+} // remote
 } // ubuntu
-
 }  // core
 
 namespace core
@@ -93,7 +86,7 @@ namespace dbus
 namespace traits
 {
 template<>
-struct Service<com::ubuntu::espoo::Espoo>
+struct Service<com::ubuntu::remote::RemoteInterface>
 {
     static const std::string& interface_name()
     {
