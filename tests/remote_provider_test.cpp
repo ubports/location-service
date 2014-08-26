@@ -20,6 +20,8 @@
 #include <com/ubuntu/location/proxy_provider.h>
 #include <com/ubuntu/location/providers/remote/provider.h>
 
+#include <core/dbus/fixture.h>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -40,6 +42,13 @@ MATCHER_P(postion_equals_tuple, value, "Returns if the string maps are equal.") 
     return longitude == pos.longitude && latitude == pos.latitude && altitude == pos.altitude;
 }
 
+namespace
+{
+struct RemoteProvider : public core::dbus::testing::Fixture
+{
+
+};
+
 class MockEventConsumer
 {
  public:
@@ -47,13 +56,13 @@ class MockEventConsumer
 
     MOCK_METHOD1(on_new_position, void(const cul::Update<cul::Position>&));
 };
-
-TEST(RemoteProvider, matches_criteria)
+}
+TEST_F(RemoteProvider, matches_criteria)
 {
     auto conf = remote::Provider::Configuration{};
     conf.name = "com.ubuntu.espoo.Service.Provider";
     conf.path = "/com/ubuntu/espoo/Service/Provider";
-
+    conf.connection = session_bus();
     remote::Provider provider(conf);
 
     EXPECT_FALSE(provider.requires(com::ubuntu::location::Provider::Requirements::satellites));
@@ -62,7 +71,7 @@ TEST(RemoteProvider, matches_criteria)
     EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::monetary_spending));
 }
 
-TEST(RemoteProvider, updates_are_fwd)
+TEST_F(RemoteProvider, updates_are_fwd)
 {
     // update received from the remote provider in a tuple
     std::tuple<double, double, double, double, uint32_t> update{3, 4, 4, 4, 0}; 
@@ -70,6 +79,7 @@ TEST(RemoteProvider, updates_are_fwd)
     auto conf = remote::Provider::Configuration{};
     conf.name = "com.ubuntu.espoo.Service.Provider";
     conf.path = "/com/ubuntu/espoo/Service/Provider";
+    conf.connection = session_bus();
 
     remote::Provider provider{conf};
 

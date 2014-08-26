@@ -22,6 +22,8 @@
 #include <com/ubuntu/location/provider_factory.h>
 #include <com/ubuntu/location/providers/remote/remote_interface.h>
 
+#include <core/dbus/bus.h>
+
 namespace com
 {
 namespace ubuntu
@@ -48,8 +50,11 @@ class Provider : public com::ubuntu::location::Provider
     {
         static std::string key_name() { return "name"; }
         static std::string key_path() { return "path"; }
+
         std::string name;
         std::string path;
+
+        core::dbus::Bus::Ptr connection;
 
         Provider::Features features = Provider::Features::position;
         Provider::Requirements requirements = Provider::Requirements::cell_network |
