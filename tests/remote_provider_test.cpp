@@ -41,16 +41,6 @@ MATCHER_P(postion_equals_tuple, value, "Returns if the string maps are equal.") 
     return longitude == pos.longitude && latitude == pos.latitude && altitude == pos.altitude;
 }
 
-class DummyProvider : public remote::Provider
-{
-  public:
-    DummyProvider(const Configuration& config) : remote::Provider(config)
-    {
-    }
-
-    using remote::Provider::on_position_changed;
-};
-
 class MockEventConsumer
 {
  public:
@@ -65,7 +55,7 @@ TEST(RemoteProvider, matches_criteria)
     conf.name = "com.ubuntu.espoo.Service.Provider";
     conf.path = "/com/ubuntu/espoo/Service/Provider";
 
-    DummyProvider provider(conf);
+    remote::Provider provider(conf);
 
     EXPECT_FALSE(provider.requires(com::ubuntu::location::Provider::Requirements::satellites));
     EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::cell_network));
@@ -82,7 +72,7 @@ TEST(RemoteProvider, updates_are_fwd)
     conf.name = "com.ubuntu.espoo.Service.Provider";
     conf.path = "/com/ubuntu/espoo/Service/Provider";
 
-    DummyProvider provider{conf};
+    remote::Provider provider{conf};
 
     cul::Provider::Ptr p1{std::addressof(provider), [](cul::Provider*){}};
     
