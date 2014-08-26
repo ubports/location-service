@@ -53,7 +53,7 @@ struct RemoteInterface
                 return "PositionChanged";
             };
             typedef RemoteInterface Interface;
-            typedef std::tuple<double, double, double, double, uint32_t> ArgumentType;
+            typedef std::tuple<double, double, double, double, double, uint32_t> ArgumentType;
         };
 
         DBUS_CPP_SIGNAL_DEF(HeadingChanged, RemoteInterface, double)
