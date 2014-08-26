@@ -42,7 +42,7 @@ struct RemoteInterface
     DBUS_CPP_METHOD_DEF(StartHeadingUpdates, RemoteInterface)
     DBUS_CPP_METHOD_DEF(StopHeadingUpdates, RemoteInterface)
     DBUS_CPP_METHOD_DEF(StartVelocityUpdates, RemoteInterface)
-    DBUS_CPP_METHOD_DEF(StopvVelocityUpdates, RemoteInterface)
+    DBUS_CPP_METHOD_DEF(StopVelocityUpdates, RemoteInterface)
 
     struct Signals
     {
