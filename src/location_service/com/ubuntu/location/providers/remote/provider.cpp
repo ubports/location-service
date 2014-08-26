@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Authored by: Thomas Voß <thomas.voss@canonical.com>
+ * Authored by: Manuel de la Peña <manuel.delapena@canonical.com>
  */
 #include <com/ubuntu/location/providers/remote/provider.h>
 
