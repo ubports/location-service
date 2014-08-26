@@ -65,7 +65,7 @@ TEST(RemoteProvider, matches_criteria)
 TEST(RemoteProvider, updates_are_fwd)
 {
     // update received from the remote provider in a tuple
-    std::tuple<double, double, double, double, double, uint32_t> update{3, 4, 4, 4, 9, 0};
+    std::tuple<double, double, double, double, uint32_t> update{3, 4, 4, 4, 0}; 
 
     auto conf = remote::Provider::Configuration{};
     conf.name = "com.ubuntu.espoo.Service.Provider";

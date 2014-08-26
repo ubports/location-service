@@ -135,5 +135,10 @@ if (LOCATION_SERVICE_ENABLE_REMOTE_PROVIDER)
     gtest_main
   )
 
-  add_test(remote_provider_test ${CMAKE_CURRENT_BINARY_DIR}/remote_provider_test)
+  if (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
+    add_test(remote_provider_test ${DBUS_TEST_RUNNER_EXECUTABLE} --task=${CMAKE_CURRENT_BINARY_DIR}/remote_provider_test)
+  else (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
+    add_test(remote_provider_test ${CMAKE_CURRENT_BINARY_DIR}/remote_provider_test)
+  endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
+
 endif (LOCATION_SERVICE_ENABLE_REMOTE_PROVIDER)
