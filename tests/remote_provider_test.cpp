@@ -30,13 +30,12 @@ using namespace ::testing;
 
 
 MATCHER_P(postion_equals_tuple, value, "Returns if the string maps are equal.") {
-    auto tuple = static_cast<std::tuple<double, double, double, double, uint32_t> >(value);
-    auto pos = static_cast<cul::Update<cul::Position> >(arg).value;
-    
+    auto pos = arg.value;
+
     // convert the tuple to the correct units
-    cul::wgs84::Longitude longitude {std::get<0>(tuple)* cul::units::Degrees};
-    cul::wgs84::Latitude latitude {std::get<1>(tuple)* cul::units::Degrees};
-    cul::wgs84::Altitude altitude {std::get<2>(tuple)* cul::units::Meters};
+    cul::wgs84::Longitude longitude {std::get<0>(value)* cul::units::Degrees};
+    cul::wgs84::Latitude latitude {std::get<1>(value)* cul::units::Degrees};
+    cul::wgs84::Altitude altitude {std::get<2>(value)* cul::units::Meters};
 
     return longitude == pos.longitude && latitude == pos.latitude && altitude == pos.altitude;
 }
@@ -66,7 +65,7 @@ TEST(RemoteProvider, matches_criteria)
 TEST(RemoteProvider, updates_are_fwd)
 {
     // update received from the remote provider in a tuple
-    std::tuple<double, double, double, double, uint32_t> update{3, 4, 4, 4, 0}; 
+    std::tuple<double, double, double, double, double, uint32_t> update{3, 4, 4, 4, 9, 0};
 
     auto conf = remote::Provider::Configuration{};
     conf.name = "com.ubuntu.espoo.Service.Provider";
@@ -75,7 +74,7 @@ TEST(RemoteProvider, updates_are_fwd)
     remote::Provider provider{conf};
 
     cul::Provider::Ptr p1{std::addressof(provider), [](cul::Provider*){}};
-    
+
     cul::ProviderSelection selection{p1, p1, p1};
 
     cul::ProxyProvider pp{selection};
