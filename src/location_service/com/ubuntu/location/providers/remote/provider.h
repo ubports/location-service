@@ -64,7 +64,6 @@ class Provider : public com::ubuntu::location::Provider
     virtual void start_position_updates();
     virtual void stop_position_updates();
 
-  protected:
     void on_position_changed(const com::ubuntu::remote::RemoteInterface::Signals::PositionChanged::ArgumentType& arg);
 
   private:
