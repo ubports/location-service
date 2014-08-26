@@ -30,7 +30,7 @@ using namespace ::testing;
 
 
 MATCHER_P(postion_equals_tuple, value, "Returns if the string maps are equal.") {
-    auto tuple = static_cast<std::tuple<double, double, double, double, uint32_t> >(value);
+    auto tuple = static_cast<std::tuple<double, double, double, double, double, uint32_t> >(value);
     auto pos = static_cast<cul::Update<cul::Position> >(arg).value;
     
     // convert the tuple to the correct units
@@ -76,7 +76,7 @@ TEST(RemoteProvider, matches_criteria)
 TEST(RemoteProvider, updates_are_fwd)
 {
     // update received from the remote provider in a tuple
-    std::tuple<double, double, double, double, uint32_t> update{3, 4, 4, 4, 0}; 
+    std::tuple<double, double, double, double, double, uint32_t> update{3, 4, 4, 4, 9, 0}; 
 
     auto conf = remote::Provider::Configuration{};
     conf.name = "com.ubuntu.espoo.Service.Provider";
