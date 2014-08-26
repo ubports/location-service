@@ -139,9 +139,10 @@ struct NetworkManager
 
         struct PropertiesChanged
         {
-            inline static std::string name()
+            inline static const std::string& name()
             {
-                return "PropertiesChanged";
+                static const std::string s{"PropertiesChanged"};
+                return s;
             }
 
             typedef AccessPoint Interface;
@@ -390,16 +391,12 @@ struct NetworkManager
         {
         }
 
-        void enumerate_devices(const std::function<void(const NetworkManager::Device& device)>& functor)
+        void enumerate_devices(const std::function<void(const core::dbus::types::ObjectPath& path)>& functor)
         {
             auto device_paths = properties.devices->get();
 
             for (const auto& device_path : device_paths)
-                functor(NetworkManager::Device
-                        {
-                            service,
-                            service->object_for_path(device_path)
-                        });
+                functor(device_path);
         }
 
         std::shared_ptr<core::dbus::Service> service;
