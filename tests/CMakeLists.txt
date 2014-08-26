@@ -116,3 +116,24 @@ if (LOCATION_SERVICE_ENABLE_GEOCLUE_PROVIDERS)
     add_test(geoclue_provider_test ${CMAKE_CURRENT_BINARY_DIR}/geoclue_provider_test)
   endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
 endif (LOCATION_SERVICE_ENABLE_GEOCLUE_PROVIDERS)
+
+if (LOCATION_SERVICE_ENABLE_REMOTE_PROVIDER)
+  add_executable(remote_provider_test remote_provider_test.cpp)
+  target_link_libraries(
+    remote_provider_test
+    
+    ubuntu-location-service
+
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${Boost_LIBRARIES}
+    ${PROCESS_CPP_LIBRARIES}
+    ${ARGN}
+
+    gmock
+
+    gtest
+    gtest_main
+  )
+
+  add_test(remote_provider_test ${CMAKE_CURRENT_BINARY_DIR}/remote_provider_test)
+endif (LOCATION_SERVICE_ENABLE_REMOTE_PROVIDER)
