@@ -16,7 +16,6 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 #include <com/ubuntu/location/providers/remote/provider.h>
-#include <com/ubuntu/location/providers/remote/remote_interface.h>
 
 #include <com/ubuntu/location/logging.h>
 
@@ -66,7 +65,16 @@ struct culpr::Provider::Private
     void stop()
     {
         VLOG(10) << __PRETTY_FUNCTION__;
-        bus->stop();
+        try
+        {
+            bus->stop();
+        }
+        catch(...)
+        {
+            // can happen if the start method was not called
+            VLOG(10) << "Stopping not started remote provider.";
+        }
+
         if (worker.joinable())
             worker.join();
     }
@@ -93,33 +101,16 @@ cul::Provider::Ptr culpr::Provider::create_instance(const cul::ProviderFactory::
     return cul::Provider::Ptr{new culpr::Provider{pConfig}};
 }
 
-culpr::Provider::Provider(const culpr::Provider::Configuration& config) 
+culpr::Provider::Provider(const culpr::Provider::Configuration& config)
         : com::ubuntu::location::Provider(config.features, config.requirements),
           d(new Private(config))
 {
-    d->position_updates_connection = 
-            d->signal_position_changed->connect(
-                [this](const com::ubuntu::remote::RemoteInterface::Signals::PositionChanged::ArgumentType& arg)
-                {
-		    std::cout << "Got new update!\n"; 
-                    auto longitude = std::get<0>(arg);
-		    auto latitude = std::get<1>(arg);
-		    auto altitude = std::get<2>(arg);
-
-                    VLOG(10) << "New update received with longitude: " << longitude  << "latitude: " << latitude << "altitude: " << altitude;
-
-                    cul::Position pos
-                    {
-                        cul::wgs84::Latitude{latitude* cul::units::Degrees},
-                        cul::wgs84::Longitude{longitude* cul::units::Degrees}
-                    };
-
-                    pos.altitude = cul::wgs84::Altitude{altitude* cul::units::Meters};
-                    cul::Update<cul::Position> update(pos);
-                    VLOG(10) << "Position updated added";
-                    this->mutable_updates().position(update);
-                });
-
+    d->position_updates_connection =
+        d->signal_position_changed->connect(
+            [this](const com::ubuntu::remote::RemoteInterface::Signals::PositionChanged::ArgumentType& arg)
+            {
+                this->on_position_changed(arg);
+            });
 }
 
 culpr::Provider::~Provider() noexcept
@@ -127,10 +118,29 @@ culpr::Provider::~Provider() noexcept
     d->stop();
 }
 
+void culpr::Provider::on_position_changed(const com::ubuntu::remote::RemoteInterface::Signals::PositionChanged::ArgumentType& arg)
+{
+    auto longitude = std::get<0>(arg);
+    auto latitude = std::get<1>(arg);
+    auto altitude = std::get<2>(arg);
+    VLOG(10) << "New update received with longitude: " << longitude
+        << "latitude: " << latitude << "altitude: " << altitude;
+
+    cul::Position pos
+    {
+        cul::wgs84::Latitude{latitude* cul::units::Degrees},
+        cul::wgs84::Longitude{longitude* cul::units::Degrees}
+    };
+
+    pos.altitude = cul::wgs84::Altitude{altitude* cul::units::Meters};
+    cul::Update<cul::Position> update(pos);
+    VLOG(10) << "Position updated added";
+    mutable_updates().position(update);
+}
+
 bool culpr::Provider::matches_criteria(const cul::Criteria&)
 {
     return true;
-
 }
 
 void culpr::Provider::start_position_updates()

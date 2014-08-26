@@ -20,6 +20,7 @@
 
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_factory.h>
+#include <com/ubuntu/location/providers/remote/remote_interface.h>
 
 namespace com
 {
@@ -50,8 +51,9 @@ class Provider : public com::ubuntu::location::Provider
         std::string name;
         std::string path;
 
-        Provider::Features features = Provider::Features::none;
-        Provider::Requirements requirements = Provider::Requirements::none;
+        Provider::Features features = Provider::Features::position;
+        Provider::Requirements requirements = Provider::Requirements::cell_network |
+            Provider::Requirements::data_network | Provider::Requirements::monetary_spending;
     };
 
     Provider(const Configuration& config);
@@ -61,6 +63,9 @@ class Provider : public com::ubuntu::location::Provider
 
     virtual void start_position_updates();
     virtual void stop_position_updates();
+
+  protected:
+    void on_position_changed(const com::ubuntu::remote::RemoteInterface::Signals::PositionChanged::ArgumentType& arg);
 
   private:
     struct Private;
