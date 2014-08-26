@@ -34,7 +34,8 @@ namespace
 {
 dbus::Bus::Ptr the_system_bus()
 {
-    static dbus::Bus::Ptr system_bus = std::make_shared<dbus::Bus>(dbus::WellKnownBus::system);
+    dbus::Bus::Ptr system_bus = std::make_shared<dbus::Bus>(dbus::WellKnownBus::system);
+    system_bus->install_executor(core::dbus::asio::make_executor(system_bus));
     return system_bus;
 }
 }
@@ -47,7 +48,7 @@ struct culpr::Provider::Private
     > PositionChanged;
 
     Private(const culpr::Provider::Configuration& config)
-            : bus(the_system_bus()),
+            : bus(config.connection),
               service(dbus::Service::use_service(bus, config.name)),
               object(service->object_for_path(config.path)),
               signal_position_changed(object->get_signal<com::ubuntu::remote::RemoteInterface::Signals::PositionChanged>())
@@ -57,7 +58,6 @@ struct culpr::Provider::Private
     void start()
     {
         VLOG(10) << __PRETTY_FUNCTION__;
-        bus->install_executor(core::dbus::asio::make_executor(bus));
         if (!worker.joinable())
             worker = std::move(std::thread{std::bind(&dbus::Bus::run, bus)});
     }
@@ -98,6 +98,9 @@ cul::Provider::Ptr culpr::Provider::create_instance(const cul::ProviderFactory::
     culpr::Provider::Configuration pConfig;
     pConfig.name = config.count(Configuration::key_name()) > 0 ? config.get<std::string>(Configuration::key_name()) : throw std::runtime_error("Missing bus-name");
     pConfig.path = config.count(Configuration::key_path()) > 0 ? config.get<std::string>(Configuration::key_path()) : throw std::runtime_error("Missing bus-path");
+
+    pConfig.connection = the_system_bus();
+
     return cul::Provider::Ptr{new culpr::Provider{pConfig}};
 }
 
