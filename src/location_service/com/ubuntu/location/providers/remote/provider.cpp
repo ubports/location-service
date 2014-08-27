@@ -123,29 +123,7 @@ culpr::Provider::~Provider() noexcept
 
 void culpr::Provider::on_position_changed(const com::ubuntu::remote::RemoteInterface::Signals::PositionChanged::ArgumentType& arg)
 {
-    auto longitude = std::get<0>(arg);
-    auto latitude = std::get<1>(arg);
-    auto altitude = std::get<2>(arg);
-    auto horizontal_accuracy = std::get<3>(arg);
-    auto vertical_accuracy = std::get<4>(arg);
-
-    VLOG(10) << "New update received with longitude: " << longitude
-        << "latitude: " << latitude << "altitude: " << altitude
-        << "horizontal accuracy: " << horizontal_accuracy
-        << "vertical accuracy: " << vertical_accuracy;
-
-    cul::Position pos
-    {
-        cul::wgs84::Latitude{latitude* cul::units::Degrees},
-        cul::wgs84::Longitude{longitude* cul::units::Degrees}
-    };
-
-    pos.altitude = cul::wgs84::Altitude{altitude* cul::units::Meters};
-    pos.accuracy.horizontal = cul::Position::Accuracy::Horizontal(horizontal_accuracy*cul::units::Meters);
-    pos.accuracy.vertical = cul::Position::Accuracy::Vertical(vertical_accuracy*cul::units::Meters);
-    cul::Update<cul::Position> update(pos);
-    VLOG(10) << "Position updated added";
-    mutable_updates().position(update);
+    mutable_updates().position(arg);
 }
 
 bool culpr::Provider::matches_criteria(const cul::Criteria&)
