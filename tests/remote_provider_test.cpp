@@ -20,6 +20,8 @@
 #include <com/ubuntu/location/proxy_provider.h>
 #include <com/ubuntu/location/providers/remote/provider.h>
 
+#include <core/dbus/fixture.h>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -30,16 +32,25 @@ using namespace ::testing;
 
 
 MATCHER_P(postion_equals_tuple, value, "Returns if the string maps are equal.") {
-    auto tuple = static_cast<std::tuple<double, double, double, double, double, uint32_t> >(value);
-    auto pos = static_cast<cul::Update<cul::Position> >(arg).value;
-    
-    // convert the tuple to the correct units
-    cul::wgs84::Longitude longitude {std::get<0>(tuple)* cul::units::Degrees};
-    cul::wgs84::Latitude latitude {std::get<1>(tuple)* cul::units::Degrees};
-    cul::wgs84::Altitude altitude {std::get<2>(tuple)* cul::units::Meters};
+    auto pos = arg.value;
 
-    return longitude == pos.longitude && latitude == pos.latitude && altitude == pos.altitude;
+    // convert the tuple to the correct units
+    cul::wgs84::Longitude longitude {std::get<0>(value)* cul::units::Degrees};
+    cul::wgs84::Latitude latitude {std::get<1>(value)* cul::units::Degrees};
+    cul::wgs84::Altitude altitude {std::get<2>(value)* cul::units::Meters};
+    cul::Position::Accuracy::Horizontal horizontal_acc (std::get<3>(value)* cul::units::Meters);
+    cul::Position::Accuracy::Vertical vertical_acc (std::get<4>(value)* cul::units::Meters);
+
+    return longitude == pos.longitude && latitude == pos.latitude && altitude == pos.altitude
+        && pos.accuracy.horizontal ==  horizontal_acc && pos.accuracy.vertical == vertical_acc;
 }
+
+namespace
+{
+struct RemoteProvider : public core::dbus::testing::Fixture
+{
+
+};
 
 class MockEventConsumer
 {
@@ -48,13 +59,13 @@ class MockEventConsumer
 
     MOCK_METHOD1(on_new_position, void(const cul::Update<cul::Position>&));
 };
-
-TEST(RemoteProvider, matches_criteria)
+}
+TEST_F(RemoteProvider, matches_criteria)
 {
     auto conf = remote::Provider::Configuration{};
     conf.name = "com.ubuntu.espoo.Service.Provider";
     conf.path = "/com/ubuntu/espoo/Service/Provider";
-
+    conf.connection = session_bus();
     remote::Provider provider(conf);
 
     EXPECT_FALSE(provider.requires(com::ubuntu::location::Provider::Requirements::satellites));
@@ -63,7 +74,7 @@ TEST(RemoteProvider, matches_criteria)
     EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::monetary_spending));
 }
 
-TEST(RemoteProvider, updates_are_fwd)
+TEST_F(RemoteProvider, updates_are_fwd)
 {
     // update received from the remote provider in a tuple
     std::tuple<double, double, double, double, double, uint32_t> update{3, 4, 4, 4, 9, 0}; 
@@ -71,11 +82,12 @@ TEST(RemoteProvider, updates_are_fwd)
     auto conf = remote::Provider::Configuration{};
     conf.name = "com.ubuntu.espoo.Service.Provider";
     conf.path = "/com/ubuntu/espoo/Service/Provider";
+    conf.connection = session_bus();
 
     remote::Provider provider{conf};
 
     cul::Provider::Ptr p1{std::addressof(provider), [](cul::Provider*){}};
-    
+
     cul::ProviderSelection selection{p1, p1, p1};
 
     cul::ProxyProvider pp{selection};
