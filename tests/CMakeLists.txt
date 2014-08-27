@@ -135,5 +135,5 @@ if (LOCATION_SERVICE_ENABLE_REMOTE_PROVIDER)
     gtest_main
   )
 
-  add_test(remote_provider_test ${CMAKE_CURRENT_BINARY_DIR}/remote_provider_test)
+    add_test(remote_provider_test ${CMAKE_CURRENT_BINARY_DIR}/remote_provider_test)
 endif (LOCATION_SERVICE_ENABLE_REMOTE_PROVIDER)

@@ -196,6 +196,8 @@ int main(int argc, char** argv)
     {
         [cm, &cancelled]()
         {
+            cm->request_scan_for_wireless_networks();
+
             while (not cancelled)
             {
                 cm->enumerate_visible_wireless_networks([](const location::connectivity::WirelessNetwork::Ptr&)

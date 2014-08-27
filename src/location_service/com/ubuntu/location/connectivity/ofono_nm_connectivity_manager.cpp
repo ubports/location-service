@@ -308,10 +308,11 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
         if (device.type() == xdg::NetworkManager::Device::Type::wifi)
         {
             // Make the device known to the cache.
-            cached.wireless_devices.insert(std::make_pair(device_path, device));
+            std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device>::iterator it;
+            std::tie(it, std::ignore) = cached.wireless_devices.insert(std::make_pair(device_path, device));
 
             // Iterate over all currently known wifis
-            device.for_each_access_point([this, device_path](const core::dbus::types::ObjectPath& path)
+            it->second.for_each_access_point([this, device_path](const core::dbus::types::ObjectPath& path)
             {
                 try
                 {
@@ -323,12 +324,12 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
                 }
             });
 
-            device.signals.scan_done->connect([this]()
+            it->second.signals.scan_done->connect([this]()
             {
                 signals.wireless_network_scan_finished();
             });
 
-            device.signals.ap_added->connect([this, device_path](const core::dbus::types::ObjectPath& path)
+            it->second.signals.ap_added->connect([this, device_path](const core::dbus::types::ObjectPath& path)
             {
                 try
                 {
@@ -340,7 +341,7 @@ void impl::OfonoNmConnectivityManager::Private::setup_network_stack_access()
                 }
             });
 
-            device.signals.ap_removed->connect([this](const core::dbus::types::ObjectPath& path)
+            it->second.signals.ap_removed->connect([this](const core::dbus::types::ObjectPath& path)
             {
                 try
                 {
@@ -461,9 +462,21 @@ connectivity::Characteristics impl::OfonoNmConnectivityManager::Private::charact
     // and silently drop them. In that case, we reset the characteristics to 'none'.
     try
     {
-        ac.enumerate_devices([this, &characteristics](const xdg::NetworkManager::Device& device)
+        ac.enumerate_devices([this, &characteristics](const core::dbus::types::ObjectPath& path)
         {
-            auto type = device.type();
+            xdg::NetworkManager::Device::Type type{xdg::NetworkManager::Device::Type::unknown};
+
+            {
+                std::lock_guard<std::mutex> lg{cached.guard};
+                if (cached.wireless_devices.count(path) > 0)
+                    type = cached.wireless_devices.at(path).type();
+                else
+                    type = xdg::NetworkManager::Device
+                    {
+                        network_manager->service,
+                        network_manager->service->object_for_path(path)
+                    }.type();
+            }
 
             // We interpret a primary connection over a modem device as
             // having monetary costs (for the data plan), as well as being
