@@ -58,7 +58,7 @@ struct RemoteInterface
                 return "PositionChanged";
             };
             typedef RemoteInterface Interface;
-            typedef cul::Update<cul::Position> ArgumentType;
+            typedef cul::Position ArgumentType;
         };
 
         DBUS_CPP_SIGNAL_DEF(HeadingChanged, RemoteInterface, double)
