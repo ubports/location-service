@@ -9,10 +9,10 @@ if (LOCATION_SERVICE_ENABLE_GEOCLUE_PROVIDER)
   message(STATUS "Enabling support for Geoclue location providers")
 
   add_library(geoclue provider.cpp)
-  
+
   set(
     ENABLED_PROVIDER_TARGETS
-    ${ENABLED_PROVIDER_TARGETS} geoclue    
+    ${ENABLED_PROVIDER_TARGETS} geoclue
     PARENT_SCOPE
   )
 
