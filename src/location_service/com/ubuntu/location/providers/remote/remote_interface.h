@@ -22,6 +22,7 @@
 #include <core/dbus/macros.h>
 #include <core/dbus/traits/service.h>
 
+#include <com/ubuntu/location/codec.h>
 #include <com/ubuntu/location/update.h>
 #include <com/ubuntu/location/position.h>
 
