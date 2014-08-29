@@ -34,12 +34,9 @@ using namespace ::testing;
 MATCHER_P(postion_equals_tuple, value, "Returns if the string maps are equal.") {
     auto pos = arg.value;
 
-    // convert the tuple to the correct units
-    cul::wgs84::Longitude longitude {std::get<0>(value)* cul::units::Degrees};
-    cul::wgs84::Latitude latitude {std::get<1>(value)* cul::units::Degrees};
-    cul::wgs84::Altitude altitude {std::get<2>(value)* cul::units::Meters};
-
-    return longitude == pos.longitude && latitude == pos.latitude && altitude == pos.altitude;
+    return value.longitude == pos.longitude && value.latitude == pos.latitude && value.altitude == pos.altitude
+        && pos.accuracy.horizontal == value.accuracy.horizontal
+        && pos.accuracy.vertical == value.accuracy.vertical;
 }
 
 namespace
@@ -74,7 +71,15 @@ TEST_F(RemoteProvider, matches_criteria)
 TEST_F(RemoteProvider, updates_are_fwd)
 {
     // update received from the remote provider in a tuple
-    std::tuple<double, double, double, double, uint32_t> update{3, 4, 4, 4, 0}; 
+    cul::Position update
+    {
+        cul::wgs84::Latitude{2* cul::units::Degrees},
+        cul::wgs84::Longitude{3* cul::units::Degrees}
+    };
+
+    update.altitude = cul::wgs84::Altitude{4* cul::units::Meters};
+    update.accuracy.horizontal = cul::Position::Accuracy::Horizontal(5* cul::units::Meters);
+    update.accuracy.vertical = cul::Position::Accuracy::Vertical(6* cul::units::Meters);
 
     auto conf = remote::Provider::Configuration{};
     conf.name = "com.ubuntu.espoo.Service.Provider";

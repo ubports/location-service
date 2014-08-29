@@ -22,6 +22,12 @@
 #include <core/dbus/macros.h>
 #include <core/dbus/traits/service.h>
 
+#include <com/ubuntu/location/codec.h>
+#include <com/ubuntu/location/update.h>
+#include <com/ubuntu/location/position.h>
+
+namespace cul = com::ubuntu::location;
+
 namespace com
 {
 namespace ubuntu
@@ -53,7 +59,7 @@ struct RemoteInterface
                 return "PositionChanged";
             };
             typedef RemoteInterface Interface;
-            typedef std::tuple<double, double, double, double, uint32_t> ArgumentType;
+            typedef cul::Position ArgumentType;
         };
 
         DBUS_CPP_SIGNAL_DEF(HeadingChanged, RemoteInterface, double)
