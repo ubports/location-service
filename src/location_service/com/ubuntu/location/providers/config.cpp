@@ -68,3 +68,11 @@ static FactoryInjector skyhook_injector
 };
 #endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_SKYHOOK
 
+#if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_REMOTE)
+#include <com/ubuntu/location/providers/remote/provider.h>
+static FactoryInjector remote_injector
+{
+    "remote::Provider", 
+    com::ubuntu::location::providers::remote::Provider::create_instance
+};
+#endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_REMOTE
