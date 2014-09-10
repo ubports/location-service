@@ -27,11 +27,20 @@
 
 namespace cul = com::ubuntu::location;
 namespace culpr = com::ubuntu::location::providers::remote;
-
+namespace cur = com::ubuntu::remote;
 namespace dbus = core::dbus;
 
 namespace
 {
+template<typename T>
+void throw_if_error(const dbus::Result<T>& result)
+{
+    if (result.is_error()) throw std::runtime_error
+    {
+        result.error().print()
+    };
+}
+
 dbus::Bus::Ptr the_system_bus()
 {
     dbus::Bus::Ptr system_bus = std::make_shared<dbus::Bus>(dbus::WellKnownBus::system);
@@ -42,38 +51,18 @@ dbus::Bus::Ptr the_system_bus()
 
 struct culpr::Provider::Private
 {
-    typedef core::dbus::Signal<
-        com::ubuntu::remote::RemoteInterface::Signals::PositionChanged,
-	com::ubuntu::remote::RemoteInterface::Signals::PositionChanged::ArgumentType
-    > PositionChanged;
-
     Private(const culpr::Provider::Configuration& config)
             : bus(config.connection),
               service(dbus::Service::use_service(bus, config.name)),
               object(service->object_for_path(config.path)),
-              signal_position_changed(object->get_signal<com::ubuntu::remote::RemoteInterface::Signals::PositionChanged>())
+              stub(object),
+              worker([this]() { bus->run(); })
     {
     }
 
-    void start()
+    ~Private()
     {
-        VLOG(10) << __PRETTY_FUNCTION__;
-        if (!worker.joinable())
-            worker = std::move(std::thread{std::bind(&dbus::Bus::run, bus)});
-    }
-
-    void stop()
-    {
-        VLOG(10) << __PRETTY_FUNCTION__;
-        try
-        {
-            bus->stop();
-        }
-        catch(...)
-        {
-            // can happen if the start method was not called
-            VLOG(10) << "Stopping not started remote provider.";
-        }
+        bus->stop();
 
         if (worker.joinable())
             worker.join();
@@ -82,8 +71,8 @@ struct culpr::Provider::Private
     dbus::Bus::Ptr bus;
     dbus::Service::Ptr service;
     dbus::Object::Ptr object;
-    PositionChanged::Ptr signal_position_changed;
-    PositionChanged::SubscriptionToken position_updates_connection;
+
+    com::ubuntu::remote::RemoteInterface::Stub stub;
 
     std::thread worker;
 };
@@ -108,22 +97,28 @@ culpr::Provider::Provider(const culpr::Provider::Configuration& config)
         : com::ubuntu::location::Provider(config.features, config.requirements),
           d(new Private(config))
 {
-    d->position_updates_connection =
-        d->signal_position_changed->connect(
-            [this](const com::ubuntu::remote::RemoteInterface::Signals::PositionChanged::ArgumentType& arg)
-            {
-                this->on_position_changed(arg);
-            });
+    d->stub.signals.position_changed->connect(
+        [this](const cur::RemoteInterface::Signals::PositionChanged::ArgumentType& arg)
+        {
+            VLOG(50) << "culpr::Provider::PositionChanged: " << arg;
+            mutable_updates().position(arg);
+        });
+    d->stub.signals.heading_changed->connect(
+        [this](const cur::RemoteInterface::Signals::HeadingChanged::ArgumentType& arg)
+        {
+            VLOG(50) << "culpr::Provider::HeadingChanged: " << arg;
+            mutable_updates().heading(arg);
+        });
+    d->stub.signals.velocity_changed->connect(
+        [this](const cur::RemoteInterface::Signals::VelocityChanged::ArgumentType& arg)
+        {
+            VLOG(50) << "culpr::Provider::VelocityChanged: " << arg;
+            mutable_updates().velocity(arg);
+        });
 }
 
 culpr::Provider::~Provider() noexcept
 {
-    d->stop();
-}
-
-void culpr::Provider::on_position_changed(const com::ubuntu::remote::RemoteInterface::Signals::PositionChanged::ArgumentType& arg)
-{
-    mutable_updates().position(arg);
 }
 
 bool culpr::Provider::matches_criteria(const cul::Criteria&)
@@ -133,12 +128,36 @@ bool culpr::Provider::matches_criteria(const cul::Criteria&)
 
 void culpr::Provider::start_position_updates()
 {
-    VLOG(10) << "Starting remote provider\n";
-    d->start();
+    VLOG(10) << __PRETTY_FUNCTION__;
+    throw_if_error(d->stub.object->transact_method<cur::RemoteInterface::StartPositionUpdates, void>());
 }
 
 void culpr::Provider::stop_position_updates()
 {
-    VLOG(10) << "Stopping remote provider\n";
-    d->stop();
+    VLOG(10) << __PRETTY_FUNCTION__;
+    throw_if_error(d->stub.object->transact_method<cur::RemoteInterface::StopPositionUpdates, void>());
+}
+
+void culpr::Provider::start_heading_updates()
+{
+    VLOG(10) << __PRETTY_FUNCTION__;
+    throw_if_error(d->stub.object->transact_method<cur::RemoteInterface::StartHeadingUpdates, void>());
+}
+
+void culpr::Provider::stop_heading_updates()
+{
+    VLOG(10) << __PRETTY_FUNCTION__;
+    throw_if_error(d->stub.object->transact_method<cur::RemoteInterface::StopHeadingUpdates, void>());
+}
+
+void culpr::Provider::start_velocity_updates()
+{
+    VLOG(10) << __PRETTY_FUNCTION__;
+    throw_if_error(d->stub.object->transact_method<cur::RemoteInterface::StartVelocityUpdates, void>());
+}
+
+void culpr::Provider::stop_velocity_updates()
+{
+    VLOG(10) << __PRETTY_FUNCTION__;
+    throw_if_error(d->stub.object->transact_method<cur::RemoteInterface::StopVelocityUpdates, void>());
 }
