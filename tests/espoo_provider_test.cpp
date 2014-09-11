@@ -18,6 +18,8 @@
 
 #include <com/ubuntu/location/providers/remote/provider.h>
 
+#include <com/ubuntu/location/logging.h>
+
 #include <com/ubuntu/location/connectivity/manager.h>
 
 #include <core/dbus/asio/executor.h>
@@ -112,10 +114,11 @@ struct StopWatch
 
 struct Statistics
 {
+    typedef std::int64_t ValueType;
     // We accumulate size, mean, min, max and variance of a sample
     typedef statistics::accumulator_set
     <
-        std::chrono::system_clock::time_point::rep,
+        ValueType,
         statistics::stats
         <
             statistics::tag::count,
@@ -141,19 +144,34 @@ struct Statistics
         accumulator = Accumulator{};
     }
 
+    ValueType min() const
+    {
+        return statistics::min(accumulator);
+    }
+
+    ValueType max() const
+    {
+        return statistics::max(accumulator);
+    }
+
+    ValueType mean() const
+    {
+        return statistics::mean(accumulator);
+    }
+
+    ValueType variance() const
+    {
+        return statistics::variance(accumulator);
+    }
+
+    std::size_t count() const
+    {
+        return statistics::count(accumulator);
+    }
+
     Accumulator accumulator;
     std::string name;
 };
-
-std::ostream& operator<<(std::ostream& out, const Statistics& stats)
-{
-    return
-            out << stats.name << ": "
-                << "min: " << statistics::min(stats.accumulator) << ", "
-                << "max: " << statistics::max(stats.accumulator) << ", "
-                << "mean: " << statistics::mean(stats.accumulator) << ", "
-                << "variance: " << statistics::variance(stats.accumulator);
-}
 
 struct EspooProviderTest : public ::testing::Test
 {
@@ -284,12 +302,13 @@ struct EspooProviderTest : public ::testing::Test
                 // The technology changed.
                 if (std::get<0>(tuple) != sp->type())
                 {
-                    connectivity_stats.over_cell_changes.update(*(++connectivity_stats.cell_changes_counter));
+
+                    ++connectivity_stats.cell_changes_counter;
                 }
                 else // No change in technology, comparing actual ids.
                 {
                     if (std::get<1>(tuple) != numeric_cell_id_from_cell(sp))
-                        connectivity_stats.over_cell_changes.update(*(++connectivity_stats.cell_changes_counter));
+                        ++connectivity_stats.cell_changes_counter;
                 }
 
                 // Update last known values.
@@ -315,7 +334,6 @@ struct EspooProviderTest : public ::testing::Test
         Counter wifi_counter{"Wifi counter"};
         Statistics over_wifi_count{"Wifi count stats"};
         Counter cell_changes_counter{"Cell changes"};
-        Statistics over_cell_changes{"Cell changes stats"};
     } connectivity_stats;
 };
 }
@@ -345,6 +363,7 @@ TEST_F(EspooProviderTest, receives_position_updates_requires_daemons)
 
     provider.updates().position.connect([&stats](const cul::Update<cul::Position>& update)
     {
+        VLOG(1) << update;
         // We track the number of position updates
         stats.position_updates_counter++;
         // And we update our statistics by querying our stopwatch.
@@ -358,10 +377,23 @@ TEST_F(EspooProviderTest, receives_position_updates_requires_daemons)
     // provider.stop_position_updates();
 
     // Finally printing some statistics
-    std::cout << "Total execution time: " << std::chrono::duration_cast<std::chrono::seconds>(stats.execution_time.stop()).count() << " [s]" << std::endl;
+    std::cout << "Total execution time: "
+              << std::chrono::duration_cast<std::chrono::seconds>(stats.execution_time.stop()).count() << " [s]" << std::endl;
     std::cout << stats.position_updates_counter << std::endl;
-    std::cout << stats.position_updates_duration_stats << std::endl;
 
-    std::cout << connectivity_stats.over_wifi_count << std::endl;
-    std::cout << connectivity_stats.over_cell_changes << std::endl;
+    std::cout << "Min time in [s] between position updates: "
+              << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::duration{stats.position_updates_duration_stats.min()}).count() << std::endl;
+    std::cout << "Max time in [s] between position updates: "
+              << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::duration{stats.position_updates_duration_stats.max()}).count() << std::endl;
+    std::cout << "Mean time in [s] between position updates: "
+              << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::duration{stats.position_updates_duration_stats.mean()}).count() << std::endl;
+    std::cout << "Std.dev. of time in [s] between position updates: "
+              << std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::duration{(std::int64_t)std::sqrt(stats.position_updates_duration_stats.variance())}).count() << std::endl;
+
+    std::cout << "Min # of visible wifis: "
+              << connectivity_stats.over_wifi_count.min() << std::endl;
+    std::cout << "Max # of visible wifis: "
+              << connectivity_stats.over_wifi_count.max() << std::endl;
+    std::cout << "Mean # of visible wifis: "
+              << connectivity_stats.over_wifi_count.mean() << std::endl;
 }
