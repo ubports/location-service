@@ -224,6 +224,7 @@ struct EspooProviderTest : public ::testing::Test
 
     EspooProviderTest()
         : bus{bus_instance_according_to_env()},
+          trap{core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_int})},
           cm{cul::connectivity::platform_default_manager()}
     {
         // Bootstrap wifi stats
@@ -299,6 +300,8 @@ struct EspooProviderTest : public ::testing::Test
 
     // The bus connection for reaching out to the espoo provider.
     core::dbus::Bus::Ptr bus;
+    // Our signal trap.
+    std::shared_ptr<core::posix::SignalTrap> trap;
     // We monitor the connectivity subsystems.
     std::shared_ptr<cul::connectivity::Manager> cm;
     // We store individual cell ids together with their type.
@@ -319,13 +322,7 @@ struct EspooProviderTest : public ::testing::Test
 
 TEST_F(EspooProviderTest, receives_position_updates_requires_daemons)
 {
-    // We shutdown the test on sigint.
-    auto trap = core::posix::trap_signals_for_all_subsequent_threads(
-    {
-        core::posix::Signal::sig_int
-    });
-
-    trap->signal_raised().connect([trap](core::posix::Signal)
+    trap->signal_raised().connect([this](core::posix::Signal)
     {
         trap->stop();
     });
@@ -356,9 +353,9 @@ TEST_F(EspooProviderTest, receives_position_updates_requires_daemons)
         stats.position_updates_duration.reset();
     });
 
-    provider.start_position_updates();
+    // provider.start_position_updates();
     trap->run();
-    provider.stop_position_updates();
+    // provider.stop_position_updates();
 
     // Finally printing some statistics
     std::cout << "Total execution time: " << std::chrono::duration_cast<std::chrono::seconds>(stats.execution_time.stop()).count() << " [s]" << std::endl;
