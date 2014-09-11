@@ -16,8 +16,8 @@
  * Authored by: Manuel de la Peña <manuel.delapena@canonical.com>
  */
 
+#include <com/ubuntu/location/logging.h>
 #include <com/ubuntu/location/provider.h>
-#include <com/ubuntu/location/proxy_provider.h>
 #include <com/ubuntu/location/providers/remote/provider.h>
 
 #include "mock_provider.h"
@@ -27,6 +27,8 @@
 
 #include <core/posix/fork.h>
 #include <core/posix/signal.h>
+
+#include <core/testing/fork_and_run.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -241,36 +243,42 @@ TEST_F(RemoteProvider, updates_are_fwd)
 
         remote_provider.object->install_method_handler<cur::RemoteInterface::StartPositionUpdates>([bus, &mock_provider](const dbus::Message::Ptr & msg)
         {
+            VLOG(1) << "StartPositionUpdates";
             mock_provider.start_position_updates();
             bus->send(dbus::Message::make_method_return(msg));
         });
 
         remote_provider.object->install_method_handler<cur::RemoteInterface::StopPositionUpdates>([bus, &mock_provider](const dbus::Message::Ptr & msg)
         {
+            VLOG(1) << "StopPositionUpdates";
             mock_provider.stop_position_updates();
             bus->send(dbus::Message::make_method_return(msg));
         });
 
         remote_provider.object->install_method_handler<cur::RemoteInterface::StartHeadingUpdates>([bus, &mock_provider](const dbus::Message::Ptr & msg)
         {
+            VLOG(1) << "StartHeadingUpdates";
             mock_provider.start_heading_updates();
             bus->send(dbus::Message::make_method_return(msg));
         });
 
         remote_provider.object->install_method_handler<cur::RemoteInterface::StopHeadingUpdates>([bus, &mock_provider](const dbus::Message::Ptr & msg)
         {
+            VLOG(1) << "StopHeadingUpdates";
             mock_provider.stop_heading_updates();
             bus->send(dbus::Message::make_method_return(msg));
         });
 
         remote_provider.object->install_method_handler<cur::RemoteInterface::StartVelocityUpdates>([bus, &mock_provider](const dbus::Message::Ptr & msg)
         {
+            VLOG(1) << "StartVelocityUpdates";
             mock_provider.start_velocity_updates();
             bus->send(dbus::Message::make_method_return(msg));
         });
 
         remote_provider.object->install_method_handler<cur::RemoteInterface::StopVelocityUpdates>([bus, &mock_provider](const dbus::Message::Ptr & msg)
         {
+            VLOG(1) << "StartVelocityUpdates";
             mock_provider.stop_velocity_updates();
             bus->send(dbus::Message::make_method_return(msg));
         });
@@ -280,6 +288,7 @@ TEST_F(RemoteProvider, updates_are_fwd)
             while (running)
             {
                 remote_provider.signals.position_changed->emit(position);
+                std::this_thread::sleep_for(std::chrono::milliseconds{10});
             }
         }};
 
@@ -288,6 +297,7 @@ TEST_F(RemoteProvider, updates_are_fwd)
             while (running)
             {
                 remote_provider.signals.heading_changed->emit(heading);
+                std::this_thread::sleep_for(std::chrono::milliseconds{10});
             }
         }};
 
@@ -296,6 +306,7 @@ TEST_F(RemoteProvider, updates_are_fwd)
             while (running)
             {
                 remote_provider.signals.velocity_changed->emit(velocity);
+                 std::this_thread::sleep_for(std::chrono::milliseconds{10});
             }
         }};
 
@@ -380,13 +391,12 @@ TEST_F(RemoteProvider, updates_are_fwd)
     EXPECT_TRUE(did_finish_successfully(skeleton.wait_for(core::posix::wait::Flags::untraced)));
 }
 
-TEST(RemoteProviderWithoutBus, matches_criteria)
+TESTP_F(RemoteProvider, matches_criteria,
 {
-
     auto conf = remote::Provider::Configuration{};
-    conf.name = "com.ubuntu.espoo.Service.Provider";
-    conf.path = "/com/ubuntu/espoo/Service/Provider";
-    conf.connection = std::make_shared<core::dbus::Bus>(core::dbus::WellKnownBus::session);
+    conf.name = RemoteProvider::stub_remote_provider_service_name;
+    conf.path = RemoteProvider::stub_remote_provider_path;
+    conf.connection = session_bus();
     conf.connection->install_executor(dbus::asio::make_executor(conf.connection));
     remote::Provider provider(conf);
 
@@ -394,4 +404,4 @@ TEST(RemoteProviderWithoutBus, matches_criteria)
     EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::cell_network));
     EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::data_network));
     EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::monetary_spending));
-}
+})
