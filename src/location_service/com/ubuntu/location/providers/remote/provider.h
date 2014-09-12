@@ -56,7 +56,14 @@ struct Provider
         Stub(const stub::Configuration& config);
         ~Stub() noexcept;
 
-        virtual bool matches_criteria(const Criteria&);
+        virtual bool matches_criteria(const Criteria&) override;
+        virtual bool supports(const Features& f) const override;
+        virtual bool requires(const Requirements& r) const override;
+
+        virtual void on_wifi_and_cell_reporting_state_changed(WifiAndCellIdReportingState state) override;
+        virtual void on_reference_location_updated(const Update<Position>& position) override;
+        virtual void on_reference_velocity_updated(const Update<Velocity>& velocity) override;
+        virtual void on_reference_heading_updated(const Update<Heading>& heading) override;
 
         virtual void start_position_updates() override;
         virtual void stop_position_updates() override;
@@ -78,7 +85,15 @@ struct Provider
         Skeleton(const remote::skeleton::Configuration& config);
         ~Skeleton() noexcept;
 
-        virtual bool matches_criteria(const Criteria&);
+        virtual bool matches_criteria(const Criteria&) override;
+
+        virtual bool supports(const Features& f) const override;
+        virtual bool requires(const Requirements& r) const override;
+
+        virtual void on_wifi_and_cell_reporting_state_changed(WifiAndCellIdReportingState state) override;
+        virtual void on_reference_location_updated(const Update<Position>& position) override;
+        virtual void on_reference_velocity_updated(const Update<Velocity>& velocity) override;
+        virtual void on_reference_heading_updated(const Update<Heading>& heading) override;
 
         virtual void start_position_updates() override;
         virtual void stop_position_updates() override;

@@ -51,7 +51,21 @@ struct Interface
         return s;
     }
 
+    // Checks if a provider satisfies a set of accuracy criteria.
     DBUS_CPP_METHOD_DEF(MatchesCriteria, remote::Interface)
+    // Checks if the provider has got a specific requirement.
+    DBUS_CPP_METHOD_DEF(Requires, remote::Interface)
+    // Checks if the provider supports a specific feature.
+    DBUS_CPP_METHOD_DEF(Supports, remote::Interface)
+    // Called by the engine whenever the wifi and cell ID reporting state changes.
+    DBUS_CPP_METHOD_DEF(OnWifiAndCellIdReportingStateChanged, remote::Interface)
+    // Called by the engine whenever the reference location changed.
+    DBUS_CPP_METHOD_DEF(OnReferenceLocationChanged, remote::Interface)
+    // Called by the engine whenever the reference heading changed.
+    DBUS_CPP_METHOD_DEF(OnReferenceHeadingChanged, remote::Interface)
+    // Called by the engine whenever the reference velocity changed.
+    DBUS_CPP_METHOD_DEF(OnReferenceVelocityChanged, remote::Interface)
+
     DBUS_CPP_METHOD_DEF(StartPositionUpdates, remote::Interface)
     DBUS_CPP_METHOD_DEF(StopPositionUpdates, remote::Interface)
     DBUS_CPP_METHOD_DEF(StartHeadingUpdates, remote::Interface)

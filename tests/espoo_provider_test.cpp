@@ -346,6 +346,11 @@ TEST_F(EspooProviderTest, receives_position_updates_requires_daemons)
         trap->stop();
     });
 
+    std::thread worker([bus]()
+    {
+        bus->run();
+    });
+
     remote::stub::Configuration config;
     config.object = core::dbus::Service::use_service(
                 bus,
@@ -377,6 +382,11 @@ TEST_F(EspooProviderTest, receives_position_updates_requires_daemons)
     // provider.start_position_updates();
     trap->run();
     // provider.stop_position_updates();
+
+    bus->stop();
+
+    if (worker.joinable())
+        worker.join();
 
     // Finally printing some statistics
     std::cout << "Total execution time: "
