@@ -346,7 +346,7 @@ TEST_F(EspooProviderTest, receives_position_updates_requires_daemons)
         trap->stop();
     });
 
-    std::thread worker([bus]()
+    std::thread worker([this]()
     {
         bus->run();
     });
