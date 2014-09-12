@@ -22,6 +22,7 @@
 
 #include <com/ubuntu/location/connectivity/manager.h>
 
+#include <core/dbus/service.h>
 #include <core/dbus/asio/executor.h>
 
 #include <core/posix/signal.h>
@@ -345,10 +346,11 @@ TEST_F(EspooProviderTest, receives_position_updates_requires_daemons)
         trap->stop();
     });
 
-    remote::Provider::Configuration config;
-    config.name = EspooProviderTest::service_name;
-    config.path = EspooProviderTest::path;
-    config.connection = bus;
+    remote::stub::Configuration config;
+    config.object = core::dbus::Service::use_service(
+                bus,
+                EspooProviderTest::service_name)->object_for_path(
+                    core::dbus::types::ObjectPath{EspooProviderTest::path});
 
     // We keep track of some characteristics.
     struct Stats
@@ -359,7 +361,7 @@ TEST_F(EspooProviderTest, receives_position_updates_requires_daemons)
         Counter position_updates_counter{"Position updates"}; // The number of position updates we received.
     } stats;
 
-    remote::Provider provider{config};
+    remote::Provider::Stub provider{config};
 
     provider.updates().position.connect([&stats](const cul::Update<cul::Position>& update)
     {
