@@ -73,6 +73,6 @@ static FactoryInjector skyhook_injector
 static FactoryInjector remote_injector
 {
     "remote::Provider", 
-    com::ubuntu::location::providers::remote::Provider::create_instance
+    com::ubuntu::location::providers::remote::Provider::Stub::create_instance
 };
 #endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_REMOTE

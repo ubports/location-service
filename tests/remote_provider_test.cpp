@@ -18,11 +18,17 @@
 
 #include <com/ubuntu/location/logging.h>
 #include <com/ubuntu/location/provider.h>
+
+#include <com/ubuntu/location/providers/remote/interface.h>
+#include <com/ubuntu/location/providers/remote/skeleton.h>
+#include <com/ubuntu/location/providers/remote/stub.h>
+
 #include <com/ubuntu/location/providers/remote/provider.h>
 
 #include "mock_provider.h"
 
 #include <core/dbus/fixture.h>
+#include <core/dbus/service.h>
 #include <core/dbus/asio/executor.h>
 
 #include <core/posix/fork.h>
@@ -33,8 +39,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <condition_variable>
+
 namespace cul = com::ubuntu::location;
-namespace cur = com::ubuntu::remote;
 namespace dbus = core::dbus;
 namespace remote = com::ubuntu::location::providers::remote;
 
@@ -43,11 +50,7 @@ using namespace ::testing;
 
 MATCHER_P(PositionUpdatesAreEqualExceptForTiming, value, "Returns true if the positions in both updates are equal.")
 {
-    auto pos = arg.value;
-
-    return value.longitude == pos.longitude && value.latitude == pos.latitude && value.altitude == pos.altitude
-        && pos.accuracy.horizontal == value.accuracy.horizontal
-        && pos.accuracy.vertical == value.accuracy.vertical;
+    return arg.value == value;
 }
 
 MATCHER_P(HeadingUpdatesAreEqualExceptForTiming, value, "Returns true if the heading in both updates are equal.")
@@ -230,83 +233,46 @@ TEST_F(RemoteProvider, updates_are_fwd)
                             dbus::types::ObjectPath{RemoteProvider::stub_remote_provider_path});
 
         // We use this instance to capture incoming requests.
-        NiceMock<MockProvider> mock_provider;
+        auto mock_provider = std::make_shared<NiceMock<MockProvider>>();
 
-        EXPECT_CALL(mock_provider, start_position_updates()).Times(1);
-        EXPECT_CALL(mock_provider, start_heading_updates()).Times(1);
-        EXPECT_CALL(mock_provider, start_velocity_updates()).Times(1);
-        EXPECT_CALL(mock_provider, stop_position_updates()).Times(1);
-        EXPECT_CALL(mock_provider, stop_heading_updates()).Times(1);
-        EXPECT_CALL(mock_provider, stop_velocity_updates()).Times(1);
+        EXPECT_CALL(*mock_provider, start_position_updates()).Times(1);
+        EXPECT_CALL(*mock_provider, start_heading_updates()).Times(1);
+        EXPECT_CALL(*mock_provider, start_velocity_updates()).Times(1);
+        EXPECT_CALL(*mock_provider, stop_position_updates()).Times(1);
+        EXPECT_CALL(*mock_provider, stop_heading_updates()).Times(1);
+        EXPECT_CALL(*mock_provider, stop_velocity_updates()).Times(1);
 
-        cur::RemoteInterface::Skeleton remote_provider{object};
-
-        remote_provider.object->install_method_handler<cur::RemoteInterface::StartPositionUpdates>([bus, &mock_provider](const dbus::Message::Ptr & msg)
+        auto provider = remote::skeleton::create_with_configuration(remote::skeleton::Configuration
         {
-            VLOG(1) << "StartPositionUpdates";
-            mock_provider.start_position_updates();
-            bus->send(dbus::Message::make_method_return(msg));
+            object,
+            bus,
+            mock_provider
         });
 
-        remote_provider.object->install_method_handler<cur::RemoteInterface::StopPositionUpdates>([bus, &mock_provider](const dbus::Message::Ptr & msg)
-        {
-            VLOG(1) << "StopPositionUpdates";
-            mock_provider.stop_position_updates();
-            bus->send(dbus::Message::make_method_return(msg));
-        });
-
-        remote_provider.object->install_method_handler<cur::RemoteInterface::StartHeadingUpdates>([bus, &mock_provider](const dbus::Message::Ptr & msg)
-        {
-            VLOG(1) << "StartHeadingUpdates";
-            mock_provider.start_heading_updates();
-            bus->send(dbus::Message::make_method_return(msg));
-        });
-
-        remote_provider.object->install_method_handler<cur::RemoteInterface::StopHeadingUpdates>([bus, &mock_provider](const dbus::Message::Ptr & msg)
-        {
-            VLOG(1) << "StopHeadingUpdates";
-            mock_provider.stop_heading_updates();
-            bus->send(dbus::Message::make_method_return(msg));
-        });
-
-        remote_provider.object->install_method_handler<cur::RemoteInterface::StartVelocityUpdates>([bus, &mock_provider](const dbus::Message::Ptr & msg)
-        {
-            VLOG(1) << "StartVelocityUpdates";
-            mock_provider.start_velocity_updates();
-            bus->send(dbus::Message::make_method_return(msg));
-        });
-
-        remote_provider.object->install_method_handler<cur::RemoteInterface::StopVelocityUpdates>([bus, &mock_provider](const dbus::Message::Ptr & msg)
-        {
-            VLOG(1) << "StartVelocityUpdates";
-            mock_provider.stop_velocity_updates();
-            bus->send(dbus::Message::make_method_return(msg));
-        });
-
-        std::thread position_updates_injector{[&remote_provider, &running]()
+        std::thread position_updates_injector{[mock_provider, &running]()
         {
             while (running)
             {
-                remote_provider.signals.position_changed->emit(position);
+                mock_provider->inject_update(cul::Update<cul::Position>{position});
                 std::this_thread::sleep_for(std::chrono::milliseconds{10});
             }
         }};
 
-        std::thread heading_updates_injector{[&remote_provider, &running]()
+        std::thread heading_updates_injector{[mock_provider, &running]()
         {
             while (running)
             {
-                remote_provider.signals.heading_changed->emit(heading);
+                mock_provider->inject_update(cul::Update<cul::Heading>{heading});
                 std::this_thread::sleep_for(std::chrono::milliseconds{10});
             }
         }};
 
-        std::thread velocity_updates_injector{[&remote_provider, &running]()
+        std::thread velocity_updates_injector{[mock_provider, &running]()
         {
             while (running)
             {
-                remote_provider.signals.velocity_changed->emit(velocity);
-                 std::this_thread::sleep_for(std::chrono::milliseconds{10});
+                mock_provider->inject_update(cul::Update<cul::Velocity>{velocity});
+                std::this_thread::sleep_for(std::chrono::milliseconds{10});
             }
         }};
 
@@ -334,16 +300,27 @@ TEST_F(RemoteProvider, updates_are_fwd)
 
     auto stub = core::posix::fork([this]()
     {
-        auto conf = remote::Provider::Configuration{};
-        conf.name = RemoteProvider::stub_remote_provider_service_name;
-        conf.path = RemoteProvider::stub_remote_provider_path;
-        conf.connection = session_bus();
-        conf.connection->install_executor(dbus::asio::make_executor(conf.connection));
+        auto bus = session_bus();
+        bus->install_executor(dbus::asio::make_executor(bus));
 
-        remote::Provider provider{conf};
-        provider.start_position_updates();
-        provider.start_heading_updates();
-        provider.start_velocity_updates();
+        std::thread worker([bus]()
+        {
+            bus->run();
+        });
+
+        remote::stub::Configuration conf
+        {
+            core::dbus::Service::use_service(
+                bus,
+                RemoteProvider::stub_remote_provider_service_name)->object_for_path(
+                    core::dbus::types::ObjectPath{RemoteProvider::stub_remote_provider_path})
+        };
+
+        auto provider = remote::stub::create_with_configuration(conf);
+
+        provider->state_controller()->start_position_updates();
+        provider->state_controller()->start_heading_updates();
+        provider->state_controller()->start_velocity_updates();
 
         MockEventConsumer mec;
         EXPECT_CALL(mec, on_new_position(PositionUpdatesAreEqualExceptForTiming(position))).Times(AtLeast(1));
@@ -352,7 +329,7 @@ TEST_F(RemoteProvider, updates_are_fwd)
 
         core::ScopedConnection sc1
         {
-            provider.updates().position.connect([&mec](const cul::Update<cul::Position>& p)
+            provider->updates().position.connect([&mec](const cul::Update<cul::Position>& p)
             {
                 mec.on_new_position(p);
             })
@@ -360,7 +337,7 @@ TEST_F(RemoteProvider, updates_are_fwd)
 
         core::ScopedConnection sc2
         {
-            provider.updates().heading.connect([&mec](const cul::Update<cul::Heading>& h)
+            provider->updates().heading.connect([&mec](const cul::Update<cul::Heading>& h)
             {
                 mec.on_new_heading(h);
             })
@@ -368,7 +345,7 @@ TEST_F(RemoteProvider, updates_are_fwd)
 
         core::ScopedConnection sc3
         {
-            provider.updates().velocity.connect([&mec](const cul::Update<cul::Velocity>& v)
+            provider->updates().velocity.connect([&mec](const cul::Update<cul::Velocity>& v)
             {
                 mec.on_new_velocity(v);
             })
@@ -378,9 +355,14 @@ TEST_F(RemoteProvider, updates_are_fwd)
         EXPECT_TRUE(mec.wait_for_heading_update_for(std::chrono::milliseconds{1000}));
         EXPECT_TRUE(mec.wait_for_velocity_update_for(std::chrono::milliseconds{1000}));
 
-        provider.stop_position_updates();
-        provider.stop_heading_updates();
-        provider.stop_velocity_updates();
+        provider->state_controller()->stop_position_updates();
+        provider->state_controller()->stop_heading_updates();
+        provider->state_controller()->stop_velocity_updates();
+
+        bus->stop();
+
+        if (worker.joinable())
+            worker.join();
 
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure :
                                                core::posix::exit::Status::success;
@@ -393,15 +375,21 @@ TEST_F(RemoteProvider, updates_are_fwd)
 
 TESTP_F(RemoteProvider, matches_criteria,
 {
-    auto conf = remote::Provider::Configuration{};
-    conf.name = RemoteProvider::stub_remote_provider_service_name;
-    conf.path = RemoteProvider::stub_remote_provider_path;
-    conf.connection = session_bus();
-    conf.connection->install_executor(dbus::asio::make_executor(conf.connection));
-    remote::Provider provider(conf);
+    auto bus = session_bus();
+    bus->install_executor(dbus::asio::make_executor(bus));
+
+    remote::stub::Configuration conf
+    {
+        core::dbus::Service::use_service(
+            bus,
+            RemoteProvider::stub_remote_provider_service_name)->object_for_path(
+                core::dbus::types::ObjectPath{RemoteProvider::stub_remote_provider_path})
+    };
+
+    remote::Provider::Stub provider{conf};
 
     EXPECT_FALSE(provider.requires(com::ubuntu::location::Provider::Requirements::satellites));
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::cell_network));
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::data_network));
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::monetary_spending));
+    EXPECT_FALSE(provider.requires(com::ubuntu::location::Provider::Requirements::cell_network));
+    EXPECT_FALSE(provider.requires(com::ubuntu::location::Provider::Requirements::data_network));
+    EXPECT_FALSE(provider.requires(com::ubuntu::location::Provider::Requirements::monetary_spending));
 })

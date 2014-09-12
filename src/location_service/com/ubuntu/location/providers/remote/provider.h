@@ -15,12 +15,14 @@
  *
  * Authored by: Manuel de la Peña <manuel.delapena@canonical.com>
  */
-#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_ESPOO_PROVIDER_H_
-#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_ESPOO_PROVIDER_H_
+#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_REMOTE_PROVIDER_H_
+#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_REMOTE_PROVIDER_H_
 
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_factory.h>
-#include <com/ubuntu/location/providers/remote/remote_interface.h>
+
+#include <com/ubuntu/location/providers/remote/skeleton.h>
+#include <com/ubuntu/location/providers/remote/stub.h>
 
 #include <core/dbus/bus.h>
 
@@ -34,55 +36,67 @@ namespace providers
 {
 namespace remote
 {
-
-class Provider : public com::ubuntu::location::Provider
+struct Provider
 {
-  public:
-    // For integration with the Provider factory.
-    static std::string class_name();
-
-    // Instantiates a new provider instance, populating the configuration object
-    // from the provided property bundle.
-    static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
-
-    // structure that represents the configuration used in the remote provider
-    struct Configuration
+    class Stub : public com::ubuntu::location::Provider
     {
-        static std::string key_name() { return "name"; }
-        static std::string key_path() { return "path"; }
+    public:
+        // For integration with the Provider factory.
+        static std::string class_name();
 
-        std::string name;
-        std::string path;
+        // Instantiates a new provider instance, populating the configuration object
+        // from the provided property bundle.
+        static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
 
-        core::dbus::Bus::Ptr connection;
+        // Name of the command line parameter for passing in the remote service name.
+        static constexpr const char* key_name{"name"};
+        // Name of the command line parameter for passing in the path of the remote provider impl.
+        static constexpr const char* key_path{"path"};
 
-        Provider::Features features = Provider::Features::position;
-        Provider::Requirements requirements = Provider::Requirements::cell_network |
-            Provider::Requirements::data_network | Provider::Requirements::monetary_spending;
+        Stub(const stub::Configuration& config);
+        ~Stub() noexcept;
+
+        virtual bool matches_criteria(const Criteria&);
+
+        virtual void start_position_updates() override;
+        virtual void stop_position_updates() override;
+
+        virtual void start_heading_updates() override;
+        virtual void stop_heading_updates() override;
+
+        virtual void start_velocity_updates() override;
+        virtual void stop_velocity_updates() override;
+
+    private:
+        struct Private;
+        std::unique_ptr<Private> d;
     };
 
-    Provider(const Configuration& config);
-    ~Provider() noexcept;
+    class Skeleton : public com::ubuntu::location::Provider
+    {
+    public:
+        Skeleton(const remote::skeleton::Configuration& config);
+        ~Skeleton() noexcept;
 
-    virtual bool matches_criteria(const Criteria&);
+        virtual bool matches_criteria(const Criteria&);
 
-    virtual void start_position_updates() override;
-    virtual void stop_position_updates() override;
+        virtual void start_position_updates() override;
+        virtual void stop_position_updates() override;
 
-    virtual void start_heading_updates() override;
-    virtual void stop_heading_updates() override;
+        virtual void start_heading_updates() override;
+        virtual void stop_heading_updates() override;
 
-    virtual void start_velocity_updates() override;
-    virtual void stop_velocity_updates() override;
+        virtual void start_velocity_updates() override;
+        virtual void stop_velocity_updates() override;
 
-  private:
-    struct Private;
-    std::unique_ptr<Private> d;
+    private:
+        struct Private;
+        std::unique_ptr<Private> d;
+    };
 };
-
-}  // remote
-}  // providers
-}  // location
-}  // ubuntu
-}  // com
-#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GEOCLUE_PROVIDER_H_
+}
+}
+}
+}
+}
+#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_REMOTE_PROVIDER_H_
