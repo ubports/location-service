@@ -271,6 +271,68 @@ remote::Provider::Skeleton::Skeleton(const remote::skeleton::Configuration& conf
         d->bus->send(reply);
     });
 
+    d->skeleton.object->install_method_handler<remote::Interface::Supports>([this](const dbus::Message::Ptr & msg)
+    {
+        VLOG(1) << "Supports";
+
+        cul::Provider::Features f; msg->reader() >> f;
+        auto reply = dbus::Message::make_method_return(msg);
+        reply->writer() << supports(f);
+
+        d->bus->send(reply);
+    });
+
+    d->skeleton.object->install_method_handler<remote::Interface::Requires>([this](const dbus::Message::Ptr & msg)
+    {
+        VLOG(1) << "Requires";
+
+        cul::Provider::Requirements r; msg->reader() >> r;
+        auto reply = dbus::Message::make_method_return(msg);
+        reply->writer() << requires(r);
+
+        d->bus->send(reply);
+    });
+
+    d->skeleton.object->install_method_handler<remote::Interface::OnWifiAndCellIdReportingStateChanged>([this](const dbus::Message::Ptr & msg)
+    {
+        VLOG(1) << "OnWifiAndCellIdReportingStateChanged";
+
+        cul::WifiAndCellIdReportingState s; msg->reader() >> s;
+        d->bus->send(dbus::Message::make_method_return(msg));
+
+        on_wifi_and_cell_reporting_state_changed(s);
+    });
+
+    d->skeleton.object->install_method_handler<remote::Interface::OnReferenceLocationChanged>([this](const dbus::Message::Ptr & msg)
+    {
+        VLOG(1) << "OnReferenceLocationChanged";
+
+        cul::Update<cul::Position> u; msg->reader() >> u;
+        d->bus->send(dbus::Message::make_method_return(msg));
+
+        on_reference_location_updated(u);
+    });
+
+    d->skeleton.object->install_method_handler<remote::Interface::OnReferenceHeadingChanged>([this](const dbus::Message::Ptr & msg)
+    {
+        VLOG(1) << "OnReferenceHeadingChanged";
+
+        cul::Update<cul::Heading> u; msg->reader() >> u;
+        d->bus->send(dbus::Message::make_method_return(msg));
+
+        on_reference_heading_updated(u);
+    });
+
+    d->skeleton.object->install_method_handler<remote::Interface::OnReferenceVelocityChanged>([this](const dbus::Message::Ptr & msg)
+    {
+        VLOG(1) << "OnReferenceVelocityChanged";
+
+        cul::Update<cul::Velocity> u; msg->reader() >> u;
+        d->bus->send(dbus::Message::make_method_return(msg));
+
+        on_reference_velocity_updated(u);
+    });
+
     d->skeleton.object->install_method_handler<remote::Interface::StartPositionUpdates>([this](const dbus::Message::Ptr & msg)
     {
         VLOG(1) << "StartPositionUpdates";

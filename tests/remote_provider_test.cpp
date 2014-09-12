@@ -235,6 +235,16 @@ TEST_F(RemoteProvider, updates_are_fwd)
         // We use this instance to capture incoming requests.
         auto mock_provider = std::make_shared<NiceMock<MockProvider>>();
 
+        EXPECT_CALL(*mock_provider, matches_criteria(_)).Times(1).WillRepeatedly(Return(false));
+
+        EXPECT_CALL(*mock_provider, supports(_)).Times(4).WillRepeatedly(Return(true));
+        EXPECT_CALL(*mock_provider, requires(_)).Times(5).WillRepeatedly(Return(true));
+
+        EXPECT_CALL(*mock_provider, on_wifi_and_cell_reporting_state_changed(_)).Times(1);
+        EXPECT_CALL(*mock_provider, on_reference_location_updated(_)).Times(1);
+        EXPECT_CALL(*mock_provider, on_reference_velocity_updated(_)).Times(1);
+        EXPECT_CALL(*mock_provider, on_reference_heading_updated(_)).Times(1);
+
         EXPECT_CALL(*mock_provider, start_position_updates()).Times(1);
         EXPECT_CALL(*mock_provider, start_heading_updates()).Times(1);
         EXPECT_CALL(*mock_provider, start_velocity_updates()).Times(1);
@@ -318,6 +328,23 @@ TEST_F(RemoteProvider, updates_are_fwd)
 
         auto provider = remote::stub::create_with_configuration(conf);
 
+        EXPECT_FALSE(provider->matches_criteria(cul::Criteria{}));
+
+        EXPECT_TRUE(provider->supports(cul::Provider::Features::none));
+        EXPECT_TRUE(provider->supports(cul::Provider::Features::position));
+        EXPECT_TRUE(provider->supports(cul::Provider::Features::heading));
+        EXPECT_TRUE(provider->supports(cul::Provider::Features::velocity));
+
+        EXPECT_TRUE(provider->requires(cul::Provider::Requirements::cell_network));
+        EXPECT_TRUE(provider->requires(cul::Provider::Requirements::data_network));
+        EXPECT_TRUE(provider->requires(cul::Provider::Requirements::monetary_spending));
+        EXPECT_TRUE(provider->requires(cul::Provider::Requirements::none));
+        EXPECT_TRUE(provider->requires(cul::Provider::Requirements::satellites));
+
+        provider->on_wifi_and_cell_reporting_state_changed(cul::WifiAndCellIdReportingState::on);
+        provider->on_reference_location_updated(cul::Update<cul::Position>{});
+        provider->on_reference_heading_updated(cul::Update<cul::Heading>{});
+        provider->on_reference_velocity_updated(cul::Update<cul::Velocity>{});
         provider->state_controller()->start_position_updates();
         provider->state_controller()->start_heading_updates();
         provider->state_controller()->start_velocity_updates();
@@ -372,24 +399,3 @@ TEST_F(RemoteProvider, updates_are_fwd)
     skeleton.send_signal_or_throw(core::posix::Signal::sig_term);
     EXPECT_TRUE(did_finish_successfully(skeleton.wait_for(core::posix::wait::Flags::untraced)));
 }
-
-TESTP_F(RemoteProvider, matches_criteria,
-{
-    auto bus = session_bus();
-    bus->install_executor(dbus::asio::make_executor(bus));
-
-    remote::stub::Configuration conf
-    {
-        core::dbus::Service::use_service(
-            bus,
-            RemoteProvider::stub_remote_provider_service_name)->object_for_path(
-                core::dbus::types::ObjectPath{RemoteProvider::stub_remote_provider_path})
-    };
-
-    remote::Provider::Stub provider{conf};
-
-    EXPECT_FALSE(provider.requires(com::ubuntu::location::Provider::Requirements::satellites));
-    EXPECT_FALSE(provider.requires(com::ubuntu::location::Provider::Requirements::cell_network));
-    EXPECT_FALSE(provider.requires(com::ubuntu::location::Provider::Requirements::data_network));
-    EXPECT_FALSE(provider.requires(com::ubuntu::location::Provider::Requirements::monetary_spending));
-})
