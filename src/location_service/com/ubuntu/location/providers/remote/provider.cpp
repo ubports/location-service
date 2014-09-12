@@ -130,6 +130,42 @@ bool remote::Provider::Stub::matches_criteria(const cul::Criteria& criteria)
     return throw_if_error_or_return(d->stub.object->transact_method<remote::Interface::MatchesCriteria, bool>(criteria));
 }
 
+bool remote::Provider::Stub::supports(const cul::Provider::Features& f) const
+{
+    VLOG(10) << __PRETTY_FUNCTION__;
+    return throw_if_error_or_return(d->stub.object->transact_method<remote::Interface::Supports, bool>(f));
+}
+
+bool remote::Provider::Stub::requires(const cul::Provider::Requirements& r) const
+{
+    VLOG(10) << __PRETTY_FUNCTION__;
+    return throw_if_error_or_return(d->stub.object->transact_method<remote::Interface::Requires, bool>(r));
+}
+
+void remote::Provider::Stub::on_wifi_and_cell_reporting_state_changed(cul::WifiAndCellIdReportingState state)
+{
+    VLOG(10) << __PRETTY_FUNCTION__;
+    throw_if_error(d->stub.object->transact_method<remote::Interface::OnWifiAndCellIdReportingStateChanged, void>(state));
+}
+
+void remote::Provider::Stub::on_reference_location_updated(const cul::Update<cul::Position>& position)
+{
+    VLOG(10) << __PRETTY_FUNCTION__;
+    throw_if_error(d->stub.object->transact_method<remote::Interface::OnReferenceLocationChanged, void>(position));
+}
+
+void remote::Provider::Stub::on_reference_velocity_updated(const cul::Update<cul::Velocity>& velocity)
+{
+    VLOG(10) << __PRETTY_FUNCTION__;
+    throw_if_error(d->stub.object->transact_method<remote::Interface::OnReferenceVelocityChanged, void>(velocity));
+}
+
+void remote::Provider::Stub::on_reference_heading_updated(const cul::Update<cul::Heading>& heading)
+{
+    VLOG(10) << __PRETTY_FUNCTION__;
+    throw_if_error(d->stub.object->transact_method<remote::Interface::OnReferenceHeadingChanged, void>(heading));
+}
+
 void remote::Provider::Stub::start_position_updates()
 {
     VLOG(10) << __PRETTY_FUNCTION__;
@@ -296,6 +332,36 @@ remote::Provider::Skeleton::~Skeleton() noexcept
 bool remote::Provider::Skeleton::matches_criteria(const cul::Criteria& criteria)
 {
     return d->impl->matches_criteria(criteria);
+}
+
+bool remote::Provider::Skeleton::supports(const cul::Provider::Features& f) const
+{
+    return d->impl->supports(f);
+}
+
+bool remote::Provider::Skeleton::requires(const cul::Provider::Requirements& r) const
+{
+    return d->impl->requires(r);
+}
+
+void remote::Provider::Skeleton::on_wifi_and_cell_reporting_state_changed(cul::WifiAndCellIdReportingState state)
+{
+    d->impl->on_wifi_and_cell_reporting_state_changed(state);
+}
+
+void remote::Provider::Skeleton::on_reference_location_updated(const cul::Update<cul::Position>& position)
+{
+    d->impl->on_reference_location_updated(position);
+}
+
+void remote::Provider::Skeleton::on_reference_velocity_updated(const cul::Update<cul::Velocity>& velocity)
+{
+    d->impl->on_reference_velocity_updated(velocity);
+}
+
+void remote::Provider::Skeleton::on_reference_heading_updated(const cul::Update<cul::Heading>& heading)
+{
+    d->impl->on_reference_heading_updated(heading);
 }
 
 void remote::Provider::Skeleton::start_position_updates()
