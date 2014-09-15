@@ -1,3 +1,14 @@
+location-service (2.1+14.10.20140915-0ubuntu1) utopic; urgency=low
+
+  [ Loïc Minier ]
+  * Update upstart job start conditions; workaround startup issue with a
+    sleep. (LP: #1356468)
+
+  [ thomas-voss ]
+  * Somewhat clean up remote provider and add an acceptance-style test.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 15 Sep 2014 20:02:59 +0000
+
 location-service (2.1+14.10.20140829-0ubuntu1) utopic; urgency=medium
 
   [ Manuel de la Pena ]
