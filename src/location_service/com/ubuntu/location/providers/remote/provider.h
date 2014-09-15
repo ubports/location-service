@@ -66,10 +66,14 @@ class Provider : public com::ubuntu::location::Provider
 
     virtual bool matches_criteria(const Criteria&);
 
-    virtual void start_position_updates();
-    virtual void stop_position_updates();
+    virtual void start_position_updates() override;
+    virtual void stop_position_updates() override;
 
-    void on_position_changed(const com::ubuntu::remote::RemoteInterface::Signals::PositionChanged::ArgumentType& arg);
+    virtual void start_heading_updates() override;
+    virtual void stop_heading_updates() override;
+
+    virtual void start_velocity_updates() override;
+    virtual void stop_velocity_updates() override;
 
   private:
     struct Private;

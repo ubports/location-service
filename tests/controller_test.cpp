@@ -17,6 +17,8 @@
  */
 #include <com/ubuntu/location/provider.h>
 
+#include "mock_provider.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -24,37 +26,6 @@ namespace cul = com::ubuntu::location;
 
 namespace
 {
-struct MockProvider : public cul::Provider
-{
-    MockProvider() : cul::Provider()
-    {
-    }
-
-    MOCK_METHOD0(start_position_updates, void());
-    MOCK_METHOD0(stop_position_updates, void());
-
-    MOCK_METHOD0(start_heading_updates, void());
-    MOCK_METHOD0(stop_heading_updates, void());
-
-    MOCK_METHOD0(start_velocity_updates, void());
-    MOCK_METHOD0(stop_velocity_updates, void());
-
-    void inject_update(const cul::Update<cul::Position>& update)
-    {
-        mutable_updates().position(update);
-    }
-
-    void inject_update(const cul::Update<cul::Velocity>& update)
-    {
-        mutable_updates().velocity(update);
-    }
-
-    void inject_update(const cul::Update<cul::Heading>& update)
-    {
-        mutable_updates().heading(update);
-    }
-};
-
 auto timestamp = com::ubuntu::location::Clock::now();
 
 com::ubuntu::location::Update<com::ubuntu::location::Position> reference_position_update
