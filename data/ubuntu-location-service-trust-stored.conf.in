@@ -1,13 +1,22 @@
 description "Location Services Trust Store Daemon"
 
-start on (started JOB=dbus and started JOB=unity8) and (:sys:started JOB=ubuntu-location-service)
-stop on stopping JOB=dbus or (:sys:stopped JOB=ubuntu-location-service)
+# try to start this on session startup or once ubuntu-location-service finished
+# starting; if dbus is available and location-service isn't or vice-versa,
+# startup will fail but the next event firing will trigger another start
+start on (started dbus and xsession SESSION=ubuntu-touch) or \
+    :sys:started JOB=ubuntu-location-service
+stop on desktop-end or :sys:stopping JOB=ubuntu-location-service
 
 respawn
 
-exec /usr/bin/trust-stored-skeleton \
-    --remote-agent DBusRemoteAgent --bus=system \
-    --local-agent MirAgent \
-    --trusted-mir-socket=/var/run/user/$(id -u)/mir_socket_trusted \
-    --for-service UbuntuLocationService \
-    --store-bus session
+script
+    # XXX LP #1369692
+    sleep 2
+
+    exec /usr/bin/trust-stored-skeleton \
+        --remote-agent DBusRemoteAgent --bus=system \
+        --local-agent MirAgent \
+        --trusted-mir-socket=/var/run/user/$(id -u)/mir_socket_trusted \
+        --for-service UbuntuLocationService \
+        --store-bus session
+end script
