@@ -20,11 +20,18 @@
 #define CORE_UBUNTU_ESPOO_PROVIDER_P_H_
 
 #include <core/dbus/macros.h>
+#include <core/dbus/object.h>
+#include <core/dbus/property.h>
+#include <core/dbus/signal.h>
+
 #include <core/dbus/traits/service.h>
 
 #include <com/ubuntu/location/codec.h>
 #include <com/ubuntu/location/update.h>
+
+#include <com/ubuntu/location/heading.h>
 #include <com/ubuntu/location/position.h>
+#include <com/ubuntu/location/velocity.h>
 
 namespace cul = com::ubuntu::location;
 
@@ -36,7 +43,6 @@ namespace remote
 {
 struct RemoteInterface
 {
-
     static const std::string& name()
     {
         static const std::string s{"com.ubuntu.remote.Service.Provider"};
@@ -52,18 +58,9 @@ struct RemoteInterface
 
     struct Signals
     {
-        struct PositionChanged
-        {
-            inline static std::string name()
-            {
-                return "PositionChanged";
-            };
-            typedef RemoteInterface Interface;
-            typedef cul::Position ArgumentType;
-        };
-
-        DBUS_CPP_SIGNAL_DEF(HeadingChanged, RemoteInterface, double)
-        DBUS_CPP_SIGNAL_DEF(VelocityChanged, RemoteInterface, double)
+        DBUS_CPP_SIGNAL_DEF(PositionChanged, RemoteInterface, cul::Position)
+        DBUS_CPP_SIGNAL_DEF(HeadingChanged, RemoteInterface, cul::Heading)
+        DBUS_CPP_SIGNAL_DEF(VelocityChanged, RemoteInterface, cul::Velocity)
     };
 
     struct Properties
@@ -80,35 +77,137 @@ struct RemoteInterface
         DBUS_CPP_READABLE_PROPERTY_DEF(AreVelocityUpdatesRunning, RemoteInterface, bool)
     };
 
+    struct Skeleton
+    {
+        // Creates a new skeleton instance and installs the interface
+        // com::ubuntu::remote::Interface on it.
+        Skeleton(const core::dbus::Object::Ptr& object)
+            : object{object},
+              properties
+              {
+                  object->get_property<Properties::HasPosition>(),
+                  object->get_property<Properties::HasVelocity>(),
+                  object->get_property<Properties::HasHeading>(),
+                  object->get_property<Properties::RequiresSatellites>(),
+                  object->get_property<Properties::RequiresCellNetwork>(),
+                  object->get_property<Properties::RequiresDataNetwork>(),
+                  object->get_property<Properties::RequiresMonetarySpending>(),
+                  object->get_property<Properties::ArePositionUpdatesRunning>(),
+                  object->get_property<Properties::AreHeadingUpdatesRunning>(),
+                  object->get_property<Properties::AreVelocityUpdatesRunning>()
+              },
+              signals
+              {
+                  object->get_signal<Signals::PositionChanged>(),
+                  object->get_signal<Signals::HeadingChanged>(),
+                  object->get_signal<Signals::VelocityChanged>()
+              }
+        {
+        }
+
+        // The object that the interface is installed on.
+        core::dbus::Object::Ptr object;
+        // All known properties.
+        struct
+        {
+            std::shared_ptr<core::dbus::Property<Properties::HasPosition>> has_position;
+            std::shared_ptr<core::dbus::Property<Properties::HasVelocity>> has_velocity;
+            std::shared_ptr<core::dbus::Property<Properties::HasHeading>> has_heading;
+            std::shared_ptr<core::dbus::Property<Properties::RequiresSatellites>> requires_satellites;
+            std::shared_ptr<core::dbus::Property<Properties::RequiresCellNetwork>> requires_cell_network;
+            std::shared_ptr<core::dbus::Property<Properties::RequiresDataNetwork>> requires_data_network;
+            std::shared_ptr<core::dbus::Property<Properties::RequiresMonetarySpending>> requires_monetary_spending;
+            std::shared_ptr<core::dbus::Property<Properties::ArePositionUpdatesRunning>> are_position_updates_running;
+            std::shared_ptr<core::dbus::Property<Properties::AreHeadingUpdatesRunning>> are_heading_updates_running;
+            std::shared_ptr<core::dbus::Property<Properties::AreVelocityUpdatesRunning>> are_velocity_updates_running;
+        } properties;
+        // All known signals.
+        struct
+        {
+            std::shared_ptr<core::dbus::Signal<
+                Signals::PositionChanged,
+                Signals::PositionChanged::ArgumentType
+            >> position_changed;
+
+            std::shared_ptr<core::dbus::Signal<
+                Signals::HeadingChanged,
+                Signals::HeadingChanged::ArgumentType
+            >> heading_changed;
+
+            std::shared_ptr<core::dbus::Signal<
+                Signals::VelocityChanged,
+                Signals::VelocityChanged::ArgumentType
+            >> velocity_changed;
+        } signals;
+    };
+
+    struct Stub
+    {
+        // Creates a new skeleton instance and installs the interface
+        // com::ubuntu::remote::Interface on it.
+        Stub(const core::dbus::Object::Ptr& object)
+            : object{object},
+              properties
+              {
+                  object->get_property<Properties::HasPosition>(),
+                  object->get_property<Properties::HasVelocity>(),
+                  object->get_property<Properties::HasHeading>(),
+                  object->get_property<Properties::RequiresSatellites>(),
+                  object->get_property<Properties::RequiresCellNetwork>(),
+                  object->get_property<Properties::RequiresDataNetwork>(),
+                  object->get_property<Properties::RequiresMonetarySpending>(),
+                  object->get_property<Properties::ArePositionUpdatesRunning>(),
+                  object->get_property<Properties::AreHeadingUpdatesRunning>(),
+                  object->get_property<Properties::AreVelocityUpdatesRunning>()
+              },
+              signals
+              {
+                  object->get_signal<Signals::PositionChanged>(),
+                  object->get_signal<Signals::HeadingChanged>(),
+                  object->get_signal<Signals::VelocityChanged>()
+              }
+        {
+        }
+
+        // The object that the interface is installed on.
+        core::dbus::Object::Ptr object;
+        // All known properties.
+        struct
+        {
+            std::shared_ptr<core::dbus::Property<Properties::HasPosition>> has_position;
+            std::shared_ptr<core::dbus::Property<Properties::HasVelocity>> has_velocity;
+            std::shared_ptr<core::dbus::Property<Properties::HasHeading>> has_heading;
+            std::shared_ptr<core::dbus::Property<Properties::RequiresSatellites>> requires_satellites;
+            std::shared_ptr<core::dbus::Property<Properties::RequiresCellNetwork>> requires_cell_network;
+            std::shared_ptr<core::dbus::Property<Properties::RequiresDataNetwork>> requires_data_network;
+            std::shared_ptr<core::dbus::Property<Properties::RequiresMonetarySpending>> requires_monetary_spending;
+            std::shared_ptr<core::dbus::Property<Properties::ArePositionUpdatesRunning>> are_position_updates_running;
+            std::shared_ptr<core::dbus::Property<Properties::AreHeadingUpdatesRunning>> are_heading_updates_running;
+            std::shared_ptr<core::dbus::Property<Properties::AreVelocityUpdatesRunning>> are_velocity_updates_running;
+        } properties;
+        // All known signals.
+        struct
+        {
+            std::shared_ptr<core::dbus::Signal<
+                Signals::PositionChanged,
+                Signals::PositionChanged::ArgumentType
+            >> position_changed;
+
+            std::shared_ptr<core::dbus::Signal<
+                Signals::HeadingChanged,
+                Signals::HeadingChanged::ArgumentType
+            >> heading_changed;
+
+            std::shared_ptr<core::dbus::Signal<
+                Signals::VelocityChanged,
+                Signals::VelocityChanged::ArgumentType
+            >> velocity_changed;
+        } signals;
+    };
+
 };
 } // remote
 } // ubuntu
 }  // core
-
-namespace core
-{
-namespace dbus
-{
-namespace traits
-{
-template<>
-struct Service<com::ubuntu::remote::RemoteInterface>
-{
-    static const std::string& interface_name()
-    {
-        static const std::string s{"com.ubuntu.espoo.Service.Provider"};
-        return s;
-    }
-
-    inline static const std::string& object_path()
-    {
-        static const std::string s{"/com/ubuntu/espoo/Service/Provider"};
-        return s;
-    }
-
-};
-}
-}
-}
 
 #endif
