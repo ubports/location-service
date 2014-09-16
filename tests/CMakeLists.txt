@@ -37,6 +37,7 @@ macro(LOCATION_SERVICE_ADD_TEST test_name src)
 
     ubuntu-location-service
     ubuntu-location-service-connectivity
+    ubuntu-location-service-provider-daemon
     ubuntu-location-service-daemon
 
     mongoose
@@ -116,6 +117,8 @@ if (LOCATION_SERVICE_ENABLE_GEOCLUE_PROVIDERS)
     add_test(geoclue_provider_test ${CMAKE_CURRENT_BINARY_DIR}/geoclue_provider_test)
   endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
 endif (LOCATION_SERVICE_ENABLE_GEOCLUE_PROVIDERS)
+
+LOCATION_SERVICE_ADD_TEST(remote_providerd_test remote_providerd_test.cpp)
 
 LOCATION_SERVICE_ADD_TEST(remote_provider_test remote_provider_test.cpp)
 LOCATION_SERVICE_ADD_TEST(espoo_provider_test espoo_provider_test.cpp)
