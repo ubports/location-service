@@ -44,6 +44,10 @@ add_library(
 
   providers/config.cpp
 
+  providers/remote/provider.cpp
+  providers/remote/skeleton.cpp
+  providers/remote/stub.cpp
+
   ${ICHNAEA_REPORTER_SRCS}
 )
 
