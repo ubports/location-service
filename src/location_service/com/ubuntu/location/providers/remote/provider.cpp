@@ -26,6 +26,10 @@
 #include <core/dbus/signal.h>
 #include <core/dbus/asio/executor.h>
 
+#include <core/posix/this_process.h>
+
+#include <boost/asio.hpp>
+
 #include <thread>
 
 namespace cul = com::ubuntu::location;
@@ -35,6 +39,73 @@ namespace dbus = core::dbus;
 
 namespace
 {
+struct Runtime
+{
+    static Runtime& instance()
+    {
+        static Runtime runtime;
+        return runtime;
+    }
+
+    Runtime()
+        : keep_alive{io_service},
+          worker1
+          {
+              [this]()
+              {
+                  io_service.run();
+              }
+          },
+          worker2
+          {
+              [this]()
+              {
+                  io_service.run();
+              }
+          }
+    {
+    }
+
+    ~Runtime()
+    {
+        io_service.stop();
+
+        if (worker1.joinable())
+            worker1.join();
+
+        if (worker2.joinable())
+            worker2.join();
+    }
+
+    boost::asio::io_service io_service;
+    boost::asio::io_service::work keep_alive;
+    std::thread worker1;
+    std::thread worker2;
+};
+
+core::dbus::Bus::Ptr bus_from_name(const std::string& bus_name)
+{
+    core::dbus::Bus::Ptr bus;
+
+    if (bus_name == "system")
+        bus = std::make_shared<core::dbus::Bus>(core::dbus::WellKnownBus::system);
+    else if (bus_name == "session")
+        bus = std::make_shared<core::dbus::Bus>(core::dbus::WellKnownBus::session);
+    else if (bus_name == "system_with_address_from_env")
+        bus = std::make_shared<core::dbus::Bus>(core::posix::this_process::env::get_or_throw("DBUS_SYSTEM_BUS_ADDRESS"));
+    else if (bus_name == "session_with_address_from_env")
+        bus = std::make_shared<core::dbus::Bus>(core::posix::this_process::env::get_or_throw("DBUS_SESSION_BUS_ADDRESS"));
+
+    if (not bus) throw std::runtime_error
+    {
+        "Could not create bus for name: " + bus_name
+    };
+
+    bus->install_executor(core::dbus::asio::make_executor(bus, Runtime::instance().io_service));
+
+    return bus;
+}
+
 void throw_if_error(const dbus::Result<void>& result)
 {
     if (result.is_error()) throw std::runtime_error
@@ -51,13 +122,6 @@ T throw_if_error_or_return(const dbus::Result<T>& result)
         result.error().print()
     };
     return result.value();
-}
-
-dbus::Bus::Ptr the_system_bus()
-{
-    dbus::Bus::Ptr system_bus = std::make_shared<dbus::Bus>(dbus::WellKnownBus::system);
-    system_bus->install_executor(core::dbus::asio::make_executor(system_bus));
-    return system_bus;
 }
 }
 
@@ -84,12 +148,14 @@ std::string remote::Provider::Stub::class_name()
 
 cul::Provider::Ptr remote::Provider::Stub::create_instance(const cul::ProviderFactory::Configuration& config)
 {
+    auto bus_name = config.count(Stub::key_bus) > 0 ? config.get<std::string>(Stub::key_bus) :
+                                                       "system";
     auto name = config.count(Stub::key_name) > 0 ? config.get<std::string>(Stub::key_name) :
                                                    throw std::runtime_error("Missing bus-name");
     auto path = config.count(Stub::key_path) > 0 ? config.get<std::string>(Stub::key_path) :
                                                    throw std::runtime_error("Missing bus-path");
 
-    auto bus = the_system_bus();
+    auto bus = bus_from_name(bus_name);
     auto service = dbus::Service::use_service(bus, name);
     auto object = service->object_for_path(path);
 
@@ -122,11 +188,12 @@ remote::Provider::Stub::Stub(const remote::stub::Configuration& config)
 
 remote::Provider::Stub::~Stub() noexcept
 {
+    VLOG(10) << __PRETTY_FUNCTION__;
 }
 
 bool remote::Provider::Stub::matches_criteria(const cul::Criteria& criteria)
 {
-    VLOG(10) << __PRETTY_FUNCTION__ << std::endl;
+    VLOG(10) << __PRETTY_FUNCTION__ << std::endl;    
     return throw_if_error_or_return(d->stub.object->transact_method<remote::Interface::MatchesCriteria, bool>(criteria));
 }
 
@@ -150,56 +217,108 @@ void remote::Provider::Stub::on_wifi_and_cell_reporting_state_changed(cul::WifiA
 
 void remote::Provider::Stub::on_reference_location_updated(const cul::Update<cul::Position>& position)
 {
-    VLOG(10) << __PRETTY_FUNCTION__;
-    throw_if_error(d->stub.object->transact_method<remote::Interface::OnReferenceLocationChanged, void>(position));
+    std::weak_ptr<Private> wp{d};
+    Runtime::instance().io_service.post([wp, position]()
+    {
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        try
+        {
+            throw_if_error(sp->stub.object->transact_method<remote::Interface::OnReferenceLocationChanged, void>(position));
+        } catch(const std::exception& e)
+        {
+            // We drop the error and just log it for post-mortem inspection.
+            LOG(WARNING) << "Transaction<remote::Interface::OnReferenceLocationChanged>: " << e.what();
+        }
+    });
 }
 
 void remote::Provider::Stub::on_reference_velocity_updated(const cul::Update<cul::Velocity>& velocity)
 {
-    VLOG(10) << __PRETTY_FUNCTION__;
-    throw_if_error(d->stub.object->transact_method<remote::Interface::OnReferenceVelocityChanged, void>(velocity));
+    std::weak_ptr<Private> wp{d};
+    Runtime::instance().io_service.post([wp, velocity]()
+    {
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        try
+        {
+            throw_if_error(sp->stub.object->transact_method<remote::Interface::OnReferenceVelocityChanged, void>(velocity));
+        } catch(const std::exception& e)
+        {
+            // We drop the error and just log it for post-mortem inspection.
+            LOG(WARNING) << "Transaction<remote::Interface::OnReferenceVelocityChanged>: " << e.what();
+        }
+    });
 }
 
 void remote::Provider::Stub::on_reference_heading_updated(const cul::Update<cul::Heading>& heading)
 {
-    VLOG(10) << __PRETTY_FUNCTION__;
-    throw_if_error(d->stub.object->transact_method<remote::Interface::OnReferenceHeadingChanged, void>(heading));
+    std::weak_ptr<Private> wp{d};
+    Runtime::instance().io_service.post([wp, heading]()
+    {
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        try
+        {
+            throw_if_error(sp->stub.object->transact_method<remote::Interface::OnReferenceHeadingChanged, void>(heading));
+        } catch(const std::exception& e)
+        {
+            // We drop the error and just log it for post-mortem inspection.
+            LOG(WARNING) << "Transaction<remote::Interface::OnReferenceHeadingChanged>: " << e.what();
+        }
+    });
 }
 
 void remote::Provider::Stub::start_position_updates()
 {
-    VLOG(10) << __PRETTY_FUNCTION__;
+    VLOG(10) << "> " << __PRETTY_FUNCTION__;
     throw_if_error(d->stub.object->transact_method<remote::Interface::StartPositionUpdates, void>());
+    VLOG(10) << "< " << __PRETTY_FUNCTION__;
 }
 
 void remote::Provider::Stub::stop_position_updates()
 {
-    VLOG(10) << __PRETTY_FUNCTION__;
+    VLOG(10) << "> " << __PRETTY_FUNCTION__;
     throw_if_error(d->stub.object->transact_method<remote::Interface::StopPositionUpdates, void>());
+    VLOG(10) << "< " << __PRETTY_FUNCTION__;
 }
 
 void remote::Provider::Stub::start_heading_updates()
 {
-    VLOG(10) << __PRETTY_FUNCTION__;
+    VLOG(10) << "> " << __PRETTY_FUNCTION__;
     throw_if_error(d->stub.object->transact_method<remote::Interface::StartHeadingUpdates, void>());
+    VLOG(10) << "< " << __PRETTY_FUNCTION__;
 }
 
 void remote::Provider::Stub::stop_heading_updates()
 {
-    VLOG(10) << __PRETTY_FUNCTION__;
+    VLOG(10) << "> " << __PRETTY_FUNCTION__;
     throw_if_error(d->stub.object->transact_method<remote::Interface::StopHeadingUpdates, void>());
+    VLOG(10) << "< " << __PRETTY_FUNCTION__;
 }
 
 void remote::Provider::Stub::start_velocity_updates()
 {
-    VLOG(10) << __PRETTY_FUNCTION__;
+    VLOG(10) << "> " << __PRETTY_FUNCTION__;
     throw_if_error(d->stub.object->transact_method<remote::Interface::StartVelocityUpdates, void>());
+    VLOG(10) << "< " << __PRETTY_FUNCTION__;
+
 }
 
 void remote::Provider::Stub::stop_velocity_updates()
 {
-    VLOG(10) << __PRETTY_FUNCTION__;
+    VLOG(10) << "> " << __PRETTY_FUNCTION__;
     throw_if_error(d->stub.object->transact_method<remote::Interface::StopVelocityUpdates, void>());
+    VLOG(10) << "< " << __PRETTY_FUNCTION__;
 }
 
 struct remote::Provider::Skeleton::Private
@@ -212,14 +331,17 @@ struct remote::Provider::Skeleton::Private
               {
                   impl->updates().position.connect([this](const cul::Update<cul::Position>& position)
                   {
+                      VLOG(100) << "Position changed reported by impl: " << position;
                       skeleton.signals.position_changed->emit(position.value);
                   }),
                   impl->updates().heading.connect([this](const cul::Update<cul::Heading>& heading)
                   {
+                      VLOG(100) << "Heading changed reported by impl: " << heading;
                       skeleton.signals.heading_changed->emit(heading.value);
                   }),
                   impl->updates().velocity.connect([this](const cul::Update<cul::Velocity>& velocity)
                   {
+                      VLOG(100) << "Velocity changed reported by impl: " << velocity;
                       skeleton.signals.velocity_changed->emit(velocity.value);
                   })
               }
@@ -243,22 +365,6 @@ remote::Provider::Skeleton::Skeleton(const remote::skeleton::Configuration& conf
     : cul::Provider(),
       d(new Private(config))
 {
-    // Wire up to updates.
-    d->impl->updates().position.connect([this](const cul::Update<cul::Position>& position)
-    {
-        d->skeleton.signals.position_changed->emit(position.value);
-    });
-
-    d->impl->updates().heading.connect([this](const cul::Update<cul::Heading>& heading)
-    {
-        d->skeleton.signals.heading_changed->emit(heading.value);
-    });
-
-    d->impl->updates().velocity.connect([this](const cul::Update<cul::Velocity>& velocity)
-    {
-        d->skeleton.signals.velocity_changed->emit(velocity.value);
-    });
-
     // And install method handlers.
     d->skeleton.object->install_method_handler<remote::Interface::MatchesCriteria>([this](const dbus::Message::Ptr & msg)
     {

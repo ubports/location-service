@@ -89,26 +89,29 @@ TEST_F(RemoteProviderdTest, AClientReceivesUpdatesFromAnOutOfProcessProvider)
 
     auto service = core::posix::fork([this]()
     {
-        auto bus = session_bus();
-        bus->install_executor(core::dbus::asio::make_executor(bus));
+        core::posix::this_process::env::set_or_throw(
+                    "TRUST_STORE_PERMISSION_MANAGER_IS_RUNNING_UNDER_TESTING",
+                    "1");
 
         const char* argv[] =
         {
             "--bus", "session",                                                 // 2
             "--provider", "remote::Provider",                                   // 4
-            "--remote::Provider::name=com.ubuntu.location.providers.Dummy",     // 5
-            "--remote::Provider::path=/com/ubuntu/location/providers/Dummy"     // 6
+            "--remote::Provider::bus=session_with_address_from_env",            // 5
+            "--remote::Provider::name=com.ubuntu.location.providers.Dummy",     // 6
+            "--remote::Provider::path=/com/ubuntu/location/providers/Dummy"     // 7
         };
 
-        auto dbus_connection_factory = [bus](core::dbus::WellKnownBus)
+        // The daemon instance requires two bus instances.
+        auto dbus_connection_factory = [this](core::dbus::WellKnownBus)
         {
-            return bus;
+            return session_bus();
         };
 
         return static_cast<core::posix::exit::Status>(
                     location::service::Daemon::main(
                         location::service::Daemon::Configuration::from_command_line_args(
-                            6, argv, dbus_connection_factory)));
+                            7, argv, dbus_connection_factory)));
     }, core::posix::StandardStream::empty);
 
     std::this_thread::sleep_for(std::chrono::milliseconds{250});
@@ -137,9 +140,9 @@ TEST_F(RemoteProviderdTest, AClientReceivesUpdatesFromAnOutOfProcessProvider)
         };
 
         MockEventReceiver receiver;
-        EXPECT_CALL(receiver, position_update_received(_)).Times(1);
-        EXPECT_CALL(receiver, heading_update_received(_)).Times(1);
-        EXPECT_CALL(receiver, velocity_update_received(_)).Times(1);
+        EXPECT_CALL(receiver, position_update_received(_)).Times(AtLeast(1));
+        EXPECT_CALL(receiver, heading_update_received(_)).Times(AtLeast(1));
+        EXPECT_CALL(receiver, velocity_update_received(_)).Times(AtLeast(1));
 
         com::ubuntu::location::service::Stub service{bus};
 
@@ -175,14 +178,17 @@ TEST_F(RemoteProviderdTest, AClientReceivesUpdatesFromAnOutOfProcessProvider)
                                                core::posix::exit::Status::success;
     }, core::posix::StandardStream::empty);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+    std::this_thread::sleep_for(std::chrono::milliseconds{4000});
 
+    std::cout << "Shutting down client" << std::endl;
     client.send_signal_or_throw(core::posix::Signal::sig_term);
     EXPECT_TRUE(did_finish_successfully(client.wait_for(core::posix::wait::Flags::untraced)));
 
+    std::cout << "Shutting down service" << std::endl;
     service.send_signal_or_throw(core::posix::Signal::sig_term);
     EXPECT_TRUE(did_finish_successfully(service.wait_for(core::posix::wait::Flags::untraced)));
 
+    std::cout << "Shutting down oopp" << std::endl;
     oopp.send_signal_or_throw(core::posix::Signal::sig_term);
     EXPECT_TRUE(did_finish_successfully(oopp.wait_for(core::posix::wait::Flags::untraced)));
 }
