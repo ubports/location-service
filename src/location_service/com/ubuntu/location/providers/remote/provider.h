@@ -48,6 +48,8 @@ struct Provider
         // from the provided property bundle.
         static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
 
+        // Name of the command line parameter for passing in the DBus to connect to.
+        static constexpr const char* key_bus{"bus"};
         // Name of the command line parameter for passing in the remote service name.
         static constexpr const char* key_name{"name"};
         // Name of the command line parameter for passing in the path of the remote provider impl.
@@ -76,7 +78,7 @@ struct Provider
 
     private:
         struct Private;
-        std::unique_ptr<Private> d;
+        std::shared_ptr<Private> d;
     };
 
     class Skeleton : public com::ubuntu::location::Provider
@@ -106,7 +108,7 @@ struct Provider
 
     private:
         struct Private;
-        std::unique_ptr<Private> d;
+        std::shared_ptr<Private> d;
     };
 };
 }

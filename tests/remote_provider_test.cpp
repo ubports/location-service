@@ -388,6 +388,8 @@ TEST_F(RemoteProvider, updates_are_fwd)
 
         bus->stop();
 
+        std::cout << "Stopped the bus" << std::endl;
+
         if (worker.joinable())
             worker.join();
 
@@ -395,7 +397,9 @@ TEST_F(RemoteProvider, updates_are_fwd)
                                                core::posix::exit::Status::success;
     }, core::posix::StandardStream::empty);
 
+    std::cout << "Waiting for stub to finish." << std::endl;
     EXPECT_TRUE(did_finish_successfully(stub.wait_for(core::posix::wait::Flags::untraced)));
+    std::cout << "Shutting down skeleton." << std::endl;
     skeleton.send_signal_or_throw(core::posix::Signal::sig_term);
     EXPECT_TRUE(did_finish_successfully(skeleton.wait_for(core::posix::wait::Flags::untraced)));
 }
