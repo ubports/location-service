@@ -44,7 +44,7 @@ int main(int argc, const char** argv)
     {
         FLAGS_logtostderr = true;
         VLOG(1) << "Problem creating directory for log files: " << ec << "."
-                     << "Falling back to stderr logging.";
+                << "Falling back to stderr logging.";
     }
 
     FLAGS_log_dir = log_dir;
