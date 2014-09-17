@@ -133,6 +133,9 @@ int location::service::ProviderDaemon::main(const location::service::ProviderDae
         configuration.provider
     });
 
+
+    std::cout << "We are up and running" << std::endl;
+
     trap->run();
 
     configuration.connection->stop();
