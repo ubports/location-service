@@ -16,8 +16,8 @@
  * Authored by: Manuel de la Pena <manuel.delapena@canonical.com>
  */
 
-#ifndef CORE_UBUNTU_ESPOO_PROVIDER_P_H_
-#define CORE_UBUNTU_ESPOO_PROVIDER_P_H_
+#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_REMOTE_INTERFACE_H_
+#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_REMOTE_INTERFACE_H_
 
 #include <core/dbus/macros.h>
 #include <core/dbus/object.h>
@@ -33,15 +33,17 @@
 #include <com/ubuntu/location/position.h>
 #include <com/ubuntu/location/velocity.h>
 
-namespace cul = com::ubuntu::location;
-
 namespace com
 {
 namespace ubuntu
 {
+namespace location
+{
+namespace providers
+{
 namespace remote
 {
-struct RemoteInterface
+struct Interface
 {
     static const std::string& name()
     {
@@ -49,32 +51,47 @@ struct RemoteInterface
         return s;
     }
 
-    DBUS_CPP_METHOD_DEF(StartPositionUpdates, RemoteInterface)
-    DBUS_CPP_METHOD_DEF(StopPositionUpdates, RemoteInterface)
-    DBUS_CPP_METHOD_DEF(StartHeadingUpdates, RemoteInterface)
-    DBUS_CPP_METHOD_DEF(StopHeadingUpdates, RemoteInterface)
-    DBUS_CPP_METHOD_DEF(StartVelocityUpdates, RemoteInterface)
-    DBUS_CPP_METHOD_DEF(StopVelocityUpdates, RemoteInterface)
+    // Checks if a provider satisfies a set of accuracy criteria.
+    DBUS_CPP_METHOD_DEF(MatchesCriteria, remote::Interface)
+    // Checks if the provider has got a specific requirement.
+    DBUS_CPP_METHOD_DEF(Requires, remote::Interface)
+    // Checks if the provider supports a specific feature.
+    DBUS_CPP_METHOD_DEF(Supports, remote::Interface)
+    // Called by the engine whenever the wifi and cell ID reporting state changes.
+    DBUS_CPP_METHOD_DEF(OnWifiAndCellIdReportingStateChanged, remote::Interface)
+    // Called by the engine whenever the reference location changed.
+    DBUS_CPP_METHOD_DEF(OnReferenceLocationChanged, remote::Interface)
+    // Called by the engine whenever the reference heading changed.
+    DBUS_CPP_METHOD_DEF(OnReferenceHeadingChanged, remote::Interface)
+    // Called by the engine whenever the reference velocity changed.
+    DBUS_CPP_METHOD_DEF(OnReferenceVelocityChanged, remote::Interface)
+
+    DBUS_CPP_METHOD_DEF(StartPositionUpdates, remote::Interface)
+    DBUS_CPP_METHOD_DEF(StopPositionUpdates, remote::Interface)
+    DBUS_CPP_METHOD_DEF(StartHeadingUpdates, remote::Interface)
+    DBUS_CPP_METHOD_DEF(StopHeadingUpdates, remote::Interface)
+    DBUS_CPP_METHOD_DEF(StartVelocityUpdates, remote::Interface)
+    DBUS_CPP_METHOD_DEF(StopVelocityUpdates, remote::Interface)
 
     struct Signals
     {
-        DBUS_CPP_SIGNAL_DEF(PositionChanged, RemoteInterface, cul::Position)
-        DBUS_CPP_SIGNAL_DEF(HeadingChanged, RemoteInterface, cul::Heading)
-        DBUS_CPP_SIGNAL_DEF(VelocityChanged, RemoteInterface, cul::Velocity)
+        DBUS_CPP_SIGNAL_DEF(PositionChanged, remote::Interface, com::ubuntu::location::Position)
+        DBUS_CPP_SIGNAL_DEF(HeadingChanged, remote::Interface, com::ubuntu::location::Heading)
+        DBUS_CPP_SIGNAL_DEF(VelocityChanged, remote::Interface, com::ubuntu::location::Velocity)
     };
 
     struct Properties
     {
-        DBUS_CPP_READABLE_PROPERTY_DEF(HasPosition, RemoteInterface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(HasVelocity, RemoteInterface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(HasHeading, RemoteInterface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresSatellites, RemoteInterface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresCellNetwork, RemoteInterface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresDataNetwork, RemoteInterface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresMonetarySpending, RemoteInterface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(ArePositionUpdatesRunning, RemoteInterface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(AreHeadingUpdatesRunning, RemoteInterface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(AreVelocityUpdatesRunning, RemoteInterface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(HasPosition, remote::Interface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(HasVelocity, remote::Interface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(HasHeading, remote::Interface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresSatellites, remote::Interface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresCellNetwork, remote::Interface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresDataNetwork, remote::Interface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresMonetarySpending, remote::Interface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(ArePositionUpdatesRunning, remote::Interface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(AreHeadingUpdatesRunning, remote::Interface, bool)
+        DBUS_CPP_READABLE_PROPERTY_DEF(AreVelocityUpdatesRunning, remote::Interface, bool)
     };
 
     struct Skeleton
@@ -206,8 +223,9 @@ struct RemoteInterface
     };
 
 };
-} // remote
-} // ubuntu
-}  // core
-
-#endif
+}
+}
+}
+}
+}
+#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_REMOTE_INTERFACE_H_

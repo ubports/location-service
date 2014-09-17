@@ -21,6 +21,7 @@
 #include <com/ubuntu/location/criteria.h>
 #include <com/ubuntu/location/heading.h>
 #include <com/ubuntu/location/position.h>
+#include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/space_vehicle.h>
 #include <com/ubuntu/location/update.h>
 #include <com/ubuntu/location/velocity.h>
@@ -341,6 +342,49 @@ struct Codec<com::ubuntu::location::Criteria>
         Codec<com::ubuntu::location::Optional<HeadingAccuracy>>::decode_argument(reader, in.accuracy.heading);
     }
 };
+
+template<>
+struct Codec<com::ubuntu::location::Provider::Features>
+{
+    static void encode_argument(Message::Writer& writer, const com::ubuntu::location::Provider::Features& in)
+    {
+        writer.push_int32(static_cast<std::int32_t>(in));
+    }
+
+    static void decode_argument(Message::Reader& reader, com::ubuntu::location::Provider::Features& in)
+    {
+        in = static_cast<com::ubuntu::location::Provider::Features>(reader.pop_int32());
+    }
+};
+
+template<>
+struct Codec<com::ubuntu::location::Provider::Requirements>
+{
+    static void encode_argument(Message::Writer& writer, const com::ubuntu::location::Provider::Requirements& in)
+    {
+        writer.push_int32(static_cast<std::int32_t>(in));
+    }
+
+    static void decode_argument(Message::Reader& reader, com::ubuntu::location::Provider::Requirements& in)
+    {
+        in = static_cast<com::ubuntu::location::Provider::Requirements>(reader.pop_int32());
+    }
+};
+
+template<>
+struct Codec<com::ubuntu::location::WifiAndCellIdReportingState>
+{
+    static void encode_argument(Message::Writer& writer, const com::ubuntu::location::WifiAndCellIdReportingState& in)
+    {
+        writer.push_int32(static_cast<std::int32_t>(in));
+    }
+
+    static void decode_argument(Message::Reader& reader, com::ubuntu::location::WifiAndCellIdReportingState& in)
+    {
+        in = static_cast<com::ubuntu::location::WifiAndCellIdReportingState>(reader.pop_int32());
+    }
+};
+
 namespace helper
 {
 template<typename T>

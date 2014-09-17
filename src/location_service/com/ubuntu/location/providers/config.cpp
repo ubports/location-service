@@ -41,6 +41,13 @@ static FactoryInjector dummy_injector
     com::ubuntu::location::providers::dummy::Provider::create_instance
 };
 
+#include <com/ubuntu/location/providers/remote/provider.h>
+static FactoryInjector remote_injector
+{
+    "remote::Provider",
+    com::ubuntu::location::providers::remote::Provider::Stub::create_instance
+};
+
 #if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GEOCLUE)
 #include <com/ubuntu/location/providers/geoclue/provider.h>
 static FactoryInjector geoclue_injector
@@ -67,12 +74,3 @@ static FactoryInjector skyhook_injector
     com::ubuntu::location::providers::skyhook::Provider::create_instance
 };
 #endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_SKYHOOK
-
-#if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_REMOTE)
-#include <com/ubuntu/location/providers/remote/provider.h>
-static FactoryInjector remote_injector
-{
-    "remote::Provider", 
-    com::ubuntu::location::providers::remote::Provider::create_instance
-};
-#endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_REMOTE
