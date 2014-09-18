@@ -25,6 +25,7 @@
 
 #include <com/ubuntu/location/providers/remote/provider.h>
 
+#include "mock_event_consumer.h"
 #include "mock_provider.h"
 
 #include <core/dbus/fixture.h>
@@ -88,99 +89,6 @@ struct RemoteProvider : public core::dbus::testing::Fixture
     {
         "/com/ubuntu/remote/Provider"
     };
-};
-
-class MockEventConsumer
-{
- public:
-    MockEventConsumer()
-    {
-        using namespace ::testing;
-
-        ON_CALL(*this, on_new_position(_))
-                .WillByDefault(
-                    InvokeWithoutArgs(
-                        this,
-                        &MockEventConsumer::notify_position_update_arrived));
-        ON_CALL(*this, on_new_heading(_))
-                .WillByDefault(
-                    InvokeWithoutArgs(
-                        this,
-                        &MockEventConsumer::notify_heading_update_arrived));
-        ON_CALL(*this, on_new_velocity(_))
-                .WillByDefault(
-                    InvokeWithoutArgs(
-                        this,
-                        &MockEventConsumer::notify_velocity_update_arrived));
-    }
-
-    bool wait_for_position_update_for(const std::chrono::milliseconds& timeout)
-    {
-        std::unique_lock<std::mutex> ul{position.guard};
-        return position.wait_condition.wait_for(ul, timeout, [this] { return position.update_arrived; });
-    }
-
-    bool wait_for_heading_update_for(const std::chrono::milliseconds& timeout)
-    {
-        std::unique_lock<std::mutex> ul{heading.guard};
-        return heading.wait_condition.wait_for(ul, timeout, [this] { return heading.update_arrived; });
-    }
-
-    bool wait_for_velocity_update_for(const std::chrono::milliseconds& timeout)
-    {
-        std::unique_lock<std::mutex> ul{velocity.guard};
-        return velocity.wait_condition.wait_for(ul, timeout, [this] { return velocity.update_arrived; });
-    }
-
-    MOCK_METHOD1(on_new_position, void(const cul::Update<cul::Position>&));
-    MOCK_METHOD1(on_new_heading, void(const cul::Update<cul::Heading>&));
-    MOCK_METHOD1(on_new_velocity, void(const cul::Update<cul::Velocity>&));
-
-private:
-    // Notes down the arrival of a position update
-    // and notifies any waiting threads about the event.
-    void notify_position_update_arrived()
-    {
-        position.update_arrived = true;
-        position.wait_condition.notify_all();
-    }
-
-    // Notes down the arrival of a heading update
-    // and notifies any waiting threads about the event.
-    void notify_heading_update_arrived()
-    {
-        heading.update_arrived = true;
-        heading.wait_condition.notify_all();
-    }
-
-    // Notes down the arrival of a heading update
-    // and notifies any waiting threads about the event.
-    void notify_velocity_update_arrived()
-    {
-        velocity.update_arrived = true;
-        velocity.wait_condition.notify_all();
-    }
-
-    struct
-    {
-        std::mutex guard;
-        std::condition_variable wait_condition;
-        bool update_arrived{false};
-    } position;
-
-    struct
-    {
-        std::mutex guard;
-        std::condition_variable wait_condition;
-        bool update_arrived{false};
-    } heading;
-
-    struct
-    {
-        std::mutex guard;
-        std::condition_variable wait_condition;
-        bool update_arrived{false};
-    } velocity;
 };
 }
 
