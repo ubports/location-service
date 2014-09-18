@@ -28,6 +28,10 @@
 
 #include <core/posix/this_process.h>
 
+#include <boost/format.hpp>
+
+#include <libintl.h>
+
 #include <sys/apparmor.h>
 
 namespace location = com::ubuntu::location;
@@ -41,6 +45,32 @@ bool is_running_under_testing()
                 "TRUST_STORE_PERMISSION_MANAGER_IS_RUNNING_UNDER_TESTING",
                 "0") == "1";
 
+}
+
+namespace i18n
+{
+static constexpr const char* domain
+{
+    "ubuntu-location-service"
+};
+
+bool init()
+{
+    ::bindtextdomain(domain, nullptr);
+    ::textdomain(domain);
+
+    return true;
+}
+
+std::string tr(const std::string& msg)
+{
+    static const bool initialized = init();
+
+    if (initialized)
+        return ::gettext(msg.c_str());
+
+    return msg;
+}
 }
 }
 
@@ -137,10 +167,10 @@ service::PermissionManager::Result service::TrustStorePermissionManager::check_p
 
     if (profile == "unconfined")
     {
-        description = "An unconfined application wants to access your current location.";
+        description = i18n::tr("An unconfined application wants to access your current location.");
     } else
     {
-        description = profile + " wants to access your current location.";
+        description = (boost::format(i18n::tr("%1% wants to access your current location.")) % profile).str();
     }
 
     core::trust::Agent::RequestParameters params
