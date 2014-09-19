@@ -30,8 +30,6 @@
 
 #include <boost/format.hpp>
 
-#include <libintl.h>
-
 #include <sys/apparmor.h>
 
 namespace location = com::ubuntu::location;
@@ -49,26 +47,11 @@ bool is_running_under_testing()
 
 namespace i18n
 {
-static constexpr const char* domain
-{
-    "ubuntu-location-service"
-};
-
-bool init()
-{
-    ::bindtextdomain(domain, nullptr);
-    ::textdomain(domain);
-
-    return true;
-}
-
+// We only tag strings that should be translated but do not do the actual translation.
+// Point is: The service might run in a system context, without correct locale information.
+// We leave the translation to in-session trust-store instances.
 std::string tr(const std::string& msg)
 {
-    static const bool initialized = init();
-
-    if (initialized)
-        return ::gettext(msg.c_str());
-
     return msg;
 }
 }
@@ -163,15 +146,7 @@ service::PermissionManager::Result service::TrustStorePermissionManager::check_p
         return service::PermissionManager::Result::rejected;
     }
 
-    std::string description;
-
-    if (profile == "unconfined")
-    {
-        description = i18n::tr("An unconfined application wants to access your current location.");
-    } else
-    {
-        description = (boost::format(i18n::tr("%1% wants to access your current location.")) % profile).str();
-    }
+    std::string description = i18n::tr("%1% wants to access your current location.");
 
     core::trust::Agent::RequestParameters params
     {
