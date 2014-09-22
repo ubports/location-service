@@ -18,6 +18,20 @@
 
 #include <com/ubuntu/location/connectivity/cached_radio_cell.h>
 
+#include <core/posix/this_process.h>
+
+namespace
+{
+std::int64_t timeout_in_seconds()
+{
+    auto value = core::posix::this_process::env::get("COM_UBUNTU_LOCATION_CONNECTIVITY_DATA_CELL_TIMEOUT", "60");
+    std::stringstream ss(value);
+    std::uint64_t result; ss >> result;
+
+    return result;
+}
+}
+
 const std::map<std::string, com::ubuntu::location::connectivity::RadioCell::Type>& detail::CachedRadioCell::type_lut()
 {
     static const std::map<std::string, com::ubuntu::location::connectivity::RadioCell::Type> lut
@@ -484,7 +498,9 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
     {
         if (valid.get())
         {
-            invalidation_timer.expires_from_now(boost::posix_time::seconds{60});
+            static const boost::posix_time::seconds timeout{timeout_in_seconds()};
+
+            invalidation_timer.expires_from_now(timeout);
             invalidation_timer.async_wait([this](boost::system::error_code ec)
             {
                 if (not ec)
