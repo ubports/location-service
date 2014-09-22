@@ -48,8 +48,11 @@ const std::map<std::string, com::ubuntu::location::connectivity::RadioCell::Type
     return lut;
 }
 
-detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem)
+detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem, boost::asio::io_service& io_service)
     : RadioCell(),
+      io_service(io_service),
+      invalidation_timer(io_service),
+      valid(true),
       radio_type(Type::gsm),
       modem(modem),
       connections
@@ -170,6 +173,11 @@ detail::CachedRadioCell::~CachedRadioCell()
     modem.network_registration.signals.property_changed->disconnect(connections.network_registration_properties_changed);
 }
 
+const core::Property<bool>& detail::CachedRadioCell::is_valid() const
+{
+    return valid;
+}
+
 const core::Signal<>& detail::CachedRadioCell::changed() const
 {
     return on_changed;
@@ -216,8 +224,12 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
     const auto& key = std::get<0>(tuple);
     const auto& variant = std::get<1>(tuple);
 
+    bool did_cell_identity_change = false;
+
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::Technology::name())
     {
+        did_cell_identity_change = true;
+
         auto value = variant.as<
                     org::Ofono::Manager::Modem::NetworkRegistration::Technology::ValueType
                 >();
@@ -313,6 +325,8 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::CellId::name())
     {
+        did_cell_identity_change = true;
+
         auto value = variant.as<
                     org::Ofono::Manager::Modem::NetworkRegistration::CellId::ValueType
                 >();
@@ -340,6 +354,8 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode::name())
     {
+        did_cell_identity_change = true;
+
         auto value = variant.as<
                     org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode::ValueType
                 >();
@@ -366,6 +382,8 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode::name())
     {
+        did_cell_identity_change = true;
+
         std::stringstream ss
         {
             variant.as<
@@ -397,6 +415,8 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode::name())
     {
+        did_cell_identity_change = true;
+
         std::stringstream ss
         {
             variant.as<
@@ -454,6 +474,28 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
         };
 
         on_changed();
+    }
+
+    // Heuristics to ensure that
+    // whenever the cell identity changes, we start a timer and invalidate the
+    // cell to account for situations where the underlying modem firmware does not
+    // report cell changes when on a 3G data connection.
+    if (did_cell_identity_change && radio_type == com::ubuntu::location::connectivity::RadioCell::Type::umts)
+    {
+        if (valid.get())
+        {
+            invalidation_timer.expires_from_now(boost::posix_time::seconds{60});
+            invalidation_timer.async_wait([this](boost::system::error_code ec)
+            {
+                if (not ec)
+                    valid = false;
+            });
+        }
+        else
+        {
+            invalidation_timer.cancel();
+            valid = true;
+        }
     }
 }
 
