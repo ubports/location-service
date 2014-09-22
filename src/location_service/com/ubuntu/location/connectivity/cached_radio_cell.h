@@ -22,6 +22,8 @@
 
 #include "ofono.h"
 
+#include <boost/asio.hpp>
+
 namespace detail
 {
 
@@ -36,10 +38,13 @@ public:
 
     // Creates an instance of a cached radio cell, deduced from the network registration
     // associated to the modem.
-    CachedRadioCell(const org::Ofono::Manager::Modem& modem);
+    CachedRadioCell(const org::Ofono::Manager::Modem& modem, boost::asio::io_service& io_service);
 
     // Frees all resources and cuts all event connections.
     ~CachedRadioCell();
+
+    // Returns true iff the instance represents a valid cell.
+    const core::Property<bool>& is_valid() const;
 
     // Emitted when the cell details change.
     const core::Signal<>& changed() const override;
@@ -63,6 +68,9 @@ public:
     void on_network_registration_property_changed(const std::tuple<std::string, core::dbus::types::Variant>& tuple);
 
 private:
+    boost::asio::io_service& io_service;
+    boost::asio::deadline_timer invalidation_timer;
+    core::Property<bool> valid;
     core::Signal<> on_changed;
     Type radio_type;
     org::Ofono::Manager::Modem modem;
