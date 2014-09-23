@@ -30,6 +30,16 @@ std::int64_t timeout_in_seconds()
 
     return result;
 }
+
+// We only activate our heuristics if we are running on problematic hardware
+bool is_running_on_problematic_modem_firmware(const org::Ofono::Manager::Modem& modem)
+{
+    // This is somewhat ambigious and we certainly want to
+    // maintain a database of problematic modem firmware in the
+    // future.
+    auto path = modem.object->path().as_string();
+    return path.find("ril") != std::string::npos;
+}
 }
 
 const std::map<std::string, com::ubuntu::location::connectivity::RadioCell::Type>& detail::CachedRadioCell::type_lut()
@@ -62,11 +72,19 @@ const std::map<std::string, com::ubuntu::location::connectivity::RadioCell::Type
     return lut;
 }
 
-detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem, boost::asio::io_service& io_service)
-    : RadioCell(),
+detail::CachedRadioCell::CellChangeHeuristics::CellChangeHeuristics(
+        boost::asio::io_service& io_service,
+        bool needed)
+    : needed(needed),
       io_service(io_service),
       invalidation_timer(io_service),
-      valid(true),
+      valid(true)
+{
+}
+
+detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem, boost::asio::io_service& io_service)
+    : RadioCell(),
+      cell_change_heuristics(io_service, is_running_on_problematic_modem_firmware(modem)),
       radio_type(Type::gsm),
       modem(modem),
       connections
@@ -189,7 +207,7 @@ detail::CachedRadioCell::~CachedRadioCell()
 
 const core::Property<bool>& detail::CachedRadioCell::is_valid() const
 {
-    return valid;
+    return cell_change_heuristics.valid;
 }
 
 const core::Signal<>& detail::CachedRadioCell::changed() const
@@ -494,23 +512,25 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
     // whenever the cell identity changes, we start a timer and invalidate the
     // cell to account for situations where the underlying modem firmware does not
     // report cell changes when on a 3G data connection.
-    if (did_cell_identity_change && radio_type == com::ubuntu::location::connectivity::RadioCell::Type::umts)
-    {
-        if (valid.get())
+    if (cell_change_heuristics.needed && // Only carry out this step if it is actually required
+        did_cell_identity_change && // and if the cell identity changed
+        radio_type == com::ubuntu::location::connectivity::RadioCell::Type::umts) // and if it's a 3G cell.
+    {        
+        if (cell_change_heuristics.valid.get())
         {
             static const boost::posix_time::seconds timeout{timeout_in_seconds()};
 
-            invalidation_timer.expires_from_now(timeout);
-            invalidation_timer.async_wait([this](boost::system::error_code ec)
+            cell_change_heuristics.invalidation_timer.expires_from_now(timeout);
+            cell_change_heuristics.invalidation_timer.async_wait([this](boost::system::error_code ec)
             {
                 if (not ec)
-                    valid = false;
+                    cell_change_heuristics.valid = false;
             });
         }
         else
         {
-            invalidation_timer.cancel();
-            valid = true;
+            cell_change_heuristics.invalidation_timer.cancel();
+            cell_change_heuristics.valid = true;
         }
     }
 }
