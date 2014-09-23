@@ -68,9 +68,23 @@ public:
     void on_network_registration_property_changed(const std::tuple<std::string, core::dbus::types::Variant>& tuple);
 
 private:
-    boost::asio::io_service& io_service;
-    boost::asio::deadline_timer invalidation_timer;
-    core::Property<bool> valid;
+    // All members required for implementing the
+    // cell change heuristics go here.
+    struct CellChangeHeuristics
+    {
+        CellChangeHeuristics(boost::asio::io_service& io_service,
+                             bool needed);
+        // True if the heuristic is needed
+        const bool needed;
+        // The io_service for setting up timeouts.
+        boost::asio::io_service& io_service;
+        // Our timer for invalidating cells.
+        boost::asio::deadline_timer invalidation_timer;
+        // Property to indicate whether the current cell is
+        // still valid according to the cell change heuristics.
+        core::Property<bool> valid;
+    } cell_change_heuristics;
+
     core::Signal<> on_changed;
     Type radio_type;
     org::Ofono::Manager::Modem modem;
