@@ -352,7 +352,9 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
         };
 
         radio_type = it->second;
-        on_changed();
+
+        if (cell_change_heuristics.valid.get())
+            on_changed();
     }
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::CellId::name())
@@ -381,7 +383,8 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
             break;
         };
 
-        on_changed();
+        if (cell_change_heuristics.valid.get())
+            on_changed();
     }
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode::name())
@@ -409,7 +412,8 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
             break;
         };
 
-        on_changed();
+        if (cell_change_heuristics.valid.get())
+            on_changed();
     }
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode::name())
@@ -442,7 +446,8 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
             break;
         };
 
-        on_changed();
+        if (cell_change_heuristics.valid.get())
+            on_changed();
     }
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode::name())
@@ -475,7 +480,8 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
             break;
         };
 
-        on_changed();
+        if (cell_change_heuristics.valid.get())
+            on_changed();
     }
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::Strength::name())
@@ -505,7 +511,8 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
             break;
         };
 
-        on_changed();
+        if (cell_change_heuristics.valid.get())
+            on_changed();
     }
 
     // Heuristics to ensure that
