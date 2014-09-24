@@ -219,6 +219,26 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_added(const core::dbus:
 
     // And update our cache of modems and registered cells.
     auto cell = std::make_shared<detail::CachedRadioCell>(modem, dispatcher.service);
+
+    // We do not keep the cell alive.
+    std::weak_ptr<detail::CachedRadioCell> wp{cell};
+
+    // We account for a cell becoming invalid and report it as report.
+    cell->is_valid().changed().connect([this, wp](bool valid)
+    {
+        VLOG(10) << "Validity of cell changed: " << std::boolalpha << valid << std::endl;
+
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        if (valid)
+            signals.connected_cell_added(sp);
+        else
+            signals.connected_cell_removed(sp);
+    });
+
     {
         std::lock_guard<std::mutex> lg(cached.guard);
         cached.modems.insert(std::make_pair(modem.object->path(), modem));
@@ -299,6 +319,8 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_interfaces_changed(
         // We account for a cell becoming invalid and report it as report.
         cell->is_valid().changed().connect([this, wp](bool valid)
         {
+            VLOG(10) << "Validity of cell changed: " << std::boolalpha << valid << std::endl;
+
             auto sp = wp.lock();
 
             if (not sp)
