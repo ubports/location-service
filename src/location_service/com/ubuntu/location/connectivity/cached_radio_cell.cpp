@@ -516,22 +516,17 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
         did_cell_identity_change && // and if the cell identity changed
         radio_type == com::ubuntu::location::connectivity::RadioCell::Type::umts) // and if it's a 3G cell.
     {        
-        if (cell_change_heuristics.valid.get())
-        {
-            static const boost::posix_time::seconds timeout{timeout_in_seconds()};
+        static const boost::posix_time::seconds timeout{timeout_in_seconds()};
 
-            cell_change_heuristics.invalidation_timer.expires_from_now(timeout);
-            cell_change_heuristics.invalidation_timer.async_wait([this](boost::system::error_code ec)
-            {
-                if (not ec)
-                    cell_change_heuristics.valid = false;
-            });
-        }
-        else
+        cell_change_heuristics.invalidation_timer.expires_from_now(timeout);
+        cell_change_heuristics.invalidation_timer.async_wait([this](boost::system::error_code ec)
         {
-            cell_change_heuristics.invalidation_timer.cancel();
-            cell_change_heuristics.valid = true;
-        }
+            if (not ec)
+                cell_change_heuristics.valid = false;
+        });
+
+        cell_change_heuristics.invalidation_timer.cancel();
+        cell_change_heuristics.valid = true;
     }
 }
 

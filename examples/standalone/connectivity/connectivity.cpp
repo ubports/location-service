@@ -205,6 +205,13 @@ int main(int argc, char** argv)
                     // We do nothing with the actual values and just keep the thread running
                     // to put some load on the infrastructure.
                 });
+
+                // Let's query some properties about wifi and wwan capabilities
+                cm->is_wifi_enabled().get();
+                cm->is_wifi_hardware_enabled().get();
+                cm->is_wwan_enabled().get();
+                cm->is_wwan_hardware_enabled().get();
+
             }
         }
     };
@@ -219,7 +226,7 @@ int main(int argc, char** argv)
                 {
                     // We do nothing with the actual values and just keep the thread running
                     // to put some load on the infrastructure.
-                });
+                });                               
             }
         }
     };
