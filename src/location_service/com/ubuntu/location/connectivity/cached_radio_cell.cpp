@@ -532,7 +532,6 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
                 cell_change_heuristics.valid = false;
         });
 
-        cell_change_heuristics.invalidation_timer.cancel();
         cell_change_heuristics.valid = true;
     }
 }
