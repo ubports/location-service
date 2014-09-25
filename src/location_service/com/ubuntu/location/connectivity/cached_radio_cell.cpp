@@ -22,6 +22,12 @@
 
 namespace
 {
+// We use this for debugging purposes.
+const bool also_apply_cell_change_heuristics_to_gsm_cells =
+    core::posix::this_process::env::get(
+            "COM_UBUNTU_LOCATION_CONNECTIVITY_DATA_CELL_FOR_GSM_TOO",
+            "false") == "true";
+
 std::int64_t timeout_in_seconds()
 {
     auto value = core::posix::this_process::env::get("COM_UBUNTU_LOCATION_CONNECTIVITY_DATA_CELL_TIMEOUT", "60");
@@ -528,7 +534,8 @@ void detail::CachedRadioCell::execute_cell_change_heuristics_if_appropriate()
     // cell to account for situations where the underlying modem firmware does not
     // report cell changes when on a 3G data connection.
     if (cell_change_heuristics.needed && // Only carry out this step if it is actually required
-        radio_type == com::ubuntu::location::connectivity::RadioCell::Type::umts) // and if it's a 3G cell.
+        (radio_type == com::ubuntu::location::connectivity::RadioCell::Type::umts ||
+         also_apply_cell_change_heuristics_to_gsm_cells)) // and if it's a 3G cell.
     {
         static const boost::posix_time::seconds timeout{timeout_in_seconds()};
 
