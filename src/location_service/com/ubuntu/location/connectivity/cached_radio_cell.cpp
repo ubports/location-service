@@ -197,6 +197,8 @@ detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem
     default:
         break;
     }
+
+    execute_cell_change_heuristics_if_appropriate();
 }
 
 detail::CachedRadioCell::~CachedRadioCell()
@@ -515,15 +517,22 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
             on_changed();
     }
 
+    if (did_cell_identity_change)
+        execute_cell_change_heuristics_if_appropriate();
+}
+
+void detail::CachedRadioCell::execute_cell_change_heuristics_if_appropriate()
+{
     // Heuristics to ensure that
     // whenever the cell identity changes, we start a timer and invalidate the
     // cell to account for situations where the underlying modem firmware does not
     // report cell changes when on a 3G data connection.
     if (cell_change_heuristics.needed && // Only carry out this step if it is actually required
-        did_cell_identity_change && // and if the cell identity changed
         radio_type == com::ubuntu::location::connectivity::RadioCell::Type::umts) // and if it's a 3G cell.
-    {        
+    {
         static const boost::posix_time::seconds timeout{timeout_in_seconds()};
+
+        std::lock_guard<std::mutex> lg(cell_change_heuristics.guard);
 
         cell_change_heuristics.invalidation_timer.expires_from_now(timeout);
         cell_change_heuristics.invalidation_timer.async_wait([this](boost::system::error_code ec)

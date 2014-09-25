@@ -78,12 +78,18 @@ private:
         const bool needed;
         // The io_service for setting up timeouts.
         boost::asio::io_service& io_service;
+        // We might experience a race on construction, if a change
+        // of a cell attribute arrives prior to setting up the timeout.
+        std::mutex guard;
         // Our timer for invalidating cells.
         boost::asio::deadline_timer invalidation_timer;
         // Property to indicate whether the current cell is
         // still valid according to the cell change heuristics.
         core::Property<bool> valid;
     } cell_change_heuristics;
+
+    // Executes the cell change heuristics if precondition is met.
+    void execute_cell_change_heuristics_if_appropriate();
 
     core::Signal<> on_changed;
     Type radio_type;
