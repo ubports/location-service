@@ -2,6 +2,8 @@
 
 #include <core/posix/signal.h>
 
+#include <glog/logging.h>
+
 #include <cstdlib>
 
 #include <thread>
@@ -23,6 +25,8 @@ typedef std::vector<location::connectivity::WirelessNetwork::Ptr> WirelessNetwor
 //   (3.) Bootstrap your own setup by explicitly getting all visible wifis and connected cells.
 int main(int argc, char** argv)
 {
+    google::InitGoogleLogging("com::ubuntu::location::connectivity");
+
     // We catch sig-term to exit cleanly.
     auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_term});
     trap->signal_raised().connect([trap](core::posix::Signal)
@@ -35,53 +39,53 @@ int main(int argc, char** argv)
 
     if (not cm)
     {
-        std::cerr << "Could not get hold of a connectivity::Manager implementation, aborting..." << std::endl;
+        LOG(ERROR) << "Could not get hold of a connectivity::Manager implementation, aborting...";
         std::exit(1);
     }
 
     // Let's query some properties about wifi and wwan capabilities
-    std::cout << "Is wifi enabled: " << std::boolalpha << cm->is_wifi_enabled().get() << std::endl;
-    std::cout << "Is wifi hw enabled: " << std::boolalpha << cm->is_wifi_hardware_enabled().get() << std::endl;
-    std::cout << "Is wwan enabled: " << std::boolalpha << cm->is_wwan_enabled().get() << std::endl;
-    std::cout << "Is wwan hw enabled: " << std::boolalpha << cm->is_wwan_hardware_enabled().get() << std::endl;
+    LOG(INFO) << "Is wifi enabled: " << std::boolalpha << cm->is_wifi_enabled().get();
+    LOG(INFO) << "Is wifi hw enabled: " << std::boolalpha << cm->is_wifi_hardware_enabled().get();
+    LOG(INFO) << "Is wwan enabled: " << std::boolalpha << cm->is_wwan_enabled().get();
+    LOG(INFO) << "Is wwan hw enabled: " << std::boolalpha << cm->is_wwan_hardware_enabled().get();
 
     // Subscribe to state changes
     cm->state().changed().connect([](location::connectivity::State state)
     {
-        std::cout << "Connectivity state changed: " << state << std::endl;
+        LOG(INFO) << "Connectivity state changed: " << state;
     });
 
     // Subscribe to wifi/wwan state changes
     cm->is_wifi_enabled().changed().connect([](bool enabled)
     {
-        std::cout << "Wifi is " << (enabled ? "" : "not") << " enabled" << std::endl;
+        LOG(INFO) << "Wifi is " << (enabled ? "" : "not") << " enabled";
     });
 
     cm->is_wwan_enabled().changed().connect([](bool enabled)
     {
-        std::cout << "Wwan is " << (enabled ? "" : "not") << " enabled" << std::endl;
+        LOG(INFO) << "Wwan is " << (enabled ? "" : "not") << " enabled";
     });
 
     cm->is_wifi_hardware_enabled().changed().connect([](bool enabled)
     {
-        std::cout << "Wifi h/w is " << (enabled ? "" : "not") << " enabled" << std::endl;
+        LOG(INFO) << "Wifi h/w is " << (enabled ? "" : "not") << " enabled";
     });
 
     cm->is_wwan_hardware_enabled().changed().connect([](bool enabled)
     {
-        std::cout << "Wwan h/w is " << (enabled ? "" : "not") << " enabled" << std::endl;
+        LOG(INFO) << "Wwan h/w is " << (enabled ? "" : "not") << " enabled";
     });
 
     // Subscribe to connection characteristics changes
     cm->active_connection_characteristics().changed().connect([](location::connectivity::Characteristics flags)
     {
-        std::cout << "Characteristics for the primary network connection have changed: " << flags << std::endl;
+        LOG(INFO) << "Characteristics for the primary network connection have changed: " << flags;
     });
 
     // Subscribe to wifi added/removed signals.
     cm->wireless_network_added().connect([](const location::connectivity::WirelessNetwork::Ptr& wifi)
     {
-        std::cout << "Visible wireless network was added: " << *wifi << std::endl;
+        LOG(INFO) << "Visible wireless network was added: " << *wifi;
 
         // We don't want to keep the object alive
         std::weak_ptr<location::connectivity::WirelessNetwork> wp
@@ -96,26 +100,26 @@ int main(int argc, char** argv)
         {
             auto sp = wp.lock();
             if (sp)
-                std::cout << "Signal strength changed for wifi " << sp->ssid().get() << ": " << tp.time_since_epoch().count() << std::endl;
+                LOG(INFO) << "Signal strength changed for wifi " << sp->ssid().get() << ": " << tp.time_since_epoch().count();
         });
 
         wifi->signal_strength().changed().connect([wp](const location::connectivity::WirelessNetwork::SignalStrength& s)
         {
             auto sp = wp.lock();
             if (sp)
-                std::cout << "Signal strength changed for wifi " << sp->ssid().get() << ": " << s << std::endl;
+                LOG(INFO) << "Signal strength changed for wifi " << sp->ssid().get() << ": " << s;
         });
     });
 
     cm->wireless_network_removed().connect([](const location::connectivity::WirelessNetwork::Ptr& wifi)
     {
-        std::cout << "Visible wireless network was removed: " << wifi->ssid().get() << std::endl;
+        LOG(INFO) << "Visible wireless network was removed: " << wifi->ssid().get();
     });
 
     // Iterate over all radio cells that the device is connected with.
     cm->enumerate_connected_radio_cells([](const location::connectivity::RadioCell::Ptr& cell)
     {
-        std::cout << *cell << std::endl;
+        LOG(INFO) << *cell;
 
         std::weak_ptr<location::connectivity::RadioCell> wp{cell};
 
@@ -125,30 +129,30 @@ int main(int argc, char** argv)
             auto sp = wp.lock();
 
             if (sp)
-                std::cout << "Something changed on a radio cell: " << *sp << std::endl;
+                LOG(INFO) << "Something changed on a radio cell: " << *sp;
         });
     });
 
     cm->connected_cell_added().connect([](const location::connectivity::RadioCell::Ptr& cell)
     {
-        std::cout << *cell << std::endl;
+        LOG(INFO) << "Connected cell added: " << *cell;
 
         // Subscribe to changes on the cell
         cell->changed().connect([]()
         {
-            std::cout << "Something changed on a radio cell." << std::endl;
+            LOG(INFO) << "Something changed on a radio cell.";
         });
     });
 
     cm->connected_cell_removed().connect([](const location::connectivity::RadioCell::Ptr& cell)
     {
-        std::cout << *cell << std::endl;
+        LOG(INFO) << "Connected cell removed: " << *cell;
     });
 
     // Iterate over all networks that are visible right now.
     cm->enumerate_visible_wireless_networks([](const location::connectivity::WirelessNetwork::Ptr& wifi)
     {
-        std::cout << *wifi << std::endl;
+        LOG(INFO) << *wifi;
 
         // We don't want to keep the object alive
         std::weak_ptr<location::connectivity::WirelessNetwork> wp
@@ -161,7 +165,7 @@ int main(int argc, char** argv)
         {
             auto sp = wp.lock();
             if (sp)
-                std::cout << "Last seen changed for wifi " << *sp << std::endl;
+                LOG(INFO) << "Last seen changed for wifi " << *sp;
         });
 
         // Subscribe to signal strength updates. Please note that this is not considering
@@ -171,14 +175,14 @@ int main(int argc, char** argv)
         {
             auto sp = wp.lock();
             if (sp)
-                std::cout << "Signal strength changed for wifi: " << *sp << std::endl;
+                LOG(INFO) << "Signal strength changed for wifi: " << *sp;
         });
     });
     
     // Subscribe to end-of-scan signals
     cm->wireless_network_scan_finished().connect([]()
     {
-        std::cout << "A wireless network scan finished." << std::endl;
+        LOG(INFO) << "A wireless network scan finished.";
     });
 
     // Request a scan for wireless networks.
@@ -187,7 +191,7 @@ int main(int argc, char** argv)
         cm->request_scan_for_wireless_networks();
     } catch(const std::runtime_error& e)
     {
-        std::cerr << e.what() << std::endl;
+        LOG(ERROR) << e.what();
     }
 
     bool cancelled = false;
@@ -205,6 +209,19 @@ int main(int argc, char** argv)
                     // We do nothing with the actual values and just keep the thread running
                     // to put some load on the infrastructure.
                 });
+
+                // Let's query some properties about wifi and wwan capabilities
+                try
+                {
+                    cm->is_wifi_enabled().get();
+                    cm->is_wifi_hardware_enabled().get();
+                    cm->is_wwan_enabled().get();
+                    cm->is_wwan_hardware_enabled().get();
+                } catch(const std::exception& e)
+                {
+                    LOG(ERROR) << e.what();
+                }
+
             }
         }
     };
@@ -219,7 +236,7 @@ int main(int argc, char** argv)
                 {
                     // We do nothing with the actual values and just keep the thread running
                     // to put some load on the infrastructure.
-                });
+                });                               
             }
         }
     };
