@@ -12,6 +12,10 @@ pkg_check_modules(
   dbus-cpp REQUIRED)
 
 pkg_check_modules(
+  GLOG
+  glog REQUIRED)
+
+pkg_check_modules(
   PROCESS_CPP 
   process-cpp REQUIRED)
 
@@ -21,6 +25,7 @@ pkg_check_modules(
 
 include_directories(
   ${DBUS_CPP_INCLUDE_DIRS}
+  ${GLOG_INCLUDE_DIRS}
   ${PROCESS_CPP_INCLUDE_DIRS}
   ${LOCATION_CONNECTIVITY_INCLUDE_DIRS})
 
@@ -35,6 +40,7 @@ target_link_libraries(
   ${CMAKE_THREAD_LIBS_INIT}
 
   ${DBUS_CPP_LDFLAGS}
+  ${GLOG_LDFLAGS}
   ${PROCESS_CPP_LDFLAGS}
   ${LOCATION_CONNECTIVITY_LDFLAGS})
 
