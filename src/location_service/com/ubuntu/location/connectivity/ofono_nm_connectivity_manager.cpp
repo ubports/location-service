@@ -201,8 +201,17 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_added(const core::dbus:
 {
     auto modem = modem_manager->modem_for_path(path);
 
+    // We immediately make the modem known to the cache, specifically
+    // prior to attempting to create a connected cell.
+    std::unique_lock<std::mutex> ul(cached.guard);
+    auto modem_result = cached.modems.insert(std::make_pair(path, modem));
+
+    // We immediate bail out if insertion into the cache does not succeed.
+    if (not modem_result.second)
+        return;
+
     // We first wire up to property changes here.
-    modem.signals.property_changed->connect([this, path](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
+    modem_result.first->signals.property_changed->connect([this, path](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
     {
         const auto& key = std::get<0>(tuple); VLOG(10) << "Property changed for modem: " << key;
 
@@ -212,16 +221,21 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_added(const core::dbus:
             if (VLOG_IS_ON(10)) for(const auto& interface : interfaces) VLOG(10) << interface;
             on_modem_interfaces_changed(path, interfaces);
         }
-
     });
 
-    // And update our cache of modems and registered cells.
-    auto cell = std::make_shared<detail::CachedRadioCell>(modem);
-    {
-        std::lock_guard<std::mutex> lg(cached.guard);
-        cached.modems.insert(std::make_pair(modem.object->path(), modem));
-        cached.cells.insert(std::make_pair(modem.object->path(), cell));
-    }
+    // And update our cache of registered cells.
+    auto cell_result = cached.cells.insert(
+                std::make_pair(
+                    modem.object->path(),
+                    std::make_shared<detail::CachedRadioCell>(modem)));
+
+    if (not cell_result.second)
+        return;
+
+    // Cool, we have reached here, updated all our caches and created a connected radio cell.
+    // We are thus good to go and release the lock manually prior to announcing the new cell
+    // to interested parties.
+    ul.unlock();
     // Announce the newly added cell to API customers, without the lock
     // on the cache being held.
     signals.connected_cell_added(cell);
