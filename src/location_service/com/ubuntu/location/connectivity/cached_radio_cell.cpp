@@ -18,6 +18,36 @@
 
 #include <com/ubuntu/location/connectivity/cached_radio_cell.h>
 
+#include <core/posix/this_process.h>
+
+namespace
+{
+// We use this for debugging purposes.
+const bool also_apply_cell_change_heuristics_to_gsm_cells =
+    core::posix::this_process::env::get(
+            "COM_UBUNTU_LOCATION_CONNECTIVITY_DATA_CELL_FOR_GSM_TOO",
+            "false") == "true";
+
+std::int64_t timeout_in_seconds()
+{
+    auto value = core::posix::this_process::env::get("COM_UBUNTU_LOCATION_CONNECTIVITY_DATA_CELL_TIMEOUT", "60");
+    std::stringstream ss(value);
+    std::uint64_t result; ss >> result;
+
+    return result;
+}
+
+// We only activate our heuristics if we are running on problematic hardware
+bool is_running_on_problematic_modem_firmware(const org::Ofono::Manager::Modem& modem)
+{
+    // This is somewhat ambigious and we certainly want to
+    // maintain a database of problematic modem firmware in the
+    // future.
+    auto path = modem.object->path().as_string();
+    return path.find("ril") != std::string::npos;
+}
+}
+
 const std::map<std::string, com::ubuntu::location::connectivity::RadioCell::Type>& detail::CachedRadioCell::type_lut()
 {
     static const std::map<std::string, com::ubuntu::location::connectivity::RadioCell::Type> lut
@@ -48,8 +78,19 @@ const std::map<std::string, com::ubuntu::location::connectivity::RadioCell::Type
     return lut;
 }
 
-detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem)
+detail::CachedRadioCell::CellChangeHeuristics::CellChangeHeuristics(
+        boost::asio::io_service& io_service,
+        bool needed)
+    : needed(needed),
+      io_service(io_service),
+      invalidation_timer(io_service),
+      valid(true)
+{
+}
+
+detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem, boost::asio::io_service& io_service)
     : RadioCell(),
+      cell_change_heuristics(io_service, is_running_on_problematic_modem_firmware(modem)),
       radio_type(Type::gsm),
       modem(modem),
       connections
@@ -162,12 +203,19 @@ detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem
     default:
         break;
     }
+
+    execute_cell_change_heuristics_if_appropriate();
 }
 
 detail::CachedRadioCell::~CachedRadioCell()
 {
     modem.signals.property_changed->disconnect(connections.modem_properties_changed);
     modem.network_registration.signals.property_changed->disconnect(connections.network_registration_properties_changed);
+}
+
+const core::Property<bool>& detail::CachedRadioCell::is_valid() const
+{
+    return cell_change_heuristics.valid;
 }
 
 const core::Signal<>& detail::CachedRadioCell::changed() const
@@ -216,8 +264,12 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
     const auto& key = std::get<0>(tuple);
     const auto& variant = std::get<1>(tuple);
 
+    bool did_cell_identity_change = false;
+
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::Technology::name())
     {
+        did_cell_identity_change = true;
+
         auto value = variant.as<
                     org::Ofono::Manager::Modem::NetworkRegistration::Technology::ValueType
                 >();
@@ -308,11 +360,15 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
         };
 
         radio_type = it->second;
-        on_changed();
+
+        if (cell_change_heuristics.valid.get())
+            on_changed();
     }
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::CellId::name())
     {
+        did_cell_identity_change = true;
+
         auto value = variant.as<
                     org::Ofono::Manager::Modem::NetworkRegistration::CellId::ValueType
                 >();
@@ -335,11 +391,14 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
             break;
         };
 
-        on_changed();
+        if (cell_change_heuristics.valid.get())
+            on_changed();
     }
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode::name())
     {
+        did_cell_identity_change = true;
+
         auto value = variant.as<
                     org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode::ValueType
                 >();
@@ -361,11 +420,14 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
             break;
         };
 
-        on_changed();
+        if (cell_change_heuristics.valid.get())
+            on_changed();
     }
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode::name())
     {
+        did_cell_identity_change = true;
+
         std::stringstream ss
         {
             variant.as<
@@ -392,11 +454,14 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
             break;
         };
 
-        on_changed();
+        if (cell_change_heuristics.valid.get())
+            on_changed();
     }
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode::name())
     {
+        did_cell_identity_change = true;
+
         std::stringstream ss
         {
             variant.as<
@@ -423,7 +488,8 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
             break;
         };
 
-        on_changed();
+        if (cell_change_heuristics.valid.get())
+            on_changed();
     }
 
     if (key == org::Ofono::Manager::Modem::NetworkRegistration::Strength::name())
@@ -453,7 +519,36 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
             break;
         };
 
-        on_changed();
+        if (cell_change_heuristics.valid.get())
+            on_changed();
+    }
+
+    if (did_cell_identity_change)
+        execute_cell_change_heuristics_if_appropriate();
+}
+
+void detail::CachedRadioCell::execute_cell_change_heuristics_if_appropriate()
+{
+    // Heuristics to ensure that
+    // whenever the cell identity changes, we start a timer and invalidate the
+    // cell to account for situations where the underlying modem firmware does not
+    // report cell changes when on a 3G data connection.
+    if (cell_change_heuristics.needed && // Only carry out this step if it is actually required
+        (radio_type == com::ubuntu::location::connectivity::RadioCell::Type::umts ||
+         also_apply_cell_change_heuristics_to_gsm_cells)) // and if it's a 3G cell.
+    {
+        static const boost::posix_time::seconds timeout{timeout_in_seconds()};
+
+        std::lock_guard<std::mutex> lg(cell_change_heuristics.guard);
+
+        cell_change_heuristics.invalidation_timer.expires_from_now(timeout);
+        cell_change_heuristics.invalidation_timer.async_wait([this](boost::system::error_code ec)
+        {
+            if (not ec)
+                cell_change_heuristics.valid = false;
+        });
+
+        cell_change_heuristics.valid = true;
     }
 }
 
