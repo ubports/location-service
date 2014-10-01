@@ -213,7 +213,7 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_added(const core::dbus:
         return;
 
     // We first wire up to property changes here.
-    modem_result.first->signals.property_changed->connect([this, path](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
+    modem_result.first->second.signals.property_changed->connect([this, path](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
     {
         const auto& key = std::get<0>(tuple); VLOG(10) << "Property changed for modem: " << key;
 
@@ -235,10 +235,10 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_added(const core::dbus:
         return;
 
     // We do not keep the cell alive.
-    std::weak_ptr<detail::CachedRadioCell> wp{*cell_result.first};
+    std::weak_ptr<detail::CachedRadioCell> wp{cell_result.first->second};
 
     // We account for a cell becoming invalid and report it as report.
-    cell_result.first->is_valid().changed().connect([this, wp](bool valid)
+    cell_result.first->second->is_valid().changed().connect([this, wp](bool valid)
     {
         VLOG(10) << "Validity of cell changed: " << std::boolalpha << valid << std::endl;
 
@@ -259,7 +259,7 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_added(const core::dbus:
     ul.unlock();
     // Announce the newly added cell to API customers, without the lock
     // on the cache being held.
-    signals.connected_cell_added(cell);
+    signals.connected_cell_added(cell_result.first->second);
 }
 
 void impl::OfonoNmConnectivityManager::Private::on_modem_removed(const core::dbus::types::ObjectPath& path)
