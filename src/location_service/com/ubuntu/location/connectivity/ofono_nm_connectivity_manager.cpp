@@ -546,10 +546,21 @@ connectivity::Characteristics impl::OfonoNmConnectivityManager::Private::charact
 
                 for (const auto& pair : cached.modems)
                 {
-                    auto status = pair.second.network_registration.get<org::Ofono::Manager::Modem::NetworkRegistration::Status>();
-
-                    if (org::Ofono::Manager::Modem::NetworkRegistration::Status::roaming == status)
+                    // This call might throw as it reaches out to ofono to query the current status of the modem.
+                    try
+                    {
+                        auto status = pair.second.network_registration.get<org::Ofono::Manager::Modem::NetworkRegistration::Status>();
+                        if (org::Ofono::Manager::Modem::NetworkRegistration::Status::roaming == status)
+                            characteristics = characteristics | connectivity::Characteristics::connection_is_roaming;
+                    }
+                    catch (const std::exception& e)
+                    {
+                        LOG(WARNING) << e.what();
+                        // And we interpret an exception being thrown conservatively, i.e., we set the
+                        // state to roaming. With that, we prevent enabling expensive data transfers over roaming
+                        // connections unless we could unambigiously determine that we are *not* roaming.
                         characteristics = characteristics | connectivity::Characteristics::connection_is_roaming;
+                    }
                 }
 
                 characteristics = characteristics | all_characteristics();
