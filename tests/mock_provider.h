@@ -28,6 +28,11 @@ struct MockProvider : public com::ubuntu::location::Provider
     {
     }
 
+    MOCK_METHOD1(matches_criteria, bool(const com::ubuntu::location::Criteria&));
+
+    MOCK_CONST_METHOD1(supports, bool(const com::ubuntu::location::Provider::Features&));
+    MOCK_CONST_METHOD1(requires, bool(const com::ubuntu::location::Provider::Requirements&));
+
     // Called by the engine whenever the wifi and cell ID reporting state changes.
     MOCK_METHOD1(on_wifi_and_cell_reporting_state_changed, void(com::ubuntu::location::WifiAndCellIdReportingState state));
 

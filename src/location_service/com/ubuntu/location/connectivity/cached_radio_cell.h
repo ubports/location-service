@@ -22,6 +22,8 @@
 
 #include "ofono.h"
 
+#include <boost/asio.hpp>
+
 namespace detail
 {
 
@@ -36,10 +38,13 @@ public:
 
     // Creates an instance of a cached radio cell, deduced from the network registration
     // associated to the modem.
-    CachedRadioCell(const org::Ofono::Manager::Modem& modem);
+    CachedRadioCell(const org::Ofono::Manager::Modem& modem, boost::asio::io_service& io_service);
 
     // Frees all resources and cuts all event connections.
     ~CachedRadioCell();
+
+    // Returns true iff the instance represents a valid cell.
+    const core::Property<bool>& is_valid() const;
 
     // Emitted when the cell details change.
     const core::Signal<>& changed() const override;
@@ -63,6 +68,29 @@ public:
     void on_network_registration_property_changed(const std::tuple<std::string, core::dbus::types::Variant>& tuple);
 
 private:
+    // All members required for implementing the
+    // cell change heuristics go here.
+    struct CellChangeHeuristics
+    {
+        CellChangeHeuristics(boost::asio::io_service& io_service,
+                             bool needed);
+        // True if the heuristic is needed
+        const bool needed;
+        // The io_service for setting up timeouts.
+        boost::asio::io_service& io_service;
+        // We might experience a race on construction, if a change
+        // of a cell attribute arrives prior to setting up the timeout.
+        std::mutex guard;
+        // Our timer for invalidating cells.
+        boost::asio::deadline_timer invalidation_timer;
+        // Property to indicate whether the current cell is
+        // still valid according to the cell change heuristics.
+        core::Property<bool> valid;
+    } cell_change_heuristics;
+
+    // Executes the cell change heuristics if precondition is met.
+    void execute_cell_change_heuristics_if_appropriate();
+
     core::Signal<> on_changed;
     Type radio_type;
     org::Ofono::Manager::Modem modem;

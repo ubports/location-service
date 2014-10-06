@@ -108,8 +108,10 @@ const core::Signal<connectivity::RadioCell::Ptr>& impl::OfonoNmConnectivityManag
 void impl::OfonoNmConnectivityManager::enumerate_connected_radio_cells(const std::function<void(const connectivity::RadioCell::Ptr&)>& f) const
 {
     std::lock_guard<std::mutex> lg(d.cached.guard);
+    // We only report currently valid cells.
     for (const auto& cell : d.cached.cells)
-        f(cell.second);
+        if (cell.second->is_valid().get())
+            f(cell.second);
 }
 
 const core::Property<connectivity::Characteristics>& impl::OfonoNmConnectivityManager::active_connection_characteristics() const
@@ -216,7 +218,27 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_added(const core::dbus:
     });
 
     // And update our cache of modems and registered cells.
-    auto cell = std::make_shared<detail::CachedRadioCell>(modem);
+    auto cell = std::make_shared<detail::CachedRadioCell>(modem, dispatcher.service);
+
+    // We do not keep the cell alive.
+    std::weak_ptr<detail::CachedRadioCell> wp{cell};
+
+    // We account for a cell becoming invalid and report it as report.
+    cell->is_valid().changed().connect([this, wp](bool valid)
+    {
+        VLOG(10) << "Validity of cell changed: " << std::boolalpha << valid << std::endl;
+
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        if (valid)
+            signals.connected_cell_added(sp);
+        else
+            signals.connected_cell_removed(sp);
+    });
+
     {
         std::lock_guard<std::mutex> lg(cached.guard);
         cached.modems.insert(std::make_pair(modem.object->path(), modem));
@@ -289,7 +311,27 @@ void impl::OfonoNmConnectivityManager::Private::on_modem_interfaces_changed(
     {
         // A new network registration is coming in and we have to create
         // a corresponding cell instance.
-        auto cell = std::make_shared<detail::CachedRadioCell>(itm->second);
+        auto cell = std::make_shared<detail::CachedRadioCell>(itm->second, dispatcher.service);
+
+        // We do not keep the cell alive.
+        std::weak_ptr<detail::CachedRadioCell> wp{cell};
+
+        // We account for a cell becoming invalid and report it as report.
+        cell->is_valid().changed().connect([this, wp](bool valid)
+        {
+            VLOG(10) << "Validity of cell changed: " << std::boolalpha << valid << std::endl;
+
+            auto sp = wp.lock();
+
+            if (not sp)
+                return;
+
+            if (valid)
+                signals.connected_cell_added(sp);
+            else
+                signals.connected_cell_removed(sp);
+        });
+
         cached.cells.insert(std::make_pair(path,cell));
         // Cache is up to date now and we announce the new cell to
         // API customers, with the lock on the cache not being held.

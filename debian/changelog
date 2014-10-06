@@ -1,3 +1,20 @@
+location-service (2.1+14.10.20140925.2-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Implement heuristic to invalidate 3G cells after 60 seconds. (LP:
+    #1371514)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 25 Sep 2014 20:27:06 +0000
+
+location-service (2.1+14.10.20140917.1-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Expose remote::Interface and respective stub/skeleton for using and
+    exposing remote location providers.
+  * Add a standalone daemon for executing providers out of process.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 17 Sep 2014 13:27:53 +0000
+
 location-service (2.1+14.10.20140915-0ubuntu1) utopic; urgency=low
 
   [ Loïc Minier ]
