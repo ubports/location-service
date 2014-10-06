@@ -44,6 +44,10 @@ add_library(
 
   providers/config.cpp
 
+  providers/remote/provider.cpp
+  providers/remote/skeleton.cpp
+  providers/remote/stub.cpp
+
   ${ICHNAEA_REPORTER_SRCS}
 )
 
@@ -127,9 +131,21 @@ install(
 )
 
 add_library(
+  ubuntu-location-service-provider-daemon
+
+  service/provider_daemon.cpp
+)
+
+add_library(
   ubuntu-location-service-daemon
 
   service/daemon.cpp
+)
+
+add_executable(
+  ubuntu-location-service-providerd
+
+  service/provider_daemon_main.cpp
 )
 
 add_executable(
@@ -145,9 +161,29 @@ add_executable(
 )
 
 target_link_libraries(
+  ubuntu-location-service-provider-daemon
+
+  ubuntu-location-service
+)
+
+target_link_libraries(
   ubuntu-location-service-daemon
 
   ubuntu-location-service
+)
+
+target_link_libraries(
+  ubuntu-location-service-providerd
+
+  ubuntu-location-service-provider-daemon
+
+  ${ENABLED_PROVIDER_TARGETS}
+
+  ${Boost_LIBRARIES}
+  ${DBUS_LIBRARIES}
+  ${DBUS_CPP_LIBRARIES}
+  ${GLog_LIBRARY}
+  ${GFlags_LIBRARY}
 )
 
 target_link_libraries(
@@ -176,6 +212,11 @@ target_link_libraries(
   ${DBUS_CPP_LIBRARIES}
   ${GLog_LIBRARY}
   ${GFlags_LIBRARY}
+)
+
+install(
+  TARGETS ubuntu-location-service-providerd
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 install(

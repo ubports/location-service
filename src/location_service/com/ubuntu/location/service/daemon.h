@@ -20,7 +20,7 @@
 
 #include <com/ubuntu/location/configuration.h>
 
-#include <core/dbus/bus.h>
+#include <com/ubuntu/location/service/dbus_connection_factory.h>
 
 #include <iosfwd>
 #include <string>
@@ -38,21 +38,6 @@ namespace service
  */
 struct Daemon
 {
-    /** @brief Function signature for creating DBus connections. */
-    typedef std::function<core::dbus::Bus::Ptr(core::dbus::WellKnownBus)> DBusConnectionFactory;
-
-    /** @brief Returns the default connection factory. */
-    static DBusConnectionFactory default_dbus_connection_factory()
-    {
-        return [](core::dbus::WellKnownBus bus)
-        {
-            return core::dbus::Bus::Ptr
-            {
-                new core::dbus::Bus(bus)
-            };
-        };
-    }
-
     /** @brief Describes the command-line interface to the daemon. */
     struct Cli
     {
