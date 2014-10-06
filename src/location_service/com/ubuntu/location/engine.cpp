@@ -136,5 +136,14 @@ void cul::Engine::for_each_provider(const std::function<void(const Provider::Ptr
 {
     std::lock_guard<std::mutex> lg(guard);
     for (const auto& provider : providers)
-        enumerator(provider.first);
+    {
+        try
+        {
+            enumerator(provider.first);
+        }
+        catch(const std::exception& e)
+        {
+            VLOG(1) << e.what();
+        }
+    }
 }
