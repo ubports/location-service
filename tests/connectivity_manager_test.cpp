@@ -144,7 +144,7 @@ TEST(RadioCell, explicit_construction_yields_correct_type)
     }
 }*/
 
-TEST(ConnectivityManagerOnDevice, repeatedly_requesting_network_scans_works_requires_device)
+TEST(ConnectivityManagerOnDevice, repeatedly_requesting_network_scans_works_requires_hardware)
 {
     auto manager = location::connectivity::platform_default_manager();
 
@@ -152,7 +152,7 @@ TEST(ConnectivityManagerOnDevice, repeatedly_requesting_network_scans_works_requ
         manager->request_scan_for_wireless_networks();
 }
 
-TEST(ConnectivityManagerOnDevice, repeatedly_querying_the_connected_cell_works_requires_device)
+TEST(ConnectivityManagerOnDevice, repeatedly_querying_the_connected_cell_works_requires_hardware)
 {
     auto manager = location::connectivity::platform_default_manager();
 
@@ -165,7 +165,7 @@ TEST(ConnectivityManagerOnDevice, repeatedly_querying_the_connected_cell_works_r
     }
 }
 
-TEST(ConnectivityManagerOnDevice, default_implementation_is_queryable_for_wifis_and_radio_cells_requires_hardware_requires_device)
+TEST(ConnectivityManagerOnDevice, default_implementation_is_queryable_for_wifis_and_radio_cells_requires_hardware)
 {
     auto manager = location::connectivity::platform_default_manager();
 
@@ -180,7 +180,7 @@ TEST(ConnectivityManagerOnDevice, default_implementation_is_queryable_for_wifis_
     });
 }
 
-TEST(ConnectivityManagerOnDevice, default_implementation_is_queryable_for_wifi_and_wwan_status_requires_device)
+TEST(ConnectivityManagerOnDevice, default_implementation_is_queryable_for_wifi_and_wwan_status_requires_hardware)
 {
     auto manager = location::connectivity::platform_default_manager();
 
