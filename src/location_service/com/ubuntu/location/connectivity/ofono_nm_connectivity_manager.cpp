@@ -131,26 +131,6 @@ connectivity::OfonoNmConnectivityManager::Private::Private(const core::dbus::Bus
 {
     try
     {
-        setup_network_stack_access();
-    }
-    catch (const std::exception& e)
-    {
-        SYSLOG(INFO) << "Error while setting up access to the networking stack: " << e.what();
-        // An error occured while setting up access to the networking stack.
-        // For that, we setup watching of registration changes and initialize
-        // the instance later on.
-        network_manager_watcher = bus_daemon->make_service_watcher(
-                    xdg::NetworkManager::name(),
-                    core::dbus::DBus::WatchMode::registration);
-
-        network_manager_watcher->service_registered().connect([this]()
-        {
-            setup_network_stack_access();
-        });
-    }
-
-    try
-    {
         setup_radio_stack_access();
     }
     catch (const std::exception& e)
@@ -166,6 +146,26 @@ connectivity::OfonoNmConnectivityManager::Private::Private(const core::dbus::Bus
         modem_manager_watcher->service_registered().connect([this]()
         {
             setup_radio_stack_access();
+        });
+    }
+
+    try
+    {
+        setup_network_stack_access();
+    }
+    catch (const std::exception& e)
+    {
+        SYSLOG(INFO) << "Error while setting up access to the networking stack: " << e.what();
+        // An error occured while setting up access to the networking stack.
+        // For that, we setup watching of registration changes and initialize
+        // the instance later on.
+        network_manager_watcher = bus_daemon->make_service_watcher(
+                    xdg::NetworkManager::name(),
+                    core::dbus::DBus::WatchMode::registration);
+
+        network_manager_watcher->service_registered().connect([this]()
+        {
+            setup_network_stack_access();
         });
     }
 }
