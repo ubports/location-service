@@ -18,5 +18,6 @@ script
         --local-agent MirAgent \
         --trusted-mir-socket=/var/run/user/$(id -u)/mir_socket_trusted \
         --for-service UbuntuLocationService \
+        --with-text-domain ubuntu-location-service \
         --store-bus session
 end script

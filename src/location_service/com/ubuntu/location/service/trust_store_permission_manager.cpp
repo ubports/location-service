@@ -28,6 +28,8 @@
 
 #include <core/posix/this_process.h>
 
+#include <boost/format.hpp>
+
 #include <sys/apparmor.h>
 
 namespace location = com::ubuntu::location;
@@ -41,6 +43,17 @@ bool is_running_under_testing()
                 "TRUST_STORE_PERMISSION_MANAGER_IS_RUNNING_UNDER_TESTING",
                 "0") == "1";
 
+}
+
+namespace i18n
+{
+// We only tag strings that should be translated but do not do the actual translation.
+// Point is: The service might run in a system context, without correct locale information.
+// We leave the translation to in-session trust-store instances.
+std::string tr(const std::string& msg)
+{
+    return msg;
+}
 }
 }
 
@@ -133,15 +146,7 @@ service::PermissionManager::Result service::TrustStorePermissionManager::check_p
         return service::PermissionManager::Result::rejected;
     }
 
-    std::string description;
-
-    if (profile == "unconfined")
-    {
-        description = "An unconfined application wants to access your current location.";
-    } else
-    {
-        description = profile + " wants to access your current location.";
-    }
+    std::string description = i18n::tr("%1% wants to access your current location.");
 
     core::trust::Agent::RequestParameters params
     {
