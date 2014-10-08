@@ -677,15 +677,31 @@ struct Runtime
     std::thread worker_thread;
 };
 }
+
+#include <com/ubuntu/location/connectivity/dummy_connectivity_manager.h>
+
 const std::shared_ptr<connectivity::Manager>& connectivity::platform_default_manager()
 {
-    static const std::shared_ptr<connectivity::Manager> instance
+    try
     {
-        new connectivity::OfonoNmConnectivityManager
+        static const std::shared_ptr<connectivity::Manager> instance
         {
-            Runtime::instance().system_bus
-        }
+            new connectivity::OfonoNmConnectivityManager
+            {
+                Runtime::instance().system_bus
+            }
+        };
+
+        return instance;
+    }
+    catch(...)
+    {
+    }
+
+    static const std::shared_ptr<connectivity::Manager> dummy_instance
+    {
+        new dummy::ConnectivityManager{}
     };
 
-    return instance;
+    return dummy_instance;
 }
