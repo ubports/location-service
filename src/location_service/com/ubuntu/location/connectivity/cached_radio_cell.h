@@ -43,6 +43,9 @@ public:
     // Frees all resources and cuts all event connections.
     ~CachedRadioCell();
 
+    // Returns true iff the network registration is roaming.
+    const core::Property<bool>& is_roaming() const;
+
     // Returns true iff the instance represents a valid cell.
     const core::Property<bool>& is_valid() const;
 
@@ -91,6 +94,7 @@ private:
     // Executes the cell change heuristics if precondition is met.
     void execute_cell_change_heuristics_if_appropriate();
 
+    core::Property<bool> roaming;
     core::Signal<> on_changed;
     Type radio_type;
     org::Ofono::Manager::Modem modem;

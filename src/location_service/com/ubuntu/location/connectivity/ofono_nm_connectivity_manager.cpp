@@ -273,6 +273,24 @@ void connectivity::OfonoNmConnectivityManager::Private::on_modem_added(const cor
             signals.connected_cell_removed(sp);
     });
 
+    // And we react to changes to the roaming state.
+    cell_result.first->second->is_roaming().changed().connect([this](bool roaming)
+    {
+        VLOG(10) << "Roaming state of cell changed: " << std::boolalpha << roaming << std::endl;
+
+        // Unblocking the bus here and scheduling re-evaluation of the
+        // active connection characteristics.
+        dispatcher.service.post([this]()
+        {
+            // Bail out if the network manager instance went away.
+            if (not network_manager)
+                return;
+
+            active_connection_characteristics.set(
+                        characteristics_for_connection(
+                            network_manager->properties.primary_connection->get()));
+        });
+    });
     // Cool, we have reached here, updated all our caches and created a connected radio cell.
     // We are thus good to go and release the lock manually prior to announcing the new cell
     // to interested parties.
@@ -592,10 +610,21 @@ connectivity::Characteristics connectivity::OfonoNmConnectivityManager::Private:
 
                 for (const auto& pair : cached.modems)
                 {
-                    auto status = pair.second.network_registration.get<org::Ofono::Manager::Modem::NetworkRegistration::Status>();
-
-                    if (org::Ofono::Manager::Modem::NetworkRegistration::Status::roaming == status)
+                    // This call might throw as it reaches out to ofono to query the current status of the modem.
+                    try
+                    {
+                        auto status = pair.second.network_registration.get<org::Ofono::Manager::Modem::NetworkRegistration::Status>();
+                        if (org::Ofono::Manager::Modem::NetworkRegistration::Status::roaming == status)
+                            characteristics = characteristics | connectivity::Characteristics::connection_is_roaming;
+                    }
+                    catch (const std::exception& e)
+                    {
+                        LOG(WARNING) << e.what();
+                        // And we interpret an exception being thrown conservatively, i.e., we set the
+                        // state to roaming. With that, we prevent enabling expensive data transfers over roaming
+                        // connections unless we could unambigiously determine that we are *not* roaming.
                         characteristics = characteristics | connectivity::Characteristics::connection_is_roaming;
+                    }
                 }
 
                 characteristics = characteristics | all_characteristics();
