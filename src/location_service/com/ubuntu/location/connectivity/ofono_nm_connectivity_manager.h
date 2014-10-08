@@ -29,9 +29,11 @@
 #include "ofono.h"
 
 #include <core/dbus/bus.h>
+#include <core/dbus/dbus.h>
 #include <core/dbus/object.h>
 #include <core/dbus/property.h>
 #include <core/dbus/service.h>
+#include <core/dbus/service_watcher.h>
 #include <core/dbus/types/object_path.h>
 #include <core/dbus/types/struct.h>
 #include <core/dbus/types/stl/map.h>
@@ -49,10 +51,12 @@
 
 namespace dbus = core::dbus;
 
-namespace impl
-{
+namespace com { namespace ubuntu { namespace location { namespace connectivity {
 struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::Manager
 {
+    // Creates an instance of the manager, resolving services on the given bus.
+    OfonoNmConnectivityManager(const core::dbus::Bus::Ptr& bus);
+
     const core::Property<com::ubuntu::location::connectivity::State>& state() const override;
 
     const core::Property<bool>& is_wifi_enabled() const override;
@@ -80,7 +84,7 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
 
     struct Private
     {
-        Private();
+        Private(const core::dbus::Bus::Ptr& bus);
         ~Private();
 
         void setup_radio_stack_access();
@@ -92,15 +96,19 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
         void setup_network_stack_access();
         void on_access_point_added(const core::dbus::types::ObjectPath& ap_path, const core::dbus::types::ObjectPath& device_path);
         void on_access_point_removed(const core::dbus::types::ObjectPath& ap_path);
-        com::ubuntu::location::connectivity::Characteristics characteristics_for_connection(const core::dbus::types::ObjectPath& path);
+        com::ubuntu::location::connectivity::Characteristics characteristics_for_connection(const core::dbus::types::ObjectPath& path);        
 
-        core::dbus::Bus::Ptr system_bus;
-        core::dbus::Executor::Ptr executor;
-
-        std::thread worker;
+        core::dbus::Bus::Ptr bus;
+        std::shared_ptr<core::dbus::DBus> bus_daemon;
 
         org::freedesktop::NetworkManager::Ptr network_manager;
+        // If we failed to setup the network manager instance on startup,
+        // we watch out for ownership changes on xdg::NetworkManager.
+        std::shared_ptr<core::dbus::ServiceWatcher> network_manager_watcher;
         org::Ofono::Manager::Ptr modem_manager;
+        // If we failed to setup the modem manager instance on startup,
+        // we watch out for ownership changes on org.ofono.Manager.
+        std::shared_ptr<core::dbus::ServiceWatcher> modem_manager_watcher;
 
         struct
         {
@@ -122,6 +130,14 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
 
         struct
         {
+            // We cache the properties as the network stack might not be
+            // initialized after startup.
+            core::Property<bool> is_wifi_enabled{false};
+            core::Property<bool> is_wwan_enabled{false};
+            core::Property<bool> is_wifi_hardware_enabled{false};
+            core::Property<bool> is_wwan_hardware_enabled{false};
+
+            // We guard access to all complex cached types with a mutex.
             mutable std::mutex guard;
             std::map<core::dbus::types::ObjectPath, detail::CachedRadioCell::Ptr> cells;
             std::map<core::dbus::types::ObjectPath, org::Ofono::Manager::Modem> modems;
@@ -144,6 +160,6 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
         core::Property<com::ubuntu::location::connectivity::Characteristics> active_connection_characteristics;
     } d;
 };
-}
+}}}}
 
 #endif // OFONO_NM_CONNECTIVITY_MANAGER_H_
