@@ -593,22 +593,29 @@ struct Manager
                       object->get_signal<PropertyChanged>()
                   }
             {
-                refresh_properties();
             }
 
-            void refresh_properties() const
+            // Calling this function might fail. However, we do not throw and only log
+            // the issue for later forensics.
+            bool refresh_properties() const
             {
                 auto result = object->invoke_method_synchronously<GetProperties, GetProperties::ValueType>();
+
                 if (result.is_error())
-                    throw std::runtime_error(result.error().print());
+                {
+                    LOG(WARNING) << "Could not refresh properties for org::Ofono::Modem::NetworkRegistration: " << result.error().print();
+                    return false;
+                }
 
                 properties = result.value();
+                return true;
             }
 
             template<typename Property>
             typename Property::ValueType get() const
-            {
-                refresh_properties();
+            {                
+                if (not refresh_properties())
+                    return typename Property::ValueType{};
 
                 auto it = properties.find(Property::name());
 

@@ -145,7 +145,11 @@ connectivity::OfonoNmConnectivityManager::Private::Private(const core::dbus::Bus
 
         modem_manager_watcher->service_registered().connect([this]()
         {
-            setup_radio_stack_access();
+            VLOG(1) << org::Ofono::name() << " got registered on the bus.";
+            dispatcher.service.post([this]()
+            {
+                setup_radio_stack_access();
+            });
         });
     }
 
@@ -165,7 +169,11 @@ connectivity::OfonoNmConnectivityManager::Private::Private(const core::dbus::Bus
 
         network_manager_watcher->service_registered().connect([this]()
         {
-            setup_network_stack_access();
+            VLOG(1) << xdg::NetworkManager::name() << " got registered on the bus.";
+            dispatcher.service.post([this]()
+            {
+                setup_network_stack_access();
+            });
         });
     }
 }
