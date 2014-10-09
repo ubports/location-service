@@ -249,7 +249,10 @@ void connectivity::OfonoNmConnectivityManager::Private::on_modem_added(const cor
         {
             auto interfaces = std::get<1>(tuple).as<std::vector<std::string> >();
             if (VLOG_IS_ON(10)) for(const auto& interface : interfaces) VLOG(10) << interface;
-            on_modem_interfaces_changed(path, interfaces);
+            dispatcher.service.post([this, path, interfaces]()
+            {
+                on_modem_interfaces_changed(path, interfaces);
+            });
         }
     });
 
