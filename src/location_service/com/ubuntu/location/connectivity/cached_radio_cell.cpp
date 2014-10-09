@@ -89,8 +89,9 @@ detail::CachedRadioCell::CellChangeHeuristics::CellChangeHeuristics(
 }
 
 detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem, boost::asio::io_service& io_service)
-    : RadioCell(),
+    : RadioCell(),      
       cell_change_heuristics(io_service, is_running_on_problematic_modem_firmware(modem)),
+      roaming(false),
       radio_type(Type::gsm),
       modem(modem),
       connections
@@ -204,6 +205,11 @@ detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem
         break;
     }
 
+    roaming =
+            modem.network_registration.get<
+                org::Ofono::Manager::Modem::NetworkRegistration::Status
+            >() == org::Ofono::Manager::Modem::NetworkRegistration::Status::roaming;
+
     execute_cell_change_heuristics_if_appropriate();
 }
 
@@ -211,6 +217,11 @@ detail::CachedRadioCell::~CachedRadioCell()
 {
     modem.signals.property_changed->disconnect(connections.modem_properties_changed);
     modem.network_registration.signals.property_changed->disconnect(connections.network_registration_properties_changed);
+}
+
+const core::Property<bool>& detail::CachedRadioCell::is_roaming() const
+{
+    return roaming;
 }
 
 const core::Property<bool>& detail::CachedRadioCell::is_valid() const
@@ -521,6 +532,13 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
 
         if (cell_change_heuristics.valid.get())
             on_changed();
+    }
+
+    if (key == org::Ofono::Manager::Modem::NetworkRegistration::Status::name())
+    {
+        roaming =
+                variant.as<org::Ofono::Manager::Modem::NetworkRegistration::Status::ValueType>() ==
+                org::Ofono::Manager::Modem::NetworkRegistration::Status::roaming;
     }
 
     if (did_cell_identity_change)
