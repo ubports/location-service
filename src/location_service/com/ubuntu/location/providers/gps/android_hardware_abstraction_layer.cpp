@@ -647,13 +647,25 @@ android::GpsXtraDownloader::Configuration gps_xtra_downloader_configuration(std:
 
 std::shared_ptr<gps::HardwareAbstractionLayer> gps::HardwareAbstractionLayer::create_default_instance()
 {
-    static std::ifstream in{"/etc/gps.conf"};
+    // We prefer /system/etc/gps.conf as it contains device-specific
+    // configuration options. However, if that file is not present, we
+    // fallback to /etc/gps.conf which contains a vanilla, non-harmful
+    // configuration.
+    std::ifstream in_system_gps_conf
+    {
+        "/system/etc/gps.conf"
+    };
+
+    std::ifstream in_gps_conf
+    {
+        "/etc/gps.conf"
+    };
 
     static android::HardwareAbstractionLayer::Configuration config
     {
         {
             create_xtra_downloader(),
-            gps_xtra_downloader_configuration(in)
+            gps_xtra_downloader_configuration((in_system_gps_conf ? in_system_gps_conf : in_gps_conf))
         }
     };
 
