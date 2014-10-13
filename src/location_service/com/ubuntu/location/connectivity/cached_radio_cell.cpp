@@ -96,10 +96,6 @@ detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem
       modem(modem),
       connections
       {
-          modem.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-          {
-              on_modem_property_changed(tuple);
-          }),
           modem.network_registration.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
           {
               on_network_registration_property_changed(tuple);
@@ -179,7 +175,6 @@ detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem
 
 detail::CachedRadioCell::~CachedRadioCell()
 {
-    modem.signals.property_changed->disconnect(connections.modem_properties_changed);
     modem.network_registration.signals.property_changed->disconnect(connections.network_registration_properties_changed);
 }
 
@@ -225,11 +220,6 @@ const com::ubuntu::location::connectivity::RadioCell::Lte& detail::CachedRadioCe
         throw std::runtime_error("Bad access to unset network type.");
 
     return detail.lte;
-}
-
-void detail::CachedRadioCell::on_modem_property_changed(const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-{
-    VLOG(10) << "Property on modem " << modem.object->path() << " changed: " << std::get<0>(tuple);
 }
 
 void detail::CachedRadioCell::on_network_registration_property_changed(const std::tuple<std::string, core::dbus::types::Variant>& tuple)

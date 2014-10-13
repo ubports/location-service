@@ -64,9 +64,6 @@ public:
     // Returns LTE-specific details or throws std::runtime_error if this is not an LTE radiocell.
     const com::ubuntu::location::connectivity::RadioCell::Lte& lte() const override;
 
-    // Invoked whenever a modem property changes remotely in ofono.
-    void on_modem_property_changed(const std::tuple<std::string, core::dbus::types::Variant>& tuple);
-
     // Invoked whenever a property specific to a network registration changes remotely.
     void on_network_registration_property_changed(const std::tuple<std::string, core::dbus::types::Variant>& tuple);
 
@@ -126,12 +123,6 @@ private:
     // Encapsulates all event connections that have to be cut on destruction.
     struct
     {
-        core::dbus::Signal
-        <
-            org::Ofono::Manager::Modem::PropertyChanged,
-            org::Ofono::Manager::Modem::PropertyChanged::ArgumentType
-        >::SubscriptionToken modem_properties_changed;
-
         core::dbus::Signal
         <
             org::Ofono::Manager::Modem::NetworkRegistration::PropertyChanged,
