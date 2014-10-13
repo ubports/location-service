@@ -64,9 +64,6 @@ public:
     // Returns LTE-specific details or throws std::runtime_error if this is not an LTE radiocell.
     const com::ubuntu::location::connectivity::RadioCell::Lte& lte() const override;
 
-    // Invoked whenever a modem property changes remotely in ofono.
-    void on_modem_property_changed(const std::tuple<std::string, core::dbus::types::Variant>& tuple);
-
     // Invoked whenever a property specific to a network registration changes remotely.
     void on_network_registration_property_changed(const std::tuple<std::string, core::dbus::types::Variant>& tuple);
 
@@ -89,10 +86,34 @@ private:
         // Property to indicate whether the current cell is
         // still valid according to the cell change heuristics.
         core::Property<bool> valid;
-    } cell_change_heuristics;
-
+    } cell_change_heuristics;       
     // Executes the cell change heuristics if precondition is met.
     void execute_cell_change_heuristics_if_appropriate();
+
+    // Queries the status from the Ofono NetworkRegistration.
+    org::Ofono::Manager::Modem::NetworkRegistration::Status::Value query_status();
+    // Queries the technology from the Ofono NetworkRegistration.
+    Type query_technology();
+    // Queries the cell id from the Ofono NetworkRegistration.
+    int query_cid();
+    // Queries the location area code from the Ofono NetworkRegistration.
+    std::uint16_t query_lac();
+    // Queries the mobile network code from the Ofono NetworkRegistration.
+    int query_mnc();
+    // Queries the mobile country code from the Ofono NetworkRegistration.
+    int query_mcc();
+    // Queries the signal strength from the Ofono NetworkRegistration.
+    std::int8_t query_strength();
+    // Returns true iff status is either roaming or registered.
+    bool is_registered_or_roaming(org::Ofono::Manager::Modem::NetworkRegistration::Status::Value status);
+    // Returns true iff all the parts of the cell are populated with valid values.
+    bool is_cell_details_valid();
+    // Retuns true iff the GSM cell details are valid.
+    bool is_gsm_valid();
+    // Returns true iff the Umts cell details are valid.
+    bool is_umts_valid();
+    // Returns true iff the Lte cell details are valid.
+    bool is_lte_valid();
 
     core::Property<bool> roaming;
     core::Signal<> on_changed;
@@ -102,12 +123,6 @@ private:
     // Encapsulates all event connections that have to be cut on destruction.
     struct
     {
-        core::dbus::Signal
-        <
-            org::Ofono::Manager::Modem::PropertyChanged,
-            org::Ofono::Manager::Modem::PropertyChanged::ArgumentType
-        >::SubscriptionToken modem_properties_changed;
-
         core::dbus::Signal
         <
             org::Ofono::Manager::Modem::NetworkRegistration::PropertyChanged,

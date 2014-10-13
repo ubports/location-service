@@ -94,67 +94,27 @@ detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem
       roaming(false),
       radio_type(Type::gsm),
       modem(modem),
-      connections
-      {
-          modem.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-          {
-              on_modem_property_changed(tuple);
-          }),
-          modem.network_registration.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-          {
-              on_network_registration_property_changed(tuple);
-          })
-      },
-      detail{Gsm()}
+      detail{}
 {
-    auto technology =
-            modem.network_registration.get<
-                org::Ofono::Manager::Modem::NetworkRegistration::Technology
-            >();
+    auto status = query_status();
+    radio_type = query_technology();
 
-    auto it = type_lut().find(technology);
-
-    if (it == type_lut().end()) throw std::runtime_error
+    connections.network_registration_properties_changed = modem.network_registration.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
     {
-        "Unknown technology for connected cell: " + technology
-    };
+        on_network_registration_property_changed(tuple);
+    });
 
-    if (it->second == com::ubuntu::location::connectivity::RadioCell::Type::unknown) throw std::runtime_error
-    {
-        "Unknown technology for connected cell: " + technology
-    };
+    if (not is_registered_or_roaming(status))
+        return;
 
-    radio_type = it->second;
+    if (radio_type == com::ubuntu::location::connectivity::RadioCell::Type::unknown)
+        return;
 
-    auto lac =
-            modem.network_registration.get<
-                org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode
-            >();
-
-    int cell_id =
-            modem.network_registration.get<
-                org::Ofono::Manager::Modem::NetworkRegistration::CellId
-            >();
-
-    auto strength =
-            modem.network_registration.get<
-                org::Ofono::Manager::Modem::NetworkRegistration::Strength
-            >();
-
-    std::stringstream ssmcc
-    {
-        modem.network_registration.get<
-            org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode
-        >()
-    };
-    int mcc{0}; ssmcc >> mcc;
-    std::stringstream ssmnc
-    {
-        modem.network_registration.get<
-            org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode
-        >()
-    };
-    int mnc{0}; ssmnc >> mnc;
+    auto lac = query_lac();
+    auto mcc = query_mcc();
+    auto mnc = query_mnc();
+    auto cell_id = query_cid();
+    auto strength = query_strength();
 
     switch(radio_type)
     {
@@ -205,18 +165,15 @@ detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem
         break;
     }
 
-    roaming =
-            modem.network_registration.get<
-                org::Ofono::Manager::Modem::NetworkRegistration::Status
-            >() == org::Ofono::Manager::Modem::NetworkRegistration::Status::roaming;
+    roaming = status == org::Ofono::Manager::Modem::NetworkRegistration::Status::Value::roaming;
 
     execute_cell_change_heuristics_if_appropriate();
 }
 
 detail::CachedRadioCell::~CachedRadioCell()
 {
-    modem.signals.property_changed->disconnect(connections.modem_properties_changed);
-    modem.network_registration.signals.property_changed->disconnect(connections.network_registration_properties_changed);
+    // TODO(tvoss): Reenable this once we know why the modem cache gets flushed.
+    // modem.network_registration.signals.property_changed->disconnect(connections.network_registration_properties_changed);
 }
 
 const core::Property<bool>& detail::CachedRadioCell::is_roaming() const
@@ -261,11 +218,6 @@ const com::ubuntu::location::connectivity::RadioCell::Lte& detail::CachedRadioCe
         throw std::runtime_error("Bad access to unset network type.");
 
     return detail.lte;
-}
-
-void detail::CachedRadioCell::on_modem_property_changed(const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-{
-    VLOG(10) << "Property on modem " << modem.object->path() << " changed: " << std::get<0>(tuple);
 }
 
 void detail::CachedRadioCell::on_network_registration_property_changed(const std::tuple<std::string, core::dbus::types::Variant>& tuple)
@@ -367,6 +319,8 @@ void detail::CachedRadioCell::on_network_registration_property_changed(const std
                 break;
             }
         default:
+            // We take the default path here, specifically for cases where
+            // we started out with Technology::unknown.
             break;
         };
 
@@ -566,8 +520,168 @@ void detail::CachedRadioCell::execute_cell_change_heuristics_if_appropriate()
                 cell_change_heuristics.valid = false;
         });
 
-        cell_change_heuristics.valid = true;
+        cell_change_heuristics.valid = is_cell_details_valid();
     }
+}
+
+// Queries the status from the Ofono NetworkRegistration.
+org::Ofono::Manager::Modem::NetworkRegistration::Status::Value detail::CachedRadioCell::query_status()
+{
+    auto status =
+            modem.network_registration.get
+            <
+                org::Ofono::Manager::Modem::NetworkRegistration::Status
+            >();
+
+    if (status == org::Ofono::Manager::Modem::NetworkRegistration::Status::unregistered)
+        return org::Ofono::Manager::Modem::NetworkRegistration::Status::Value::unregistered;
+
+    if (status == org::Ofono::Manager::Modem::NetworkRegistration::Status::registered)
+        return org::Ofono::Manager::Modem::NetworkRegistration::Status::Value::registered;
+
+    if (status == org::Ofono::Manager::Modem::NetworkRegistration::Status::searching)
+        return org::Ofono::Manager::Modem::NetworkRegistration::Status::Value::searching;
+
+    if (status == org::Ofono::Manager::Modem::NetworkRegistration::Status::denied)
+        return org::Ofono::Manager::Modem::NetworkRegistration::Status::Value::denied;
+
+    if (status == org::Ofono::Manager::Modem::NetworkRegistration::Status::unknown)
+        return org::Ofono::Manager::Modem::NetworkRegistration::Status::Value::unknown;
+
+    if (status == org::Ofono::Manager::Modem::NetworkRegistration::Status::unregistered)
+        return org::Ofono::Manager::Modem::NetworkRegistration::Status::Value::unregistered;
+
+    if (status == org::Ofono::Manager::Modem::NetworkRegistration::Status::roaming)
+        return org::Ofono::Manager::Modem::NetworkRegistration::Status::Value::roaming;
+
+    return org::Ofono::Manager::Modem::NetworkRegistration::Status::Value::unknown;
+}
+
+// Queries the technology from the Ofono NetworkRegistration.
+com::ubuntu::location::connectivity::RadioCell::Type detail::CachedRadioCell::query_technology()
+{
+    auto technology =
+            modem.network_registration.get<
+                org::Ofono::Manager::Modem::NetworkRegistration::Technology
+            >();
+
+    auto it = type_lut().find(technology);
+
+    if (it == type_lut().end())
+        return com::ubuntu::location::connectivity::RadioCell::Type::unknown;
+
+    return it->second;
+}
+
+// Queries the cell id from the Ofono NetworkRegistration.
+int detail::CachedRadioCell::query_cid()
+{
+    return modem.network_registration.get
+    <
+        org::Ofono::Manager::Modem::NetworkRegistration::CellId
+    >();
+}
+
+// Queries the location area code from the Ofono NetworkRegistration.
+std::uint16_t detail::CachedRadioCell::query_lac()
+{
+    return modem.network_registration.get
+    <
+        org::Ofono::Manager::Modem::NetworkRegistration::LocationAreaCode
+    >();
+}
+
+// Queries the mobile network code from the Ofono NetworkRegistration.
+int detail::CachedRadioCell::query_mnc()
+{
+    std::stringstream ssmnc
+    {
+        modem.network_registration.get
+        <
+            org::Ofono::Manager::Modem::NetworkRegistration::MobileNetworkCode
+        >()
+    };
+    int mnc{0}; ssmnc >> mnc;
+    return mnc;
+}
+
+// Queries the mobile country code from the Ofono NetworkRegistration.
+int detail::CachedRadioCell::query_mcc()
+{
+    std::stringstream ssmcc
+    {
+        modem.network_registration.get
+        <
+            org::Ofono::Manager::Modem::NetworkRegistration::MobileCountryCode
+        >()
+    };
+    int mcc{0}; ssmcc >> mcc;
+    return mcc;
+}
+
+// Queries the signal strength from the Ofono NetworkRegistration.
+std::int8_t detail::CachedRadioCell::query_strength()
+{
+    return modem.network_registration.get
+    <
+        org::Ofono::Manager::Modem::NetworkRegistration::Strength
+    >();
+}
+
+// Returns true iff status is either roaming or registered.
+bool detail::CachedRadioCell::is_registered_or_roaming(org::Ofono::Manager::Modem::NetworkRegistration::Status::Value status)
+{
+    return status == org::Ofono::Manager::Modem::NetworkRegistration::Status::Value::registered ||
+           status == org::Ofono::Manager::Modem::NetworkRegistration::Status::Value::roaming;
+}
+
+// Returns true iff all the parts of the cell are populated with valid values.
+bool detail::CachedRadioCell::is_cell_details_valid()
+{
+    switch(radio_type)
+    {
+    case com::ubuntu::location::connectivity::RadioCell::Type::unknown:
+        return false;
+    case com::ubuntu::location::connectivity::RadioCell::Type::gsm:
+        return is_gsm_valid();
+    case com::ubuntu::location::connectivity::RadioCell::Type::umts:
+        return is_umts_valid();
+    case com::ubuntu::location::connectivity::RadioCell::Type::lte:
+        return is_lte_valid();
+    }
+
+    return false;
+}
+
+// Retuns true iff the GSM cell details are valid.
+bool detail::CachedRadioCell::is_gsm_valid()
+{
+   return gsm().mobile_country_code.is_valid() &&
+          gsm().mobile_network_code.is_valid() &&
+          gsm().location_area_code.is_valid() &&
+          gsm().id.is_valid() &&
+          gsm().strength.is_valid();
+}
+
+// Returns true iff the Umts cell details are valid.
+bool detail::CachedRadioCell::is_umts_valid()
+{
+    return umts().mobile_country_code.is_valid() &&
+           umts().mobile_network_code.is_valid() &&
+           umts().location_area_code.is_valid() &&
+           umts().id.is_valid() &&
+           umts().strength.is_valid();
+}
+
+// Returns true iff the Lte cell details are valid.
+bool detail::CachedRadioCell::is_lte_valid()
+{
+    return lte().mobile_country_code.is_valid() &&
+           lte().mobile_network_code.is_valid() &&
+           lte().tracking_area_code.is_valid() &&
+           lte().id.is_valid() &&
+           lte().physical_id.is_valid() &&
+           lte().strength.is_valid();
 }
 
 detail::CachedRadioCell::Detail::Detail() : none(detail::CachedRadioCell::None{})
