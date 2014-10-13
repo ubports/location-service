@@ -229,6 +229,8 @@ void connectivity::OfonoNmConnectivityManager::Private::setup_radio_stack_access
 
 void connectivity::OfonoNmConnectivityManager::Private::on_modem_added(const core::dbus::types::ObjectPath& path)
 {
+    VLOG(1) << __PRETTY_FUNCTION__;
+
     auto modem = modem_manager->modem_for_path(path);
 
     // We immediately make the modem known to the cache, specifically
@@ -313,6 +315,8 @@ void connectivity::OfonoNmConnectivityManager::Private::on_modem_added(const cor
 
 void connectivity::OfonoNmConnectivityManager::Private::on_modem_removed(const core::dbus::types::ObjectPath& path)
 {
+    VLOG(1) << __PRETTY_FUNCTION__;
+
     detail::CachedRadioCell::Ptr cell;
     {
         std::lock_guard<std::mutex> lg(cached.guard);
