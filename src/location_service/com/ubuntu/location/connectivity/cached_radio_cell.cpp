@@ -106,6 +106,12 @@ detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem
     if (radio_type == com::ubuntu::location::connectivity::RadioCell::Type::unknown)
         return;
 
+    // And we finally subscribe to property changes.
+    connections.network_registration_properties_changed = modem.network_registration.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
+    {
+        on_network_registration_property_changed(tuple);
+    });
+
     auto lac = query_lac();
     auto mcc = query_mnc();
     auto mnc = query_mnc();
@@ -164,12 +170,6 @@ detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem
     roaming = status == org::Ofono::Manager::Modem::NetworkRegistration::Status::Value::roaming;
 
     execute_cell_change_heuristics_if_appropriate();
-
-    // And we finally subscribe to property changes.
-    connections.network_registration_properties_changed = modem.network_registration.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-    {
-        on_network_registration_property_changed(tuple);
-    });
 }
 
 detail::CachedRadioCell::~CachedRadioCell()
