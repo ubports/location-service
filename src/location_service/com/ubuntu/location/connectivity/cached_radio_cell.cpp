@@ -111,7 +111,7 @@ detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem
         return;
 
     auto lac = query_lac();
-    auto mcc = query_mnc();
+    auto mcc = query_mcc();
     auto mnc = query_mnc();
     auto cell_id = query_cid();
     auto strength = query_strength();
