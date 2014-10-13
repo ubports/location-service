@@ -371,33 +371,45 @@ void connectivity::OfonoNmConnectivityManager::Private::on_modem_interfaces_chan
         ul.unlock(); signals.connected_cell_removed(cell);
     } else if (not has_cell_for_modem and modem_has_network_registration)
     {
-        // A new network registration is coming in and we have to create
-        // a corresponding cell instance.
-        auto cell = std::make_shared<detail::CachedRadioCell>(itm->second, dispatcher.service);
-
-        // We do not keep the cell alive.
-        std::weak_ptr<detail::CachedRadioCell> wp{cell};
-
-        // We account for a cell becoming invalid and report it as report.
-        cell->is_valid().changed().connect([this, wp](bool valid)
+        dispatcher.service.post([this, path]()
         {
-            VLOG(10) << "Validity of cell changed: " << std::boolalpha << valid << std::endl;
+            std::unique_lock<std::mutex> ul(cached.guard);
 
-            auto sp = wp.lock();
-
-            if (not sp)
+            auto itm = cached.modems.find(path);
+            if (itm == cached.modems.end())
+            {
+                VLOG(1) << "Could not find a modem for path " << path.as_string();
                 return;
+            }
 
-            if (valid)
-                signals.connected_cell_added(sp);
-            else
-                signals.connected_cell_removed(sp);
+            // A new network registration is coming in and we have to create
+            // a corresponding cell instance.
+            auto cell = std::make_shared<detail::CachedRadioCell>(itm->second, dispatcher.service);
+
+            // We do not keep the cell alive.
+            std::weak_ptr<detail::CachedRadioCell> wp{cell};
+
+            // We account for a cell becoming invalid and report it as report.
+            cell->is_valid().changed().connect([this, wp](bool valid)
+            {
+                VLOG(10) << "Validity of cell changed: " << std::boolalpha << valid << std::endl;
+
+                auto sp = wp.lock();
+
+                if (not sp)
+                    return;
+
+                if (valid)
+                    signals.connected_cell_added(sp);
+                else
+                    signals.connected_cell_removed(sp);
+            });
+
+            cached.cells.insert(std::make_pair(path,cell));
+            // Cache is up to date now and we announce the new cell to
+            // API customers, with the lock on the cache not being held.
+            ul.unlock(); signals.connected_cell_added(cell);
         });
-
-        cached.cells.insert(std::make_pair(path,cell));
-        // Cache is up to date now and we announce the new cell to
-        // API customers, with the lock on the cache not being held.
-        ul.unlock(); signals.connected_cell_added(cell);
     }
 }
 
