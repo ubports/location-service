@@ -94,13 +94,6 @@ detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem
       roaming(false),
       radio_type(Type::gsm),
       modem(modem),
-      connections
-      {
-          modem.network_registration.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
-          {
-              on_network_registration_property_changed(tuple);
-          })
-      },
       detail{}
 {
     auto status = query_status();
@@ -171,6 +164,12 @@ detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem
     roaming = status == org::Ofono::Manager::Modem::NetworkRegistration::Status::Value::roaming;
 
     execute_cell_change_heuristics_if_appropriate();
+
+    // And we finally subscribe to property changes.
+    connections.network_registration_properties_changed = modem.network_registration.signals.property_changed->connect([this](const std::tuple<std::string, core::dbus::types::Variant>& tuple)
+    {
+        on_network_registration_property_changed(tuple);
+    });
 }
 
 detail::CachedRadioCell::~CachedRadioCell()
