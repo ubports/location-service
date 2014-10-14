@@ -1,3 +1,67 @@
+location-service (2.1+14.10.20141013-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Allow for creation of initially invalid radio cells. (LP: #1380668)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 13 Oct 2014 15:28:59 +0000
+
+location-service (2.1+14.10.20141010-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Prefer /system/etc/gps.conf over /etc/gps.conf.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 10 Oct 2014 07:18:05 +0000
+
+location-service (2.1+14.10.20141009.1-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Make sure that modems are cached, no matter if they come with a
+    valid NetworkRegistration.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 09 Oct 2014 15:18:56 +0000
+
+location-service (2.1+14.10.20141008-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Make the service translateable. (LP: #1354092)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 08 Oct 2014 09:20:31 +0000
+
+location-service (2.1+14.10.20141006-0ubuntu1) utopic; urgency=low
+
+  [ Alberto Aguirre ]
+  * Ensure Engine::for_each_provider fulfills the noexcept promise
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 06 Oct 2014 16:39:42 +0000
+
+location-service (2.1+14.10.20140925.2-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Implement heuristic to invalidate 3G cells after 60 seconds. (LP:
+    #1371514)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 25 Sep 2014 20:27:06 +0000
+
+location-service (2.1+14.10.20140917.1-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Expose remote::Interface and respective stub/skeleton for using and
+    exposing remote location providers.
+  * Add a standalone daemon for executing providers out of process.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 17 Sep 2014 13:27:53 +0000
+
+location-service (2.1+14.10.20140915-0ubuntu1) utopic; urgency=low
+
+  [ Loïc Minier ]
+  * Update upstart job start conditions; workaround startup issue with a
+    sleep. (LP: #1356468)
+
+  [ thomas-voss ]
+  * Somewhat clean up remote provider and add an acceptance-style test.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 15 Sep 2014 20:02:59 +0000
+
 location-service (2.1+14.10.20140829-0ubuntu1) utopic; urgency=medium
 
   [ Manuel de la Pena ]

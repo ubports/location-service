@@ -30,22 +30,14 @@
 
 #include <core/posix/fork.h>
 
+#include "did_finish_successfully.h"
+
 #include <gmock/gmock.h>
 
 namespace location = com::ubuntu::location;
 
 namespace
 {
-::testing::AssertionResult did_finish_successfully(const core::posix::wait::Result& result)
-{
-    if (result.status != core::posix::wait::Result::Status::exited)
-        return ::testing::AssertionFailure() << "Process did not exit, but: " << (int)result.status;
-    if (result.detail.if_exited.status != core::posix::exit::Status::success)
-        return ::testing::AssertionFailure() << "Process did exit with failure.";
-
-    return ::testing::AssertionSuccess();
-}
-
 struct MockEventReceiver
 {
     MOCK_METHOD1(position_update_received, void(const location::Update<location::Position>&));
