@@ -46,7 +46,9 @@ public:
     typedef std::function<void()> Task;
     typedef std::function<void(Task)> Dispatcher;
 
-    DispatchingProvider(const Dispatcher& dispatcher, const Provider::Ptr& fwd);
+    // Create a new instance wired up to the given Provider instance.
+    static DispatchingProvider::Ptr create(const Dispatcher& dispatcher, const Provider::Ptr& fwd);
+
     ~DispatchingProvider() noexcept;
 
     bool supports(const location::Provider::Features& f) const override;
@@ -68,17 +70,18 @@ public:
     void stop_velocity_updates() override;
 
 private:
+    // We want to pass ourselves around.
+    DispatchingProvider(const Dispatcher& dispatcher, const Provider::Ptr& fwd);
+
+    // Two stage initialization is evil, but we are somewhat forced to do it.
+    DispatchingProvider::Ptr init();
+
     // The dispatcher we rely on to dispatch events/invocations.
     Dispatcher dispatcher;
     // The provider that we relay to/from.
     Provider::Ptr fwd;
     // We store all connections that should be cut on destruction.
-    struct
-    {
-        core::ScopedConnection position_updates;
-        core::ScopedConnection heading_updates;
-        core::ScopedConnection velocity_updates;
-    } connections;
+    std::vector<core::ScopedConnection> connections;
 };
 }
 }

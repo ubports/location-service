@@ -17,6 +17,7 @@
  */
 #include <com/ubuntu/location/provider_factory.h>
 
+#include <com/ubuntu/location/logging.h>
 #include <com/ubuntu/location/dispatching_provider.h>
 
 #include <com/ubuntu/location/service/default_configuration.h>
@@ -76,6 +77,9 @@ struct NullReporter : public location::service::Harvester::Reporter
 // another , forcing execution to a well known set of threads.
 struct Runtime
 {
+    // Our default concurrency setup.
+    static constexpr const std::uint32_t worker_threads = 2;
+
     // Our global singleton instance.
     static Runtime& instance()
     {
@@ -84,17 +88,52 @@ struct Runtime
     }
 
     Runtime()
-        : keep_alive{service},
-          worker1{[this]() { service.run(); }}
+        : running{true},
+          service{worker_threads},
+          strand{service},
+          keep_alive{service}
     {
+        for (unsigned int i = 0; i < worker_threads; i++)
+            workers.push_back(std::thread
+            {
+                [this]()
+                {
+                    while(running)
+                    {
+                        try
+                        {
+                            service.run();
+                        }
+                        catch (const std::exception& e)
+                        {
+                            LOG(WARNING) << e.what();
+                        }
+                        catch (...)
+                        {
+                            LOG(WARNING) << "Unknown exception caught while executing boost::asio::io_service";
+                        }
+                    }
+                }
+            });
     }
 
     ~Runtime()
     {
-        service.stop();
+        stop();
+    }
 
-        if (worker1.joinable())
-            worker1.join();
+    void stop()
+    {
+        VLOG(1) << __PRETTY_FUNCTION__;
+        running = false;
+        service.stop();
+        VLOG(1) << "\t Service stopped.";
+
+        for (auto& worker : workers)
+            if (worker.joinable())
+                worker.join();
+
+        VLOG(1) << "\t Worker threads joined.";
     }
 
     // Allows for reusing the runtime in components that require a dispatcher
@@ -103,13 +142,15 @@ struct Runtime
     {
         return [this](std::function<void()> task)
         {
-            service.post(task);
+            strand.post(task);
         };
     }
 
+    bool running;
     boost::asio::io_service service;
+    boost::asio::io_service::strand strand;
     boost::asio::io_service::work keep_alive;
-    std::thread worker1;
+    std::vector<std::thread> workers;
 };
 
 location::ProgramOptions init_daemon_options()
@@ -225,7 +266,7 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
 
             if (p)
                 instantiated_providers.insert(
-                            std::make_shared<location::DispatchingProvider>(
+                            location::DispatchingProvider::create(
                                 Runtime::instance().to_dispatcher_functional(), p));
             else
                 throw std::runtime_error("Problem instantiating provider");
@@ -237,8 +278,8 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         }
     }
 
-    config.incoming->install_executor(dbus::asio::make_executor(config.incoming));
-    config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing));
+    config.incoming->install_executor(dbus::asio::make_executor(config.incoming, Runtime::instance().service));
+    config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing, Runtime::instance().service));
 
     location::service::DefaultConfiguration dc;
 
@@ -281,27 +322,7 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         configuration
     };
 
-    std::thread t1{[&config](){config.incoming->run();}};
-    std::thread t2{[&config](){config.incoming->run();}};
-    std::thread t3{[&config](){config.incoming->run();}};
-    std::thread t4{[&config](){config.outgoing->run();}};
-
     trap->run();
-
-    config.incoming->stop();
-    config.outgoing->stop();
-
-    if (t1.joinable())
-        t1.join();
-
-    if (t2.joinable())
-        t2.join();
-
-    if (t3.joinable())
-        t3.join();
-
-    if (t4.joinable())
-        t4.join();
 
     return EXIT_SUCCESS;
 }

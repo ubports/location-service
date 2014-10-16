@@ -24,60 +24,20 @@
 
 namespace location = com::ubuntu::location;
 
+location::DispatchingProvider::Ptr location::DispatchingProvider::create(
+        const location::DispatchingProvider::Dispatcher& dispatcher,
+        const location::Provider::Ptr& fwd)
+{
+    std::shared_ptr<location::DispatchingProvider> sp
+    {
+        new location::DispatchingProvider{dispatcher, fwd}
+    };
+    return sp->init();
+}
+
 location::DispatchingProvider::DispatchingProvider(const location::DispatchingProvider::Dispatcher& dispatcher, const location::Provider::Ptr& fwd)
     : dispatcher{dispatcher},
-      fwd{fwd},
-      connections
-      {
-          fwd->updates().position.connect([this](const location::Update<location::Position>& update)
-          {
-              auto sp = shared_from_this();
-              this->dispatcher([sp, update]()
-              {
-                  try
-                  {
-                      sp->mutable_updates().position(update);
-                  } catch(const std::exception& e)
-                  {
-                      LOG(WARNING) << e.what();
-                  } catch(...)
-                  {
-                  }
-              });
-          }),
-          fwd->updates().heading.connect([this](const location::Update<location::Heading>& update)
-          {
-              auto sp = shared_from_this();
-              this->dispatcher([sp, update]()
-              {
-                  try
-                  {
-                      sp->mutable_updates().heading(update);
-                  } catch(const std::exception& e)
-                  {
-                      LOG(WARNING) << e.what();
-                  } catch(...)
-                  {
-                  }
-              });
-          }),
-          fwd->updates().velocity.connect([this](const location::Update<location::Velocity>& update)
-          {
-              auto sp = shared_from_this();
-              this->dispatcher([sp, update]()
-              {
-                  try
-                  {
-                     sp->mutable_updates().velocity(update);
-                  } catch(const std::exception& e)
-                  {
-                      LOG(WARNING) << e.what();
-                  } catch(...)
-                  {
-                  }
-              });
-          })
-      }
+      fwd{fwd}
 {
     if (not dispatcher) throw std::logic_error
     {
@@ -166,171 +126,200 @@ bool location::DispatchingProvider::matches_criteria(const location::Criteria& c
 // We forward all events to the other providers.
 void location::DispatchingProvider::on_wifi_and_cell_reporting_state_changed(location::WifiAndCellIdReportingState state)
 {
-    auto sp = shared_from_this();
-    dispatcher([sp, state]()
+    std::weak_ptr<location::DispatchingProvider> wp{shared_from_this()};
+    dispatcher([wp, state]()
     {
-        try
-        {
-            sp->fwd->on_wifi_and_cell_reporting_state_changed(state);
-        } catch(const std::exception& e)
-        {
-            LOG(WARNING) << e.what();
-        } catch(...)
-        {
-        }
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        sp->fwd->on_wifi_and_cell_reporting_state_changed(state);
     });
 }
 
 void location::DispatchingProvider::on_reference_location_updated(const location::Update<location::Position>& position)
 {
-    auto sp = shared_from_this();
-    dispatcher([sp, position]()
+    std::weak_ptr<location::DispatchingProvider> wp{shared_from_this()};
+    dispatcher([wp, position]()
     {
-        try
-        {
-            sp->fwd->on_reference_location_updated(position);
-        } catch(const std::exception& e)
-        {
-            LOG(WARNING) << e.what();
-        } catch(...)
-        {
-        }
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        sp->fwd->on_reference_location_updated(position);
     });
 }
 
 void location::DispatchingProvider::on_reference_velocity_updated(const location::Update<location::Velocity>& velocity)
 {
-    auto sp = shared_from_this();
-    dispatcher([sp, velocity]()
+    std::weak_ptr<location::DispatchingProvider> wp{shared_from_this()};
+    dispatcher([wp, velocity]()
     {
-        try
-        {
-            sp->fwd->on_reference_velocity_updated(velocity);
-        } catch(const std::exception& e)
-        {
-            LOG(WARNING) << e.what();
-        } catch(...)
-        {
-        }
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        sp->fwd->on_reference_velocity_updated(velocity);
     });
 }
 
 void location::DispatchingProvider::on_reference_heading_updated(const location::Update<location::Heading>& heading)
 {
-    auto sp = shared_from_this();
-    dispatcher([sp, heading]()
+    std::weak_ptr<location::DispatchingProvider> wp{shared_from_this()};
+    dispatcher([wp, heading]()
     {
-        try
-        {
+        auto sp = wp.lock();
+
+        if (not sp)
             sp->fwd->on_reference_heading_updated(heading);
-        } catch(const std::exception& e)
-        {
-            LOG(WARNING) << e.what();
-        } catch(...)
-        {
-        }
     });
 }
 
 // As well as the respective state change requests.
 void location::DispatchingProvider::start_position_updates()
 {
-    auto sp = shared_from_this();
-    dispatcher([sp]()
+    std::weak_ptr<location::DispatchingProvider> wp{shared_from_this()};
+    dispatcher([wp]()
     {
-        try
-        {
-            sp->fwd->state_controller()->start_position_updates();
-        } catch(const std::exception& e)
-        {
-            LOG(WARNING) << e.what();
-        } catch(...)
-        {
-        }
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        sp->fwd->state_controller()->start_position_updates();
     });
 }
 
 void location::DispatchingProvider::stop_position_updates()
 {
-    auto sp = shared_from_this();
-    dispatcher([sp]()
+    std::weak_ptr<location::DispatchingProvider> wp{shared_from_this()};
+    dispatcher([wp]()
     {
-        try
-        {
-            sp->fwd->state_controller()->stop_position_updates();
-        } catch(const std::exception& e)
-        {
-            LOG(WARNING) << e.what();
-        } catch(...)
-        {
-        }
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        sp->fwd->state_controller()->stop_position_updates();
     });
 }
 
 void location::DispatchingProvider::start_heading_updates()
 {
-    auto sp = shared_from_this();
-    dispatcher([sp]()
+    std::weak_ptr<location::DispatchingProvider> wp{shared_from_this()};
+    dispatcher([wp]()
     {
-        try
-        {
-            sp->fwd->state_controller()->start_heading_updates();
-        } catch(const std::exception& e)
-        {
-            LOG(WARNING) << e.what();
-        } catch(...)
-        {
-        }
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        sp->fwd->state_controller()->start_heading_updates();
     });
 }
 
 void location::DispatchingProvider::stop_heading_updates()
 {
-    auto sp = shared_from_this();
-    dispatcher([sp]()
+    std::weak_ptr<location::DispatchingProvider> wp{shared_from_this()};
+    dispatcher([wp]()
     {
-        try
-        {
-            sp->fwd->state_controller()->stop_heading_updates();
-        } catch(const std::exception& e)
-        {
-            LOG(WARNING) << e.what();
-        } catch(...)
-        {
-        }
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        sp->fwd->state_controller()->stop_heading_updates();
     });
 }
 
 void location::DispatchingProvider::start_velocity_updates()
 {
-    auto sp = shared_from_this();
-    dispatcher([sp]()
+    std::weak_ptr<location::DispatchingProvider> wp{shared_from_this()};
+    dispatcher([wp]()
     {
-        try
-        {
-            sp->fwd->state_controller()->start_velocity_updates();
-        } catch(const std::exception& e)
-        {
-            LOG(WARNING) << e.what();
-        } catch(...)
-        {
-        }
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        sp->fwd->state_controller()->start_velocity_updates();
     });
 }
 
 void location::DispatchingProvider::stop_velocity_updates()
 {
-    auto sp = shared_from_this();
-    dispatcher([sp]()
+    std::weak_ptr<location::DispatchingProvider> wp{shared_from_this()};
+    dispatcher([wp]()
     {
-        try
-        {
-            sp->fwd->state_controller()->stop_velocity_updates();
-        } catch(const std::exception& e)
-        {
-            LOG(WARNING) << e.what();
-        } catch(...)
-        {
-        }
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        sp->fwd->state_controller()->stop_velocity_updates();
     });
+}
+
+location::DispatchingProvider::Ptr location::DispatchingProvider::init()
+{
+    auto sp = shared_from_this();
+    std::weak_ptr<location::DispatchingProvider> wp{sp};
+    connections.push_back(fwd->updates().position.connect([wp](const location::Update<location::Position>& update)
+    {
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        sp->dispatcher([wp, update]()
+        {
+            auto sp = wp.lock();
+
+            if (not sp)
+                return;
+
+            sp->mutable_updates().position(update);
+        });
+    }));
+
+    connections.push_back(fwd->updates().heading.connect([wp](const location::Update<location::Heading>& update)
+    {
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        sp->dispatcher([wp, update]()
+        {
+            auto sp = wp.lock();
+
+            if (not sp)
+                return;
+
+            sp->mutable_updates().heading(update);
+        });
+    }));
+
+    connections.push_back(fwd->updates().velocity.connect([wp](const location::Update<location::Velocity>& update)
+    {
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        sp->dispatcher([wp, update]()
+        {
+            auto sp = wp.lock();
+
+            if (not sp)
+                return;
+
+            sp->mutable_updates().velocity(update);
+        });
+    }));
+
+    return sp;
 }

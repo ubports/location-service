@@ -51,22 +51,31 @@ struct BagOfProviders : public location::Provider
         // We connect to all updates of each provider.
         for (auto provider : BagOfProviders::providers)
         {
-            provider->updates().position.connect([this](const location::Update<location::Position>& update)
-            {
-                mutable_updates().position(update);
-            });
+            event_connections.push_back(
+                        provider->updates().position.connect([this](const location::Update<location::Position>& update)
+                        {
+                            mutable_updates().position(update);
+                        }));
 
-            provider->updates().heading.connect([this](const location::Update<location::Heading>& update)
-            {
-                mutable_updates().heading(update);
-            });
+            event_connections.push_back(
+                        provider->updates().heading.connect([this](const location::Update<location::Heading>& update)
+                        {
+                            mutable_updates().heading(update);
+                        }));
 
-            provider->updates().velocity.connect([this](const location::Update<location::Velocity>& update)
-            {
-                mutable_updates().velocity(update);
-            });
+            event_connections.push_back(
+                        provider->updates().velocity.connect([this](const location::Update<location::Velocity>& update)
+                        {
+                            mutable_updates().velocity(update);
+                        }));
         }
 
+    }
+
+    ~BagOfProviders()
+    {
+        for(auto& c : event_connections)
+            c.disconnect();
     }
 
     // We always match :)
@@ -137,6 +146,7 @@ struct BagOfProviders : public location::Provider
     }
 
     std::set<location::Provider::Ptr> providers;
+    std::vector<core::Connection> event_connections;
 };
 }
 
