@@ -19,6 +19,7 @@ add_library(
   non_selecting_provider_selection_policy.cpp
 
   criteria.cpp
+  dispatching_provider.cpp
   engine.cpp
   init_and_shutdown.cpp
   position.cpp

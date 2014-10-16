@@ -17,6 +17,8 @@
  */
 #include <com/ubuntu/location/provider_factory.h>
 
+#include <com/ubuntu/location/dispatching_provider.h>
+
 #include <com/ubuntu/location/service/default_configuration.h>
 #include <com/ubuntu/location/service/demultiplexing_reporter.h>
 #include <com/ubuntu/location/service/ichnaea_reporter.h>
@@ -31,6 +33,8 @@
 #include <core/dbus/asio/executor.h>
 
 #include <core/posix/signal.h>
+
+#include <boost/asio.hpp>
 
 #include <system_error>
 #include <thread>
@@ -65,6 +69,47 @@ struct NullReporter : public location::service::Harvester::Reporter
                 const std::vector<location::connectivity::RadioCell::Ptr>&)
     {
     }
+};
+
+// We bundle our "global" runtime dependencies here, specifically
+// a dispatcher to decouple multiple in-process providers from one
+// another , forcing execution to a well known set of threads.
+struct Runtime
+{
+    // Our global singleton instance.
+    static Runtime& instance()
+    {
+        static Runtime runtime;
+        return runtime;
+    }
+
+    Runtime()
+        : keep_alive{service},
+          worker1{[this]() { service.run(); }}
+    {
+    }
+
+    ~Runtime()
+    {
+        service.stop();
+
+        if (worker1.joinable())
+            worker1.join();
+    }
+
+    // Allows for reusing the runtime in components that require a dispatcher
+    // to control execution of tasks.
+    std::function<void(std::function<void()>)> to_dispatcher_functional()
+    {
+        return [this](std::function<void()> task)
+        {
+            service.post(task);
+        };
+    }
+
+    boost::asio::io_service service;
+    boost::asio::io_service::work keep_alive;
+    std::thread worker1;
 };
 
 location::ProgramOptions init_daemon_options()
@@ -179,7 +224,9 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
                             config.provider_options.at(provider) : empty_provider_configuration);
 
             if (p)
-                instantiated_providers.insert(p);
+                instantiated_providers.insert(
+                            std::make_shared<location::DispatchingProvider>(
+                                Runtime::instance().to_dispatcher_functional(), p));
             else
                 throw std::runtime_error("Problem instantiating provider");
 
