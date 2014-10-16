@@ -677,7 +677,7 @@ struct LocationServiceStandaloneLoad : public LocationServiceStandalone
 
         options.add(Keys::update_period,
                     "Update period length for dummy::Provider setup.",
-                    std::uint32_t{100});
+                    std::uint32_t{10});
 
         options.add(Keys::client_count,
                     "Number of clients that should be fired up.",
@@ -773,7 +773,11 @@ TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingW
         config.incoming = session_bus();
         config.outgoing = session_bus();
         config.is_testing_enabled = false;
-        config.providers = {cul::providers::dummy::Provider::class_name()};
+        config.providers =
+        {
+            cul::providers::dummy::Provider::class_name(),
+            cul::providers::dummy::Provider::class_name()
+        };
         config.provider_options = provider_config;
 
         core::posix::exit::Status status{core::posix::exit::Status::failure};
