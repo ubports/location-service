@@ -730,6 +730,8 @@ struct LocationServiceStandaloneLoad : public LocationServiceStandalone
 };
 }
 
+#include "did_finish_successfully.h"
+
 TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingWorks)
 {
     EXPECT_TRUE(trust_store_is_set_up_for_testing);
@@ -798,7 +800,7 @@ TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingW
                     status;
     }, core::posix::StandardStream::empty);
 
-    std::this_thread::sleep_for(std::chrono::seconds{2});
+    std::this_thread::sleep_for(std::chrono::seconds{15});
 
     auto client = [this]()
     {
@@ -926,17 +928,11 @@ TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingW
     {
         VLOG(1) << "Stopping client...: " << client.pid();
         client.send_signal_or_throw(core::posix::Signal::sig_term);
-        auto result = client.wait_for(core::posix::wait::Flags::untraced);
-
-        EXPECT_EQ(core::posix::wait::Result::Status::exited, result.status);
-        EXPECT_EQ(core::posix::exit::Status::success, result.detail.if_exited.status);
+        EXPECT_TRUE(did_finish_successfully(client.wait_for(core::posix::wait::Flags::untraced)));
     }
 
     VLOG(1) << "Cleaned up clients, shutting down the service...";
 
     server.send_signal_or_throw(core::posix::Signal::sig_term);
-    auto result = server.wait_for(core::posix::wait::Flags::untraced);
-
-    EXPECT_EQ(core::posix::wait::Result::Status::exited, result.status);
-    EXPECT_EQ(core::posix::exit::Status::success, result.detail.if_exited.status);
+    EXPECT_TRUE(did_finish_successfully(server.wait_for(core::posix::wait::Flags::untraced)));
 }
