@@ -1,3 +1,13 @@
+location-service (2.1+14.10.20141023-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Prevent multiple invocations of start positioning on android GPS HAL
+    to prevent buggy HAL implementations from blocking. Allow for
+    decorated provider names to enable moving providers OOP. (LP:
+    #1382501)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 23 Oct 2014 16:41:05 +0000
+
 location-service (2.1+14.10.20141014-0ubuntu1) utopic; urgency=low
 
   [ thomas-voss ]
