@@ -74,7 +74,6 @@ culg::Provider::Provider(const std::shared_ptr<HardwareAbstractionLayer>& hal)
 
 culg::Provider::~Provider() noexcept
 {
-    d->hal->stop_positioning();
 }
 
 bool culg::Provider::matches_criteria(const cul::Criteria&)
@@ -93,23 +92,19 @@ void culg::Provider::stop_position_updates()
 }
 
 void culg::Provider::start_velocity_updates()
-{
-    d->hal->start_positioning();
+{   
 }
 
 void culg::Provider::stop_velocity_updates()
 {
-    d->hal->stop_positioning();
 }    
 
 void culg::Provider::start_heading_updates()
 {
-    d->hal->start_positioning();
 }
 
 void culg::Provider::stop_heading_updates()
 {
-    d->hal->stop_positioning();
 }
 
 void culg::Provider::on_reference_location_updated(const cul::Update<cul::Position>& position)

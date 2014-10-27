@@ -233,17 +233,17 @@ TEST(GpsProvider, starting_updates_on_a_provider_instance_calls_into_the_hal)
 
     gps::Provider provider(hal_ptr);
 
-    EXPECT_CALL(hal, start_positioning()).Times(3);
-    // Stop positioning will be called by the provider's dtor.
-    // Thus 3 explicit stops and 1 implicit.
-    EXPECT_CALL(hal, stop_positioning()).Times(4);
+    // The Android HAL should only ever be called at most once for starting and stopping.
+    // It seems like some HAL implementations otherwise get stuck or expose undefined
+    // behavior later down the road.
+    EXPECT_CALL(hal, start_positioning()).Times(1);
+    EXPECT_CALL(hal, stop_positioning()).Times(1);
 
     provider.start_position_updates();
-    provider.start_heading_updates();
-    provider.start_velocity_updates();
-
     provider.stop_position_updates();
+    provider.start_heading_updates();
     provider.stop_heading_updates();
+    provider.start_velocity_updates();
     provider.stop_velocity_updates();
 }
 

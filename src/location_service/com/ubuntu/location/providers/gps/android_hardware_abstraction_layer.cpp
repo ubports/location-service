@@ -133,7 +133,7 @@ android::HardwareAbstractionLayer::SuplAssistant::Impl::Impl(android::HardwareAb
 
 void android::HardwareAbstractionLayer::on_nmea_update(int64_t timestamp, const char *nmea, int length, void *context)
 {
-    VLOG(20) << __PRETTY_FUNCTION__ << ": "
+    VLOG(200) << __PRETTY_FUNCTION__ << ": "
              << "timestamp=" << timestamp << " "
              << "nmea=" << nmea << " "
              << "length=" << length << " "

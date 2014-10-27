@@ -38,7 +38,7 @@ namespace remote
 {
 struct Provider
 {
-    class Stub : public com::ubuntu::location::Provider
+    class Stub : public com::ubuntu::location::Provider, public std::enable_shared_from_this<Stub>
     {
     public:
         // For integration with the Provider factory.
@@ -48,6 +48,9 @@ struct Provider
         // from the provided property bundle.
         static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
 
+        // Creates a new provider instance with the given config object.
+        static Provider::Ptr create_instance_with_config(const stub::Configuration& config);
+
         // Name of the command line parameter for passing in the DBus to connect to.
         static constexpr const char* key_bus{"bus"};
         // Name of the command line parameter for passing in the remote service name.
@@ -55,7 +58,6 @@ struct Provider
         // Name of the command line parameter for passing in the path of the remote provider impl.
         static constexpr const char* key_path{"path"};
 
-        Stub(const stub::Configuration& config);
         ~Stub() noexcept;
 
         virtual bool matches_criteria(const Criteria&) override;
@@ -77,6 +79,11 @@ struct Provider
         virtual void stop_velocity_updates() override;
 
     private:
+        Stub(const stub::Configuration& config);
+
+        // Yeah, two stage init is evil.
+        void setup_event_connections();
+
         struct Private;
         std::shared_ptr<Private> d;
     };
