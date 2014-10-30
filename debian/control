@@ -5,7 +5,7 @@ Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 XSBC-Original-Maintainer: Thomas Voß <thomas.voss@canonical.com>
 Build-Depends: cmake,
                curl,
-               libdbus-cpp-dev (>= 4.0.0),
+               libdbus-cpp-dev (>= 4.1.0),
                debhelper (>= 9),
                doxygen,
                geoclue-ubuntu-geoip,
