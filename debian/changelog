@@ -1,3 +1,11 @@
+location-service (2.1+14.10.20141030~rtm-0ubuntu1) 14.09; urgency=low
+
+  [ thomas-voss ]
+  * Bump build dependency.
+  * Disconnect event connections for bag of providers. (LP: #1387572)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 30 Oct 2014 14:33:22 +0000
+
 location-service (2.1+14.10.20141023-0ubuntu1) utopic; urgency=low
 
   [ thomas-voss ]
