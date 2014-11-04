@@ -1,3 +1,9 @@
+location-service (2.1+15.04.20141104-0ubuntu1) vivid; urgency=low
+
+  * New rebuild forced
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 04 Nov 2014 06:20:45 +0000
+
 location-service (2.1+14.10.20141030~rtm-0ubuntu1) 14.09; urgency=low
 
   [ thomas-voss ]
