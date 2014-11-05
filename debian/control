@@ -59,6 +59,7 @@ Recommends: ubuntu-location-service-doc,
 Depends: libubuntu-location-service2 (= ${binary:Version}),
          libdbus-1-dev,
          libdbus-cpp-dev,
+         libboost-dev,
          ${misc:Depends},
 Suggests: ubuntu-location-service-doc,
 Description: location service aggregating position/velocity/heading
