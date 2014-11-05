@@ -1,3 +1,17 @@
+location-service (2.1+15.04.20141105.1-0ubuntu1) vivid; urgency=low
+
+  [ CI bot ]
+  * Resync trunk
+
+  [ Kevin DuBois ]
+  * The headers shipped in libubuntu-location-service-dev contain
+    includes that are provided in the libboost-dev package (specifically
+    headers like boost/units/cmath.hpp). Make the dev package depend on
+    libboost-dev so the downstreams get what they need to compile
+    against the libubuntu-location-service-dev headers
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 05 Nov 2014 15:51:16 +0000
+
 location-service (2.1+15.04.20141104-0ubuntu1) vivid; urgency=low
 
   * New rebuild forced
