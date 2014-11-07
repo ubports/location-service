@@ -440,7 +440,6 @@ void connectivity::OfonoNmConnectivityManager::Private::setup_network_stack_acce
         dispatcher.service.post([this, path]()
         {
             on_device_added(path);
-            active_connection_characteristics = characteristics_for_connection(path);
         });
     });
 
@@ -451,7 +450,6 @@ void connectivity::OfonoNmConnectivityManager::Private::setup_network_stack_acce
         dispatcher.service.post([this, path]()
         {
             on_device_removed(path);
-            active_connection_characteristics = characteristics_for_connection(path);
         });
     });
 
