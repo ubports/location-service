@@ -525,8 +525,13 @@ void connectivity::OfonoNmConnectivityManager::Private::on_device_added(const co
     {
         std::unique_lock<std::mutex> ul(cached.guard);
         // Make the device known to the cache.
+        bool added{false}
         std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device>::iterator it;
-        std::tie(it, std::ignore) = cached.wireless_devices.insert(std::make_pair(device_path, device));
+        std::tie(it, added) = cached.wireless_devices.insert(std::make_pair(device_path, device));
+
+        // We bail out if we already knew about the device in the cache.
+        if (not added)
+            return;
 
         // Iterate over all currently known wifis
         it->second.for_each_access_point([this, device_path](const core::dbus::types::ObjectPath& path)
