@@ -525,7 +525,7 @@ void connectivity::OfonoNmConnectivityManager::Private::on_device_added(const co
     {
         std::unique_lock<std::mutex> ul(cached.guard);
         // Make the device known to the cache.
-        bool added{false}
+        bool added{false};
         std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device>::iterator it;
         std::tie(it, added) = cached.wireless_devices.insert(std::make_pair(device_path, device));
 
