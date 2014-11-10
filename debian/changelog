@@ -1,3 +1,11 @@
+location-service (2.1+15.04.20141110.1-0ubuntu1) vivid; urgency=low
+
+  [ thomas-voss ]
+  * Make sure that devices being added/removed by NetworkManager are
+    handled correctly. (LP: #1390490)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 10 Nov 2014 20:30:56 +0000
+
 location-service (2.1+15.04.20141105.1-0ubuntu1) vivid; urgency=low
 
   [ CI bot ]
