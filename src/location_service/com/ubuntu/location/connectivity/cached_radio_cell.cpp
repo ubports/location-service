@@ -172,8 +172,7 @@ detail::CachedRadioCell::CachedRadioCell(const org::Ofono::Manager::Modem& modem
 
 detail::CachedRadioCell::~CachedRadioCell()
 {
-    // TODO(tvoss): Reenable this once we know why the modem cache gets flushed.
-    // modem.network_registration.signals.property_changed->disconnect(connections.network_registration_properties_changed);
+    modem.network_registration.signals.property_changed->disconnect(connections.network_registration_properties_changed);
 }
 
 const core::Property<bool>& detail::CachedRadioCell::is_roaming() const
