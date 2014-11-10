@@ -423,56 +423,8 @@ void connectivity::OfonoNmConnectivityManager::Private::setup_network_stack_acce
 
     network_manager->for_each_device([this](const core::dbus::types::ObjectPath& device_path)
     {
-        auto device = network_manager->device_for_path(device_path);
-
-        if (device.type() == xdg::NetworkManager::Device::Type::wifi)
-        {
-            // Make the device known to the cache.
-            std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device>::iterator it;
-            std::tie(it, std::ignore) = cached.wireless_devices.insert(std::make_pair(device_path, device));
-
-            // Iterate over all currently known wifis
-            it->second.for_each_access_point([this, device_path](const core::dbus::types::ObjectPath& path)
-            {
-                try
-                {
-                    on_access_point_added(path, device_path);
-                }
-                catch (const std::exception& e)
-                {
-                    VLOG(1) << "Error while creating ap/wifi: " << e.what();
-                }
-            });
-
-            it->second.signals.scan_done->connect([this]()
-            {
-                signals.wireless_network_scan_finished();
-            });
-
-            it->second.signals.ap_added->connect([this, device_path](const core::dbus::types::ObjectPath& path)
-            {
-                try
-                {
-                    on_access_point_added(path, device_path);
-                }
-                catch (const std::exception& e)
-                {
-                    VLOG(1) << "Error while creating ap/wifi: " << e.what();
-                }
-            });
-
-            it->second.signals.ap_removed->connect([this](const core::dbus::types::ObjectPath& path)
-            {
-                try
-                {
-                    on_access_point_removed(path);
-                }
-                catch (const std::exception& e)
-                {
-                    VLOG(1) << "Error while removing ap/wifi: " << e.what();
-                }
-            });
-        }
+        std::unique_lock<std::mutex> ul{cached.guard};
+        on_device_added(device_path, ul);
     });
 
     // Query the initial connectivity state
@@ -481,6 +433,28 @@ void connectivity::OfonoNmConnectivityManager::Private::setup_network_stack_acce
     active_connection_characteristics.set(
                 characteristics_for_connection(
                     network_manager->properties.primary_connection->get()));
+
+    network_manager->signals.device_added->connect([this](const core::dbus::types::ObjectPath& path)
+    {
+        // We dispatch determining the connection characteristics to unblock
+        // the bus here.
+        dispatcher.service.post([this, path]()
+        {
+            std::unique_lock<std::mutex> ul{cached.guard};
+            on_device_added(path, ul);
+        });
+    });
+
+    network_manager->signals.device_removed->connect([this](const core::dbus::types::ObjectPath& path)
+    {
+        // We dispatch determining the connection characteristics to unblock
+        // the bus here.
+        dispatcher.service.post([this, path]()
+        {
+            std::unique_lock<std::mutex> ul{cached.guard};
+            on_device_removed(path, ul);
+        });
+    });
 
     // And we wire up to property changes here
     network_manager->signals.properties_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
@@ -546,12 +520,79 @@ void connectivity::OfonoNmConnectivityManager::Private::setup_network_stack_acce
     });
 }
 
+void connectivity::OfonoNmConnectivityManager::Private::on_device_added(
+        const core::dbus::types::ObjectPath& device_path,
+        std::unique_lock<std::mutex>& ul)
+{
+    if (cached.wireless_devices.count(device_path) > 0)
+        return;
+
+    auto device = network_manager->device_for_path(device_path);
+
+    if (device.type() == xdg::NetworkManager::Device::Type::wifi)
+    {
+        // Make the device known to the cache.
+        std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device>::iterator it;
+        std::tie(it, std::ignore) = cached.wireless_devices.insert(std::make_pair(device_path, device));
+
+        // Iterate over all currently known wifis
+        it->second.for_each_access_point([this, device_path, &ul](const core::dbus::types::ObjectPath& path)
+        {
+            try
+            {
+                on_access_point_added(path, device_path, ul);
+            }
+            catch (const std::exception& e)
+            {
+                VLOG(1) << "Error while creating ap/wifi: " << e.what();
+            }
+        });
+
+        it->second.signals.scan_done->connect([this]()
+        {
+            signals.wireless_network_scan_finished();
+        });
+
+        it->second.signals.ap_added->connect([this, device_path](const core::dbus::types::ObjectPath& path)
+        {
+            try
+            {
+                std::unique_lock<std::mutex> ul{cached.guard};
+                on_access_point_added(path, device_path, ul);
+            }
+            catch (const std::exception& e)
+            {
+                VLOG(1) << "Error while creating ap/wifi: " << e.what();
+            }
+        });
+
+        it->second.signals.ap_removed->connect([this](const core::dbus::types::ObjectPath& path)
+        {
+            try
+            {
+                std::unique_lock<std::mutex> ul{cached.guard};
+                on_access_point_removed(path, ul);
+            }
+            catch (const std::exception& e)
+            {
+                VLOG(1) << "Error while removing ap/wifi: " << e.what();
+            }
+        });
+    }
+}
+
+void connectivity::OfonoNmConnectivityManager::Private::on_device_removed(
+        const core::dbus::types::ObjectPath& path,
+        std::unique_lock<std::mutex>&)
+{
+    cached.wireless_devices.erase(path);
+}
+
 void connectivity::OfonoNmConnectivityManager::Private::on_access_point_added(
         const core::dbus::types::ObjectPath& ap_path,
-        const core::dbus::types::ObjectPath& device_path)
+        const core::dbus::types::ObjectPath& device_path,
+        std::unique_lock<std::mutex>& ul)
 {
-    std::unique_lock<std::mutex> ul(cached.guard);
-
     // Let's see if we have a device known for the path. We return early
     // if we do not know about the device.
     auto itd = cached.wireless_devices.find(device_path);
@@ -571,10 +612,10 @@ void connectivity::OfonoNmConnectivityManager::Private::on_access_point_added(
     ul.unlock(); signals.wireless_network_added(wifi);
 }
 
-void connectivity::OfonoNmConnectivityManager::Private::on_access_point_removed(const core::dbus::types::ObjectPath& ap_path)
+void connectivity::OfonoNmConnectivityManager::Private::on_access_point_removed(
+        const core::dbus::types::ObjectPath& ap_path,
+        std::unique_lock<std::mutex>& ul)
 {
-    std::unique_lock<std::mutex> ul(cached.guard);
-
     // Let's see if we know about the wifi. We return early if not.
     auto itw = cached.wifis.find(ap_path);
     if (itw == cached.wifis.end())
