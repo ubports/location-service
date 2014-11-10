@@ -94,10 +94,10 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
 
         // All network stack specific functionality goes here.
         void setup_network_stack_access();
-        void on_device_added(const core::dbus::types::ObjectPath& device_path);
-        void on_device_removed(const core::dbus::types::ObjectPath& device_path);
-        void on_access_point_added(const core::dbus::types::ObjectPath& ap_path, const core::dbus::types::ObjectPath& device_path);
-        void on_access_point_removed(const core::dbus::types::ObjectPath& ap_path);
+        void on_device_added(const core::dbus::types::ObjectPath& device_path, std::unique_lock<std::mutex>& ul);
+        void on_device_removed(const core::dbus::types::ObjectPath& device_path, std::unique_lock<std::mutex>& ul);
+        void on_access_point_added(const core::dbus::types::ObjectPath& ap_path, const core::dbus::types::ObjectPath& device_path, std::unique_lock<std::mutex>& ul);
+        void on_access_point_removed(const core::dbus::types::ObjectPath& ap_path, std::unique_lock<std::mutex>& ul);
         com::ubuntu::location::connectivity::Characteristics characteristics_for_connection(const core::dbus::types::ObjectPath& path);        
 
         core::dbus::Bus::Ptr bus;
