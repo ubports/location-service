@@ -69,6 +69,9 @@ struct Provider
         virtual void on_reference_velocity_updated(const Update<Velocity>& velocity) override;
         virtual void on_reference_heading_updated(const Update<Heading>& heading) override;
 
+        virtual void disable() override;
+        virtual void enable() override;
+
         virtual void start_position_updates() override;
         virtual void stop_position_updates() override;
 
@@ -103,6 +106,9 @@ struct Provider
         virtual void on_reference_location_updated(const Update<Position>& position) override;
         virtual void on_reference_velocity_updated(const Update<Velocity>& velocity) override;
         virtual void on_reference_heading_updated(const Update<Heading>& heading) override;
+
+        virtual void disable() override;
+        virtual void enable() override;
 
         virtual void start_position_updates() override;
         virtual void stop_position_updates() override;
