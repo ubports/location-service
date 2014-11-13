@@ -82,9 +82,25 @@ public:
     public:
         typedef std::shared_ptr<Controller> Ptr;
 
+        /** @brief Enumerates known states of a controller/provider. */
+        enum class State
+        {
+            disabled, ///< The provider is disabled.
+            enabled ///< The provider is enabled.
+        };
+
         virtual ~Controller() = default;
         Controller(const Controller&) = delete;
         Controller& operator=(const Controller&) = delete;
+
+        /**
+         * @brief Returns the getable/setable/observable state of the controller.
+         *
+         * If the controller is in state disabled, all calls to start* or stop*
+         * have no effect and subsequent calls to is*running will return false.
+         *
+         */
+        virtual core::Property<State>& state();
 
         /**
          * @brief Request to start position updates if not already running.
@@ -140,6 +156,7 @@ public:
 
     private:
         Provider& instance;
+        core::Property<State> current_state;
         std::atomic<int> position_updates_counter;
         std::atomic<int> heading_updates_counter;
         std::atomic<int> velocity_updates_counter;
@@ -228,6 +245,16 @@ protected:
 
     virtual Updates& mutable_updates();
     
+    /**
+     * @brief Disables the provider, empty by default.
+     */
+    virtual void disable();
+
+    /**
+     * @brief Enables the provider, empty by default.
+     */
+    virtual void enable();
+
     /**
      * @brief Implementation-specific, empty by default.
      */

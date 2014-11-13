@@ -31,21 +31,41 @@ cul::Engine::Engine(const std::shared_ptr<cul::ProviderSelectionPolicy>& provide
         std::runtime_error("Cannot construct an engine given a null ProviderSelectionPolicy");
 
     // Setup behavior in case of configuration changes.
+    configuration.satellite_based_positioning_state.changed().connect([this](const SatelliteBasedPositioningState& state)
+    {
+        for_each_provider([state](const Provider::Ptr& provider)
+        {
+            if (provider->requires(cul::Provider::Requirements::satellites))
+            {
+                switch (state)
+                {
+                case SatelliteBasedPositioningState::on:
+                    provider->state_controller()->state() = cul::Provider::Controller::State::enabled;
+                    break;
+                case SatelliteBasedPositioningState::off:
+                    provider->state_controller()->state() = cul::Provider::Controller::State::disabled;
+                    break;
+                }
+            }
+        });
+    });
+
     configuration.engine_state.changed().connect([this](const Engine::Status& status)
     {
-        switch (status)
+        for_each_provider([status](const Provider::Ptr& provider)
         {
-        case Engine::Status::off:
-            for_each_provider([](const Provider::Ptr& provider)
+            switch (status)
             {
-                provider->state_controller()->stop_position_updates();
-                provider->state_controller()->stop_heading_updates();
-                provider->state_controller()->stop_velocity_updates();
-            });
-            break;
-        default:
-            break;
-        }
+            case Engine::Status::on:
+                provider->state_controller()->state() = cul::Provider::Controller::State::enabled;
+                break;
+            case Engine::Status::off:
+                provider->state_controller()->state() = cul::Provider::Controller::State::disabled;
+                break;
+            default:
+                break;
+            }
+        });
     });
 }
 
