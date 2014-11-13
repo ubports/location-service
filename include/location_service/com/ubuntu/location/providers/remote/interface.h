@@ -66,6 +66,8 @@ struct Interface
     // Called by the engine whenever the reference velocity changed.
     DBUS_CPP_METHOD_DEF(OnReferenceVelocityChanged, remote::Interface)
 
+    DBUS_CPP_METHOD_DEF(Disable, remote::Interface)
+    DBUS_CPP_METHOD_DEF(Enable, remote::Interface)
     DBUS_CPP_METHOD_DEF(StartPositionUpdates, remote::Interface)
     DBUS_CPP_METHOD_DEF(StopPositionUpdates, remote::Interface)
     DBUS_CPP_METHOD_DEF(StartHeadingUpdates, remote::Interface)
