@@ -81,7 +81,7 @@ public:
             /** Key for persisting the Engine::Status */
             static constexpr const char* engine_state
             {
-                "Engine.Status"
+                "Engine.State"
             };
         };
 

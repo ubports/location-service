@@ -43,7 +43,7 @@ public:
     // Returns true iff a value is known for the given key.
     bool has_value_for_key(const std::string& key) const override;
 
-    // Gets an integer value known for the given key, or throws Error::NoValueForKey.
+    // Gets a string value known for the given key, or throws Error::NoValueForKey.
     std::string get_string_for_key_or_throw(const std::string& key) override;
 
     // Sets values known for the given key.

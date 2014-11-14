@@ -76,7 +76,7 @@ location::ProgramOptions init_daemon_options()
     options.add("testing", "Enables running the service without providers");
     options.add("config-file",
                 "The configuration we should read from/write to",
-                std::string{"/var/run/ubuntu-location-service/config.ini"});
+                std::string{"/var/lib/ubuntu-location-service/config.ini"});
     options.add_composed<std::vector<std::string>>(
                 "provider",
                 "The providers that should be added to the engine");
