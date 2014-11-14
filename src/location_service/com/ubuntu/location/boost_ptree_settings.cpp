@@ -63,10 +63,6 @@ std::string location::BoostPtreeSettings::get_string_for_key_or_throw(const std:
     {
         return tree.get<std::string>(key);
     }
-    catch (const boost::property_tree::ptree_bad_data&)
-    {
-        throw location::Settings::Error::NoValueForKey{key};
-    }
     catch (...)
     {
         throw location::Settings::Error::NoValueForKey{key};
