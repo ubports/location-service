@@ -25,7 +25,10 @@ add_library(
   provider.cpp
   provider_factory.cpp
   proxy_provider.cpp
+  settings.cpp
   set_name_for_thread.cpp
+
+  boost_ptree_settings.cpp
 
   service/default_configuration.cpp
   service/default_permission_manager.cpp

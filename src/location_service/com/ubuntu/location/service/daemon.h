@@ -19,6 +19,7 @@
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_DAEMON_H_
 
 #include <com/ubuntu/location/configuration.h>
+#include <com/ubuntu/location/settings.h>
 
 #include <com/ubuntu/location/service/dbus_connection_factory.h>
 
@@ -151,6 +152,8 @@ struct Daemon
         std::vector<std::string> providers;
         /** @brief Provider-specific options keyed on the provider name. */
         std::map< std::string, location::Configuration > provider_options;
+        /** @brief Settings instance to read values from. */
+        Settings::Ptr settings;
     };
 
     /** @brief Pretty-prints the CLI's help text to the given output stream. */
