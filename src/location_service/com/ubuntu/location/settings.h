@@ -21,6 +21,7 @@
 #include <cstdint>
 
 #include <memory>
+#include <sstream>
 #include <string>
 
 namespace com
@@ -62,45 +63,51 @@ struct Settings
 
     // Convenience wrapper.
     template<typename T>
-    inline T get_enum_for_key_or_throw(const std::string& key, T default_value);
+    inline T get_enum_for_key(const std::string& key, T default_value);
 
     template<typename T>
     inline T get_enum_for_key_or_throw(const std::string& key);
 
     // Tries to read the value for the given key and returns the default_value if
     // no value is known.
-    std::int32_t get_int_for_key(const std::string& key, std::uint32_t default_value);
+    std::string get_string_for_key(const std::string& key, const std::string& default_value);
 
     // Gets an integer value known for the given key, or throws Error::NoValueForKey.
-    virtual std::int32_t get_int_for_key_or_throw(const std::string& key) = 0;
+    virtual std::string get_string_for_key_or_throw(const std::string& key) = 0;
 
     // Convenience wrapper.
     template<typename T>
     inline bool set_enum_for_key(const std::string& key, T value);
 
     // Sets values known for the given key.
-    virtual bool set_int_for_key(const std::string& key, std::int32_t value) = 0;
+    virtual bool set_string_for_key(const std::string& key, const std::string& value) = 0;
 };
 
 template<typename T>
-inline T Settings::get_enum_for_key_or_throw(const std::string& key, T default_value)
+inline T Settings::get_enum_for_key(const std::string& key, T default_value)
 {
     static_assert(std::is_enum<T>::value, "Only enum types are supported.");
-    return static_cast<T>(get_int_for_key(key, static_cast<std::int32_t>(default_value)));
+    std::stringstream dss; dss << default_value;
+    std::stringstream ss{get_string_for_key(key, dss.str())};
+    T result; ss >> result;
+    return result;
 }
 
 template<typename T>
 inline T Settings::get_enum_for_key_or_throw(const std::string& key)
 {
     static_assert(std::is_enum<T>::value, "Only enum types are supported.");
-    return static_cast<T>(get_int_for_key_or_throw(key));
+    std::stringstream ss{get_string_for_key_or_throw(key)};
+    T result; ss >> result;
+    return result;
 }
 
 template<typename T>
 inline bool Settings::set_enum_for_key(const std::string& key, T value)
 {
     static_assert(std::is_enum<T>::value, "Only enum types are supported.");
-    return set_int_for_key(key, static_cast<std::int32_t>(value));
+    std::stringstream ss; ss << value;
+    return set_string_for_key(key, ss.str());
 }
 }
 }

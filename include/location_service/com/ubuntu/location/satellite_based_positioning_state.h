@@ -18,6 +18,8 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SATELLITE_BASED_POSITIONING_STATE_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SATELLITE_BASED_POSITIONING_STATE_H_
 
+#include <iosfwd>
+
 namespace com
 {
 namespace ubuntu
@@ -33,6 +35,11 @@ enum class SatelliteBasedPositioningState
     on, ///< Satellite assisted positioning is on.
     off ///< Satellite assisted positioning is off.
 };
+
+/** @brief Pretty prints the given state to the given stream. */
+std::ostream& operator<<(std::ostream&, SatelliteBasedPositioningState);
+/** @brief Parses the state from the given stream. */
+std::istream& operator>>(std::istream&, SatelliteBasedPositioningState&);
 }
 }
 }

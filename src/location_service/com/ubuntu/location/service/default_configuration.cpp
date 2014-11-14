@@ -26,9 +26,10 @@ namespace culs = com::ubuntu::location::service;
 
 cul::Engine::Ptr culs::DefaultConfiguration::the_engine(
     const std::set<cul::Provider::Ptr>& provider_set,
-    const cul::ProviderSelectionPolicy::Ptr& provider_selection_policy)
+    const cul::ProviderSelectionPolicy::Ptr& provider_selection_policy,
+    const cul::Settings::Ptr& settings)
 {
-    auto engine = std::make_shared<cul::Engine>(provider_selection_policy);
+    auto engine = std::make_shared<cul::Engine>(provider_selection_policy, settings);
     for (const auto& provider : provider_set)
         engine->add_provider(provider);
 
