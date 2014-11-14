@@ -50,7 +50,7 @@ public:
 
     // Creates an engine instance given a set of providers, a provider selection policy
     // and a settings instance.
-    virtual Engine::Ptr the_engine(
+    virtual std::shared_ptr<Engine> the_engine(
         const std::set<Provider::Ptr>& provider_set,
         const ProviderSelectionPolicy::Ptr& provider_selection_policy,
         const Settings::Ptr& settings);

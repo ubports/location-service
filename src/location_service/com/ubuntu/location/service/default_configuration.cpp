@@ -19,6 +19,7 @@
 #include <com/ubuntu/location/service/default_permission_manager.h>
 #include <com/ubuntu/location/service/trust_store_permission_manager.h>
 
+#include <com/ubuntu/location/engine.h>
 #include <com/ubuntu/location/non_selecting_provider_selection_policy.h>
 
 namespace cul = com::ubuntu::location;
