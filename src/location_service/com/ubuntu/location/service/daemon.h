@@ -131,6 +131,7 @@ struct Daemon
          *   --help                Produces this help message
          *   --testing             Enables executing the service without selected providers
          *   --provider arg        The providers that should be added to the engine
+         *   --config-file arg     The config file we should read from/write to
          */
         static Configuration from_command_line_args(
                 int argc,

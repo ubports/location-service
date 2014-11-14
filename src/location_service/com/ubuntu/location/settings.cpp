@@ -25,10 +25,10 @@ location::Settings::Error::NoValueForKey::NoValueForKey(const std::string& key)
 {
 }
 
-std::int32_t location::Settings::get_int_for_key(const std::string& key, std::uint32_t default_value)
+std::string location::Settings::get_string_for_key(const std::string& key, const std::string& default_value)
 {
     if (not has_value_for_key(key))
         return default_value;
 
-    return get_int_for_key_or_throw(key);
+    return get_string_for_key_or_throw(key);
 }

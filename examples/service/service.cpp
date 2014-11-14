@@ -18,6 +18,7 @@
 #include "program_options.h"
 
 #include <com/ubuntu/location/provider_factory.h>
+#include <com/ubuntu/location/boost_ptree_settings.h>
 
 #include <com/ubuntu/location/service/default_configuration.h>
 #include <com/ubuntu/location/service/implementation.h>
@@ -67,6 +68,10 @@ int main(int argc, char** argv)
         "bus", 
         "The well-known bus to announce the service upon", 
         std::string{"session"});
+    options.add(
+        "config-file",
+        "The configuration we should read from/write to",
+        std::string{"/var/run/ubuntu-location-service/config.ini"});
     options.add_composed<std::vector<std::string>>(
         "provider", 
         "The providers that should be added to the engine");
@@ -158,13 +163,15 @@ int main(int argc, char** argv)
     };
     outgoing->install_executor(dbus::asio::make_executor(outgoing));
 
+    auto settings = std::make_shared<cul::BoostPtreeSettings>(options.value_for_key<std::string>("config-file"));
+
     culs::DefaultConfiguration config;
 
     culs::Implementation::Configuration configuration
     {
         incoming,
         outgoing,
-        config.the_engine(instantiated_providers, config.the_provider_selection_policy()),
+        config.the_engine(instantiated_providers, config.the_provider_selection_policy(), settings),
         config.the_permission_manager(incoming),
         culs::Harvester::Configuration
         {
