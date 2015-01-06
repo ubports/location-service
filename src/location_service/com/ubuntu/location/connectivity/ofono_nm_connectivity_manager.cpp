@@ -286,24 +286,6 @@ void connectivity::OfonoNmConnectivityManager::Private::on_modem_added(const cor
             signals.connected_cell_removed(sp);
     });
 
-    // And we react to changes to the roaming state.
-    cell_result.first->second->is_roaming().changed().connect([this](bool roaming)
-    {
-        VLOG(10) << "Roaming state of cell changed: " << std::boolalpha << roaming << std::endl;
-
-        // Unblocking the bus here and scheduling re-evaluation of the
-        // active connection characteristics.
-        dispatcher.service.post([this]()
-        {
-            // Bail out if the network manager instance went away.
-            if (not network_manager)
-                return;
-
-            active_connection_characteristics.set(
-                        characteristics_for_connection(
-                            network_manager->properties.primary_connection->get()));
-        });
-    });
     // Cool, we have reached here, updated all our caches and created a connected radio cell.
     // We are thus good to go and release the lock manually prior to announcing the new cell
     // to interested parties.
@@ -652,17 +634,12 @@ connectivity::Characteristics connectivity::OfonoNmConnectivityManager::Private:
         ac.enumerate_devices([this, &characteristics](const core::dbus::types::ObjectPath& path)
         {
             xdg::NetworkManager::Device::Type type{xdg::NetworkManager::Device::Type::unknown};
-
             {
+                // We only consider cached devices and do not reach out to enumerate all of the devices
+                // to prevent from excessive dbus roundtrips.
                 std::lock_guard<std::mutex> lg{cached.guard};
                 if (cached.wireless_devices.count(path) > 0)
-                    type = cached.wireless_devices.at(path).type();
-                else
-                    type = xdg::NetworkManager::Device
-                    {
-                        network_manager->service,
-                        network_manager->service->object_for_path(path)
-                    }.type();
+                    type = cached.wireless_devices.at(path).type();                
             }
 
             // We interpret a primary connection over a modem device as
@@ -681,7 +658,7 @@ connectivity::Characteristics connectivity::OfonoNmConnectivityManager::Private:
                     // This call might throw as it reaches out to ofono to query the current status of the modem.
                     try
                     {
-                        auto status = pair.second.network_registration.get<org::Ofono::Manager::Modem::NetworkRegistration::Status>();
+                        auto status = pair.second.network_registration.get<org::Ofono::Manager::Modem::NetworkRegistration::Status>(false);
                         if (org::Ofono::Manager::Modem::NetworkRegistration::Status::roaming == status)
                             characteristics = characteristics | connectivity::Characteristics::connection_is_roaming;
                     }
