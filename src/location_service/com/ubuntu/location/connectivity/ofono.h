@@ -612,10 +612,13 @@ struct Manager
             }
 
             template<typename Property>
-            typename Property::ValueType get() const
-            {                
-                if (not refresh_properties())
-                    return typename Property::ValueType{};
+            typename Property::ValueType get(bool refresh = true) const
+            {
+                if (refresh)
+                {
+                    if (not refresh_properties())
+                        return typename Property::ValueType{};
+                }
 
                 auto it = properties.find(Property::name());
 
