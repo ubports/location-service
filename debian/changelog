@@ -1,3 +1,13 @@
+location-service (2.1+15.04.20150106~rtm-0ubuntu1) 14.09; urgency=low
+
+  [ thomas-voss ]
+  * Fix #1394204 by: (LP: #1394204)
+
+  [ Ubuntu daily release ]
+  * New rebuild forced
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 06 Jan 2015 18:50:55 +0000
+
 location-service (2.1+15.04.20141110.1-0ubuntu1) vivid; urgency=low
 
   [ thomas-voss ]
