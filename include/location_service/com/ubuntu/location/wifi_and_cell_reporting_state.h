@@ -18,6 +18,8 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_WIFI_AND_CELL_REPORTING_STATE_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_WIFI_AND_CELL_REPORTING_STATE_H_
 
+#include <iosfwd>
+
 namespace com
 {
 namespace ubuntu
@@ -29,6 +31,11 @@ enum class WifiAndCellIdReportingState
     on, ///< Wifi and Cell Ids might be reported to online location services.
     off ///< Wifi and Cell Ids are _not_ reported. This is the default value.
 };
+
+/** @brief Pretty prints the given state to the given stream. */
+std::ostream& operator<<(std::ostream&, WifiAndCellIdReportingState);
+/** @brief Parses the state from the given stream. */
+std::istream& operator>>(std::istream&, WifiAndCellIdReportingState&);
 }
 }
 }
