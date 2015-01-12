@@ -20,6 +20,8 @@
 
 #include <com/ubuntu/location/service/configuration.h>
 
+#include <com/ubuntu/location/settings.h>
+
 #include <set>
 
 #include <core/dbus/bus.h>
@@ -46,10 +48,12 @@ public:
     // Returns a set of providers, seeded with the seed provider if it is not null.
     virtual std::set<Provider::Ptr> the_provider_set(const Provider::Ptr& seed = Provider::Ptr {});
 
-    // Creates an engine instance given a set of providers and a provider selection policy.
-    virtual Engine::Ptr the_engine(
+    // Creates an engine instance given a set of providers, a provider selection policy
+    // and a settings instance.
+    virtual std::shared_ptr<Engine> the_engine(
         const std::set<Provider::Ptr>& provider_set,
-        const ProviderSelectionPolicy::Ptr& provider_selection_policy);    
+        const ProviderSelectionPolicy::Ptr& provider_selection_policy,
+        const Settings::Ptr& settings);
 
     // Instantiates an instance of the permission manager.
     virtual PermissionManager::Ptr the_permission_manager(const std::shared_ptr<core::dbus::Bus>& bus);
