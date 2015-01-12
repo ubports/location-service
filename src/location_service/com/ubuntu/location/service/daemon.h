@@ -51,7 +51,9 @@ struct Daemon
             /** @brief Request to query a property value of the running service. */
             get,
             /** @brief Request to adjust a property value of the running service. */
-            set
+            set,
+            /** @brief Executes runtime tests. */
+            test
         };
 
         /** @brief Enumerates all properties known to the cli. */
@@ -84,6 +86,7 @@ struct Daemon
                                             visible_space_vehicles [get]
              * --set arg                 Adjust the value of the property.
              * --get                     Query the value of the property.
+             * --test                    Executes runtime tests.
              */
             static Configuration from_command_line_args(
                     int argc,
