@@ -32,6 +32,8 @@ add_library(
   service/harvester.cpp
   service/demultiplexing_reporter.h
   service/demultiplexing_reporter.cpp
+  service/runtime_tests.h
+  service/runtime_tests.cpp
   service/trust_store_permission_manager.cpp
 
   service/implementation.cpp

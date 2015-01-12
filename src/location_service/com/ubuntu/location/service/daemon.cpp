@@ -23,6 +23,8 @@
 #include <com/ubuntu/location/service/implementation.h>
 #include <com/ubuntu/location/service/stub.h>
 
+#include <com/ubuntu/location/service/runtime_tests.h>
+
 #include "program_options.h"
 #include "daemon.h"
 
@@ -275,6 +277,7 @@ location::ProgramOptions init_cli_options()
                 location::service::Daemon::Cli::Property::unknown);
     options.add<std::string>("set", "Adjust the value of the property.");
     options.add("get", "Query the value of the property.");
+    options.add("test", "Executes runtime tests.");
 
     return options;
 }
@@ -324,6 +327,10 @@ location::service::Daemon::Cli::Configuration location::service::Daemon::Cli::Co
         result.command = Command::set;
         result.new_value = mutable_cli_options().value_for_key<std::string>("set");
     }
+    else if (mutable_cli_options().value_count_for_key("test") > 0)
+    {
+        result.command = Command::test;
+    }
 
     return result;
 }
@@ -336,6 +343,9 @@ void location::service::Daemon::Cli::print_help(std::ostream& out)
 
 int location::service::Daemon::Cli::main(const location::service::Daemon::Cli::Configuration& config)
 {
+    if (config.command == Command::test)
+        return location::service::execute_runtime_tests();
+
     auto location_service =
             dbus::resolve_service_on_bus<location::service::Interface, location::service::Stub>(config.bus);
 
@@ -366,6 +376,7 @@ int location::service::Daemon::Cli::main(const location::service::Daemon::Cli::C
             std::cout << "succeeded" << std::endl;
             break;
         }
+        default:
         case Command::unknown: break;
         }
         break;
@@ -394,6 +405,7 @@ int location::service::Daemon::Cli::main(const location::service::Daemon::Cli::C
             std::cout << "succeeded" << std::endl;
             break;
         }
+        default:
         case Command::unknown: break;
         }
         break;
@@ -422,6 +434,7 @@ int location::service::Daemon::Cli::main(const location::service::Daemon::Cli::C
             std::cout << "succeeded" << std::endl;
             break;
         }
+        default:
         case Command::unknown: break;
         }
         break;
@@ -441,6 +454,7 @@ int location::service::Daemon::Cli::main(const location::service::Daemon::Cli::C
             std::cout << "Property visible_space_vehicles is not set-able, aborting now." << std::endl;
             location::service::Daemon::Cli::print_help(std::cout);
             return EXIT_FAILURE;
+        default:
         case Command::unknown: break;
         }
         break;
