@@ -684,9 +684,17 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_without_sup
         state.on_position_updated(pos);
     });
 
+    // We report updates to the visible space vehicles here.
+    hal->space_vehicle_updates().connect([](const std::set<location::SpaceVehicle>& svs)
+    {
+        std::cout << std::scientific;
+        std::cout << "key snr has_almanac_data has_ephimeris_data used_in_fix azimuth elevation" << std::endl;
+        for (const auto& sv : svs)
+            std::cout << sv.key.id << " " << sv.snr << " " << sv.has_almanac_data << " " << sv.has_ephimeris_data << " " << sv.used_in_fix << " " << sv.azimuth.value() << " " << sv.elevation.value() << std::endl;
+    });
+
     for (unsigned int i = 0; i < trials; i++)
     {
-        std::cout << "Executing trial " << i << " of " << trials << " trials" << std::endl;
         // We want to force a cold start per trial.
         hal->delete_all_aiding_data();
 
