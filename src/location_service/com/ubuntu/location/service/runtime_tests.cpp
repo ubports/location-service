@@ -56,12 +56,8 @@ struct Fixture
         expect<true, std::logic_error>(::getuid() == 0, "This test has to be run as root.");
 
         int rc = ::system("service ubuntu-location-service stop");
-
-        // We consciously ignore the return code of the command here.
-        // The location service might not have been running before and with that
-        // the command would return an error, although the precondition has been successfully
-        // established.
-        expect<true, std::runtime_error>(rc < 0, "Unable to stop the location service as part of the test setup.");
+        // We consciously ignore any issues and assume that we are good to go.
+        (void) rc;
     }
 
     ~Fixture()
