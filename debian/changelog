@@ -1,3 +1,11 @@
+location-service (2.1+15.04.20150113~rtm-0ubuntu1) 14.09; urgency=low
+
+  [ thomas-voss ]
+  * Print details about visible space vehicles to the gps provider test
+    case. (LP: #1408984)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 13 Jan 2015 13:01:58 +0000
+
 location-service (2.1+15.04.20150106~rtm-0ubuntu1) 14.09; urgency=low
 
   [ thomas-voss ]
