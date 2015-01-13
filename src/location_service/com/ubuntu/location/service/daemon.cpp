@@ -147,7 +147,8 @@ location::service::Daemon::Configuration location::service::Daemon::Configuratio
         }
     }
 
-    result.settings = std::make_shared<location::BoostPtreeSettings>(mutable_daemon_options().value_for_key<std::string>("config-file"));
+    auto settings = std::make_shared<location::BoostPtreeSettings>(mutable_daemon_options().value_for_key<std::string>("config-file"));
+    result.settings = std::make_shared<location::SyncingSettings>(settings);
 
     return result;
 }

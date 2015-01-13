@@ -83,6 +83,40 @@ struct Settings
     virtual bool set_string_for_key(const std::string& key, const std::string& value) = 0;
 };
 
+// A decorator that syncs whenever a value changes.
+struct SyncingSettings : public Settings
+{
+    SyncingSettings(const Settings::Ptr& impl) : impl{impl} {}
+
+    ~SyncingSettings()
+    {
+        sync();
+    }
+
+    virtual void sync()
+    {
+        impl->sync();
+    }
+
+    virtual bool has_value_for_key(const std::string& key) const
+    {
+        return impl->has_value_for_key(key);
+    }
+
+    virtual std::string get_string_for_key_or_throw(const std::string& key)
+    {
+        return impl->get_string_for_key_or_throw(key);
+    }
+
+    virtual bool set_string_for_key(const std::string& key, const std::string& value)
+    {
+        auto result = impl->set_string_for_key(key, value); if (result) impl->sync();
+        return result;
+    }
+
+    Settings::Ptr impl;
+};
+
 template<typename T>
 inline T Settings::get_enum_for_key(const std::string& key, T default_value)
 {
