@@ -263,9 +263,6 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
     if (t4.joinable())
         t4.join();
 
-    // And we finally sync our settings.
-    config.settings->sync();
-
     return EXIT_SUCCESS;
 }
 
