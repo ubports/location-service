@@ -77,6 +77,24 @@ cul::Engine::Engine(const cul::ProviderSelectionPolicy::Ptr& provider_selection_
             settings->get_enum_for_key<WifiAndCellIdReportingState>(
                 Configuration::Keys::wifi_and_cell_id_reporting_state,
                 Configuration::Defaults::wifi_and_cell_id_reporting_state);
+
+    configuration.engine_state.changed().connect([this](const Engine::Status& status)
+    {
+        Engine::settings->set_enum_for_key<Engine::Status>(Configuration::Keys::engine_state, status);
+        Engine::settings->sync();
+    });
+
+    configuration.satellite_based_positioning_state.changed().connect([this](SatelliteBasedPositioningState state)
+    {
+        Engine::settings->set_enum_for_key<SatelliteBasedPositioningState>(Configuration::Keys::satellite_based_positioning_state, state);
+        Engine::settings->sync();
+    });
+
+    configuration.wifi_and_cell_id_reporting_state.changed().connect([this](WifiAndCellIdReportingState state)
+    {
+        Engine::settings->set_enum_for_key<WifiAndCellIdReportingState>(Configuration::Keys::wifi_and_cell_id_reporting_state, state);
+        Engine::settings->sync();
+    });
 }
 
 cul::Engine::~Engine()
