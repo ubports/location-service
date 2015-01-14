@@ -71,17 +71,17 @@ public:
             /** Key for persisting the SatelliteBasedPositioningState */
             static constexpr const char* satellite_based_positioning_state
             {
-                "Engine.SatelliteBasedPositioningState"
+                "Engine::SatelliteBasedPositioningState"
             };
             /** Key for persisting the WifiAndCellIdReportingState */
             static constexpr const char* wifi_and_cell_id_reporting_state
             {
-                "Engine.WifiAndCellIdReportingState"
+                "Engine::WifiAndCellIdReportingState"
             };
             /** Key for persisting the Engine::Status */
             static constexpr const char* engine_state
             {
-                "Engine.State"
+                "Engine::State"
             };
         };
 
