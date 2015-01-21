@@ -348,38 +348,6 @@ void remote::Provider::Stub::on_reference_heading_updated(const cul::Update<cul:
     });
 }
 
-void remote::Provider::Stub::disable()
-{
-    VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    std::weak_ptr<Private> wp{d};
-    Runtime::instance().task.service.post([wp]()
-    {
-        auto sp = wp.lock();
-
-        if (not sp)
-            return;
-
-        throw_if_error(sp->stub.object->transact_method<remote::Interface::Disable, void>());
-    });
-    VLOG(10) << "< " << __PRETTY_FUNCTION__;
-}
-
-void remote::Provider::Stub::enable()
-{
-    VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    std::weak_ptr<Private> wp{d};
-    Runtime::instance().task.service.post([wp]()
-    {
-        auto sp = wp.lock();
-
-        if (not sp)
-            return;
-
-        throw_if_error(sp->stub.object->transact_method<remote::Interface::Enable, void>());
-    });
-    VLOG(10) << "< " << __PRETTY_FUNCTION__;
-}
-
 void remote::Provider::Stub::start_position_updates()
 {
     VLOG(10) << "> " << __PRETTY_FUNCTION__;
@@ -593,21 +561,7 @@ remote::Provider::Skeleton::Skeleton(const remote::skeleton::Configuration& conf
         d->bus->send(dbus::Message::make_method_return(msg));
 
         on_reference_velocity_updated(u);
-    });
-
-    d->skeleton.object->install_method_handler<remote::Interface::Disable>([this](const dbus::Message::Ptr & msg)
-    {
-        VLOG(1) << "Disable";
-        disable();
-        d->bus->send(dbus::Message::make_method_return(msg));
-    });
-
-    d->skeleton.object->install_method_handler<remote::Interface::Enable>([this](const dbus::Message::Ptr & msg)
-    {
-        VLOG(1) << "Enable";
-        enable();
-        d->bus->send(dbus::Message::make_method_return(msg));
-    });
+    });    
 
     d->skeleton.object->install_method_handler<remote::Interface::StartPositionUpdates>([this](const dbus::Message::Ptr & msg)
     {
@@ -700,16 +654,6 @@ void remote::Provider::Skeleton::on_reference_velocity_updated(const cul::Update
 void remote::Provider::Skeleton::on_reference_heading_updated(const cul::Update<cul::Heading>& heading)
 {
     d->impl->on_reference_heading_updated(heading);
-}
-
-void remote::Provider::Skeleton::disable()
-{
-    d->impl->state_controller()->state() = location::Provider::Controller::State::disabled;
-}
-
-void remote::Provider::Skeleton::enable()
-{
-    d->impl->state_controller()->state() = location::Provider::Controller::State::enabled;
 }
 
 void remote::Provider::Skeleton::start_position_updates()

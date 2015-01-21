@@ -159,6 +159,8 @@ TEST(Engine, adding_a_provider_creates_connections_to_engine_configuration_prope
     engine.updates.reference_velocity = location::Update<location::Velocity>{};
 }
 
+/* TODO(tvoss): We have to disable these tests as the MP is being refactored to not break ABI.
+ * We have to enable these tests once we enable the ABI-breaking interface adjustments again.
 TEST(Engine, switching_the_engine_off_results_in_providers_being_disabled_and_updates_being_stopped)
 {
     using namespace ::testing;
@@ -255,6 +257,7 @@ TEST(Engine, switching_satellite_based_positioning_on_after_off_disables_and_ena
     engine.configuration.satellite_based_positioning_state = location::SatelliteBasedPositioningState::off;
     engine.configuration.satellite_based_positioning_state = location::SatelliteBasedPositioningState::on;
 }
+*/
 TEST(Engine, reads_state_from_settings_on_construction)
 {
     using namespace ::testing;

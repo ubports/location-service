@@ -55,10 +55,10 @@ cul::Engine::Engine(const cul::ProviderSelectionPolicy::Ptr& provider_selection_
                 switch (state)
                 {
                 case SatelliteBasedPositioningState::on:
-                    provider->state_controller()->state() = cul::Provider::Controller::State::enabled;
+                    provider->state_controller()->enable();
                     break;
                 case SatelliteBasedPositioningState::off:
-                    provider->state_controller()->state() = cul::Provider::Controller::State::disabled;
+                    provider->state_controller()->disable();
                     break;
                 }
             }
@@ -72,10 +72,10 @@ cul::Engine::Engine(const cul::ProviderSelectionPolicy::Ptr& provider_selection_
             switch (status)
             {
             case Engine::Status::on:
-                provider->state_controller()->state() = cul::Provider::Controller::State::enabled;
+                provider->state_controller()->enable();
                 break;
             case Engine::Status::off:
-                provider->state_controller()->state() = cul::Provider::Controller::State::disabled;
+                provider->state_controller()->disable();
                 break;
             default:
                 break;
