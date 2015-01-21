@@ -23,14 +23,32 @@
 
 namespace cul = com::ubuntu::location;
 
-core::Property<cul::Provider::Controller::State>& cul::Provider::Controller::state()
+namespace
 {
-    return current_state;
+static const int our_magic_disabling_value = -1;
+}
+
+void cul::Provider::Controller::enable()
+{
+    position_updates_counter = 0;
+    heading_updates_counter = 0;
+    velocity_updates_counter = 0;
+}
+
+void cul::Provider::Controller::disable()
+{
+    stop_position_updates();
+    stop_heading_updates();
+    stop_velocity_updates();
+
+    position_updates_counter = our_magic_disabling_value;
+    heading_updates_counter = our_magic_disabling_value;
+    velocity_updates_counter = our_magic_disabling_value;
 }
 
 void cul::Provider::Controller::start_position_updates()
 {
-    if (current_state == cul::Provider::Controller::State::disabled)
+    if (position_updates_counter == our_magic_disabling_value)
         return;
 
     if (++position_updates_counter == 1)
@@ -41,6 +59,9 @@ void cul::Provider::Controller::start_position_updates()
 
 void cul::Provider::Controller::stop_position_updates()
 {
+    if (position_updates_counter == our_magic_disabling_value)
+        return;
+
     if (--position_updates_counter == 0)
     {
         instance.stop_position_updates();
@@ -54,7 +75,7 @@ bool cul::Provider::Controller::are_position_updates_running() const
 
 void cul::Provider::Controller::start_heading_updates()
 {
-    if (current_state == cul::Provider::Controller::State::disabled)
+    if (heading_updates_counter == our_magic_disabling_value)
         return;
 
     if (++heading_updates_counter == 1)
@@ -65,6 +86,9 @@ void cul::Provider::Controller::start_heading_updates()
 
 void cul::Provider::Controller::stop_heading_updates()
 {
+    if (heading_updates_counter == our_magic_disabling_value)
+        return;
+
     if (--heading_updates_counter == 0)
     {
         instance.stop_heading_updates();
@@ -78,7 +102,7 @@ bool cul::Provider::Controller::are_heading_updates_running() const
 
 void cul::Provider::Controller::start_velocity_updates()
 {
-    if (current_state == cul::Provider::Controller::State::disabled)
+    if (velocity_updates_counter == our_magic_disabling_value)
         return;
 
     if (++velocity_updates_counter == 1)
@@ -89,6 +113,9 @@ void cul::Provider::Controller::start_velocity_updates()
 
 void cul::Provider::Controller::stop_velocity_updates()
 {
+    if (velocity_updates_counter == our_magic_disabling_value)
+        return;
+
     if (--velocity_updates_counter == 0)
     {
         instance.stop_velocity_updates();
@@ -102,26 +129,10 @@ bool cul::Provider::Controller::are_velocity_updates_running() const
 
 cul::Provider::Controller::Controller(cul::Provider& instance)
     : instance(instance),
-      current_state(cul::Provider::Controller::State::enabled),
       position_updates_counter(0),
       heading_updates_counter(0),
       velocity_updates_counter(0)
-{
-    current_state.changed().connect([this](cul::Provider::Controller::State state)
-    {
-        switch (state)
-        {
-        case cul::Provider::Controller::State::disabled:
-            Controller::instance.disable();
-            stop_position_updates();
-            stop_heading_updates();
-            stop_velocity_updates();
-            break;
-        case cul::Provider::Controller::State::enabled:
-            Controller::instance.enable();
-            break;
-        }
-    });
+{  
 }
 
 const cul::Provider::Controller::Ptr& cul::Provider::state_controller() const
@@ -179,8 +190,6 @@ void cul::Provider::on_reference_heading_updated(const cul::Update<cul::Heading>
 {
 }
 
-void cul::Provider::disable() {}
-void cul::Provider::enable() {}
 void cul::Provider::start_position_updates() {}
 void cul::Provider::stop_position_updates() {}
 void cul::Provider::start_heading_updates() {}

@@ -186,14 +186,6 @@ TEST(Provider, starting_and_stopping_multiple_times_results_in_exactly_one_call_
     EXPECT_FALSE(provider.state_controller()->are_velocity_updates_running());
 }
 
-TEST(Provider, initial_state_of_controller_is_enabled)
-{
-    using namespace ::testing;
-
-    NiceMock<MockProvider> p;
-    EXPECT_EQ(cul::Provider::Controller::State::enabled, p.state_controller()->state());
-}
-
 TEST(Provider, starting_updates_on_a_disabled_provider_does_nothing)
 {
     using namespace ::testing;
@@ -203,7 +195,7 @@ TEST(Provider, starting_updates_on_a_disabled_provider_does_nothing)
     EXPECT_CALL(p, start_heading_updates()).Times(0);
     EXPECT_CALL(p, start_velocity_updates()).Times(0);
 
-    p.state_controller()->state() = cul::Provider::Controller::State::disabled;
+    p.state_controller()->disable();
 
     p.state_controller()->start_position_updates();
     p.state_controller()->start_heading_updates();
@@ -223,7 +215,7 @@ TEST(Provider, disabling_a_provider_stops_all_updates)
     p.state_controller()->start_heading_updates();
     p.state_controller()->start_velocity_updates();
 
-    p.state_controller()->state() = cul::Provider::Controller::State::disabled;
+    p.state_controller()->disable();
 }
 
 #include <com/ubuntu/location/proxy_provider.h>
