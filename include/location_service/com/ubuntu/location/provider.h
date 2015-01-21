@@ -90,13 +90,13 @@ public:
          * @brief disable switches the provider to a disabled state, such that subsequent
          * calls to start* methods fail.
          */
-        virtual void disable();
+        void disable();
 
         /**
          * @brief enable switches the provider to an enabled state, such that subsequent
          * calls to start* methods succeed.
          */
-        virtual void enable();
+        void enable();
 
         /**
          * @brief Request to start position updates if not already running.
