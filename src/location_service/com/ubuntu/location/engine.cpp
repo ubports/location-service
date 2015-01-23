@@ -47,7 +47,7 @@ cul::Engine::Engine(const cul::ProviderSelectionPolicy::Ptr& provider_selection_
 
     // Setup behavior in case of configuration changes.
     configuration.satellite_based_positioning_state.changed().connect([this](const SatelliteBasedPositioningState& state)
-    {
+    {               
         for_each_provider([state](const Provider::Ptr& provider)
         {
             if (provider->requires(cul::Provider::Requirements::satellites))
