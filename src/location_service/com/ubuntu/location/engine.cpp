@@ -69,6 +69,10 @@ cul::Engine::Engine(const cul::ProviderSelectionPolicy::Ptr& provider_selection_
     {
         for_each_provider([status](const Provider::Ptr& provider)
         {
+            // We do not enable providers that require satellites if the respective engine option is set to off.
+            if (provider->requires(cul::Provider::Requirements::satellites) && configuration.satellite_based_positioning_state == SatelliteBasedPositioningState::off)
+                return;
+
             switch (status)
             {
             case Engine::Status::on:
