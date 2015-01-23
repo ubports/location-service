@@ -37,13 +37,16 @@ void cul::Provider::Controller::enable()
 
 void cul::Provider::Controller::disable()
 {    
+    if (position_updates_counter > 0)
+        stop_position_updates();
+    if (heading_updates_counter > 0)
+        stop_heading_updates();
+    if (velocity_updates_counter > 0)
+        stop_velocity_updates();
+
     position_updates_counter = our_magic_disabling_value;
     heading_updates_counter = our_magic_disabling_value;
     velocity_updates_counter = our_magic_disabling_value;
-
-    instance.stop_position_updates();
-    instance.stop_heading_updates();
-    instance.stop_velocity_updates();
 }
 
 void cul::Provider::Controller::start_position_updates()
