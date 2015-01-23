@@ -67,6 +67,7 @@ int main(int argc, const char** argv)
     try
     {
         location::service::Daemon::main(config);
+        config.settings->sync();
     } catch(const std::exception& e)
     {
         std::cout << "Problem executing the daemon: " << e.what() << std::endl;

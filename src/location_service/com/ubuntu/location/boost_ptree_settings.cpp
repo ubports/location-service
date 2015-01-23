@@ -52,7 +52,7 @@ void location::BoostPtreeSettings::sync()
 
 // Returns true iff a value is known for the given key.
 bool location::BoostPtreeSettings::has_value_for_key(const std::string& key) const
-{
+{    
     return tree.count(key) > 0;
 }
 
