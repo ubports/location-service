@@ -35,6 +35,10 @@ struct MockProvider : public location::Provider
     {
     }
 
+    MOCK_CONST_METHOD1(requires, bool(const location::Provider::Requirements&));
+
+    MOCK_METHOD0(disable, void());
+    MOCK_METHOD0(enable, void());
     MOCK_METHOD0(stop_position_updates, void());
     MOCK_METHOD0(stop_velocity_updates, void());
     MOCK_METHOD0(stop_heading_updates, void());
@@ -155,7 +159,9 @@ TEST(Engine, adding_a_provider_creates_connections_to_engine_configuration_prope
     engine.updates.reference_velocity = location::Update<location::Velocity>{};
 }
 
-TEST(Engine, switching_the_engine_off_results_in_updates_being_stopped)
+/* TODO(tvoss): We have to disable these tests as the MP is being refactored to not break ABI.
+ * We have to enable these tests once we enable the ABI-breaking interface adjustments again.
+TEST(Engine, switching_the_engine_off_results_in_providers_being_disabled_and_updates_being_stopped)
 {
     using namespace ::testing;
 
@@ -168,6 +174,7 @@ TEST(Engine, switching_the_engine_off_results_in_updates_being_stopped)
     location::Engine engine{selection_policy, mock_settings()};
     engine.add_provider(provider);
 
+    EXPECT_CALL(*provider, disable()).Times(1);
     EXPECT_CALL(*provider, stop_position_updates()).Times(1);
     EXPECT_CALL(*provider, stop_velocity_updates()).Times(1);
     EXPECT_CALL(*provider, stop_heading_updates()).Times(1);
@@ -175,6 +182,82 @@ TEST(Engine, switching_the_engine_off_results_in_updates_being_stopped)
     engine.configuration.engine_state = location::Engine::Status::off;
 }
 
+TEST(Engine, switching_the_engine_on_after_off_results_in_providers_being_enabled)
+{
+    using namespace ::testing;
+
+    auto provider = std::make_shared<NiceMock<MockProvider>>();
+
+    auto selection_policy = std::make_shared<NiceMock<MockProviderSelectionPolicy>>();
+    location::Engine engine{selection_policy, mock_settings()};
+    engine.add_provider(provider);
+
+    EXPECT_CALL(*provider, disable()).Times(1);
+    EXPECT_CALL(*provider, enable()).Times(1);
+
+    engine.configuration.engine_state = location::Engine::Status::off;
+    engine.configuration.engine_state = location::Engine::Status::on;
+}
+
+TEST(Engine, switching_satellite_based_positioning_off_disables_providers_requiring_satellites)
+{
+    using namespace ::testing;
+
+    auto gps_provider = std::make_shared<NiceMock<MockProvider>>();
+    auto network_provider = std::make_shared<NiceMock<MockProvider>>();
+
+    ON_CALL(*gps_provider, requires(Ne(location::Provider::Requirements::satellites)))
+            .WillByDefault(Return(true));
+    ON_CALL(*gps_provider, requires(location::Provider::Requirements::satellites))
+            .WillByDefault(Return(true));
+    ON_CALL(*network_provider, requires(location::Provider::Requirements::satellites))
+            .WillByDefault(Return(false));
+
+    auto selection_policy = std::make_shared<NiceMock<MockProviderSelectionPolicy>>();
+    location::Engine engine{selection_policy, mock_settings()};
+    engine.add_provider(gps_provider);
+    engine.add_provider(network_provider);
+
+    // Only the mocked gps provider requiring satellites will be disabled.
+    EXPECT_CALL(*gps_provider, disable()).Times(1);
+    // The network based provider will not be disabled.
+    EXPECT_CALL(*network_provider, disable()).Times(0);
+
+    engine.configuration.satellite_based_positioning_state = location::SatelliteBasedPositioningState::off;
+}
+
+TEST(Engine, switching_satellite_based_positioning_on_after_off_disables_and_enables_providers_requiring_satellites)
+{
+    using namespace ::testing;
+
+    auto gps_provider = std::make_shared<NiceMock<MockProvider>>();
+    auto network_provider = std::make_shared<NiceMock<MockProvider>>();
+
+    ON_CALL(*gps_provider, requires(Ne(location::Provider::Requirements::satellites)))
+            .WillByDefault(Return(true));
+    ON_CALL(*gps_provider, requires(location::Provider::Requirements::satellites))
+            .WillByDefault(Return(true));
+    ON_CALL(*network_provider, requires(location::Provider::Requirements::satellites))
+            .WillByDefault(Return(false));
+
+    auto selection_policy = std::make_shared<NiceMock<MockProviderSelectionPolicy>>();
+    location::Engine engine{selection_policy, mock_settings()};
+    engine.add_provider(gps_provider);
+    engine.add_provider(network_provider);
+
+    // Only the mocked gps provider requiring satellites will be disabled.
+    EXPECT_CALL(*gps_provider, disable()).Times(1);
+    // Only the mocked gps provider requiring satellites will be disabled.
+    EXPECT_CALL(*gps_provider, enable()).Times(1);
+    // The network based provider will not be disabled.
+    EXPECT_CALL(*network_provider, disable()).Times(0);
+    // The network based provider will not be disabled.
+    EXPECT_CALL(*network_provider, enable()).Times(0);
+
+    engine.configuration.satellite_based_positioning_state = location::SatelliteBasedPositioningState::off;
+    engine.configuration.satellite_based_positioning_state = location::SatelliteBasedPositioningState::on;
+}
+*/
 TEST(Engine, reads_state_from_settings_on_construction)
 {
     using namespace ::testing;

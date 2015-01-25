@@ -23,8 +23,37 @@
 
 namespace cul = com::ubuntu::location;
 
+namespace
+{
+static const int our_magic_disabling_value = -1;
+}
+
+void cul::Provider::Controller::enable()
+{
+    position_updates_counter = 0;
+    heading_updates_counter = 0;
+    velocity_updates_counter = 0;
+}
+
+void cul::Provider::Controller::disable()
+{    
+    if (position_updates_counter > 0)
+        instance.stop_position_updates();
+    if (heading_updates_counter > 0)
+        instance.stop_heading_updates();
+    if (velocity_updates_counter > 0)
+        instance.stop_velocity_updates();
+
+    position_updates_counter = our_magic_disabling_value;
+    heading_updates_counter = our_magic_disabling_value;
+    velocity_updates_counter = our_magic_disabling_value;
+}
+
 void cul::Provider::Controller::start_position_updates()
 {
+    if (position_updates_counter < 0)
+        return;
+
     if (++position_updates_counter == 1)
     {
         instance.start_position_updates();
@@ -33,6 +62,9 @@ void cul::Provider::Controller::start_position_updates()
 
 void cul::Provider::Controller::stop_position_updates()
 {
+    if (position_updates_counter < 0)
+        return;
+
     if (--position_updates_counter == 0)
     {
         instance.stop_position_updates();
@@ -46,6 +78,9 @@ bool cul::Provider::Controller::are_position_updates_running() const
 
 void cul::Provider::Controller::start_heading_updates()
 {
+    if (heading_updates_counter < 0)
+        return;
+
     if (++heading_updates_counter == 1)
     {
         instance.start_heading_updates();
@@ -54,6 +89,9 @@ void cul::Provider::Controller::start_heading_updates()
 
 void cul::Provider::Controller::stop_heading_updates()
 {
+    if (heading_updates_counter < 0)
+        return;
+
     if (--heading_updates_counter == 0)
     {
         instance.stop_heading_updates();
@@ -67,6 +105,9 @@ bool cul::Provider::Controller::are_heading_updates_running() const
 
 void cul::Provider::Controller::start_velocity_updates()
 {
+    if (velocity_updates_counter < 0)
+        return;
+
     if (++velocity_updates_counter == 1)
     {
         instance.start_velocity_updates();
@@ -75,6 +116,9 @@ void cul::Provider::Controller::start_velocity_updates()
 
 void cul::Provider::Controller::stop_velocity_updates()
 {
+    if (velocity_updates_counter < 0)
+        return;
+
     if (--velocity_updates_counter == 0)
     {
         instance.stop_velocity_updates();
@@ -91,7 +135,7 @@ cul::Provider::Controller::Controller(cul::Provider& instance)
       position_updates_counter(0),
       heading_updates_counter(0),
       velocity_updates_counter(0)
-{
+{  
 }
 
 const cul::Provider::Controller::Ptr& cul::Provider::state_controller() const
