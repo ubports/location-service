@@ -18,6 +18,7 @@
 
 #include <com/ubuntu/location/service/daemon.h>
 
+#include <com/ubuntu/location/boost_ptree_settings.h>
 #include <com/ubuntu/location/space_vehicle.h>
 
 #include <core/dbus/dbus.h>
@@ -45,11 +46,17 @@ std::function<core::posix::exit::Status()> testing_daemon(DaemonAndCli& fixture)
 {
     return [&fixture]()
     {
+        static constexpr const char* fn{"/tmp/settings.ini"};
+
+        // Clean up prior to running the test case.
+        std::remove(fn);
+
         location::service::Daemon::Configuration config;
 
         config.incoming = fixture.session_bus();
         config.outgoing = fixture.session_bus();
         config.is_testing_enabled = true;
+        config.settings = std::make_shared<location::BoostPtreeSettings>(fn);
 
         auto result = location::service::Daemon::main(config);
 

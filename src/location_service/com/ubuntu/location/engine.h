@@ -21,9 +21,12 @@
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_enumerator.h>
 #include <com/ubuntu/location/provider_selection.h>
+#include <com/ubuntu/location/provider_selection_policy.h>
 #include <com/ubuntu/location/satellite_based_positioning_state.h>
 #include <com/ubuntu/location/space_vehicle.h>
 #include <com/ubuntu/location/wifi_and_cell_reporting_state.h>
+
+#include <com/ubuntu/location/settings.h>
 
 #include <core/property.h>
 
@@ -62,20 +65,59 @@ public:
      */
     struct Configuration
     {
+        /** Keys for persisting state go here. */
+        struct Keys
+        {
+            /** Key for persisting the SatelliteBasedPositioningState */
+            static constexpr const char* satellite_based_positioning_state
+            {
+                "Engine::SatelliteBasedPositioningState"
+            };
+            /** Key for persisting the WifiAndCellIdReportingState */
+            static constexpr const char* wifi_and_cell_id_reporting_state
+            {
+                "Engine::WifiAndCellIdReportingState"
+            };
+            /** Key for persisting the Engine::Status */
+            static constexpr const char* engine_state
+            {
+                "Engine::State"
+            };
+        };
+
+        /** Default values go here. */
+        struct Defaults
+        {
+            static constexpr const SatelliteBasedPositioningState satellite_based_positioning_state
+            {
+                SatelliteBasedPositioningState::on
+            };
+
+            static constexpr const WifiAndCellIdReportingState wifi_and_cell_id_reporting_state
+            {
+                WifiAndCellIdReportingState::off
+            };
+
+            static constexpr const Engine::Status engine_state
+            {
+                Engine::Status::on
+            };
+        };
+
         /** Setable/getable/observable property for the satellite based positioning state. */
         core::Property<SatelliteBasedPositioningState> satellite_based_positioning_state
         {
-            SatelliteBasedPositioningState::on
+            Defaults::satellite_based_positioning_state
         };
         /** Setable/getable/observable property for the satellite based positioning state. */
         core::Property<WifiAndCellIdReportingState> wifi_and_cell_id_reporting_state
         {
-            WifiAndCellIdReportingState::off
+            Defaults::wifi_and_cell_id_reporting_state
         };
         /** Setable/getable/observable property for the overall engine state. */
         core::Property<Engine::Status> engine_state
         {
-            Engine::Status::on
+            Defaults::engine_state
         };
     };
 
@@ -92,7 +134,9 @@ public:
         core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>> visible_space_vehicles{};
     };
 
-    Engine(const std::shared_ptr<ProviderSelectionPolicy>& provider_selection_policy);
+    Engine(const ProviderSelectionPolicy::Ptr& provider_selection_policy,
+           const Settings::Ptr& settings);
+
     Engine(const Engine&) = delete;
     Engine& operator=(const Engine&) = delete;
     virtual ~Engine();
@@ -147,8 +191,14 @@ private:
 
     mutable std::mutex guard;
     std::map<Provider::Ptr, ProviderConnections> providers;
-    std::shared_ptr<ProviderSelectionPolicy> provider_selection_policy;
+    ProviderSelectionPolicy::Ptr provider_selection_policy;
+    Settings::Ptr settings;
 };
+
+/** @brief Pretty prints the given status to the given stream. */
+std::ostream& operator<<(std::ostream&, Engine::Status);
+/** @brief Parses the status from the given stream. */
+std::istream& operator>>(std::istream&, Engine::Status&);
 }
 }
 }
