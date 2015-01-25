@@ -276,9 +276,6 @@ bool remote::Provider::Stub::supports(const cul::Provider::Features& f) const
 bool remote::Provider::Stub::requires(const cul::Provider::Requirements& r) const
 {
     VLOG(10) << __PRETTY_FUNCTION__;
-    if (r == cul::Provider::Requirements::satellites)
-        return false;
-
     return throw_if_error_or_return(d->stub.object->transact_method<remote::Interface::Requires, bool>(r));
 }
 

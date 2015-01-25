@@ -47,16 +47,17 @@ cul::Engine::Engine(const cul::ProviderSelectionPolicy::Ptr& provider_selection_
 
     // Setup behavior in case of configuration changes.
     configuration.satellite_based_positioning_state.changed().connect([this](const SatelliteBasedPositioningState& state)
-    {               
-        std::cout << "GPS state changed: " << state << std::endl;
-        for_each_provider([state](const Provider::Ptr& provider)
+    {
+        for_each_provider([this, state](const Provider::Ptr& provider)
         {
             if (provider->requires(cul::Provider::Requirements::satellites))
             {
                 switch (state)
                 {
                 case SatelliteBasedPositioningState::on:
-                    provider->state_controller()->enable();
+                    // We only enable a provider if the overall engine is enabled.
+                    if (configuration.engine_state == Engine::Status::on)
+                        provider->state_controller()->enable();
                     break;
                 case SatelliteBasedPositioningState::off:
                     provider->state_controller()->disable();
@@ -68,7 +69,6 @@ cul::Engine::Engine(const cul::ProviderSelectionPolicy::Ptr& provider_selection_
 
     configuration.engine_state.changed().connect([this](const Engine::Status& status)
     {
-        std::cout << "Engine state changed: " << status << std::endl;
         for_each_provider([this, status](const Provider::Ptr& provider)
         {
             switch (status)
@@ -88,9 +88,6 @@ cul::Engine::Engine(const cul::ProviderSelectionPolicy::Ptr& provider_selection_
             }
         });
     });
-
-    std::cout << "engine state: " << configuration.engine_state << std::endl;
-    std::cout << "gps state: " << configuration.satellite_based_positioning_state << std::endl;
 
     configuration.engine_state =
             settings->get_enum_for_key<Engine::Status>(
@@ -159,6 +156,13 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
 {
     if (!provider)
         throw std::runtime_error("Cannot add null provider");
+
+    // We synchronize to the engine state.
+    if (provider->requires(Provider::Requirements::satellites) && configuration.satellite_based_positioning_state == SatelliteBasedPositioningState::off)
+        provider->state_controller()->disable();
+
+    if (configuration.engine_state == Engine::Status::off)
+        provider->state_controller()->disable();
 
     // We wire up changes in the engine's configuration to the respective slots
     // of the provider.
