@@ -1,3 +1,16 @@
+location-service (2.1+15.04.20150125~rtm-0ubuntu1) 14.09; urgency=low
+
+  [ CI Train Bot ]
+  * Resync trunk
+
+  [ thomas-voss ]
+  * Add an interface for querying settings by key. Add an implementation
+    leveraging boost::property_tree to provide settings. (LP: #1362765)
+  * Allow for enabling/disabling providers. Wire up engine state changes
+    to enabling/disabling of providers. (LP: #1392399)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Sun, 25 Jan 2015 12:45:54 +0000
+
 location-service (2.1+15.04.20150113~rtm-0ubuntu1) 14.09; urgency=low
 
   [ thomas-voss ]
