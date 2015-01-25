@@ -80,11 +80,23 @@ public:
     class Controller
     {
     public:
-        typedef std::shared_ptr<Controller> Ptr;
+        typedef std::shared_ptr<Controller> Ptr; 
 
         virtual ~Controller() = default;
         Controller(const Controller&) = delete;
-        Controller& operator=(const Controller&) = delete;
+        Controller& operator=(const Controller&) = delete;        
+
+        /**
+         * @brief disable switches the provider to a disabled state, such that subsequent
+         * calls to start* methods fail.
+         */
+        void disable();
+
+        /**
+         * @brief enable switches the provider to an enabled state, such that subsequent
+         * calls to start* methods succeed.
+         */
+        void enable();
 
         /**
          * @brief Request to start position updates if not already running.
@@ -227,7 +239,7 @@ protected:
         const Requirements& requirements = Requirements::none);
 
     virtual Updates& mutable_updates();
-    
+
     /**
      * @brief Implementation-specific, empty by default.
      */

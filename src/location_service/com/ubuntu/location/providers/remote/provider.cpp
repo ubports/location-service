@@ -561,7 +561,7 @@ remote::Provider::Skeleton::Skeleton(const remote::skeleton::Configuration& conf
         d->bus->send(dbus::Message::make_method_return(msg));
 
         on_reference_velocity_updated(u);
-    });
+    });    
 
     d->skeleton.object->install_method_handler<remote::Interface::StartPositionUpdates>([this](const dbus::Message::Ptr & msg)
     {
