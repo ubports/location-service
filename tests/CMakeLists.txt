@@ -71,6 +71,7 @@ include_directories (
 )
 
 LOCATION_SERVICE_ADD_TEST(acceptance_tests acceptance_tests.cpp)
+LOCATION_SERVICE_ADD_TEST(boost_ptree_settings_test boost_ptree_settings_test.cpp)
 LOCATION_SERVICE_ADD_TEST(connectivity_manager_test connectivity_manager_test.cpp)
 LOCATION_SERVICE_ADD_TEST(controller_test controller_test.cpp)
 LOCATION_SERVICE_ADD_TEST(criteria_test criteria_test.cpp)

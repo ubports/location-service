@@ -15,6 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
+#include <com/ubuntu/location/boost_ptree_settings.h>
 #include <com/ubuntu/location/provider_factory.h>
 
 #include <com/ubuntu/location/service/default_configuration.h>
@@ -75,8 +76,12 @@ location::ProgramOptions init_daemon_options()
 
     options.add("help", "Produces this help message");
     options.add("testing", "Enables running the service without providers");
-    options.add_composed<std::vector<std::string>>("provider",
-                                                   "The providers that should be added to the engine");
+    options.add("config-file",
+                "The configuration we should read from/write to",
+                std::string{"/var/lib/ubuntu-location-service/config.ini"});
+    options.add_composed<std::vector<std::string>>(
+                "provider",
+                "The providers that should be added to the engine");
 
     return options;
 }
@@ -99,7 +104,7 @@ location::service::Daemon::Configuration location::service::Daemon::Configuratio
         throw std::runtime_error{"Could not parse command-line, aborting..."};
 
     result.incoming = factory(mutable_daemon_options().bus());
-    result.outgoing= factory(mutable_daemon_options().bus());
+    result.outgoing = factory(mutable_daemon_options().bus());
 
     if (mutable_daemon_options().value_count_for_key("testing") == 0 && mutable_daemon_options().value_count_for_key("provider") == 0)
     {
@@ -143,6 +148,9 @@ location::service::Daemon::Configuration location::service::Daemon::Configuratio
             });
         }
     }
+
+    auto settings = std::make_shared<location::BoostPtreeSettings>(mutable_daemon_options().value_for_key<std::string>("config-file"));
+    result.settings = std::make_shared<location::SyncingSettings>(settings);
 
     return result;
 }
@@ -201,7 +209,7 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
     {
         config.incoming,
         config.outgoing,
-        dc.the_engine(instantiated_providers, dc.the_provider_selection_policy()),
+        dc.the_engine(instantiated_providers, dc.the_provider_selection_policy(), config.settings),
         dc.the_permission_manager(config.outgoing),
         location::service::Harvester::Configuration
         {
