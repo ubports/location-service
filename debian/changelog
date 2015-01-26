@@ -1,3 +1,13 @@
+location-service (2.1+15.04.20150126.1-0ubuntu1) vivid; urgency=low
+
+  [ thomas-voss ]
+  * Make the remote::Provider::Stub fail loudly on construction if the
+    other side is not reachable. Relax the exception in
+    location::Daemon::main and do not exit if instantiating a provider
+    fails. (LP: #1414591)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 26 Jan 2015 20:16:32 +0000
+
 location-service (2.1+15.04.20150125~rtm-0ubuntu1) 14.09; urgency=low
 
   [ CI Train Bot ]
