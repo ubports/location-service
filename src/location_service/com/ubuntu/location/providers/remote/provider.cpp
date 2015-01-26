@@ -196,6 +196,11 @@ cul::Provider::Ptr remote::Provider::Stub::create_instance(const cul::ProviderFa
 cul::Provider::Ptr remote::Provider::Stub::create_instance_with_config(const remote::stub::Configuration& config)
 {
     std::shared_ptr<remote::Provider::Stub> result{new remote::Provider::Stub{config}};
+
+    // This call throws if we fail to reach the remote end. With that, we make sure that
+    // we do not return a potentially invalid instance that throws later on.
+    result->ping();
+
     result->setup_event_connections();
     return result;
 }
@@ -254,6 +259,12 @@ void remote::Provider::Stub::setup_event_connections()
                 sp->mutable_updates().velocity(arg);
             });
         });
+}
+
+void remote::Provider::Stub::ping()
+{
+    // Requires reaches out to the remote side and throws in case of issues.
+    requires(Provider::Requirements::satellites);
 }
 
 remote::Provider::Stub::~Stub() noexcept
