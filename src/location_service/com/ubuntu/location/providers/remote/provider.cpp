@@ -263,7 +263,8 @@ void remote::Provider::Stub::setup_event_connections()
 
 void remote::Provider::Stub::ping()
 {
-
+    // Requires reaches out to the remote side and throws in case of issues.
+    requires(Provider::Requirements::satellites);
 }
 
 remote::Provider::Stub::~Stub() noexcept
