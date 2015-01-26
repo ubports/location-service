@@ -195,8 +195,7 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
 
         } catch(const std::runtime_error& e)
         {
-            std::cerr << "Exception instantiating provider: " << e.what() << " ... Aborting now." << std::endl;
-            return EXIT_FAILURE;
+            std::cerr << "Issue instantiating provider: " << e.what() << std::endl;
         }
     }
 

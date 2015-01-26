@@ -83,6 +83,9 @@ struct Provider
 
         // Yeah, two stage init is evil.
         void setup_event_connections();
+        // ping tries to reach out to the remote end and throws
+        // if the ping fails.
+        void ping();
 
         struct Private;
         std::shared_ptr<Private> d;
