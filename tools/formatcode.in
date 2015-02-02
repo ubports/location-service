@@ -1,0 +1,64 @@
+#!/bin/sh
+
+# Copyright (C) 2013 Canonical Ltd
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License version 3 as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Authored by: Michi Henning <michi.henning@canonical.com>
+
+# Simple script to format files with astyle, followed by clang-format (which
+# undoes some damage that's done by astyle, without wiping out astyle edits we want
+# to happen).
+#
+# usage: formatcode [FILE]...
+#
+# If no arguments are provided, we format stdin and write to stdout.
+
+astyle="@ASTYLE_COMMAND@"
+format="@CLANG_FORMAT_COMMAND@"
+dos2unix="@DOS2UNIX_COMMAND@"
+style="@CMAKE_SOURCE_DIR@/_clang-format"
+
+# Check that the format commands were found.
+[ "$astyle" = "ASTYLE_COMMAND-NOTFOUND" -o \
+  "$dos2unix" = "DOS2UNIX_COMMAND-NOTFOUND" -o \
+  "$format" = "CLANG_FORMAT_COMMAND-NOTFOUND" ] && {
+    echo "formatcode: cmake did not find all formatting tools" >&2
+    exit 1
+}
+
+# If no arguments were provided, read stdin and write stdout.
+# Recent versions of astyle can't read stdin: http://sourceforge.net/p/astyle/bugs/63/
+# astyle 2.03 writes DOS line endings: https://sourceforge.net/p/astyle/bugs/268/
+[ $# -eq 0 ] && {
+    tmpdir=`mktemp -d`
+    tmp=`mktemp -p $tmpdir`
+    cp "$style" $tmpdir
+    cat >$tmp
+    cd $tmpdir
+    "$astyle" -q --options=@CMAKE_SOURCE_DIR@/astyle-config -n $tmp
+    "$dos2unix" -q $tmp
+    "$format" -i -style=file $tmp
+    cat $tmp
+    rm -fr $tmpdir
+    exit $?
+}
+
+# Format files in place.
+"$astyle" --options=@CMAKE_SOURCE_DIR@/astyle-config -n "$@"
+[ $? -ne 0 ] && exit $?
+
+"$dos2unix" -q "$@"
+
+"$format" -i -style=file $files "$@"
+exit $?

@@ -1,0 +1,70 @@
+#! /usr/bin/env python3
+
+#
+# Copyright (C) 2014 Canonical Ltd
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License version 3 as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Authored by: Michi Henning <michi.henning@canonical.com>
+#
+
+import re
+import subprocess
+
+OLD_FILE = './debian/libubuntu-location-service@UBUNTU_LOCATION_SERVICE_VERSION_MAJOR@.symbols'
+NEW_FILE = './debian/libubuntu-location-service@UBUNTU_LOCATION_SERVICE_VERSION_MAJOR@/DEBIAN/symbols'
+
+def run():
+    old_regex = re.compile(r'^ (\(.*\))"(.*)" (.*)$')
+
+    old_syms = {}                                   # Dictionary containing symbol -> ( tag, version )
+    with open(OLD_FILE, encoding='utf=8') as file:
+        file.readline()                             # Skip first line, which is the library name and version
+        for line in file:
+            mo = old_regex.match(line)
+            if mo:
+                old_syms[mo.group(2)] = ( mo.group(1), mo.group(3) )
+            else:
+                raise Exception('Invalid input line in ' + OLD_FILE + ': ' + line)
+
+    new_regex = re.compile(r'^ (.*) .+$')
+
+    # Run the new symbols file through "c++filt | sort | uniq". We need
+    # the sort | uniq because, otherwise, we end up with duplicate demangled symbols.
+    with open(NEW_FILE) as infile, open('new_symbols', 'w') as outfile:
+        p = subprocess.Popen(['c++filt | sort | uniq'], shell=True, stdin=infile, stdout=subprocess.PIPE)
+
+        # For each symbol, if it is in the old dictionary, output the tags from the original
+        # symbol file, followed by the symbol and version. Otherwise, use "(c++)" as the tag
+        # and add " 0replaceme", so the new symbol will be accepted.
+        line = p.stdout.readline().decode('utf-8')
+        outfile.write(line)                         # Write library name and version
+        for line in p.stdout:
+            mo = new_regex.match(line.decode('utf-8'))
+            if (mo):
+                sym = mo.group(1)
+                try:
+                    tag, version = old_syms[sym]
+                except KeyError:
+                    tag = '(c++)'
+                    version = '0replaceme'
+                outfile.write(' {}"{}" {}\n'.format(tag, sym, version))
+            else:
+                raise Exception('Cannot parse demangled line: ' + line)
+
+    # Write the diff into /tmp/symbols.diff
+    with open('/tmp/symbols.diff', 'w') as outfile:
+        subprocess.call(['diff', '-u', OLD_FILE, 'new_symbols'], stdout=outfile)
+
+if __name__ == '__main__':
+    run()
