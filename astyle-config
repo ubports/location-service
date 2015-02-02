@@ -1,0 +1,44 @@
+# Options for formatting code with astyle.
+#
+# This helps to make code match the style guide.
+# 
+# Use like this:
+# 
+#     astyle --options=astyle-config mfile.h myfile.cpp
+# 
+# Occasionally, astyle does something silly (particularly with lambdas), so it's
+# still necessary to scan the changes for things that are wrong.
+# But, for most files, it does a good job.
+# 
+# Please consider using this before checking code in for review. Code reviews shouldn't
+# have to deal with layout issues, they are just a distraction. It's better to be able
+# to focus on semantics in a code review, with style issues out of the way.
+
+--formatted
+--style=allman
+--min-conditional-indent=2
+--indent-switches
+--max-instatement-indent=120
+--pad-header
+--align-pointer=type
+--align-reference=type
+--add-brackets
+--convert-tabs
+--close-templates
+--max-code-length=120
+
+# --pad-oper
+#
+# Commented out for now. It changes
+#
+#     for (int i=0; i<10; ++i)
+# to
+#     for (int i = 0; i < 10; ++i)
+#
+# Unfortunately, it also messes with rvalue references:
+#
+#     ResourcePtr& operator=(ResourcePtr&& r);
+#
+# becomes:
+#
+#     ResourcePtr& operator=(ResourcePtr && r);
