@@ -22,7 +22,6 @@
 --pad-header
 --align-pointer=type
 --align-reference=type
---add-brackets
 --convert-tabs
 --close-templates
 --max-code-length=120
