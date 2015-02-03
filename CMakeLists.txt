@@ -55,33 +55,17 @@ if (DISABLE_ERROR_ON_LOCAL_TYPEDEFS_WARNINGS)
 endif (DISABLE_ERROR_ON_LOCAL_TYPEDEFS_WARNINGS)
 
 #
-# Code style fixer. We put the code through astyle first because it makes some fixes that
-# clang-format won't do (such as "char *p" -> "char* p"). But astyle messes up other things
-# (particularly lambdas and assembly-style comments), which clang-format does right.
-# So, we run clang-format after running astyle, which undoes the damage done by astyle
-# without reverting desirable astyle fixes.
+# Code style fixer. We rely on clang-format to adjust the formatting of source code.
 #
-
-find_program(ASTYLE_COMMAND NAMES astyle)
-if (NOT ASTYLE_COMMAND)
-    message(WARNING "Cannot find astyle: formatcode target will not be available")
-else()
-    # astyle 2.03 creates DOS line endings, so we need to fix its output
-    find_program(DOS2UNIX_COMMAND NAMES dos2unix)
-    if (NOT DOS2UNIX_COMMAND)
-        message(WARNING "Cannot find dos2unix: formatcode target will not be available")
-    else()
-        find_program(CLANG_FORMAT_COMMAND NAMES clang-format-3.6 clang-format-3.5)
-        if (NOT CLANG_FORMAT_COMMAND)
-            message(WARNING "Cannot find clang-format >= clang-format-3.5: formatcode target will not be available")
-        endif()
-    endif()
+find_program(CLANG_FORMAT_COMMAND NAMES clang-format-3.6 clang-format-3.5)
+if (NOT CLANG_FORMAT_COMMAND)
+  message(WARNING "Cannot find clang-format >= clang-format-3.5: formatcode target will not be available")
 endif()
 
-if (ASTYLE_COMMAND AND DOS2UNIX_COMMAND AND CLANG_FORMAT_COMMAND)
-set(UNITY_SCOPES_LIB_HDRS ${UNITY_SCOPES_LIB_HDRS} ${fmt_h})
-    add_custom_target(formatcode
-                      ${PROJECT_SOURCE_DIR}/tools/format-files.sh ${PROJECT_SOURCE_DIR} ${ASTYLE_COMMAND} ${CLANG_FORMAT_COMMAND})
+if (CLANG_FORMAT_COMMAND)
+  file(GLOB_RECURSE UBUNTU_LOCATION_SERVICE_INTERFACE_HEADER_FILES ${CMAKE_SOURCE_DIR}/include/*.h)
+  file(GLOB_RECURSE UBUNTU_LOCATION_SERVICE_IMPLEMENTATION_FILES ${CMAKE_SOURCE_DIR}/src/*.h ${CMAKE_SOURCE_DIR}/src/*.cpp)
+  add_custom_target(formatcode ${CLANG_FORMAT_COMMAND} -i ${UBUNTU_LOCATION_SERVICE_INTERFACE_HEADER_FILES} ${UBUNTU_LOCATION_SERVICE_IMPLEMENTATION_FILES} SOURCES _clang-format)
 endif()
 
 include_directories(
