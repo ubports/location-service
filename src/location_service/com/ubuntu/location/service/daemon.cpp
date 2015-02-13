@@ -238,10 +238,7 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         }
     };
 
-    location::service::Implementation location_service
-    {
-        configuration
-    };
+    auto location_service = std::make_shared<location::service::Implementation>(configuration);
 
     std::thread t1{[&config](){config.incoming->run();}};
     std::thread t2{[&config](){config.incoming->run();}};
