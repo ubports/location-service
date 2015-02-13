@@ -25,6 +25,7 @@
 #include <core/dbus/dbus.h>
 #include <core/dbus/object.h>
 #include <core/dbus/property.h>
+#include <core/dbus/service_watcher.h>
 #include <core/dbus/skeleton.h>
 
 #include <core/dbus/interfaces/properties.h>
@@ -124,7 +125,11 @@ private:
     // Returns true iff the session has been added to the store.
     bool add_to_session_store_for_path(
             const core::dbus::types::ObjectPath& path,
+            std::unique_ptr<core::dbus::ServiceWatcher> watcher,
             const session::Interface::Ptr& session);
+
+    // Removes the session with the given path from the session store.
+    void remove_from_session_store_for_path(const core::dbus::types::ObjectPath& path);
 
     // Called whenever the value of the respective property changes.
     void on_does_satellite_based_positioning_changed(bool value);
@@ -135,6 +140,8 @@ private:
 
     // Stores the configuration passed in at creation time.
     Configuration configuration;
+    // We observe sessions if they have died and resigned from the bus.
+    core::dbus::DBus daemon;
     // The skeleton object representing com.ubuntu.location.service.Interface on the bus.
     core::dbus::Object::Ptr object;
     // We emit property changes manually.
@@ -161,8 +168,14 @@ private:
     } connections;
     // Guards the session store.
     std::mutex guard;
+    // We track sessions and their respective watchers.
+    struct Element
+    {
+        std::unique_ptr<core::dbus::ServiceWatcher> watcher;
+        std::shared_ptr<session::Interface> session;
+    };
     // Keeps track of running sessions, keying them by their unique object path.
-    std::map<dbus::types::ObjectPath, std::shared_ptr<session::Interface>> session_store;
+    std::map<dbus::types::ObjectPath, Element> session_store;
 };
 }
 }

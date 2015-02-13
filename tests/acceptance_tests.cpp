@@ -248,7 +248,7 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
                 std::make_shared<NullReporter>()
             }
         };
-        cul::service::Implementation location_service{configuration};
+        auto location_service = std::make_shared<cul::service::Implementation>(configuration);
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -371,7 +371,7 @@ TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
             }
         };
         configuration.engine->configuration.engine_state = cul::Engine::Status::on;
-        cul::service::Implementation location_service{configuration};
+        auto location_service = std::make_shared<cul::service::Implementation>(configuration);
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -452,7 +452,7 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
             }
         };
         configuration.engine->configuration.satellite_based_positioning_state.set(cul::SatelliteBasedPositioningState::on);
-        cul::service::Implementation location_service{configuration};
+        auto location_service = std::make_shared<cul::service::Implementation>(configuration);
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -531,7 +531,7 @@ TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdu
                 std::make_shared<NullReporter>()
             }
         };
-        cul::service::Implementation location_service{configuration};
+        auto location_service = std::make_shared<cul::service::Implementation>(configuration);
 
         std::thread t1{[incoming](){incoming->run();}};
         std::thread t2{[outgoing](){outgoing->run();}};
@@ -619,7 +619,7 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
                 std::make_shared<NullReporter>()
             }
         };
-        cul::service::Implementation location_service{configuration};
+        auto location_service = std::make_shared<cul::service::Implementation>(configuration);
 
         configuration.engine->updates.visible_space_vehicles.set(visible_space_vehicles);
 
