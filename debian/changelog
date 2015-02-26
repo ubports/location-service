@@ -1,3 +1,15 @@
+location-service (2.1+15.04.20150226-0ubuntu1) vivid; urgency=medium
+
+  [ CI Train Bot ]
+  * Launchpad automatic translations update. added: po/af.po po/bg.po
+    po/sk.po
+  * New rebuild forced.
+
+  [ thomas-voss ]
+  * Account for dbus interface breakage in NM from 0.9.8.8 -> 0.9.10.0.
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Thu, 26 Feb 2015 19:53:44 +0000
+
 location-service (2.1+15.04.20150213-0ubuntu1) vivid; urgency=medium
 
   [ thomas-voss ]
