@@ -126,7 +126,9 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
             // And a dedicated worker thread.
             std::thread worker
             {
-                [this]() { service.run(); }
+                [this]() {
+                    service.run();
+                }
             };
         } dispatcher;
 

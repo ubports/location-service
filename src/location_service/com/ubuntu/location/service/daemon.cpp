@@ -15,6 +15,8 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
+
+#include <com/ubuntu/location/logging.h>
 #include <com/ubuntu/location/boost_ptree_settings.h>
 #include <com/ubuntu/location/provider_factory.h>
 
@@ -239,11 +241,38 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
     };
 
     auto location_service = std::make_shared<location::service::Implementation>(configuration);
+    // we need to ensure that is any exception is raised by the executor that we do not let it crash the app
+    // and we log the issue
+    auto incomingExecutorRunner = [&config] {
+        while(true) {
+            try {
+                VLOG(10) << "Starting the incoming executor";
+                config.incoming->run();
+                break; // run() exited normally
+            }
+            catch (...) {
+                LOG(WARNING) << "Unexpected exceptions was raised by the incomming dbus executor";
+            }
+        }
+    };
 
-    std::thread t1{[&config](){config.incoming->run();}};
-    std::thread t2{[&config](){config.incoming->run();}};
-    std::thread t3{[&config](){config.incoming->run();}};
-    std::thread t4{[&config](){config.outgoing->run();}};
+    auto outgoingExecutorRunner = [&config] {
+        while(true) {
+            try {
+                VLOG(10) << "Starting the outgoing executor";
+                config.outgoing->run();
+                break; // run() exited normally
+            }
+            catch (...) {
+                LOG(WARNING) << "Unexpected exceptions was raised by the outgoing dbus executor";
+            }
+        }
+    };
+
+    std::thread t1{incomingExecutorRunner};
+    std::thread t2{incomingExecutorRunner};
+    std::thread t3{incomingExecutorRunner};
+    std::thread t4{outgoingExecutorRunner};
 
     trap->run();
 
