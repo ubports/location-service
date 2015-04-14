@@ -66,7 +66,7 @@ struct Runtime
             try
             {
                 service.run();
-                break;  // provider was excit correctly
+                break;  // provider has exited correctly
             }
             catch (const std::exception& e)
             {

@@ -241,8 +241,8 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
     };
 
     auto location_service = std::make_shared<location::service::Implementation>(configuration);
-    // we need to ensure that is any exception is raised by the executor that we do not let it crash the app
-    // and we log the issue
+    // We need to ensure that any exception raised by the executor does not crash the app
+    // and also gets logged.
     auto incomingExecutorRunner = [&config] {
         while(true)
         {
@@ -258,7 +258,7 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
             }
             catch (...)
             {
-                LOG(WARNING) << "Unexpected exceptions was raised by the incomming dbus executor";
+                LOG(WARNING) << "nexpected exception was raised by the incoming executo";
             }
         }
     };
