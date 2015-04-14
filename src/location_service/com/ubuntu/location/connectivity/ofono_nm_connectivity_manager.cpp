@@ -705,12 +705,20 @@ struct Runtime
 
         worker_thread = std::move(std::thread
         {
-            [this]() {
+            [this]()
+            {
                 while(true) {
-                    try {
+                    try
+                    {
                         system_bus->run();
                         break;  // run exited normally
-                    } catch(...) {
+                    }
+                    catch (const std::exception& e)
+                    {
+                        LOG(WARNING) << e.what();
+                    }
+                    catch(...)
+                    {
                         LOG(WARNING) << "Unexpected exception was raised by the io executor.";
                     }
                 }

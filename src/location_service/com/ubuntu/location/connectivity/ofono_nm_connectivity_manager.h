@@ -126,8 +126,24 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
             // And a dedicated worker thread.
             std::thread worker
             {
-                [this]() {
-                    service.run();
+                [this]() 
+                {
+                   while(true)
+                   {
+                      try
+                      {
+                          service.run();
+                          break;  // normal exit
+                      }
+                      catch (const std::exception& e)
+                      {
+                          LOG(WARNING) << e.what();
+                      }
+                      catch(...)
+                      {
+                          LOG(WARNING) << "Received unexpected exception.";
+                      }
+                   }
                 }
             };
         } dispatcher;

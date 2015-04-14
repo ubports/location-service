@@ -244,26 +244,40 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
     // we need to ensure that is any exception is raised by the executor that we do not let it crash the app
     // and we log the issue
     auto incomingExecutorRunner = [&config] {
-        while(true) {
-            try {
+        while(true)
+        {
+            try
+            {
                 VLOG(10) << "Starting the incoming executor";
                 config.incoming->run();
                 break; // run() exited normally
             }
-            catch (...) {
+            catch (const std::exception& e)
+            {
+                LOG(WARNING) << e.what();
+            }
+            catch (...)
+            {
                 LOG(WARNING) << "Unexpected exceptions was raised by the incomming dbus executor";
             }
         }
     };
 
     auto outgoingExecutorRunner = [&config] {
-        while(true) {
-            try {
+        while(true)
+        {
+            try
+            {
                 VLOG(10) << "Starting the outgoing executor";
                 config.outgoing->run();
                 break; // run() exited normally
             }
-            catch (...) {
+            catch (const std::exception& e)
+            {
+                LOG(WARNING) << e.what();
+            }
+            catch (...)
+            {
                 LOG(WARNING) << "Unexpected exceptions was raised by the outgoing dbus executor";
             }
         }
