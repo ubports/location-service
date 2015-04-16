@@ -55,19 +55,7 @@ static const std::map<int, std::string> return_code_lut =
 
 struct culs::Provider::Private
 {
-    enum class State
-    {
-        stopped,
-        started,
-        stop_requested
-    };
 
-    static WPS_Continuation periodic_callback(
-        void* context,
-        WPS_ReturnCode code,
-        const WPS_Location* location,
-        const void*);
-    
     Private(
         const culs::Provider::Configuration& config, 
         culs::Provider* parent)
@@ -112,11 +100,6 @@ struct culs::Provider::Private
         state = State::stop_requested;
     }
 
-    culs::Provider* parent;
-    Configuration config;
-    State state;
-    WPS_SimpleAuthentication authentication;
-    std::thread worker;
 };
 
 WPS_Continuation culs::Provider::Private::periodic_callback(void* context,
@@ -201,7 +184,7 @@ culs::Provider::Provider(const culs::Provider::Configuration& config)
 
 culs::Provider::~Provider() noexcept
 {
-    d->request_stop();
+    request_stop();
 }
 
 bool culs::Provider::matches_criteria(const cul::Criteria&)
@@ -211,30 +194,30 @@ bool culs::Provider::matches_criteria(const cul::Criteria&)
 
 void culs::Provider::start_position_updates()
 {
-    d->start();
+    start();
 }
 
 void culs::Provider::stop_position_updates()
 {
-    d->request_stop();
+    request_stop();
 }
 
 void culs::Provider::start_velocity_updates()
 {
-    d->start();
+    start();
 }
 
 void culs::Provider::stop_velocity_updates()
 {
-    d->request_stop();
+    request_stop();
 }    
 
 void culs::Provider::start_heading_updates()
 {
-    d->start();
+    start();
 }
 
 void culs::Provider::stop_heading_updates()
 {
-    d->request_stop();
+    request_stop();
 }

@@ -14,9 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
+ *              Manuel de la Pena <manuel.delapena@canonical.com>
  */
-#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GPS_PROVIDER_H_
-#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GPS_PROVIDER_H_
+
+#pragma once
 
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_factory.h>
@@ -60,12 +61,10 @@ class Provider : public com::ubuntu::location::Provider
     void on_reference_location_updated(const Update<Position>& position);
 
   private:
-    struct Private;
-    std::unique_ptr<Private> d;    
+    std::shared_ptr<HardwareAbstractionLayer> hal;
 };
 }
 }
 }
 }
 }
-#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GPS_PROVIDER_H_
