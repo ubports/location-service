@@ -243,13 +243,13 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
     auto location_service = std::make_shared<location::service::Implementation>(configuration);
     // We need to ensure that any exception raised by the executor does not crash the app
     // and also gets logged.
-    auto incomingExecutorRunner = [&config] {
+    auto execute = [] (std::shared_ptr<core::dbus::Bus> bus) {
         while(true)
         {
             try
             {
                 VLOG(10) << "Starting the incoming executor";
-                config.incoming->run();
+                bus->run();
                 break; // run() exited normally
             }
             catch (const std::exception& e)
@@ -258,35 +258,15 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
             }
             catch (...)
             {
-                LOG(WARNING) << "nexpected exception was raised by the incoming executo";
+                LOG(WARNING) << "Unexpected exception was raised by the bus executor";
             }
         }
     };
 
-    auto outgoingExecutorRunner = [&config] {
-        while(true)
-        {
-            try
-            {
-                VLOG(10) << "Starting the outgoing executor";
-                config.outgoing->run();
-                break; // run() exited normally
-            }
-            catch (const std::exception& e)
-            {
-                LOG(WARNING) << e.what();
-            }
-            catch (...)
-            {
-                LOG(WARNING) << "Unexpected exceptions was raised by the outgoing dbus executor";
-            }
-        }
-    };
-
-    std::thread t1{incomingExecutorRunner};
-    std::thread t2{incomingExecutorRunner};
-    std::thread t3{incomingExecutorRunner};
-    std::thread t4{outgoingExecutorRunner};
+    std::thread t1{execute, config.incoming};
+    std::thread t2{execute, config.incoming};
+    std::thread t3{execute, config.incoming};
+    std::thread t4{execute, config.outgoing};
 
     trap->run();
 
