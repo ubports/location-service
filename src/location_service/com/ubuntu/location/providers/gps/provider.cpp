@@ -28,11 +28,6 @@
 namespace cul = com::ubuntu::location;
 namespace culg = com::ubuntu::location::providers::gps;
 
-struct culg::Provider::Private
-{
-    std::shared_ptr<HardwareAbstractionLayer> hal;
-};
-
 std::string culg::Provider::class_name()
 {
     return "gps::Provider";
@@ -47,26 +42,25 @@ culg::Provider::Provider(const std::shared_ptr<HardwareAbstractionLayer>& hal)
     : cul::Provider(
           cul::Provider::Features::position | cul::Provider::Features::velocity | cul::Provider::Features::heading,
           cul::Provider::Requirements::satellites),
-      d(new Private())
+          hal(hal)
 {
-    d->hal = hal;
 
-    d->hal->position_updates().connect([this](const location::Position& pos)
+    hal->position_updates().connect([this](const location::Position& pos)
     {
         mutable_updates().position(Update<Position>(pos));
     });
 
-    d->hal->heading_updates().connect([this](const location::Heading& heading)
+    hal->heading_updates().connect([this](const location::Heading& heading)
     {
         mutable_updates().heading(Update<Heading>(heading));
     });
 
-    d->hal->velocity_updates().connect([this](const location::Velocity& velocity)
+    hal->velocity_updates().connect([this](const location::Velocity& velocity)
     {
         mutable_updates().velocity(Update<Velocity>(velocity));
     });
 
-    d->hal->space_vehicle_updates().connect([this](const std::set<location::SpaceVehicle>& svs)
+    hal->space_vehicle_updates().connect([this](const std::set<location::SpaceVehicle>& svs)
     {
         mutable_updates().svs(Update<std::set<location::SpaceVehicle>>(svs));
     });
@@ -83,12 +77,12 @@ bool culg::Provider::matches_criteria(const cul::Criteria&)
 
 void culg::Provider::start_position_updates()
 {
-    d->hal->start_positioning();
+    hal->start_positioning();
 }
 
 void culg::Provider::stop_position_updates()
 {
-    d->hal->stop_positioning();
+    hal->stop_positioning();
 }
 
 void culg::Provider::start_velocity_updates()
@@ -109,6 +103,6 @@ void culg::Provider::stop_heading_updates()
 
 void culg::Provider::on_reference_location_updated(const cul::Update<cul::Position>& position)
 {
-    d->hal->inject_reference_position(position.value);
+    hal->inject_reference_position(position.value);
 }
 
