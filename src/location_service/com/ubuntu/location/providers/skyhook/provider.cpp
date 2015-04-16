@@ -53,54 +53,6 @@ static const std::map<int, std::string> return_code_lut =
 };
 }
 
-struct culs::Provider::Private
-{
-
-    Private(
-        const culs::Provider::Configuration& config, 
-        culs::Provider* parent)
-            : parent(parent),
-              config(config),
-              state(State::stopped)
-    {
-    }
-    
-    void start()
-    {
-        if (state != State::stopped)
-            return;
-        
-        if (worker.joinable())
-            worker.join();
-
-        static const unsigned infinite_iterations = 0;
-        
-        authentication.username = config.user_name.c_str();
-        authentication.realm = config.realm.c_str();
-        
-        worker = std::move(std::thread([&]()
-        {
-            int rc = WPS_periodic_location(
-                &authentication,
-                WPS_NO_STREET_ADDRESS_LOOKUP,
-                config.period.count(),
-                infinite_iterations,
-                culs::Provider::Private::periodic_callback,
-                this);
-
-            if (rc != WPS_OK)
-                LOG(ERROR) << return_code_lut.at(rc);
-        }));
-
-        state = State::started;
-    }
-    
-    void request_stop()
-    {
-        state = State::stop_requested;
-    }
-
-};
 
 WPS_Continuation culs::Provider::Private::periodic_callback(void* context,
                                                             WPS_ReturnCode code,
@@ -178,13 +130,44 @@ const cul::Provider::RequirementFlags& culs::Provider::default_requirement_flags
 
 culs::Provider::Provider(const culs::Provider::Configuration& config) 
         : com::ubuntu::location::Provider(culs::Provider::default_feature_flags(), culs::Provider::default_requirement_flags()),
-          d(new Private(config, this))
+          config(config),
+          state(State::stopped)
 {
 }
 
 culs::Provider::~Provider() noexcept
 {
     request_stop();
+}
+
+void culs::Provider::start()
+{
+    if (state != State::stopped)
+        return;
+
+    if (worker.joinable())
+        worker.join();
+
+    static const unsigned infinite_iterations = 0;
+
+    authentication.username = config.user_name.c_str();
+    authentication.realm = config.realm.c_str();
+
+    worker = std::move(std::thread([&]()
+    {
+        int rc = WPS_periodic_location(&authentication, WPS_NO_STREET_ADDRESS_LOOKUP, config.period.count(),
+                                       infinite_iterations, culs::Provider::Private::periodic_callback, this);
+
+        if (rc != WPS_OK)
+            LOG(ERROR) << return_code_lut.at(rc);
+    }));
+
+    state = State::started;
+}
+
+void culs::Provider::request_stop()
+{
+    state = State::stop_requested;
 }
 
 bool culs::Provider::matches_criteria(const cul::Criteria&)
