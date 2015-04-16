@@ -144,7 +144,7 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
             std::map<core::dbus::types::ObjectPath, detail::CachedRadioCell::Ptr> cells;
             std::map<core::dbus::types::ObjectPath, org::Ofono::Manager::Modem> modems;
             std::map<core::dbus::types::ObjectPath, detail::CachedWirelessNetwork::Ptr> wifis;
-            std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device> wireless_devices;
+            std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device> nm_devices;
             std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::ActiveConnection> primary_connection;
             std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device> primary_connection_devices;
         } cached;
