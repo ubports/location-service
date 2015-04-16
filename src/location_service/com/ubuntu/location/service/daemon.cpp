@@ -248,7 +248,7 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         {
             try
             {
-                VLOG(10) << "Starting the incoming executor";
+                VLOG(10) << "Starting a bus executor";
                 bus->run();
                 break; // run() exited normally
             }
