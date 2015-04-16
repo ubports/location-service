@@ -75,8 +75,9 @@ void connectivity::OfonoNmConnectivityManager::request_scan_for_wireless_network
 {
     std::lock_guard<std::mutex> lg(d.cached.guard);
 
-    for (const auto& pair : d.cached.wireless_devices)
-        pair.second.request_scan();
+    for (const auto& pair : d.cached.nm_devices)
+        if (pair.second.type() == xdg::NetworkManager::Device::Type::wifi)
+            pair.second.request_scan();
 }
 
 const core::Signal<>& connectivity::OfonoNmConnectivityManager::wireless_network_scan_finished() const
@@ -506,16 +507,23 @@ void connectivity::OfonoNmConnectivityManager::Private::on_device_added(
         const core::dbus::types::ObjectPath& device_path,
         std::unique_lock<std::mutex>& ul)
 {
-    if (cached.wireless_devices.count(device_path) > 0)
+    if (cached.nm_devices.count(device_path) > 0)
         return;
 
     auto device = network_manager->device_for_path(device_path);
+
+    if (device.type() == xdg::NetworkManager::Device::Type::modem)
+    {
+      // Make the device known to the cache.
+      std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device>::iterator it;
+      std::tie(it, std::ignore) = cached.nm_devices.insert(std::make_pair(device_path, device));
+    }
 
     if (device.type() == xdg::NetworkManager::Device::Type::wifi)
     {
         // Make the device known to the cache.
         std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device>::iterator it;
-        std::tie(it, std::ignore) = cached.wireless_devices.insert(std::make_pair(device_path, device));
+        std::tie(it, std::ignore) = cached.nm_devices.insert(std::make_pair(device_path, device));
 
         // Iterate over all currently known wifis
         it->second.for_each_access_point([this, device_path, &ul](const core::dbus::types::ObjectPath& path)
@@ -567,7 +575,7 @@ void connectivity::OfonoNmConnectivityManager::Private::on_device_removed(
         const core::dbus::types::ObjectPath& path,
         std::unique_lock<std::mutex>&)
 {
-    cached.wireless_devices.erase(path);
+    cached.nm_devices.erase(path);
 }
 
 void connectivity::OfonoNmConnectivityManager::Private::on_access_point_added(
@@ -577,8 +585,8 @@ void connectivity::OfonoNmConnectivityManager::Private::on_access_point_added(
 {
     // Let's see if we have a device known for the path. We return early
     // if we do not know about the device.
-    auto itd = cached.wireless_devices.find(device_path);
-    if (itd == cached.wireless_devices.end())
+    auto itd = cached.nm_devices.find(device_path);
+    if (itd == cached.nm_devices.end() || itd->second.type() != xdg::NetworkManager::Device::Type::wifi)
         return;
 
     xdg::NetworkManager::AccessPoint ap
@@ -638,8 +646,8 @@ connectivity::Characteristics connectivity::OfonoNmConnectivityManager::Private:
                 // We only consider cached devices and do not reach out to enumerate all of the devices
                 // to prevent from excessive dbus roundtrips.
                 std::lock_guard<std::mutex> lg{cached.guard};
-                if (cached.wireless_devices.count(path) > 0)
-                    type = cached.wireless_devices.at(path).type();                
+                if (cached.nm_devices.count(path) > 0 )
+                    type = cached.nm_devices.at(path).type();
             }
 
             // We interpret a primary connection over a modem device as
@@ -670,9 +678,7 @@ connectivity::Characteristics connectivity::OfonoNmConnectivityManager::Private:
                         // connections unless we could unambigiously determine that we are *not* roaming.
                         characteristics = characteristics | connectivity::Characteristics::connection_is_roaming;
                     }
-                }
-
-                characteristics = characteristics | all_characteristics();
+                }                
             } else if (type == xdg::NetworkManager::Device::Type::wifi)
             {
                 characteristics = characteristics | connectivity::Characteristics::connection_goes_via_wifi;
@@ -684,6 +690,7 @@ connectivity::Characteristics connectivity::OfonoNmConnectivityManager::Private:
         // Empty on purpose.
     }
 
+    LOG(INFO) << characteristics << std::endl;
     return characteristics;
 }
 
