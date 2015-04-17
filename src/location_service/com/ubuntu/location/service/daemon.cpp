@@ -15,6 +15,8 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
+
+#include <com/ubuntu/location/logging.h>
 #include <com/ubuntu/location/boost_ptree_settings.h>
 #include <com/ubuntu/location/provider_factory.h>
 
@@ -239,11 +241,32 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
     };
 
     auto location_service = std::make_shared<location::service::Implementation>(configuration);
+    // We need to ensure that any exception raised by the executor does not crash the app
+    // and also gets logged.
+    auto execute = [] (std::shared_ptr<core::dbus::Bus> bus) {
+        while(true)
+        {
+            try
+            {
+                VLOG(10) << "Starting a bus executor";
+                bus->run();
+                break; // run() exited normally
+            }
+            catch (const std::exception& e)
+            {
+                LOG(WARNING) << e.what();
+            }
+            catch (...)
+            {
+                LOG(WARNING) << "Unexpected exception was raised by the bus executor";
+            }
+        }
+    };
 
-    std::thread t1{[&config](){config.incoming->run();}};
-    std::thread t2{[&config](){config.incoming->run();}};
-    std::thread t3{[&config](){config.incoming->run();}};
-    std::thread t4{[&config](){config.outgoing->run();}};
+    std::thread t1{execute, config.incoming};
+    std::thread t2{execute, config.incoming};
+    std::thread t3{execute, config.incoming};
+    std::thread t4{execute, config.outgoing};
 
     trap->run();
 
