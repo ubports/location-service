@@ -1,3 +1,14 @@
+location-service (2.1+15.04.20150417-0ubuntu1) vivid; urgency=medium
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+  [ Manuel de la Pena ]
+  * If an exception is thrown from the io_executor run method it must be
+    caught, logger and continued with the main loop.
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Fri, 17 Apr 2015 09:45:52 +0000
+
 location-service (2.1+15.04.20150226-0ubuntu1) vivid; urgency=medium
 
   [ CI Train Bot ]
