@@ -678,7 +678,9 @@ connectivity::Characteristics connectivity::OfonoNmConnectivityManager::Private:
                         // connections unless we could unambigiously determine that we are *not* roaming.
                         characteristics = characteristics | connectivity::Characteristics::connection_is_roaming;
                     }
-                }                
+                }
+
+                characteristics = characteristics | all_characteristics();                
             } else if (type == xdg::NetworkManager::Device::Type::wifi)
             {
                 characteristics = characteristics | connectivity::Characteristics::connection_goes_via_wifi;
