@@ -16,9 +16,11 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <com/ubuntu/location/non_selecting_provider_selection_policy.h>
+#include <atomic>
 
-#include <set>
+#include <com/ubuntu/location/logging.h>
+#include <com/ubuntu/location/optional.h>
+#include <com/ubuntu/location/non_selecting_provider_selection_policy.h>
 
 namespace location = com::ubuntu::location;
 
@@ -53,7 +55,15 @@ struct BagOfProviders : public location::Provider
         {
             connections.push_back(provider->updates().position.connect([this](const location::Update<location::Position>& update)
             {
-                mutable_updates().position(update);
+                auto data = update.value;
+                LOG(INFO) << "Update recived from " << std::chrono::system_clock::to_time_t(update.when) << " with the following data:\n"
+                    << "longitud:\t" << data.longitude  << "\nlatitude:\t" << data.latitude  << "\naltidue:\t"
+                    << data.altitude;
+                if (is_better_position_update(update))
+                {
+                    last_position_update = update;
+                    mutable_updates().position(update);
+                }
             }));
 
             connections.push_back(provider->updates().heading.connect([this](const location::Update<location::Heading>& update)
@@ -67,6 +77,38 @@ struct BagOfProviders : public location::Provider
             }));
         }
 
+    }
+
+    // decide if the update is better than the last one sent
+    bool is_better_position_update(const location::Update<location::Position>& update)
+    {
+        if (!last_position_update)
+        {
+            // first update, ergo is better
+            return true;
+        }
+
+        std::chrono::minutes minutes(2);
+
+        auto timeDelta = update.when - last_position_update->when;
+        auto isSignificantlyNewer = timeDelta > minutes;
+        auto isSignificantlyOlder =  timeDelta < minutes;
+
+        // if the time diff is bigger than 2 mins, we are more interested in the new one, else the old one is better
+        if (isSignificantlyNewer) {
+            return true;
+        } else if (isSignificantlyOlder) {
+            return false;
+        }
+
+        // we are within a time range where we can get a valid update that is more accurate
+        // TODO: Track the provider so that we just accept the GPS one before
+        if (last_position_update->value.accuracy.horizontal > update.value.accuracy.horizontal)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     // We always match :)
@@ -138,6 +180,10 @@ struct BagOfProviders : public location::Provider
 
     std::set<location::Provider::Ptr> providers;
     std::vector<core::ScopedConnection> connections;
+
+ private:
+    // keep track of the latests sent update
+    location::Optional<location::Update<location::Position>> last_position_update;
 };
 }
 
