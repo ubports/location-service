@@ -49,7 +49,7 @@ struct GpsXtraDownloader
         /** @brief Timeout on gps xtra download operations. */
         std::chrono::milliseconds timeout
         {
-            1500
+            5000
         };
 
         /** Set of hosts serving GPS xtra data. */
