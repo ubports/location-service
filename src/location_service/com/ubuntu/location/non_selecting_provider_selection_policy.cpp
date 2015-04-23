@@ -16,12 +16,9 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-
-#include <mutex>
-
-#include <com/ubuntu/location/logging.h>
-#include <com/ubuntu/location/optional.h>
 #include <com/ubuntu/location/non_selecting_provider_selection_policy.h>
+
+#include <set>
 
 namespace location = com::ubuntu::location;
 
@@ -56,23 +53,7 @@ struct BagOfProviders : public location::Provider
         {
             connections.push_back(provider->updates().position.connect([this](const location::Update<location::Position>& update)
             {
-                std::lock_guard<std::mutex> lock(position_update_mutex);
-                auto data = update.value;
-                LOG(INFO) << "Update recived from " << std::chrono::system_clock::to_time_t(update.when) << " with the following data:\n"
-                    << "longitud:\t" << data.longitude  << "\nlatitude:\t" << data.latitude  << "\naltidue:\t"
-                    << data.altitude;
-                if (is_better_position_update(update))
-                {
-                    LOG(INFO) << "Updating position";
-                    last_position_update = update;
-                    mutable_updates().position(update);
-                }
-                else
-                {
-                    // use the old location to mimic that we are getting updates at a decent rate
-                    LOG(INFO) << "Sending old update";
-                    mutable_updates().position(*last_position_update);
-                }
+                mutable_updates().position(update);
             }));
 
             connections.push_back(provider->updates().heading.connect([this](const location::Update<location::Heading>& update)
@@ -85,34 +66,6 @@ struct BagOfProviders : public location::Provider
                 mutable_updates().velocity(update);
             }));
         }
-
-    }
-
-    // decide if the update is better than the last one sent
-    bool is_better_position_update(const location::Update<location::Position>& update)
-    {
-        if (!last_position_update)
-        {
-            // first update, ergo is better
-            return true;
-        }
-
-        std::chrono::minutes limit(2);
-        auto timeDelta = update.when - last_position_update->when;
-        auto isSignificantlyNewer = timeDelta > limit;
-        auto isSignificantlyOlder = timeDelta < (-1 * limit);
-
-        // if the time diff is bigger than 2 mins, we are more interested in the new one, else the old one is better
-        if (isSignificantlyNewer) {
-            return true;
-        } else if (isSignificantlyOlder) {
-            return false;
-        }
-
-        // we are within a time range where we can get a valid update that is more accurate
-        // TODO: Track the provider so that we just accept the GPS one before
-        return last_position_update->value.accuracy.horizontal && update.value.accuracy.horizontal
-            && *last_position_update->value.accuracy.horizontal >= *update.value.accuracy.horizontal;
 
     }
 
@@ -185,11 +138,6 @@ struct BagOfProviders : public location::Provider
 
     std::set<location::Provider::Ptr> providers;
     std::vector<core::ScopedConnection> connections;
-
- private:
-    // keep track of the latests sent update
-    location::Optional<location::Update<location::Position>> last_position_update;
-    std::mutex position_update_mutex;
 };
 }
 
