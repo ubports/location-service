@@ -39,6 +39,7 @@ TimeBasedUpdatePolicy::TimeBasedUpdatePolicy(std::chrono::minutes mins)
 {
 
 }
+
 const location::Update<location::Position>& TimeBasedUpdatePolicy::verify_update(const location::Update<location::Position>& update)
 {
     std::lock_guard<std::mutex> guard(position_update_mutex);
