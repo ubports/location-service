@@ -16,8 +16,8 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  *              Manuel de la Pena <manuel.delapena@canonical.com>
  */
-
-#pragma once
+#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_SKYHOOK_PROVIDER_H_
+#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_SKYHOOK_PROVIDER_H_
 
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_factory.h>
@@ -76,8 +76,7 @@ class Provider : public com::ubuntu::location::Provider
     virtual void start_heading_updates() override;
     virtual void stop_heading_updates() override;
 
- protected:
-    // visible to simplify exposing it to the tests
+ private:
     static WPS_Continuation periodic_callback(
             void* context,
             WPS_ReturnCode code,

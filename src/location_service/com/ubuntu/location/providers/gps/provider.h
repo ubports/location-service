@@ -16,8 +16,8 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  *              Manuel de la Pena <manuel.delapena@canonical.com>
  */
-
-#pragma once
+#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GPS_PROVIDER_H_
+#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GPS_PROVIDER_H_
 
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_factory.h>
@@ -68,3 +68,4 @@ class Provider : public com::ubuntu::location::Provider
 }
 }
 }
+#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GPS_PROVIDER_H_
