@@ -27,7 +27,7 @@ namespace location
 
 std::chrono::minutes TimeBasedUpdatePolicy::default_timeout()
 {
-    static std::chrono::minutes default_limit(2);
+    static const std::chrono::minutes default_limit(2);
     return default_limit;
 }
 
