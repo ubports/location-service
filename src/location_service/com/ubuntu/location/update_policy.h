@@ -36,17 +36,35 @@ namespace location
 // allows developers to inject different heuristics in the engine to perform the update selection
 // so that the app developers can take advantage of it.
 class UpdatePolicy {
-
-
  public:
     typedef std::shared_ptr<UpdatePolicy> Ptr;
 
-    // Return if the given position update will be verifyed as the new position in the engine.
+    UpdatePolicy(const UpdatePolicy&) = delete;
+    UpdatePolicy(UpdatePolicy&&) = delete;
+    UpdatePolicy& operator=(const UpdatePolicy&) = delete;
+    virtual ~UpdatePolicy() = default;
+
+    // Return if the given position update will be verified as the new position in the engine.
     virtual const location::Update<location::Position>& verify_update(const location::Update<location::Position>& update) = 0;
-    // Return if the given heading update will be verifyed as the new heading in the engine.
+    // Return if the given heading update will be verified as the new heading in the engine.
     virtual const location::Update<location::Heading>& verify_update(const location::Update<location::Heading>& update) = 0;
-    // Return if the given velocity update will be verifyed as the new velocity in the engine.
+    // Return if the given velocity update will be verified as the new velocity in the engine.
     virtual const location::Update<location::Velocity>& verify_update(const location::Update<location::Velocity>& update) = 0;
+ protected:
+    UpdatePolicy() = default;
+
+    template <class T> bool is_significantly_newer(const location::Update<T> last_update, const location::Update<T> update, std::chrono::minutes limit)
+    {
+       auto delta = update.when - last_update.when;
+       return delta > limit;
+    }
+
+    template <class T> bool is_significantly_older(const location::Update<T> last_update, const location::Update<T> update, std::chrono::minutes limit)
+    {
+       auto delta = update.when - last_update.when;
+       return delta < (-1 * limit);
+    }
+
 
 };
 }

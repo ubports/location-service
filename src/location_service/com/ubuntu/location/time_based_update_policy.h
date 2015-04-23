@@ -36,8 +36,7 @@ namespace location
 class TimeBasedUpdatePolicy : public UpdatePolicy {
 
  public:
-    TimeBasedUpdatePolicy();
-    TimeBasedUpdatePolicy(int mins);
+    TimeBasedUpdatePolicy(std::chrono::minutes mins=default_timeout());
     TimeBasedUpdatePolicy(const TimeBasedUpdatePolicy&) = delete;
     ~TimeBasedUpdatePolicy() = default;
 
@@ -48,20 +47,10 @@ class TimeBasedUpdatePolicy : public UpdatePolicy {
     // Return if the given velocity update will be verifyed as the new velocity in the engine.
     const location::Update<location::Velocity>& verify_update(const location::Update<location::Velocity>& update) override;
 
+    static std::chrono::minutes default_timeout();
+
  protected:
     // not private to simplify the testing but should be private
-    template <class T> bool is_significantly_newer(const location::Update<T> update)
-    {
-       auto delta = update.when - last_position_update.when;
-       return delta > limit;
-    }
-
-    template <class T> bool is_significantly_older(const location::Update<T> update)
-    {
-       auto delta = update.when - last_position_update.when;
-       return delta < (-1 * limit);
-    }
-
     location::Update<location::Position> last_position_update;
     location::Update<location::Heading> last_heading_update;
     location::Update<location::Velocity> last_velocity_update;
