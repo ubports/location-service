@@ -18,9 +18,6 @@
 
 #include "time_based_update_policy.h"
 
-namespace {
-    int default_time_limit = 2;
-}
 namespace com
 {
 namespace ubuntu
