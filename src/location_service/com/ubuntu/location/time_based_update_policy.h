@@ -30,9 +30,8 @@ namespace ubuntu
 namespace location
 {
 
-// An interface that can be implemented to add heuristics on how update will be chosen. This class
-// allows developers to inject different heuristics in the engine to perform the update selection
-// so that the app developers can take advantage of it.
+// An interface that can be implemented to add heuristics on how heading, position or velocity updates will be chosen.
+// This class ensures that the best update possible is chosen within a reasonable time bracket.
 class TimeBasedUpdatePolicy : public UpdatePolicy {
 
  public:
@@ -40,11 +39,11 @@ class TimeBasedUpdatePolicy : public UpdatePolicy {
     TimeBasedUpdatePolicy(const TimeBasedUpdatePolicy&) = delete;
     ~TimeBasedUpdatePolicy() = default;
 
-    // Return if the given position update will be verifyed as the new position in the engine.
+    // Return if the given position update will be verified as the new position in the engine.
     const location::Update<location::Position>& verify_update(const location::Update<location::Position>& update) override;
-    // Return if the given heading update will be verifyed as the new heading in the engine.
+    // Return if the given heading update will be verified as the new heading in the engine.
     const location::Update<location::Heading>& verify_update(const location::Update<location::Heading>& update) override;
-    // Return if the given velocity update will be verifyed as the new velocity in the engine.
+    // Return if the given velocity update will be verified as the new velocity in the engine.
     const location::Update<location::Velocity>& verify_update(const location::Update<location::Velocity>& update) override;
 
     static std::chrono::minutes default_timeout();

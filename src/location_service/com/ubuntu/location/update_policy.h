@@ -32,8 +32,8 @@ namespace ubuntu
 namespace location
 {
 
-// An interface that can be implemented to add heuristics on how update will be chosen. This class
-// allows developers to inject different heuristics in the engine to perform the update selection
+// An interface that can be implemented to add heuristics on how heading, position or velocity updateswill be chosen.
+// This class allows developers to inject different heuristics in the engine to perform the update selection
 // so that the app developers can take advantage of it.
 class UpdatePolicy {
  public:
@@ -53,13 +53,13 @@ class UpdatePolicy {
  protected:
     UpdatePolicy() = default;
 
-    template <class T> bool is_significantly_newer(const location::Update<T> last_update, const location::Update<T> update, std::chrono::minutes limit)
+    template <class T> bool is_significantly_newer(const location::Update<T> last_update, const location::Update<T> update, std::chrono::minutes limit) const
     {
        auto delta = update.when - last_update.when;
        return delta > limit;
     }
 
-    template <class T> bool is_significantly_older(const location::Update<T> last_update, const location::Update<T> update, std::chrono::minutes limit)
+    template <class T> bool is_significantly_older(const location::Update<T> last_update, const location::Update<T> update, std::chrono::minutes limit) const
     {
        auto delta = update.when - last_update.when;
        return delta < (-1 * limit);
