@@ -16,8 +16,8 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  *              Manuel de la Pena <manuel.delapena@canonical.com>
  */
-
-#pragma once
+#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GEOCLUE_PROVIDER_H_
+#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GEOCLUE_PROVIDER_H_
 
 #include <core/dbus/object.h>
 #include <core/dbus/signal.h>
@@ -85,8 +85,7 @@ class Provider : public com::ubuntu::location::Provider
     virtual void start_heading_updates() override;
     virtual void stop_heading_updates() override;
 
-  protected:
-    // set to be protected instead of private so that they can be exposed for testing
+  private:
     void start();
     void stop();
 
@@ -109,3 +108,4 @@ class Provider : public com::ubuntu::location::Provider
 }
 }
 }
+#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GEOCLUE_PROVIDER_H_
