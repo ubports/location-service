@@ -19,7 +19,7 @@
 #include "time_based_update_policy.h"
 
 namespace {
-    int DEFAULT_TIME_LIMIT = 2;
+    int default_time_limit = 2;
 }
 namespace com
 {
@@ -28,12 +28,13 @@ namespace ubuntu
 namespace location
 {
 
-TimeBasedUpdatePolicy::TimeBasedUpdatePolicy()
-    : TimeBasedUpdatePolicy(DEFAULT_TIME_LIMIT)
+std::chrono::minutes TimeBasedUpdatePolicy::default_timeout()
 {
+    static std::chrono::minutes default_limit(2);
+    return default_limit;
 }
 
-TimeBasedUpdatePolicy::TimeBasedUpdatePolicy(int mins)
+TimeBasedUpdatePolicy::TimeBasedUpdatePolicy(std::chrono::minutes mins)
     : limit(mins)
 {
 
@@ -42,11 +43,11 @@ const location::Update<location::Position>& TimeBasedUpdatePolicy::verify_update
 {
     std::lock_guard<std::mutex> guard(position_update_mutex);
     bool use_new_update;
-    if (is_significantly_newer(update))
+    if (is_significantly_newer(last_position_update, update, limit))
     {
         use_new_update = true;
     }
-    else if (is_significantly_older(update))
+    else if (is_significantly_older(last_position_update, update, limit))
     {
         use_new_update = false;
     }
@@ -72,11 +73,11 @@ const location::Update<location::Heading>& TimeBasedUpdatePolicy::verify_update(
 {
     std::lock_guard<std::mutex> guard(heading_update_mutex);
     bool use_new_update;
-    if (is_significantly_newer(update))
+    if (is_significantly_newer(last_heading_update, update, limit))
     {
         use_new_update = true;
     }
-    else if (is_significantly_older(update))
+    else if (is_significantly_older(last_heading_update, update, limit))
     {
         use_new_update = false;
     }
@@ -95,11 +96,11 @@ const location::Update<location::Velocity>& TimeBasedUpdatePolicy::verify_update
 {
     std::lock_guard<std::mutex> guard(velocity_update_mutex);
     bool use_new_update;
-    if (is_significantly_newer(update))
+    if (is_significantly_newer(last_velocity_update, update, limit))
     {
         use_new_update = true;
     }
-    else if (is_significantly_older(update))
+    else if (is_significantly_older(last_velocity_update, update, limit))
     {
         use_new_update = false;
     }
