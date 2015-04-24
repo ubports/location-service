@@ -33,6 +33,8 @@
 #include <mutex>
 #include <set>
 
+#include "update_policy.h"
+
 namespace com
 {
 namespace ubuntu
@@ -193,6 +195,7 @@ private:
     std::map<Provider::Ptr, ProviderConnections> providers;
     ProviderSelectionPolicy::Ptr provider_selection_policy;
     Settings::Ptr settings;
+    UpdatePolicy::Ptr update_policy;
 };
 
 /** @brief Pretty prints the given status to the given stream. */

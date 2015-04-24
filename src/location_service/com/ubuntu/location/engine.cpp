@@ -24,6 +24,8 @@
 #include <stdexcept>
 #include <unordered_map>
 
+#include "time_based_update_policy.h"
+
 namespace cul = com::ubuntu::location;
 
 const cul::SatelliteBasedPositioningState cul::Engine::Configuration::Defaults::satellite_based_positioning_state;
@@ -33,7 +35,8 @@ const cul::Engine::Status cul::Engine::Configuration::Defaults::engine_state;
 cul::Engine::Engine(const cul::ProviderSelectionPolicy::Ptr& provider_selection_policy,
                     const cul::Settings::Ptr& settings)
           : provider_selection_policy(provider_selection_policy),
-            settings(settings)
+            settings(settings),
+            update_policy(std::make_shared<cul::TimeBasedUpdatePolicy>())
 {
     if (!provider_selection_policy) throw std::runtime_error
     {
@@ -204,7 +207,7 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
     // We should come up with a better heuristic here.
     auto cpr = provider->updates().position.connect([this](const cul::Update<cul::Position>& src)
     {
-        updates.reference_location = src;
+        updates.reference_location = update_policy->verify_update(src);
     });
 
     std::lock_guard<std::mutex> lg(guard);
