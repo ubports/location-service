@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
+ *              Manuel de la Pena <manuel.delapena@canonical.com>
  */
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_SKYHOOK_PROVIDER_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_SKYHOOK_PROVIDER_H_
@@ -35,6 +36,13 @@ namespace skyhook
 {
 class Provider : public com::ubuntu::location::Provider
 {
+    enum class State
+    {
+        stopped,
+        started,
+        stop_requested
+    };
+
   public:
     static Provider::Ptr create_instance(const ProviderFactory::Configuration& config);
     
@@ -57,20 +65,33 @@ class Provider : public com::ubuntu::location::Provider
     Provider& operator=(const Provider&) = delete;
     ~Provider() noexcept;
 
-    virtual bool matches_criteria(const Criteria&);
+    virtual bool matches_criteria(const Criteria&) override;
 
-    virtual void start_position_updates();
-    virtual void stop_position_updates();
+    virtual void start_position_updates() override;
+    virtual void stop_position_updates() override;
 
-    virtual void start_velocity_updates();
-    virtual void stop_velocity_updates();
+    virtual void start_velocity_updates() override;
+    virtual void stop_velocity_updates() override;
 
-    virtual void start_heading_updates();
-    virtual void stop_heading_updates();
+    virtual void start_heading_updates() override;
+    virtual void stop_heading_updates() override;
+
+ private:
+    static WPS_Continuation periodic_callback(
+            void* context,
+            WPS_ReturnCode code,
+            const WPS_Location* location,
+            const void*);
+
+    void start();
+    void stop();
 
   private:
-    struct Private;
-    std::unique_ptr<Private> d;
+
+    Configuration config;
+    State state;
+    WPS_SimpleAuthentication authentication;
+    std::thread worker;
 };
 }
 }
