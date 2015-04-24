@@ -1,3 +1,20 @@
+location-service (2.1+15.04.20150424-0ubuntu1) vivid; urgency=medium
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+  [ Manuel de la Pena ]
+  * Improve the selection of the bag of providers to ensure that the
+    locations used are within a reasonable time margin.
+  * Remove the pimpl implementation from the providers and hide their
+    public headers because they should only be used within the project.
+
+  [ Thomas Voß ]
+  * Increase default timeout for downloading gps xtra data. (LP:
+    #1447161)
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Fri, 24 Apr 2015 14:46:59 +0000
+
 location-service (2.1+15.04.20150417-0ubuntu1) vivid; urgency=medium
 
   [ CI Train Bot ]
