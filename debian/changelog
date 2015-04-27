@@ -1,3 +1,14 @@
+location-service (2.1+15.04.20150427.1-0ubuntu1) vivid; urgency=medium
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+  [ Manuel de la Pena ]
+  * Make sure that cached modems are considered as well when calculating
+    connection characteristics.
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Mon, 27 Apr 2015 22:55:52 +0000
+
 location-service (2.1+15.04.20150424-0ubuntu1) vivid; urgency=medium
 
   [ CI Train Bot ]
