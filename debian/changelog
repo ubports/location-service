@@ -1,3 +1,11 @@
+location-service (2.1+15.10.20150528.3-0ubuntu1) wily; urgency=medium
+
+  [ Thomas Voß ]
+  * Make sure we always hand a lock owning its mutex to
+    on_access_point_added. (LP: #1426307)
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Thu, 28 May 2015 11:40:58 +0000
+
 location-service (2.1+15.04.20150427.1-0ubuntu1) vivid; urgency=medium
 
   [ CI Train Bot ]
