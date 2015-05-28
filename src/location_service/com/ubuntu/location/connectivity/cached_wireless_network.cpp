@@ -73,7 +73,7 @@ std::chrono::system_clock::time_point boot_time()
             continue;
 
         std::uint64_t ts; ss >> ts;
-        return std::chrono::system_clock::time_point{std::chrono::system_clock::duration{ts}};
+        return std::chrono::system_clock::time_point{std::chrono::seconds{ts}};
     }
 
     // Fallback to the best estimate we can give.
