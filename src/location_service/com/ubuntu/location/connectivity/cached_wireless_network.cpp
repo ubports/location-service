@@ -80,6 +80,8 @@ std::chrono::system_clock::time_point boot_time()
     return std::chrono::system_clock::now();
 }
 
+// NetworkManager reports AP LastSeen timestamps in seconds since boot. We map that back to the epoch
+// to keep dependent software working.
 std::chrono::system_clock::time_point translate_time_stamp(std::uint64_t ts)
 {
     static const auto ts_when_booted = boot_time();
