@@ -14,14 +14,14 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2015-05-05 05:47+0000\n"
-"X-Generator: Launchpad (build 17474)\n"
+"X-Launchpad-Export-Date: 2015-07-14 05:39+0000\n"
+"X-Generator: Launchpad (build 17628)\n"
 
 #: /tmp/i18n/src/location_service/com/ubuntu/location/service/trust_store_permission_manager.cpp:170
 msgid "An unconfined application wants to access your current location."
-msgstr "Una aplicación non confinada quier acceder a la to llocalización."
+msgstr "Una aplicación non confinada quier acceder al to allugamientu."
 
 #: /tmp/i18n/src/location_service/com/ubuntu/location/service/trust_store_permission_manager.cpp:173
 #, boost-format
 msgid "%1% wants to access your current location."
-msgstr "%1% quier acceder a la to llocalización."
+msgstr "%1% quier acceder al to allugamientu."
