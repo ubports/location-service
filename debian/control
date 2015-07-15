@@ -11,10 +11,6 @@ Build-Depends: cmake,
                geoclue-ubuntu-geoip,
                google-mock (>= 1.6.0+svn437),
                graphviz,
-# We rely on C++11 features, and to prevent from ABI breaks
-# in libstdc++ causing us issues, we explicitly select a G++
-# version.
-               g++-4.9,
                libapparmor-dev,
                libboost-filesystem-dev,
                libboost-program-options-dev,
