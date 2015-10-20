@@ -62,7 +62,7 @@ location-service path.
 
 This applies only if GPS provider is enabled.
 
- - Add the silo.
+ - (If applicable: Remember to add the silo you are testing)
  - `sudo apt-get install ubuntu-location-service-tests`
  - If you want to send off crowdsourced information, i.e., information about visible wifis and visible radio cells for the obtained location fixes to Mozilla's location service and our own instance: 
    - `sudo GLOG_v=40 GLOG_logtostderr=1 GPS_TEST_ENABLE_HARVESTING_DURING_TESTS=1  /usr/bin/uls-tests/gps_provider_test --gtest_filter=*.time_to_first_fix_cold_start_without_supl_benchmark_requires_hardware`
@@ -119,10 +119,9 @@ as the only provider or as an assistance for the GPS hardware to lock.
    - slpgwd
    - posclientd
    - ubuntu-espoo-service
- - Workaround LP #1367244 by waiting for boot to settle, then restarting posclientd: "sudo restart ubuntu-location-provider-here-posclientd", wait 30s.
  - Make sure SIM is unlocked and attached to the network (has some reliable signal) and that WiFi is turned on.
  - Install OSMTouch app
- - Run OSMTouch app, hit the position button every other second until you get a blue circle showing your current location; this might take up to 30s until LP #XXX is fixed.
+ - Run OSMTouch app, hit the position button every other second until you get a blue circle showing your current location; 
 
 # Connectivity API
 
@@ -137,7 +136,6 @@ commands on a newly flashed device with a writable image:
   - `GLOG_logtostderr=1 ./connectivity`
 
 Verify that the output looks similar to:
-
 
     phablet@ubuntu-phablet:/tmp/build$ ./connectivity 
     Is wifi enabled: true
@@ -159,7 +157,7 @@ Verify that the output looks similar to:
 
 Please note that we are assuming a freshly wiped system for testing
 here. If you cannot fulfill that pre-condition, please run `rm -rf
-/home/phablet/.local/share/UbuntuLocationService` prior to running the
+/home/phablet/.local/share/UbuntuLocationService && sudo shutdown -r` prior to running the
 tests:
 
 ## Unconfined
