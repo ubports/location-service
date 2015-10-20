@@ -21,7 +21,7 @@ GPS provider is built-in into location-service and might break all of
 it if it goes south (working on splitting it out); try enabling only
 the HERE provider on the location-serviced command-line and see if
 that works. Works? File a bug against location-service. Doesn't work?
-Move one
+Move on.
 
 ## HERE test
 
@@ -85,6 +85,7 @@ you should see something like:
     I1105 16:47:26.534828 11140 connectivity.cpp:155] (bssid: 12:12:12:12:12:12, ssid: boing, last seen: 1415224046, mode: Mode::infrastructure, frequency: 2467, strength: 57)
 
 Also, please attach output of /usr/share/ofono/scripts/list-modems > list-modems-output.txt
+Please note that the command might take ~1 minute to complete.
 
 TODO: document dbus-monitor / d-feet capturing of client / system traffic with snooping config.
 

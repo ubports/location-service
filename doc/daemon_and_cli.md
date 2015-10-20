@@ -30,7 +30,7 @@ instance described by the given unique DBus name and path.
     ubuntu-location-serviced \
 	  --bus system \
 	  --provider remote::Provider \
-      --remote::Provider::bus=system \
+          --remote::Provider::bus=system \
 	  --remote::Provider::name=com.ubuntu.location.provider.Gps \
 	  --remote::Provider::path=/
 
@@ -44,11 +44,11 @@ positioning (decorated with @network):
     ubuntu-location-serviced \
 	  --bus system \
 	  --provider remote::Provider@gps \
-      --remote::Provider@gps::bus=system \
+          --remote::Provider@gps::bus=system \
 	  --remote::Provider@gps::name=com.ubuntu.location.provider.Gps \
 	  --remote::Provider@gps::path=/ \
 	  --provider remote::Provider@network \
-      --remote::Provider@network::bus=system \
+          --remote::Provider@network::bus=system \
 	  --remote::Provider@network::name=com.ubuntu.location.provider.Network \
 	  --remote::Provider@network::path=/
 
