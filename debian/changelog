@@ -1,3 +1,17 @@
+location-service (2.1+15.04.20151022-0ubuntu1) vivid; urgency=medium
+
+  [ Thomas Voß ]
+  * Add documentation for debugging, hacking and debugging the location
+    service. Pull manual testing instructions over from the wiki. Add
+    tools for formatting the source.
+
+  [ thomas-voss ]
+  * Add documentation for debugging, hacking and debugging the location
+    service. Pull manual testing instructions over from the wiki. Add
+    tools for formatting the source.
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Thu, 22 Oct 2015 07:16:50 +0000
+
 location-service (2.1+15.04.20150427.1-0ubuntu1) vivid; urgency=medium
 
   [ CI Train Bot ]
