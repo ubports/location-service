@@ -54,6 +54,20 @@ if (DISABLE_ERROR_ON_LOCAL_TYPEDEFS_WARNINGS)
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=unused-local-typedefs")
 endif (DISABLE_ERROR_ON_LOCAL_TYPEDEFS_WARNINGS)
 
+#
+# Code style fixer. We rely on clang-format to adjust the formatting of source code.
+#
+find_program(CLANG_FORMAT_COMMAND NAMES clang-format-3.6 clang-format-3.5)
+if (NOT CLANG_FORMAT_COMMAND)
+  message(WARNING "Cannot find clang-format >= clang-format-3.5: formatcode target will not be available")
+endif()
+
+if (CLANG_FORMAT_COMMAND)
+  file(GLOB_RECURSE UBUNTU_LOCATION_SERVICE_INTERFACE_HEADER_FILES ${CMAKE_SOURCE_DIR}/include/*.h)
+  file(GLOB_RECURSE UBUNTU_LOCATION_SERVICE_IMPLEMENTATION_FILES ${CMAKE_SOURCE_DIR}/src/*.h ${CMAKE_SOURCE_DIR}/src/*.cpp)
+  add_custom_target(formatcode ${CLANG_FORMAT_COMMAND} -i ${UBUNTU_LOCATION_SERVICE_INTERFACE_HEADER_FILES} ${UBUNTU_LOCATION_SERVICE_IMPLEMENTATION_FILES} SOURCES _clang-format)
+endif()
+
 include_directories(
   ${Boost_INCLUDE_DIRS}
   ${DBUS_INCLUDE_DIRS}
