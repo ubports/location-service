@@ -20,6 +20,8 @@
 #include <com/ubuntu/location/boost_ptree_settings.h>
 #include <com/ubuntu/location/provider_factory.h>
 
+#include <com/ubuntu/location/connectivity/dummy_connectivity_manager.h>
+
 #include <com/ubuntu/location/service/default_configuration.h>
 #include <com/ubuntu/location/service/demultiplexing_reporter.h>
 #include <com/ubuntu/location/service/ichnaea_reporter.h>
@@ -214,29 +216,8 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         dc.the_permission_manager(config.outgoing),
         location::service::Harvester::Configuration
         {
-            location::connectivity::platform_default_manager(),
-            // We submit location/wifi/cell measurements to both
-            // Mozilla's location service and to Ubuntu's own instance.
-            std::make_shared<service::DemultiplexingReporter>(
-            std::initializer_list<service::Harvester::Reporter::Ptr>
-            {
-                std::make_shared<service::ichnaea::Reporter>(
-                     service::ichnaea::Reporter::Configuration
-                     {
-                         "https://location.services.mozilla.com",
-                         "UbuntuLocationService",
-                         "UbuntuLocationService"
-                     }
-                ),
-                std::make_shared<service::ichnaea::Reporter>(
-                     service::ichnaea::Reporter::Configuration
-                     {
-                         "https://162.213.35.107",
-                         "UbuntuLocationService",
-                         "UbuntuLocationService"
-                     }
-                )
-            })
+            std::make_shared<dummy::ConnectivityManager>(),
+            std::make_shared<NullReporter>()
         }
     };
 
