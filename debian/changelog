@@ -1,3 +1,18 @@
+location-service (2.1+15.04.20151109.2-0ubuntu1) vivid; urgency=medium
+
+  [ Alberto Mardegan ]
+  * Make sure that injected time is given in milliseconds
+
+  [ Thomas Voß ]
+  * Cherry-pick rev. 196 and 199 from lp:location-service. The changes
+    got accidentally removed by merging the outstanding documentation
+    branch.
+  * Handle responses of clients to updates asynchronously. Rely on
+    dummy::ConnectivityManager as harvesting is disabled anyway. (LP:
+    #1462664, #1387643)
+
+ -- David Barth <david.barth@canonical.com>  Mon, 09 Nov 2015 20:48:48 +0000
+
 location-service (2.1+15.04.20151022-0ubuntu1) vivid; urgency=medium
 
   [ Thomas Voß ]
