@@ -86,7 +86,14 @@ detail::CachedWirelessNetwork::CachedWirelessNetwork(
         const org::freedesktop::NetworkManager::Device& device,
         const org::freedesktop::NetworkManager::AccessPoint& ap)
     : device_(device),
-      access_point_(ap)
+      access_point_(ap),
+      connections
+      {
+          access_point_.properties_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
+          {
+              on_access_point_properties_changed(dict);
+          })
+      }
 {
     last_seen_ = std::chrono::system_clock::time_point
     {
@@ -110,6 +117,11 @@ detail::CachedWirelessNetwork::CachedWirelessNetwork(
     {
         on_access_point_properties_changed(dict);
     });
+}
+
+detail::CachedWirelessNetwork::~CachedWirelessNetwork()
+{
+    access_point_.properties_changed->disconnect(connections.ap_properties_changed);
 }
 
 void detail::CachedWirelessNetwork::on_access_point_properties_changed(const std::map<std::string, core::dbus::types::Variant>& dict)
