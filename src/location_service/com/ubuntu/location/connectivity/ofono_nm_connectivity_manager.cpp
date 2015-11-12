@@ -597,6 +597,8 @@ void connectivity::OfonoNmConnectivityManager::Private::on_access_point_added(
     auto wifi = std::make_shared<detail::CachedWirelessNetwork>(itd->second, ap);
     cached.wifis[ap_path] = wifi;
 
+    LOG(INFO) << "Added access point - CM knows about " << cached.wifis.size() << " aps";
+
     // Let API consumers know that an AP appeared. The lock on the cache is
     // not held to prevent from deadlocks.
     ul.unlock(); signals.wireless_network_added(wifi);
@@ -615,6 +617,8 @@ void connectivity::OfonoNmConnectivityManager::Private::on_access_point_removed(
     // have been informed of the wifi going away.
     connectivity::WirelessNetwork::Ptr wifi = itw->second;
     cached.wifis.erase(itw);
+
+    LOG(INFO) << "Removed access point - CM knows about " << cached.wifis.size() << " aps";
 
     // Let API consumers know that an AP disappeared. The lock on the cache is
     // not held to prevent from deadlocks.
