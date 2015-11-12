@@ -111,12 +111,6 @@ detail::CachedWirelessNetwork::CachedWirelessNetwork(
     {
         static_cast<int>(access_point_.strength->get())
     };
-
-    // Wire up all the connections
-    access_point_.properties_changed->connect([this](const std::map<std::string, core::dbus::types::Variant>& dict)
-    {
-        on_access_point_properties_changed(dict);
-    });
 }
 
 detail::CachedWirelessNetwork::~CachedWirelessNetwork()
