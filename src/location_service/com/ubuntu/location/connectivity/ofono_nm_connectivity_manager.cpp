@@ -591,7 +591,7 @@ void connectivity::OfonoNmConnectivityManager::Private::on_access_point_added(
 
     xdg::NetworkManager::AccessPoint ap
     {
-        network_manager->service->add_object_for_path(ap_path)
+        network_manager->service->object_for_path(ap_path)
     };
 
     auto wifi = std::make_shared<detail::CachedWirelessNetwork>(itd->second, ap);
