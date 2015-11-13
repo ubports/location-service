@@ -66,8 +66,6 @@ android::GpsXtraDownloader::Configuration android::GpsXtraDownloader::Configurat
     if (config.count("XTRA_SERVER_3") > 0)
         result.xtra_hosts.push_back(config.get<std::string>("XTRA_SERVER_3"));
 
-    result.timeout = std::chrono::milliseconds{1500};
-
     return result;
 }
 
