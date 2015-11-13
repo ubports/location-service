@@ -1,3 +1,9 @@
+location-service (2.1+15.04.20151113-0ubuntu1) vivid; urgency=medium
+
+  * Adjust default timeout for downloading GPS XTRA data.
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Fri, 13 Nov 2015 10:33:56 +0000
+
 location-service (2.1+15.04.20151109.2-0ubuntu1) vivid; urgency=medium
 
   [ Alberto Mardegan ]
