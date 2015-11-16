@@ -149,5 +149,18 @@ culs::session::Interface::Ptr culs::Implementation::create_session_for_criteria(
         new ProxyProvider{provider_selection}
     };
 
-    return session::Interface::Ptr{new culs::session::Implementation(proxy_provider)};
+    session::Interface::Ptr session_iface{new session::Implementation(proxy_provider)};
+    std::weak_ptr<session::Interface> session_weak{session_iface};
+    session_iface->updates().position_status.changed().connect([this, session_weak](const session::Interface::Updates::Status& status)
+    {
+        if (status == culs::session::Interface::Updates::Status::enabled)
+        {
+            /* Immediately send the last known position to the client */
+            if (auto session_iface = session_weak.lock())
+            {
+                session_iface->updates().position = configuration.engine->updates.reference_location;
+            }
+        }
+    });
+    return session_iface;
 }
