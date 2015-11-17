@@ -115,7 +115,6 @@ detail::CachedWirelessNetwork::CachedWirelessNetwork(
 
 detail::CachedWirelessNetwork::~CachedWirelessNetwork()
 {
-    LOG(INFO) << __PRETTY_FUNCTION__;
     access_point_.properties_changed->disconnect(connections.ap_properties_changed);
 }
 
