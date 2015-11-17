@@ -114,9 +114,12 @@ culs::Implementation::Implementation(const culs::Implementation::Configuration& 
                   visible_space_vehicles() = svs;
               }),
           configuration.engine->updates.reference_location.changed().connect(
-              [this](const cul::Update<cul::Position>& update)
+              [this](const cul::Optional<cul::Update<cul::Position>>& update)
               {
-                  harvester.report_position_update(update);
+                  if (update)
+                  {
+                      harvester.report_position_update(update.get());
+                  }
               })
       }
 {
@@ -153,12 +156,15 @@ culs::session::Interface::Ptr culs::Implementation::create_session_for_criteria(
     std::weak_ptr<session::Interface> session_weak{session_iface};
     session_iface->updates().position_status.changed().connect([this, session_weak](const session::Interface::Updates::Status& status)
     {
-        if (status == culs::session::Interface::Updates::Status::enabled)
+        cul::Optional<cul::Update<cul::Position>> last_known_position =
+            configuration.engine->updates.reference_location.get();
+        if (last_known_position &&
+            status == culs::session::Interface::Updates::Status::enabled)
         {
             /* Immediately send the last known position to the client */
             if (auto session_iface = session_weak.lock())
             {
-                session_iface->updates().position = configuration.engine->updates.reference_location;
+                session_iface->updates().position = last_known_position.get();
             }
         }
     });

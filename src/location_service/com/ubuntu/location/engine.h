@@ -127,7 +127,7 @@ public:
     struct Updates
     {
         /** The current best known reference location */
-        core::Property<Update<Position>> reference_location{};
+        core::Property<Optional<Update<Position>>> reference_location{};
         /** The current best known velocity estimate. */
         core::Property<Update<Velocity>> reference_velocity{};
         /** The current best known heading estimate. */

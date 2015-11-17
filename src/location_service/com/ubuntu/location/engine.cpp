@@ -169,9 +169,12 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
 
     // We wire up changes in the engine's configuration to the respective slots
     // of the provider.
-    auto cp = updates.reference_location.changed().connect([provider](const cul::Update<cul::Position>& pos)
+    auto cp = updates.reference_location.changed().connect([provider](const cul::Optional<cul::Update<cul::Position>>& pos)
     {
-        provider->on_reference_location_updated(pos);
+        if (pos)
+        {
+            provider->on_reference_location_updated(pos.get());
+        }
     });
 
     auto cv = updates.reference_velocity.changed().connect([provider](const cul::Update<cul::Velocity>& velocity)
