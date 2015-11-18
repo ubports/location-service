@@ -25,5 +25,5 @@ namespace remote = com::ubuntu::location::providers::remote;
 
 location::Provider::Ptr remote::stub::create_with_configuration(const remote::stub::Configuration& configuration)
 {
-    return std::make_shared<remote::Provider::Stub>(configuration);
+    return remote::Provider::Stub::create_instance_with_config(configuration);
 }

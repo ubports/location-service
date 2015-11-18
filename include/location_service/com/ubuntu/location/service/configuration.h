@@ -20,7 +20,6 @@
 
 #include <com/ubuntu/location/service/permission_manager.h>
 
-#include <com/ubuntu/location/engine.h>
 #include <com/ubuntu/location/provider.h>
 #include <com/ubuntu/location/provider_selection_policy.h>
 
@@ -32,6 +31,7 @@ namespace ubuntu
 {
 namespace location
 {
+class Engine;
 namespace service
 {
 class Configuration
@@ -41,7 +41,7 @@ public:
     Configuration(const Configuration&) = delete;
     Configuration& operator=(const Configuration&) = delete;
 
-    virtual Engine::Ptr the_engine(
+    virtual std::shared_ptr<Engine> the_engine(
     	const std::set<Provider::Ptr>& provider_set,
         const ProviderSelectionPolicy::Ptr& provider_selection_policy) = 0;
     

@@ -19,6 +19,7 @@
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_DAEMON_H_
 
 #include <com/ubuntu/location/configuration.h>
+#include <com/ubuntu/location/settings.h>
 
 #include <com/ubuntu/location/service/dbus_connection_factory.h>
 
@@ -51,7 +52,9 @@ struct Daemon
             /** @brief Request to query a property value of the running service. */
             get,
             /** @brief Request to adjust a property value of the running service. */
-            set
+            set,
+            /** @brief Executes runtime tests. */
+            test
         };
 
         /** @brief Enumerates all properties known to the cli. */
@@ -84,6 +87,7 @@ struct Daemon
                                             visible_space_vehicles [get]
              * --set arg                 Adjust the value of the property.
              * --get                     Query the value of the property.
+             * --test                    Executes runtime tests.
              */
             static Configuration from_command_line_args(
                     int argc,
@@ -130,6 +134,7 @@ struct Daemon
          *   --help                Produces this help message
          *   --testing             Enables executing the service without selected providers
          *   --provider arg        The providers that should be added to the engine
+         *   --config-file arg     The config file we should read from/write to
          */
         static Configuration from_command_line_args(
                 int argc,
@@ -151,6 +156,8 @@ struct Daemon
         std::vector<std::string> providers;
         /** @brief Provider-specific options keyed on the provider name. */
         std::map< std::string, location::Configuration > provider_options;
+        /** @brief Settings instance to read values from. */
+        Settings::Ptr settings;
     };
 
     /** @brief Pretty-prints the CLI's help text to the given output stream. */

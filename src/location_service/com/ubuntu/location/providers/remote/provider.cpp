@@ -48,37 +48,69 @@ struct Runtime
     }
 
     Runtime()
-        : keep_alive{io_service},
-          worker1
-          {
-              [this]()
-              {
-                  io_service.run();
-              }
-          },
-          worker2
-          {
-              [this]()
-              {
-                  io_service.run();
-              }
-          }
+        : running{true},
+          worker1{std::bind(&Runtime::run, this, std::ref(io.service))},
+          worker2{std::bind(&Runtime::run, this, std::ref(task.service))}
     {
     }
 
     ~Runtime()
     {
-        io_service.stop();
+        stop();
+    }
 
-        if (worker1.joinable())
-            worker1.join();
+    void run(boost::asio::io_service& service)
+    {
+        while (running)
+        {
+            try
+            {
+                service.run();
+                break;  // provider has exited correctly
+            }
+            catch (const std::exception& e)
+            {
+                LOG(WARNING) << e.what();
+            }
+            catch (...)
+            {
+                LOG(WARNING) << "Caught exception from event loop, restarting.";
+            }
+        }
+    }
+
+    void stop()
+    {
+        running = false;
+
+        task.service.stop();
 
         if (worker2.joinable())
             worker2.join();
+
+        io.service.stop();
+
+        if (worker1.joinable())
+            worker1.join();
     }
 
-    boost::asio::io_service io_service;
-    boost::asio::io_service::work keep_alive;
+    bool running;
+    struct
+    {
+        boost::asio::io_service service;
+        boost::asio::io_service::work keep_alive
+        {
+            service
+        };
+    } io;
+    struct
+    {
+        boost::asio::io_service service;
+        boost::asio::io_service::work keep_alive
+        {
+            service
+        };
+    } task;
     std::thread worker1;
     std::thread worker2;
 };
@@ -101,7 +133,7 @@ core::dbus::Bus::Ptr bus_from_name(const std::string& bus_name)
         "Could not create bus for name: " + bus_name
     };
 
-    bus->install_executor(core::dbus::asio::make_executor(bus, Runtime::instance().io_service));
+    bus->install_executor(core::dbus::asio::make_executor(bus, Runtime::instance().io.service));
 
     return bus;
 }
@@ -159,31 +191,81 @@ cul::Provider::Ptr remote::Provider::Stub::create_instance(const cul::ProviderFa
     auto service = dbus::Service::use_service(bus, name);
     auto object = service->object_for_path(path);
 
-    return cul::Provider::Ptr{new remote::Provider::Stub{remote::stub::Configuration{object}}};
+    return create_instance_with_config(remote::stub::Configuration{object});
+}
+
+cul::Provider::Ptr remote::Provider::Stub::create_instance_with_config(const remote::stub::Configuration& config)
+{
+    std::shared_ptr<remote::Provider::Stub> result{new remote::Provider::Stub{config}};
+
+    // This call throws if we fail to reach the remote end. With that, we make sure that
+    // we do not return a potentially invalid instance that throws later on.
+    result->ping();
+
+    result->setup_event_connections();
+    return result;
 }
 
 remote::Provider::Stub::Stub(const remote::stub::Configuration& config)
         : com::ubuntu::location::Provider(/* TODO(tvoss) Features should be all initially*/),
           d(new Private(config))
 {
+}
+
+void remote::Provider::Stub::setup_event_connections()
+{
+    std::weak_ptr<remote::Provider::Stub> wp{shared_from_this()};
+
     d->stub.signals.position_changed->connect(
-        [this](const remote::Interface::Signals::PositionChanged::ArgumentType& arg)
+        [wp](const remote::Interface::Signals::PositionChanged::ArgumentType& arg)
         {
             VLOG(50) << "remote::Provider::Stub::PositionChanged: " << arg;
-            mutable_updates().position(arg);
+            Runtime::instance().task.service.post([wp, arg]()
+            {
+                auto sp = wp.lock();
+
+                if (not sp)
+                    return;
+
+                sp->mutable_updates().position(arg);
+            });
         });
+
     d->stub.signals.heading_changed->connect(
-        [this](const remote::Interface::Signals::HeadingChanged::ArgumentType& arg)
+        [wp](const remote::Interface::Signals::HeadingChanged::ArgumentType& arg)
         {
             VLOG(50) << "remote::Provider::Stub::HeadingChanged: " << arg;
-            mutable_updates().heading(arg);
+            Runtime::instance().task.service.post([wp, arg]()
+            {
+                auto sp = wp.lock();
+
+                if (not sp)
+                    return;
+
+                sp->mutable_updates().heading(arg);
+            });
         });
+
     d->stub.signals.velocity_changed->connect(
-        [this](const remote::Interface::Signals::VelocityChanged::ArgumentType& arg)
+        [wp](const remote::Interface::Signals::VelocityChanged::ArgumentType& arg)
         {
             VLOG(50) << "remote::Provider::Stub::VelocityChanged: " << arg;
-            mutable_updates().velocity(arg);
+            Runtime::instance().task.service.post([wp, arg]()
+            {
+                auto sp = wp.lock();
+
+                if (not sp)
+                    return;
+
+                sp->mutable_updates().velocity(arg);
+            });
         });
+}
+
+void remote::Provider::Stub::ping()
+{
+    // Requires reaches out to the remote side and throws in case of issues.
+    requires(Provider::Requirements::satellites);
 }
 
 remote::Provider::Stub::~Stub() noexcept
@@ -218,7 +300,7 @@ void remote::Provider::Stub::on_wifi_and_cell_reporting_state_changed(cul::WifiA
 void remote::Provider::Stub::on_reference_location_updated(const cul::Update<cul::Position>& position)
 {
     std::weak_ptr<Private> wp{d};
-    Runtime::instance().io_service.post([wp, position]()
+    Runtime::instance().task.service.post([wp, position]()
     {
         auto sp = wp.lock();
 
@@ -239,7 +321,7 @@ void remote::Provider::Stub::on_reference_location_updated(const cul::Update<cul
 void remote::Provider::Stub::on_reference_velocity_updated(const cul::Update<cul::Velocity>& velocity)
 {
     std::weak_ptr<Private> wp{d};
-    Runtime::instance().io_service.post([wp, velocity]()
+    Runtime::instance().task.service.post([wp, velocity]()
     {
         auto sp = wp.lock();
 
@@ -260,7 +342,7 @@ void remote::Provider::Stub::on_reference_velocity_updated(const cul::Update<cul
 void remote::Provider::Stub::on_reference_heading_updated(const cul::Update<cul::Heading>& heading)
 {
     std::weak_ptr<Private> wp{d};
-    Runtime::instance().io_service.post([wp, heading]()
+    Runtime::instance().task.service.post([wp, heading]()
     {
         auto sp = wp.lock();
 
@@ -281,35 +363,80 @@ void remote::Provider::Stub::on_reference_heading_updated(const cul::Update<cul:
 void remote::Provider::Stub::start_position_updates()
 {
     VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    throw_if_error(d->stub.object->transact_method<remote::Interface::StartPositionUpdates, void>());
+    std::weak_ptr<Private> wp{d};
+    Runtime::instance().task.service.post([wp]()
+    {
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        throw_if_error(sp->stub.object->transact_method<remote::Interface::StartPositionUpdates, void>());
+    });
     VLOG(10) << "< " << __PRETTY_FUNCTION__;
 }
 
 void remote::Provider::Stub::stop_position_updates()
 {
     VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    throw_if_error(d->stub.object->transact_method<remote::Interface::StopPositionUpdates, void>());
+    std::weak_ptr<Private> wp{d};
+    Runtime::instance().task.service.post([wp]()
+    {
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        throw_if_error(sp->stub.object->transact_method<remote::Interface::StopPositionUpdates, void>());
+    });
     VLOG(10) << "< " << __PRETTY_FUNCTION__;
 }
 
 void remote::Provider::Stub::start_heading_updates()
 {
     VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    throw_if_error(d->stub.object->transact_method<remote::Interface::StartHeadingUpdates, void>());
+    std::weak_ptr<Private> wp{d};
+    Runtime::instance().task.service.post([wp]()
+    {
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        throw_if_error(sp->stub.object->transact_method<remote::Interface::StartHeadingUpdates, void>());
+    });
     VLOG(10) << "< " << __PRETTY_FUNCTION__;
 }
 
 void remote::Provider::Stub::stop_heading_updates()
 {
     VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    throw_if_error(d->stub.object->transact_method<remote::Interface::StopHeadingUpdates, void>());
+    std::weak_ptr<Private> wp{d};
+    Runtime::instance().task.service.post([wp]()
+    {
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        throw_if_error(sp->stub.object->transact_method<remote::Interface::StopHeadingUpdates, void>());
+    });
     VLOG(10) << "< " << __PRETTY_FUNCTION__;
 }
 
 void remote::Provider::Stub::start_velocity_updates()
 {
     VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    throw_if_error(d->stub.object->transact_method<remote::Interface::StartVelocityUpdates, void>());
+    std::weak_ptr<Private> wp{d};
+    Runtime::instance().task.service.post([wp]()
+    {
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        throw_if_error(sp->stub.object->transact_method<remote::Interface::StartVelocityUpdates, void>());
+    });
     VLOG(10) << "< " << __PRETTY_FUNCTION__;
 
 }
@@ -317,7 +444,16 @@ void remote::Provider::Stub::start_velocity_updates()
 void remote::Provider::Stub::stop_velocity_updates()
 {
     VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    throw_if_error(d->stub.object->transact_method<remote::Interface::StopVelocityUpdates, void>());
+    std::weak_ptr<Private> wp{d};
+    Runtime::instance().task.service.post([wp]()
+    {
+        auto sp = wp.lock();
+
+        if (not sp)
+            return;
+
+        throw_if_error(sp->stub.object->transact_method<remote::Interface::StopVelocityUpdates, void>());
+    });
     VLOG(10) << "< " << __PRETTY_FUNCTION__;
 }
 
@@ -331,7 +467,7 @@ struct remote::Provider::Skeleton::Private
               {
                   impl->updates().position.connect([this](const cul::Update<cul::Position>& position)
                   {
-                      VLOG(100) << "Position changed reported by impl: " << position;
+                      VLOG(100) << "Position changed reported by impl: " << position;                      
                       skeleton.signals.position_changed->emit(position.value);
                   }),
                   impl->updates().heading.connect([this](const cul::Update<cul::Heading>& heading)
@@ -437,7 +573,7 @@ remote::Provider::Skeleton::Skeleton(const remote::skeleton::Configuration& conf
         d->bus->send(dbus::Message::make_method_return(msg));
 
         on_reference_velocity_updated(u);
-    });
+    });    
 
     d->skeleton.object->install_method_handler<remote::Interface::StartPositionUpdates>([this](const dbus::Message::Ptr & msg)
     {

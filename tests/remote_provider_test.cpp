@@ -92,7 +92,7 @@ struct RemoteProvider : public core::dbus::testing::Fixture
 };
 }
 
-TEST_F(RemoteProvider, updates_are_fwd)
+TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
 {
     using namespace ::testing;
 

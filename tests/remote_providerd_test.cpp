@@ -56,7 +56,6 @@ TEST_F(RemoteProviderdTest, AClientReceivesUpdatesFromAnOutOfProcessProvider)
     auto oopp = core::posix::fork([this]()
     {
         auto bus = session_bus();
-        bus->install_executor(core::dbus::asio::make_executor(bus));
 
         const char* argv[] =
         {

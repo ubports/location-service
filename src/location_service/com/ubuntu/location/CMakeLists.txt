@@ -26,13 +26,21 @@ add_library(
   provider.cpp
   provider_factory.cpp
   proxy_provider.cpp
+  satellite_based_positioning_state.cpp
+  settings.cpp
+  time_based_update_policy.cpp
   set_name_for_thread.cpp
+  wifi_and_cell_reporting_state.cpp
+
+  boost_ptree_settings.cpp
 
   service/default_configuration.cpp
   service/default_permission_manager.cpp
   service/harvester.cpp
   service/demultiplexing_reporter.h
   service/demultiplexing_reporter.cpp
+  service/runtime_tests.h
+  service/runtime_tests.cpp
   service/trust_store_permission_manager.cpp
 
   service/implementation.cpp

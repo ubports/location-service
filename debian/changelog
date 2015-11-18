@@ -1,3 +1,178 @@
+location-service (2.1+15.04.20151109.2-0ubuntu1) vivid; urgency=medium
+
+  [ Alberto Mardegan ]
+  * Make sure that injected time is given in milliseconds
+
+  [ Thomas Voß ]
+  * Cherry-pick rev. 196 and 199 from lp:location-service. The changes
+    got accidentally removed by merging the outstanding documentation
+    branch.
+  * Handle responses of clients to updates asynchronously. Rely on
+    dummy::ConnectivityManager as harvesting is disabled anyway. (LP:
+    #1462664, #1387643)
+
+ -- David Barth <david.barth@canonical.com>  Mon, 09 Nov 2015 20:48:48 +0000
+
+location-service (2.1+15.04.20151022-0ubuntu1) vivid; urgency=medium
+
+  [ Thomas Voß ]
+  * Add documentation for debugging, hacking and debugging the location
+    service. Pull manual testing instructions over from the wiki. Add
+    tools for formatting the source.
+
+  [ thomas-voss ]
+  * Add documentation for debugging, hacking and debugging the location
+    service. Pull manual testing instructions over from the wiki. Add
+    tools for formatting the source.
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Thu, 22 Oct 2015 07:16:50 +0000
+
+location-service (2.1+15.04.20150427.1-0ubuntu1) vivid; urgency=medium
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+  [ Manuel de la Pena ]
+  * Make sure that cached modems are considered as well when calculating
+    connection characteristics.
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Mon, 27 Apr 2015 22:55:52 +0000
+
+location-service (2.1+15.04.20150424-0ubuntu1) vivid; urgency=medium
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+  [ Manuel de la Pena ]
+  * Improve the selection of the bag of providers to ensure that the
+    locations used are within a reasonable time margin.
+  * Remove the pimpl implementation from the providers and hide their
+    public headers because they should only be used within the project.
+
+  [ Thomas Voß ]
+  * Increase default timeout for downloading gps xtra data. (LP:
+    #1447161)
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Fri, 24 Apr 2015 14:46:59 +0000
+
+location-service (2.1+15.04.20150417-0ubuntu1) vivid; urgency=medium
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+  [ Manuel de la Pena ]
+  * If an exception is thrown from the io_executor run method it must be
+    caught, logger and continued with the main loop.
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Fri, 17 Apr 2015 09:45:52 +0000
+
+location-service (2.1+15.04.20150226-0ubuntu1) vivid; urgency=medium
+
+  [ CI Train Bot ]
+  * Launchpad automatic translations update. added: po/af.po po/bg.po
+    po/sk.po
+  * New rebuild forced.
+
+  [ thomas-voss ]
+  * Account for dbus interface breakage in NM from 0.9.8.8 -> 0.9.10.0.
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Thu, 26 Feb 2015 19:53:44 +0000
+
+location-service (2.1+15.04.20150213-0ubuntu1) vivid; urgency=medium
+
+  [ thomas-voss ]
+  * Automatically clean up session store for dead clients. (LP:
+    #1418033)
+
+ -- CI Train Bot <ci-train-bot@canonical.com>  Fri, 13 Feb 2015 13:54:25 +0000
+
+location-service (2.1+15.04.20150126.1-0ubuntu1) vivid; urgency=low
+
+  [ thomas-voss ]
+  * Make the remote::Provider::Stub fail loudly on construction if the
+    other side is not reachable. Relax the exception in
+    location::Daemon::main and do not exit if instantiating a provider
+    fails. (LP: #1414591)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 26 Jan 2015 20:16:32 +0000
+
+location-service (2.1+15.04.20150125~rtm-0ubuntu1) 14.09; urgency=low
+
+  [ CI Train Bot ]
+  * Resync trunk
+
+  [ thomas-voss ]
+  * Add an interface for querying settings by key. Add an implementation
+    leveraging boost::property_tree to provide settings. (LP: #1362765)
+  * Allow for enabling/disabling providers. Wire up engine state changes
+    to enabling/disabling of providers. (LP: #1392399)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Sun, 25 Jan 2015 12:45:54 +0000
+
+location-service (2.1+15.04.20150113~rtm-0ubuntu1) 14.09; urgency=low
+
+  [ thomas-voss ]
+  * Print details about visible space vehicles to the gps provider test
+    case. (LP: #1408984)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 13 Jan 2015 13:01:58 +0000
+
+location-service (2.1+15.04.20150106~rtm-0ubuntu1) 14.09; urgency=low
+
+  [ thomas-voss ]
+  * Fix #1394204 by: (LP: #1394204)
+
+  [ Ubuntu daily release ]
+  * New rebuild forced
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 06 Jan 2015 18:50:55 +0000
+
+location-service (2.1+15.04.20141110.1-0ubuntu1) vivid; urgency=low
+
+  [ thomas-voss ]
+  * Make sure that devices being added/removed by NetworkManager are
+    handled correctly. (LP: #1390490)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 10 Nov 2014 20:30:56 +0000
+
+location-service (2.1+15.04.20141105.1-0ubuntu1) vivid; urgency=low
+
+  [ CI bot ]
+  * Resync trunk
+
+  [ Kevin DuBois ]
+  * The headers shipped in libubuntu-location-service-dev contain
+    includes that are provided in the libboost-dev package (specifically
+    headers like boost/units/cmath.hpp). Make the dev package depend on
+    libboost-dev so the downstreams get what they need to compile
+    against the libubuntu-location-service-dev headers
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 05 Nov 2014 15:51:16 +0000
+
+location-service (2.1+15.04.20141104-0ubuntu1) vivid; urgency=low
+
+  * New rebuild forced
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 04 Nov 2014 06:20:45 +0000
+
+location-service (2.1+14.10.20141030~rtm-0ubuntu1) 14.09; urgency=low
+
+  [ thomas-voss ]
+  * Bump build dependency.
+  * Disconnect event connections for bag of providers. (LP: #1387572)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 30 Oct 2014 14:33:22 +0000
+
+location-service (2.1+14.10.20141023-0ubuntu1) utopic; urgency=low
+
+  [ thomas-voss ]
+  * Prevent multiple invocations of start positioning on android GPS HAL
+    to prevent buggy HAL implementations from blocking. Allow for
+    decorated provider names to enable moving providers OOP. (LP:
+    #1382501)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 23 Oct 2014 16:41:05 +0000
+
 location-service (2.1+14.10.20141014-0ubuntu1) utopic; urgency=low
 
   [ thomas-voss ]

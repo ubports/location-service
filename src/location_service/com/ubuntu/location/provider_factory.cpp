@@ -43,11 +43,13 @@ cul::Provider::Ptr cul::ProviderFactory::create_provider_for_name_with_config(
     const std::string& name, 
     const cul::ProviderFactory::Configuration& config)
 {
+    auto undecorated_name = name.substr(0, name.find("@"));
+
     std::lock_guard<std::mutex> lg(guard);
-    if (factory_store.count(name) == 0)
+    if (factory_store.count(undecorated_name) == 0)
         return Provider::Ptr{};
     
-    return cul::Provider::Ptr{factory_store.at(name)(config)};
+    return cul::Provider::Ptr{factory_store.at(undecorated_name)(config)};
 }
 
 void cul::ProviderFactory::enumerate(

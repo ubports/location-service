@@ -15,16 +15,22 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
+
+#include <com/ubuntu/location/logging.h>
+#include <com/ubuntu/location/boost_ptree_settings.h>
 #include <com/ubuntu/location/provider_factory.h>
 
 #include <com/ubuntu/location/logging.h>
 #include <com/ubuntu/location/dispatching_provider.h>
+#include <com/ubuntu/location/connectivity/dummy_connectivity_manager.h>
 
 #include <com/ubuntu/location/service/default_configuration.h>
 #include <com/ubuntu/location/service/demultiplexing_reporter.h>
 #include <com/ubuntu/location/service/ichnaea_reporter.h>
 #include <com/ubuntu/location/service/implementation.h>
 #include <com/ubuntu/location/service/stub.h>
+
+#include <com/ubuntu/location/service/runtime_tests.h>
 
 #include "program_options.h"
 #include "daemon.h"
@@ -103,6 +109,7 @@ struct Runtime
                         try
                         {
                             service.run();
+                            break;
                         }
                         catch (const std::exception& e)
                         {
@@ -159,8 +166,12 @@ location::ProgramOptions init_daemon_options()
 
     options.add("help", "Produces this help message");
     options.add("testing", "Enables running the service without providers");
-    options.add_composed<std::vector<std::string>>("provider",
-                                                   "The providers that should be added to the engine");
+    options.add("config-file",
+                "The configuration we should read from/write to",
+                std::string{"/var/lib/ubuntu-location-service/config.ini"});
+    options.add_composed<std::vector<std::string>>(
+                "provider",
+                "The providers that should be added to the engine");
 
     return options;
 }
@@ -183,7 +194,7 @@ location::service::Daemon::Configuration location::service::Daemon::Configuratio
         throw std::runtime_error{"Could not parse command-line, aborting..."};
 
     result.incoming = factory(mutable_daemon_options().bus());
-    result.outgoing= factory(mutable_daemon_options().bus());
+    result.outgoing = factory(mutable_daemon_options().bus());
 
     if (mutable_daemon_options().value_count_for_key("testing") == 0 && mutable_daemon_options().value_count_for_key("provider") == 0)
     {
@@ -227,6 +238,9 @@ location::service::Daemon::Configuration location::service::Daemon::Configuratio
             });
         }
     }
+
+    auto settings = std::make_shared<location::BoostPtreeSettings>(mutable_daemon_options().value_for_key<std::string>("config-file"));
+    result.settings = std::make_shared<location::SyncingSettings>(settings);
 
     return result;
 }
@@ -273,8 +287,7 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
 
         } catch(const std::runtime_error& e)
         {
-            std::cerr << "Exception instantiating provider: " << e.what() << " ... Aborting now." << std::endl;
-            return EXIT_FAILURE;
+            std::cerr << "Issue instantiating provider: " << e.what() << std::endl;
         }
     }
 
@@ -287,40 +300,16 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
     {
         config.incoming,
         config.outgoing,
-        dc.the_engine(instantiated_providers, dc.the_provider_selection_policy()),
+        dc.the_engine(instantiated_providers, dc.the_provider_selection_policy(), config.settings),
         dc.the_permission_manager(config.outgoing),
         location::service::Harvester::Configuration
         {
-            location::connectivity::platform_default_manager(),
-            // We submit location/wifi/cell measurements to both
-            // Mozilla's location service and to Ubuntu's own instance.
-            std::make_shared<service::DemultiplexingReporter>(
-            std::initializer_list<service::Harvester::Reporter::Ptr>
-            {
-                std::make_shared<service::ichnaea::Reporter>(
-                     service::ichnaea::Reporter::Configuration
-                     {
-                         "https://location.services.mozilla.com",
-                         "UbuntuLocationService",
-                         "UbuntuLocationService"
-                     }
-                ),
-                std::make_shared<service::ichnaea::Reporter>(
-                     service::ichnaea::Reporter::Configuration
-                     {
-                         "https://162.213.35.107",
-                         "UbuntuLocationService",
-                         "UbuntuLocationService"
-                     }
-                )
-            })
+            std::make_shared<dummy::ConnectivityManager>(),
+            std::make_shared<NullReporter>()
         }
     };
 
-    location::service::Implementation location_service
-    {
-        configuration
-    };
+    auto location_service = std::make_shared<location::service::Implementation>(configuration);
 
     trap->run();
 
@@ -343,6 +332,7 @@ location::ProgramOptions init_cli_options()
                 location::service::Daemon::Cli::Property::unknown);
     options.add<std::string>("set", "Adjust the value of the property.");
     options.add("get", "Query the value of the property.");
+    options.add("test", "Executes runtime tests.");
 
     return options;
 }
@@ -392,6 +382,10 @@ location::service::Daemon::Cli::Configuration location::service::Daemon::Cli::Co
         result.command = Command::set;
         result.new_value = mutable_cli_options().value_for_key<std::string>("set");
     }
+    else if (mutable_cli_options().value_count_for_key("test") > 0)
+    {
+        result.command = Command::test;
+    }
 
     return result;
 }
@@ -404,6 +398,9 @@ void location::service::Daemon::Cli::print_help(std::ostream& out)
 
 int location::service::Daemon::Cli::main(const location::service::Daemon::Cli::Configuration& config)
 {
+    if (config.command == Command::test)
+        return location::service::execute_runtime_tests();
+
     auto location_service =
             dbus::resolve_service_on_bus<location::service::Interface, location::service::Stub>(config.bus);
 
@@ -434,6 +431,7 @@ int location::service::Daemon::Cli::main(const location::service::Daemon::Cli::C
             std::cout << "succeeded" << std::endl;
             break;
         }
+        default:
         case Command::unknown: break;
         }
         break;
@@ -462,6 +460,7 @@ int location::service::Daemon::Cli::main(const location::service::Daemon::Cli::C
             std::cout << "succeeded" << std::endl;
             break;
         }
+        default:
         case Command::unknown: break;
         }
         break;
@@ -490,6 +489,7 @@ int location::service::Daemon::Cli::main(const location::service::Daemon::Cli::C
             std::cout << "succeeded" << std::endl;
             break;
         }
+        default:
         case Command::unknown: break;
         }
         break;
@@ -509,6 +509,7 @@ int location::service::Daemon::Cli::main(const location::service::Daemon::Cli::C
             std::cout << "Property visible_space_vehicles is not set-able, aborting now." << std::endl;
             location::service::Daemon::Cli::print_help(std::cout);
             return EXIT_FAILURE;
+        default:
         case Command::unknown: break;
         }
         break;

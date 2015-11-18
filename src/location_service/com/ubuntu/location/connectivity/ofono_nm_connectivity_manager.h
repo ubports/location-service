@@ -94,8 +94,10 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
 
         // All network stack specific functionality goes here.
         void setup_network_stack_access();
-        void on_access_point_added(const core::dbus::types::ObjectPath& ap_path, const core::dbus::types::ObjectPath& device_path);
-        void on_access_point_removed(const core::dbus::types::ObjectPath& ap_path);
+        void on_device_added(const core::dbus::types::ObjectPath& device_path, std::unique_lock<std::mutex>& ul);
+        void on_device_removed(const core::dbus::types::ObjectPath& device_path, std::unique_lock<std::mutex>& ul);
+        void on_access_point_added(const core::dbus::types::ObjectPath& ap_path, const core::dbus::types::ObjectPath& device_path, std::unique_lock<std::mutex>& ul);
+        void on_access_point_removed(const core::dbus::types::ObjectPath& ap_path, std::unique_lock<std::mutex>& ul);
         com::ubuntu::location::connectivity::Characteristics characteristics_for_connection(const core::dbus::types::ObjectPath& path);        
 
         core::dbus::Bus::Ptr bus;
@@ -124,7 +126,25 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
             // And a dedicated worker thread.
             std::thread worker
             {
-                [this]() { service.run(); }
+                [this]() 
+                {
+                   while(true)
+                   {
+                      try
+                      {
+                          service.run();
+                          break;  // normal exit
+                      }
+                      catch (const std::exception& e)
+                      {
+                          LOG(WARNING) << e.what();
+                      }
+                      catch(...)
+                      {
+                          LOG(WARNING) << "Received unexpected exception.";
+                      }
+                   }
+                }
             };
         } dispatcher;
 
@@ -142,7 +162,7 @@ struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::
             std::map<core::dbus::types::ObjectPath, detail::CachedRadioCell::Ptr> cells;
             std::map<core::dbus::types::ObjectPath, org::Ofono::Manager::Modem> modems;
             std::map<core::dbus::types::ObjectPath, detail::CachedWirelessNetwork::Ptr> wifis;
-            std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device> wireless_devices;
+            std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device> nm_devices;
             std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::ActiveConnection> primary_connection;
             std::map<core::dbus::types::ObjectPath, org::freedesktop::NetworkManager::Device> primary_connection_devices;
         } cached;
