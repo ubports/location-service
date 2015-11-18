@@ -68,6 +68,7 @@ core::dbus::types::ObjectPath culs::Skeleton::ObjectPathGenerator::object_path_f
 culs::Skeleton::Skeleton(const culs::Skeleton::Configuration& configuration)
     : dbus::Skeleton<culs::Interface>(configuration.incoming),
       configuration(configuration),
+      daemon(configuration.incoming),
       object(access_service()->add_object_for_path(culs::Interface::path())),
       properties_changed(object->get_signal<core::dbus::interfaces::Properties::Signals::PropertiesChanged>()),
       properties
@@ -110,6 +111,7 @@ void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr
 
     auto sender = in->sender();
     auto reply = the_empty_reply();
+    auto thiz = shared_from_this();
 
     try
     {
@@ -147,12 +149,13 @@ void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr
             }
         };
 
-        culss::Interface::Ptr session
+        auto watcher = daemon.make_service_watcher(sender);
+        watcher->owner_changed().connect([thiz, path](const std::string&, const std::string&)
         {
-            new culss::Skeleton{config}
-        };
+            thiz->remove_from_session_store_for_path(path);
+        });
 
-        if (not add_to_session_store_for_path(path, session))
+        if (not add_to_session_store_for_path(path, std::move(watcher), culss::Interface::Ptr{new culss::Skeleton{config}}))
         {
             reply = dbus::Message::make_error(
                         in,
@@ -190,12 +193,19 @@ void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr
 
 bool culs::Skeleton::add_to_session_store_for_path(
         const core::dbus::types::ObjectPath& path,
+        std::unique_ptr<core::dbus::ServiceWatcher> watcher,
         const culss::Interface::Ptr& session)
 {
     std::lock_guard<std::mutex> lg(guard);
     bool inserted = false;
-    std::tie(std::ignore, inserted) = session_store.insert(std::make_pair(path, session));
+    std::tie(std::ignore, inserted) = session_store.insert(std::make_pair(path, Element{std::move(watcher), session}));
     return inserted;
+}
+
+void culs::Skeleton::remove_from_session_store_for_path(const core::dbus::types::ObjectPath& path)
+{
+    std::lock_guard<std::mutex> lg(guard);
+    session_store.erase(path);
 }
 
 void culs::Skeleton::on_does_satellite_based_positioning_changed(bool value)

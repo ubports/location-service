@@ -26,6 +26,8 @@
 #include <com/ubuntu/location/service/configuration.h>
 #include <com/ubuntu/location/service/program_options.h>
 
+#include <core/dbus/asio/executor.h>
+
 #include <core/posix/signal.h>
 
 namespace location = com::ubuntu::location;
@@ -63,6 +65,7 @@ location::service::ProviderDaemon::Configuration location::service::ProviderDaem
     location::service::ProviderDaemon::Configuration result;
 
     result.connection = factory(mutable_daemon_options().bus());
+    result.connection->install_executor(core::dbus::asio::make_executor(result.connection));
 
     auto service = core::dbus::Service::add_service(
                 result.connection,
@@ -132,9 +135,6 @@ int location::service::ProviderDaemon::main(const location::service::ProviderDae
         configuration.connection,
         configuration.provider
     });
-
-
-    std::cout << "We are up and running" << std::endl;
 
     trap->run();
 

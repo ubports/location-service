@@ -97,6 +97,37 @@ struct NullReporter : public culs::Harvester::Reporter
     }
 };
 
+struct NullSettings : public cul::Settings
+{
+    // Syncs the current settings to implementation-specific backends.
+    void sync() override
+    {
+    }
+
+    // Returns true iff a value is known for the given key.
+    bool has_value_for_key(const std::string&) const override
+    {
+        return false;
+    }
+
+    // Gets an integer value known for the given key, or throws Error::NoValueForKey.
+    std::string get_string_for_key_or_throw(const std::string& key) override
+    {
+        throw cul::Settings::Error::NoValueForKey{key};
+    }
+
+    // Sets values known for the given key.
+    bool set_string_for_key(const std::string&, const std::string&) override
+    {
+        return false;
+    }
+};
+
+cul::Settings::Ptr null_settings()
+{
+    return std::make_shared<NullSettings>();
+}
+
 struct LocationServiceStandalone : public core::dbus::testing::Fixture
 {
 };
@@ -209,7 +240,7 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
         {
             incoming,
             outgoing,
-            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy(), null_settings()),
             config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
@@ -217,7 +248,7 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
                 std::make_shared<NullReporter>()
             }
         };
-        cul::service::Implementation location_service{configuration};
+        auto location_service = std::make_shared<cul::service::Implementation>(configuration);
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -331,7 +362,7 @@ TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
         {
             incoming,
             outgoing,
-            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy(), null_settings()),
             config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
@@ -340,7 +371,7 @@ TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
             }
         };
         configuration.engine->configuration.engine_state = cul::Engine::Status::on;
-        cul::service::Implementation location_service{configuration};
+        auto location_service = std::make_shared<cul::service::Implementation>(configuration);
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -412,7 +443,7 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
         {
             incoming,
             outgoing,
-            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy(), null_settings()),
             config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
@@ -421,7 +452,7 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
             }
         };
         configuration.engine->configuration.satellite_based_positioning_state.set(cul::SatelliteBasedPositioningState::on);
-        cul::service::Implementation location_service{configuration};
+        auto location_service = std::make_shared<cul::service::Implementation>(configuration);
 
         sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
 
@@ -492,7 +523,7 @@ TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdu
         {
             incoming,
             outgoing,
-            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy(), null_settings()),
             config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
@@ -500,7 +531,7 @@ TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdu
                 std::make_shared<NullReporter>()
             }
         };
-        cul::service::Implementation location_service{configuration};
+        auto location_service = std::make_shared<cul::service::Implementation>(configuration);
 
         std::thread t1{[incoming](){incoming->run();}};
         std::thread t2{[outgoing](){outgoing->run();}};
@@ -580,7 +611,7 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
         {
             incoming,
             outgoing,
-            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy()),
+            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy(), null_settings()),
             config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
@@ -588,7 +619,7 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
                 std::make_shared<NullReporter>()
             }
         };
-        cul::service::Implementation location_service{configuration};
+        auto location_service = std::make_shared<cul::service::Implementation>(configuration);
 
         configuration.engine->updates.visible_space_vehicles.set(visible_space_vehicles);
 
@@ -777,10 +808,10 @@ TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingW
         config.is_testing_enabled = false;
         config.providers =
         {
-            cul::providers::dummy::Provider::class_name(),
             cul::providers::dummy::Provider::class_name()
         };
         config.provider_options = provider_config;
+        config.settings = null_settings();
 
         core::posix::exit::Status status{core::posix::exit::Status::failure};
 

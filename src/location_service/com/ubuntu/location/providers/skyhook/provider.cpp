@@ -53,71 +53,6 @@ static const std::map<int, std::string> return_code_lut =
 };
 }
 
-struct culs::Provider::Private
-{
-    enum class State
-    {
-        stopped,
-        started,
-        stop_requested
-    };
-
-    static WPS_Continuation periodic_callback(
-        void* context,
-        WPS_ReturnCode code,
-        const WPS_Location* location,
-        const void*);
-    
-    Private(
-        const culs::Provider::Configuration& config, 
-        culs::Provider* parent)
-            : parent(parent),
-              config(config),
-              state(State::stopped)
-    {
-    }
-    
-    void start()
-    {
-        if (state != State::stopped)
-            return;
-        
-        if (worker.joinable())
-            worker.join();
-
-        static const unsigned infinite_iterations = 0;
-        
-        authentication.username = config.user_name.c_str();
-        authentication.realm = config.realm.c_str();
-        
-        worker = std::move(std::thread([&]()
-        {
-            int rc = WPS_periodic_location(
-                &authentication,
-                WPS_NO_STREET_ADDRESS_LOOKUP,
-                config.period.count(),
-                infinite_iterations,
-                culs::Provider::Private::periodic_callback,
-                this);
-
-            if (rc != WPS_OK)
-                LOG(ERROR) << return_code_lut.at(rc);
-        }));
-
-        state = State::started;
-    }
-    
-    void request_stop()
-    {
-        state = State::stop_requested;
-    }
-
-    culs::Provider* parent;
-    Configuration config;
-    State state;
-    WPS_SimpleAuthentication authentication;
-    std::thread worker;
-};
 
 WPS_Continuation culs::Provider::Private::periodic_callback(void* context,
                                                             WPS_ReturnCode code,
@@ -195,13 +130,44 @@ const cul::Provider::RequirementFlags& culs::Provider::default_requirement_flags
 
 culs::Provider::Provider(const culs::Provider::Configuration& config) 
         : com::ubuntu::location::Provider(culs::Provider::default_feature_flags(), culs::Provider::default_requirement_flags()),
-          d(new Private(config, this))
+          config(config),
+          state(State::stopped)
 {
 }
 
 culs::Provider::~Provider() noexcept
 {
-    d->request_stop();
+    request_stop();
+}
+
+void culs::Provider::start()
+{
+    if (state != State::stopped)
+        return;
+
+    if (worker.joinable())
+        worker.join();
+
+    static const unsigned infinite_iterations = 0;
+
+    authentication.username = config.user_name.c_str();
+    authentication.realm = config.realm.c_str();
+
+    worker = std::move(std::thread([&]()
+    {
+        int rc = WPS_periodic_location(&authentication, WPS_NO_STREET_ADDRESS_LOOKUP, config.period.count(),
+                                       infinite_iterations, culs::Provider::Private::periodic_callback, this);
+
+        if (rc != WPS_OK)
+            LOG(ERROR) << return_code_lut.at(rc);
+    }));
+
+    state = State::started;
+}
+
+void culs::Provider::request_stop()
+{
+    state = State::stop_requested;
 }
 
 bool culs::Provider::matches_criteria(const cul::Criteria&)
@@ -211,30 +177,30 @@ bool culs::Provider::matches_criteria(const cul::Criteria&)
 
 void culs::Provider::start_position_updates()
 {
-    d->start();
+    start();
 }
 
 void culs::Provider::stop_position_updates()
 {
-    d->request_stop();
+    request_stop();
 }
 
 void culs::Provider::start_velocity_updates()
 {
-    d->start();
+    start();
 }
 
 void culs::Provider::stop_velocity_updates()
 {
-    d->request_stop();
+    request_stop();
 }    
 
 void culs::Provider::start_heading_updates()
 {
-    d->start();
+    start();
 }
 
 void culs::Provider::stop_heading_updates()
 {
-    d->request_stop();
+    request_stop();
 }

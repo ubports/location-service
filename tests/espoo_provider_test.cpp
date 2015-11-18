@@ -366,9 +366,9 @@ TEST_F(EspooProviderTest, receives_position_updates_requires_daemons)
         Counter position_updates_counter{"Position updates"}; // The number of position updates we received.
     } stats;
 
-    remote::Provider::Stub provider{config};
+    auto provider = remote::Provider::Stub::create_instance_with_config(config);
 
-    provider.updates().position.connect([&stats](const cul::Update<cul::Position>& update)
+    provider->updates().position.connect([&stats](const cul::Update<cul::Position>& update)
     {
         VLOG(1) << update;
         // We track the number of position updates
