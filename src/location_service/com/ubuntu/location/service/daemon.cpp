@@ -34,6 +34,7 @@
 
 #include "program_options.h"
 #include "daemon.h"
+#include "runtime.h"
 
 #include <core/dbus/announcer.h>
 #include <core/dbus/resolver.h>
@@ -76,88 +77,6 @@ struct NullReporter : public location::service::Harvester::Reporter
                 const std::vector<location::connectivity::RadioCell::Ptr>&)
     {
     }
-};
-
-// We bundle our "global" runtime dependencies here, specifically
-// a dispatcher to decouple multiple in-process providers from one
-// another , forcing execution to a well known set of threads.
-struct Runtime
-{
-    // Our default concurrency setup.
-    static constexpr const std::uint32_t worker_threads = 2;
-
-    // Our global singleton instance.
-    static Runtime& instance()
-    {
-        static Runtime runtime;
-        return runtime;
-    }
-
-    Runtime()
-        : running{true},
-          service{worker_threads},
-          strand{service},
-          keep_alive{service}
-    {
-        for (unsigned int i = 0; i < worker_threads; i++)
-            workers.push_back(std::thread
-            {
-                [this]()
-                {
-                    while(running)
-                    {
-                        try
-                        {
-                            service.run();
-                            break;
-                        }
-                        catch (const std::exception& e)
-                        {
-                            LOG(WARNING) << e.what();
-                        }
-                        catch (...)
-                        {
-                            LOG(WARNING) << "Unknown exception caught while executing boost::asio::io_service";
-                        }
-                    }
-                }
-            });
-    }
-
-    ~Runtime()
-    {
-        stop();
-    }
-
-    void stop()
-    {
-        VLOG(1) << __PRETTY_FUNCTION__;
-        running = false;
-        service.stop();
-        VLOG(1) << "\t Service stopped.";
-
-        for (auto& worker : workers)
-            if (worker.joinable())
-                worker.join();
-
-        VLOG(1) << "\t Worker threads joined.";
-    }
-
-    // Allows for reusing the runtime in components that require a dispatcher
-    // to control execution of tasks.
-    std::function<void(std::function<void()>)> to_dispatcher_functional()
-    {
-        return [this](std::function<void()> task)
-        {
-            strand.post(task);
-        };
-    }
-
-    bool running;
-    boost::asio::io_service service;
-    boost::asio::io_service::strand strand;
-    boost::asio::io_service::work keep_alive;
-    std::vector<std::thread> workers;
 };
 
 location::ProgramOptions init_daemon_options()
@@ -263,6 +182,8 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         trap->stop();
     });
 
+    auto runtime = location::service::Runtime::create();
+
     const location::Configuration empty_provider_configuration;
 
     std::set<location::Provider::Ptr> instantiated_providers;
@@ -281,7 +202,7 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
             if (p)
                 instantiated_providers.insert(
                             location::DispatchingProvider::create(
-                                Runtime::instance().to_dispatcher_functional(), p));
+                                runtime->to_dispatcher_functional(), p));
             else
                 throw std::runtime_error("Problem instantiating provider");
 
@@ -291,8 +212,8 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         }
     }
 
-    config.incoming->install_executor(dbus::asio::make_executor(config.incoming, Runtime::instance().service));
-    config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing, Runtime::instance().service));
+    config.incoming->install_executor(dbus::asio::make_executor(config.incoming, runtime->service()));
+    config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing, runtime->service()));
 
     location::service::DefaultConfiguration dc;
 
