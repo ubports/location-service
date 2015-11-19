@@ -169,7 +169,7 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
 
     // We wire up changes in the engine's configuration to the respective slots
     // of the provider.
-    auto cp = updates.reference_location.changed().connect([provider](const cul::Optional<cul::Update<cul::Position>>& pos)
+    auto cp = updates.last_known_location.changed().connect([provider](const cul::Optional<cul::Update<cul::Position>>& pos)
     {
         if (pos)
         {
@@ -177,14 +177,20 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
         }
     });
 
-    auto cv = updates.reference_velocity.changed().connect([provider](const cul::Update<cul::Velocity>& velocity)
+    auto cv = updates.last_known_velocity.changed().connect([provider](const cul::Optional<cul::Update<cul::Velocity>>& velocity)
     {
-        provider->on_reference_velocity_updated(velocity);
+        if (velocity)
+        {
+            provider->on_reference_velocity_updated(velocity.get());
+        }
     });
 
-    auto ch = updates.reference_heading.changed().connect([provider](const cul::Update<cul::Heading>& heading)
+    auto ch = updates.last_known_heading.changed().connect([provider](const cul::Optional<cul::Update<cul::Heading>>& heading)
     {
-        provider->on_reference_heading_updated(heading);
+        if (heading)
+        {
+            provider->on_reference_heading_updated(heading.get());
+        }
     });
 
     auto cr = configuration.wifi_and_cell_id_reporting_state.changed().connect([provider](cul::WifiAndCellIdReportingState state)
@@ -210,7 +216,7 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
     // We should come up with a better heuristic here.
     auto cpr = provider->updates().position.connect([this](const cul::Update<cul::Position>& src)
     {
-        updates.reference_location = update_policy->verify_update(src);
+        updates.last_known_location = update_policy->verify_update(src);
     });
 
     std::lock_guard<std::mutex> lg(guard);
