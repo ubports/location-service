@@ -175,8 +175,6 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         trap->stop();
     });
 
-    const location::Configuration empty_provider_configuration;
-
     location::service::DefaultConfiguration dc;
     auto engine = dc.the_engine(std::set<location::Provider::Ptr>{}, dc.the_provider_selection_policy(), config.settings);
 
@@ -186,15 +184,17 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
 
         try
         {
-            location::ProviderFactory::instance().create_provider_for_name_with_config(
-                        provider,
-                        config.provider_options.count(provider) > 0 ?
-                            config.provider_options.at(provider) : empty_provider_configuration,
-                        [engine](Provider::Ptr provider)
-                        {
-                            std::cout << "****** CALLBACK ADDING PROVIDER ******" << std::endl;
-                            engine->add_provider(provider);
-                        });
+            auto result = std::async(std::launch::async, [provider, config, engine] {
+                return location::ProviderFactory::instance().create_provider_for_name_with_config(
+                    provider,
+                    config.provider_options.count(provider) > 0 ?
+                        config.provider_options.at(provider) : location::Configuration {},
+                    [engine](Provider::Ptr provider)
+                    {
+                        engine->add_provider(provider);
+                    }
+                );
+            });
         } catch(const std::runtime_error& e)
         {
             std::cerr << "Issue instantiating provider: " << e.what() << std::endl;
