@@ -154,9 +154,9 @@ TEST(Engine, adding_a_provider_creates_connections_to_engine_configuration_prope
     EXPECT_CALL(*provider, on_reference_velocity_updated(_)).Times(1);
 
     engine.configuration.wifi_and_cell_id_reporting_state = location::WifiAndCellIdReportingState::on;
-    engine.updates.reference_location = location::Update<location::Position>{};
-    engine.updates.reference_heading = location::Update<location::Heading>{};
-    engine.updates.reference_velocity = location::Update<location::Velocity>{};
+    engine.updates.last_known_location = location::Update<location::Position>{};
+    engine.updates.last_known_heading = location::Update<location::Heading>{};
+    engine.updates.last_known_velocity = location::Update<location::Velocity>{};
 }
 
 /* TODO(tvoss): We have to disable these tests as the MP is being refactored to not break ABI.

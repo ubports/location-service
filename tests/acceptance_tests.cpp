@@ -702,7 +702,7 @@ TEST_F(LocationServiceStandalone, NewSessionsGetLastKnownPosition)
         };
         auto location_service = std::make_shared<cul::service::Implementation>(configuration);
 
-        configuration.engine->updates.reference_location.set(reference_position_update);
+        configuration.engine->updates.last_known_location.set(reference_position_update);
         std::thread t1{[incoming](){incoming->run();}};
         std::thread t2{[outgoing](){outgoing->run();}};
 

@@ -113,7 +113,7 @@ culs::Implementation::Implementation(const culs::Implementation::Configuration& 
               {
                   visible_space_vehicles() = svs;
               }),
-          configuration.engine->updates.reference_location.changed().connect(
+          configuration.engine->updates.last_known_location.changed().connect(
               [this](const cul::Optional<cul::Update<cul::Position>>& update)
               {
                   if (update)
@@ -157,11 +157,11 @@ culs::session::Interface::Ptr culs::Implementation::create_session_for_criteria(
     session_iface->updates().position_status.changed().connect([this, session_weak](const session::Interface::Updates::Status& status)
     {
         cul::Optional<cul::Update<cul::Position>> last_known_position =
-            configuration.engine->updates.reference_location.get();
+            configuration.engine->updates.last_known_location.get();
         if (last_known_position &&
             status == culs::session::Interface::Updates::Status::enabled)
         {
-            /* Immediately send the last known position to the client */
+            // Immediately send the last known position to the client
             if (auto session_iface = session_weak.lock())
             {
                 session_iface->updates().position = last_known_position.get();
