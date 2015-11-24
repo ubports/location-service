@@ -99,7 +99,10 @@ int main(int argc, char** argv)
     auto selected_providers = options.value_for_key<std::vector<std::string>>("provider");
 
     std::map<std::string, cul::ProviderFactory::Configuration> config_lut;
-    std::set<cul::Provider::Ptr> instantiated_providers;
+
+    culs::DefaultConfiguration config;
+    auto settings = std::make_shared<cul::BoostPtreeSettings>(options.value_for_key<std::string>("config-file"));
+    auto engine = config.the_engine(std::set<cul::Provider::Ptr>{}, config.the_provider_selection_policy(), settings);
 
     for (const std::string& provider : selected_providers)
     {
@@ -129,15 +132,15 @@ int main(int argc, char** argv)
 
         try
         {
-            auto p = cul::ProviderFactory::instance().create_provider_for_name_with_config(
-                provider, 
-                config_lut[provider]);
-
-            if (p)
-                instantiated_providers.insert(p);
-            else
-                throw std::runtime_error("Problem instantiating provider");
-            
+            auto result = std::async(std::launch::async, [provider, config_lut, engine] {
+                return cul::ProviderFactory::instance().create_provider_for_name_with_config(
+                    provider,
+                    config_lut.at(provider),
+                    [engine](cul::Provider::Ptr provider)
+                    {
+                        engine->add_provider(provider);
+                    });
+            });
         } catch(const std::runtime_error& e)
         {
             std::cerr << "Exception instantiating provider: " << e.what() << " ... Aborting now." << std::endl;
@@ -163,15 +166,11 @@ int main(int argc, char** argv)
     };
     outgoing->install_executor(dbus::asio::make_executor(outgoing));
 
-    auto settings = std::make_shared<cul::BoostPtreeSettings>(options.value_for_key<std::string>("config-file"));
-
-    culs::DefaultConfiguration config;
-
     culs::Implementation::Configuration configuration
     {
         incoming,
         outgoing,
-        config.the_engine(instantiated_providers, config.the_provider_selection_policy(), settings),
+        engine,
         config.the_permission_manager(incoming),
         culs::Harvester::Configuration
         {
