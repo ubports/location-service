@@ -198,10 +198,16 @@ cul::Provider::Ptr remote::Provider::Stub::create_instance_with_config(const rem
 {
     std::shared_ptr<remote::Provider::Stub> result{new remote::Provider::Stub{config}};
 
-    // This call throws if we fail to reach the remote end. With that, we make sure that
-    // we do not return a potentially invalid instance that throws later on.
-    result->ping();
-
+    // Since we can register asynchronously now, wait for the service to come up
+    while (true) {// XXX(ssweeny): There must be a better way.
+        try {
+            result->ping();
+            break;
+        } catch (std::exception e)
+        {
+            continue;
+        }
+    }
     result->setup_event_connections();
     return result;
 }
