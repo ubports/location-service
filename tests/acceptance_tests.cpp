@@ -666,7 +666,6 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
 TEST_F(LocationServiceStandalone, NewSessionsGetLastKnownPosition)
 {
     core::testing::CrossProcessSync sync_start;
-    core::testing::CrossProcessSync sync_session_created;
 
     auto server = [this, &sync_start]()
     {
@@ -722,7 +721,7 @@ TEST_F(LocationServiceStandalone, NewSessionsGetLastKnownPosition)
         return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
     };
 
-    auto client = [this, &sync_start, &sync_session_created]()
+    auto client = [this, &sync_start]()
     {
         SCOPED_TRACE("Client");
 
@@ -745,7 +744,6 @@ TEST_F(LocationServiceStandalone, NewSessionsGetLastKnownPosition)
             [&](const cul::Update<cul::Position>& new_position) {
                 std::cout << "On position updated: " << new_position << std::endl;
                 position = new_position;
-                bus->stop();
             });
 
         std::cout << "Created event connections, starting updates..." << std::endl;
@@ -754,7 +752,9 @@ TEST_F(LocationServiceStandalone, NewSessionsGetLastKnownPosition)
 
         std::cout << "done" << std::endl;
 
-        sync_session_created.try_signal_ready_for(std::chrono::milliseconds{500});
+        std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+
+        bus->stop();
 
         if (t.joinable())
             t.join();
