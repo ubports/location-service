@@ -38,12 +38,14 @@
 #include <com/ubuntu/location/service/stub.h>
 
 #include <core/dbus/announcer.h>
+#include <core/dbus/bus.h>
 #include <core/dbus/fixture.h>
 #include <core/dbus/resolver.h>
 
 #include <core/dbus/asio/executor.h>
 
 #include <core/posix/signal.h>
+#include <core/posix/this_process.h>
 
 #include <core/testing/cross_process_sync.h>
 #include <core/testing/fork_and_run.h>
@@ -803,8 +805,8 @@ TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingW
         };
 
         cul::service::Daemon::Configuration config;
-        config.incoming = session_bus();
-        config.outgoing = session_bus();
+        config.incoming = std::make_shared<core::dbus::Bus>(core::posix::this_process::env::get_or_throw("DBUS_SESSION_BUS_ADDRESS"));
+        config.outgoing = std::make_shared<core::dbus::Bus>(core::posix::this_process::env::get_or_throw("DBUS_SESSION_BUS_ADDRESS"));
         config.is_testing_enabled = false;
         config.providers =
         {
