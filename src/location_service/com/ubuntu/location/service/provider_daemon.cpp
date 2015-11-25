@@ -132,6 +132,8 @@ int location::service::ProviderDaemon::main(const location::service::ProviderDae
         config.provider
     });
 
+    runtime->start();
+
     trap->run();
 
     config.connection->stop();

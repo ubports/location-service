@@ -55,6 +55,10 @@ public:
     Runtime& operator=(const Runtime&) = delete;
     Runtime& operator=(Runtime&&) = delete;
 
+    // start executes the underlying io_service on a thread pool with
+    // the size configured at creation time.
+    void start();
+
     // stop cleanly shuts down a Runtime instance,
     // joining all worker threads.
     void stop();
@@ -72,6 +76,7 @@ private:
     // worker threads.
     Runtime(std::uint32_t pool_size);
 
+    std::uint32_t pool_size_;
     boost::asio::io_service service_;
     boost::asio::io_service::strand strand_;
     boost::asio::io_service::work keep_alive_;
