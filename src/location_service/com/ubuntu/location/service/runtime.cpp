@@ -59,12 +59,11 @@ std::shared_ptr<culs::Runtime> culs::Runtime::create(std::uint32_t pool_size)
 }
 
 culs::Runtime::Runtime(std::uint32_t pool_size)
-    : service_{pool_size},
+    : pool_size_{pool_size},
+      service_{pool_size_},
       strand_{service_},
       keep_alive_{service_}
 {
-        for (unsigned int i = 0; i < pool_size; i++)
-            workers_.push_back(std::thread{exception_safe_run, std::ref(service_)});
 }
 
 culs::Runtime::~Runtime()
@@ -76,6 +75,12 @@ culs::Runtime::~Runtime()
     {
         // Dropping all exceptions to satisfy the nothrow guarantee.
     }
+}
+
+void culs::Runtime::start()
+{
+    for (unsigned int i = 0; i < pool_size_; i++)
+        workers_.push_back(std::thread{exception_safe_run, std::ref(service_)});
 }
 
 void culs::Runtime::stop()

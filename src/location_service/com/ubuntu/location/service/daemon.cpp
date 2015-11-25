@@ -215,6 +215,8 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
     config.incoming->install_executor(dbus::asio::make_executor(config.incoming, runtime->service()));
     config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing, runtime->service()));
 
+    runtime->start();
+
     location::service::DefaultConfiguration dc;
 
     location::service::Implementation::Configuration configuration
