@@ -21,7 +21,6 @@
 #include <com/ubuntu/location/provider_factory.h>
 
 #include <com/ubuntu/location/logging.h>
-#include <com/ubuntu/location/dispatching_provider.h>
 #include <com/ubuntu/location/connectivity/dummy_connectivity_manager.h>
 
 #include <com/ubuntu/location/service/default_configuration.h>
@@ -200,9 +199,7 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
                             config.provider_options.at(provider) : empty_provider_configuration);
 
             if (p)
-                instantiated_providers.insert(
-                            location::DispatchingProvider::create(
-                                runtime->to_dispatcher_functional(), p));
+                instantiated_providers.insert(p);
             else
                 throw std::runtime_error("Problem instantiating provider");
 
