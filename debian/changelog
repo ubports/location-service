@@ -1,3 +1,29 @@
+location-service (2.1+15.04.20151127-0ubuntu1) vivid; urgency=medium
+
+  [ Alberto Mardegan ]
+  * Send last known position on session start
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+  [ Thomas Voß ]
+  * Factor out service::Runtime from daemon.cpp into its own .h/.cpp
+    pair of files. Add test cases around correct operation of
+    service::Runtime. added:
+    src/location_service/com/ubuntu/location/service/runtime.cpp
+    src/location_service/com/ubuntu/location/service/runtime.h
+    tests/runtime_test.cpp
+
+  [ thomas-voss ]
+  * Factor out service::Runtime from daemon.cpp into its own .h/.cpp
+    pair of files. Add test cases around correct operation of
+    service::Runtime. added:
+    src/location_service/com/ubuntu/location/service/runtime.cpp
+    src/location_service/com/ubuntu/location/service/runtime.h
+    tests/runtime_test.cpp
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Fri, 27 Nov 2015 13:00:33 +0000
+
 location-service (2.1+15.04.20151113-0ubuntu1) vivid; urgency=medium
 
   * Adjust default timeout for downloading GPS XTRA data.
