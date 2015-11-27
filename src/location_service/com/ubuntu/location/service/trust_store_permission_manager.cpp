@@ -146,7 +146,7 @@ service::PermissionManager::Result service::TrustStorePermissionManager::check_p
         return service::PermissionManager::Result::rejected;
     }
 
-    std::string description = i18n::tr("%1% wants to access your current location.");
+    std::string description = i18n::tr("wants to access your current location.");
 
     core::trust::Agent::RequestParameters params
     {
