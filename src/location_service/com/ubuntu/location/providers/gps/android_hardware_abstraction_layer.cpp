@@ -66,8 +66,6 @@ android::GpsXtraDownloader::Configuration android::GpsXtraDownloader::Configurat
     if (config.count("XTRA_SERVER_3") > 0)
         result.xtra_hosts.push_back(config.get<std::string>("XTRA_SERVER_3"));
 
-    result.timeout = std::chrono::milliseconds{1500};
-
     return result;
 }
 
@@ -333,14 +331,14 @@ void android::HardwareAbstractionLayer::on_request_utc_time(void* context)
     } else
     {
         auto now = location::Clock::now().time_since_epoch();
-        auto thiz = static_cast<android::HardwareAbstractionLayer*>(context);
+        auto ms_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(now);
 
         static const int zero_uncertainty = 0;
 
         u_hardware_gps_inject_time(
                     thiz->impl.gps_handle,
-                    now.count(),
-                    now.count(),
+                    ms_since_epoch.count(),
+                    ms_since_epoch.count(),
                     zero_uncertainty);
     }
 }
