@@ -14,6 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
+ *              Scott Sweeny <scott.sweeny@canonical.com>
  */
 
 #include <com/ubuntu/location/service/daemon.h>
