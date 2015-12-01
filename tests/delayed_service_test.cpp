@@ -34,6 +34,7 @@
 #include <core/posix/this_process.h>
 
 #include "did_finish_successfully.h"
+#include "mock_event_receiver.h"
 
 #include <gmock/gmock.h>
 
@@ -42,13 +43,6 @@ namespace remote = com::ubuntu::location::providers::remote;
 
 namespace
 {
-struct MockEventReceiver
-{
-    MOCK_METHOD1(position_update_received, void(const location::Update<location::Position>&));
-    MOCK_METHOD1(heading_update_received, void(const location::Update<location::Heading>&));
-    MOCK_METHOD1(velocity_update_received, void(const location::Update<location::Velocity>&));
-};
-
 struct DelayedServiceTest : public core::dbus::testing::Fixture, public ::testing::WithParamInterface<int>
 {
 
