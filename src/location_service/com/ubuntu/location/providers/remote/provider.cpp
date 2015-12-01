@@ -23,6 +23,7 @@
 #include <com/ubuntu/location/logging.h>
 
 #include <core/dbus/object.h>
+#include <core/dbus/service_watcher.h>
 #include <core/dbus/signal.h>
 #include <core/dbus/asio/executor.h>
 
@@ -191,6 +192,24 @@ cul::Provider::Ptr remote::Provider::Stub::create_instance(const cul::ProviderFa
     auto service = dbus::Service::use_service(bus, name);
     auto object = service->object_for_path(path);
 
+    // Check if the service has come up
+    if (!bus->has_owner_for_name(name)) {
+        // If it hasn't wait for it to come up
+        bool valid = false;
+        dbus::DBus daemon(bus);
+        dbus::ServiceWatcher::Ptr service_watcher(
+            daemon.make_service_watcher(name, dbus::DBus::WatchMode::registration));
+
+        service_watcher->service_registered().connect([&valid]()
+            {
+                valid = true;
+            });
+
+        while (!valid) {
+            continue;
+        }
+    }
+
     return create_instance_with_config(remote::stub::Configuration{object});
 }
 
@@ -198,16 +217,10 @@ cul::Provider::Ptr remote::Provider::Stub::create_instance_with_config(const rem
 {
     std::shared_ptr<remote::Provider::Stub> result{new remote::Provider::Stub{config}};
 
-    // Since we can register asynchronously now, wait for the service to come up
-    while (true) {// XXX(ssweeny): There must be a better way.
-        try {
-            result->ping();
-            break;
-        } catch (std::exception e)
-        {
-            continue;
-        }
-    }
+    // This call throws if we fail to reach the remote end. With that, we make sure that
+    // we do not return a potentially invalid instance that throws later on.
+    result->ping();
+
     result->setup_event_connections();
     return result;
 }
