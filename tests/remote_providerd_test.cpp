@@ -76,6 +76,8 @@ TEST_F(RemoteProviderdTest, AClientReceivesUpdatesFromAnOutOfProcessProvider)
                             8, argv, dbus_connection_factory)));
     }, core::posix::StandardStream::empty);
 
+    std::this_thread::sleep_for(std::chrono::milliseconds{250});
+
     auto service = core::posix::fork([this]()
     {
         core::posix::this_process::env::set_or_throw(
