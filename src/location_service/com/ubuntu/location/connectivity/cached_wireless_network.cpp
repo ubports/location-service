@@ -18,6 +18,10 @@
 
 #include <com/ubuntu/location/connectivity/cached_wireless_network.h>
 
+#include <fstream>
+#include <sstream>
+#include <string>
+
 namespace connectivity = com::ubuntu::location::connectivity;
 
 namespace
@@ -49,6 +53,39 @@ wifi_mode_from_ap_mode(org::freedesktop::NetworkManager::AccessPoint::Mode::Valu
     }
 
     return mode;
+}
+
+// boot_time returns the time since the epoch when the system booted.
+std::chrono::system_clock::time_point boot_time()
+{
+    std::ifstream in{"/proc/stat"};
+    std::string line;
+
+    while (std::getline(in, line))
+    {
+        if (line.empty())
+            continue;
+
+        std::stringstream ss{line};
+        std::string name; ss >> name;
+
+        if (name != "btime")
+            continue;
+
+        std::uint64_t ts; ss >> ts;
+        return std::chrono::system_clock::time_point{std::chrono::seconds{ts}};
+    }
+
+    // Fallback to the best estimate we can give.
+    return std::chrono::system_clock::now();
+}
+
+// NetworkManager reports AP LastSeen timestamps in seconds since boot. We map that back to the epoch
+// to keep dependent software working.
+std::chrono::system_clock::time_point translate_time_stamp(std::uint64_t ts)
+{
+    static const auto ts_when_booted = boot_time();
+    return ts_when_booted + std::chrono::seconds{ts};
 }
 }
 
@@ -95,10 +132,7 @@ detail::CachedWirelessNetwork::CachedWirelessNetwork(
           })
       }
 {
-    last_seen_ = std::chrono::system_clock::time_point
-    {
-        std::chrono::system_clock::duration{access_point_.last_seen->get()}
-    };
+    last_seen_ = translate_time_stamp(access_point_.last_seen->get());
 
     bssid_ = access_point_.hw_address->get();
     ssid_ = utf8_ssid_to_string(access_point_.ssid->get());
@@ -168,13 +202,8 @@ void detail::CachedWirelessNetwork::on_access_point_properties_changed(const std
             org::freedesktop::NetworkManager::AccessPoint::LastSeen::name(),
             [](CachedWirelessNetwork& thiz, const core::dbus::types::Variant& value)
             {
-                thiz.last_seen_ = std::chrono::system_clock::time_point
-                {
-                    std::chrono::system_clock::duration
-                    {
-                        value.as<org::freedesktop::NetworkManager::AccessPoint::LastSeen::ValueType>()
-                    }
-                };
+                thiz.last_seen_ = translate_time_stamp(
+                    value.as<org::freedesktop::NetworkManager::AccessPoint::LastSeen::ValueType>());
             }
         }
     };

@@ -530,6 +530,10 @@ void connectivity::OfonoNmConnectivityManager::Private::on_device_added(
         {
             try
             {
+                // We have to make sure that we always hand in a lock that owns the mutex.
+                if (not ul.owns_lock())
+                    ul.lock();
+
                 on_access_point_added(path, device_path, ul);
             }
             catch (const std::exception& e)
