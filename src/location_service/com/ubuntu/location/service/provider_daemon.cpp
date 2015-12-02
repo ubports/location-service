@@ -108,6 +108,14 @@ location::service::ProviderDaemon::Configuration location::service::ProviderDaem
     return result;
 }
 
+namespace
+{
+std::shared_ptr<location::service::Runtime> runtime()
+{
+    static const auto inst = location::service::Runtime::create(1);
+    return inst;
+}
+}
 int location::service::ProviderDaemon::main(const location::service::ProviderDaemon::Configuration& config)
 {
     auto trap = core::posix::trap_signals_for_all_subsequent_threads(
@@ -121,9 +129,7 @@ int location::service::ProviderDaemon::main(const location::service::ProviderDae
         trap->stop();
     });
 
-    auto runtime = location::service::Runtime::create(1);
-
-    config.connection->install_executor(core::dbus::asio::make_executor(config.connection, runtime->service()));
+    config.connection->install_executor(core::dbus::asio::make_executor(config.connection, runtime()->service()));
 
     auto skeleton = location::providers::remote::skeleton::create_with_configuration(location::providers::remote::skeleton::Configuration
     {
@@ -132,7 +138,7 @@ int location::service::ProviderDaemon::main(const location::service::ProviderDae
         config.provider
     });
 
-    runtime->start();
+    runtime()->start();
 
     trap->run();
 
