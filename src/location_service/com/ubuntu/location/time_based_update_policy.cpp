@@ -53,8 +53,9 @@ const location::Update<location::Position>& TimeBasedUpdatePolicy::verify_update
     {
         // if the update has happened within a reasonable amount of time we will just use it if it is more accurate
         // that the previous one.
-        use_new_update = last_position_update.value.accuracy.horizontal && update.value.accuracy.horizontal
-            && *last_position_update.value.accuracy.horizontal >= *update.value.accuracy.horizontal;
+        use_new_update = !last_position_update.value.accuracy.horizontal ||
+            (update.value.accuracy.horizontal
+             && *last_position_update.value.accuracy.horizontal >= *update.value.accuracy.horizontal);
     }
 
     if (use_new_update)
