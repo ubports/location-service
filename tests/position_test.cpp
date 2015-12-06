@@ -40,7 +40,7 @@ TEST(Position, InitWithLatLonAltGivesValidFieldsForLatLonAlt)
         cul::wgs84::Latitude{},
         cul::wgs84::Longitude{},
         cul::wgs84::Altitude{}};
-    EXPECT_TRUE(p.altitude);
+    EXPECT_TRUE(p.altitude ? true : false);
 }
 
 #include <com/ubuntu/location/codec.h>
