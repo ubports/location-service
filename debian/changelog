@@ -1,3 +1,9 @@
+location-service (2.1+15.04.20151209-0ubuntu1) vivid; urgency=medium
+
+  * Fix settings not being applied correctly.
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Wed, 09 Dec 2015 15:22:22 +0000
+
 location-service (2.1+15.04.20151202.1-0ubuntu1) vivid; urgency=medium
 
   * Ensure that event connections are cleaned up on destruction. (LP:
