@@ -181,7 +181,7 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         trap->stop();
     });
 
-    auto runtime = location::service::Runtime::create();
+    auto runtime = location::service::Runtime::create(4);
 
     const location::Configuration empty_provider_configuration;
 
