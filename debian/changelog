@@ -1,3 +1,10 @@
+location-service (2.1+15.04.20151211-0ubuntu1) vivid; urgency=medium
+
+  * Account for changes in trust-store w.r.t. assembling the description
+    of a trust prompt.
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Fri, 11 Dec 2015 08:57:44 +0000
+
 location-service (2.1+15.04.20151209-0ubuntu1) vivid; urgency=medium
 
   * Fix settings not being applied correctly.
