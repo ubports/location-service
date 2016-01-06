@@ -1,3 +1,13 @@
+location-service (2.1+15.04.20160106-0ubuntu1) vivid; urgency=medium
+
+  [ Alberto Mardegan ]
+  * Set debian source format to "3.0 (native)"
+
+  [ Scott Sweeny ]
+  * Allow providers to register themselves asynchronously (LP: #1415029)
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Wed, 06 Jan 2016 16:15:29 +0000
+
 location-service (2.1+15.04.20151211-0ubuntu1) vivid; urgency=medium
 
   * Account for changes in trust-store w.r.t. assembling the description
