@@ -183,26 +183,25 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
 
     auto runtime = location::service::Runtime::create(4);
 
-    const location::Configuration empty_provider_configuration;
-
-    std::set<location::Provider::Ptr> instantiated_providers;
-
+    location::service::DefaultConfiguration dc;
+    auto engine = dc.the_engine(std::set<location::Provider::Ptr>{}, dc.the_provider_selection_policy(), config.settings);
     for (const std::string& provider : config.providers)
     {
         std::cout << "Instantiating and configuring: " << provider << std::endl;
 
         try
         {
-            auto p = location::ProviderFactory::instance().create_provider_for_name_with_config(
-                        provider,
-                        config.provider_options.count(provider) > 0 ?
-                            config.provider_options.at(provider) : empty_provider_configuration);
-
-            if (p)
-                instantiated_providers.insert(p);
-            else
-                throw std::runtime_error("Problem instantiating provider");
-
+            auto result = std::async(std::launch::async, [provider, config, engine] {
+                return location::ProviderFactory::instance().create_provider_for_name_with_config(
+                    provider,
+                    config.provider_options.count(provider) > 0 ?
+                        config.provider_options.at(provider) : location::Configuration {},
+                    [engine](Provider::Ptr provider)
+                    {
+                        engine->add_provider(provider);
+                    }
+                );
+            });
         } catch(const std::runtime_error& e)
         {
             std::cerr << "Issue instantiating provider: " << e.what() << std::endl;
@@ -214,13 +213,11 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
 
     runtime->start();
 
-    location::service::DefaultConfiguration dc;
-
     location::service::Implementation::Configuration configuration
     {
         config.incoming,
         config.outgoing,
-        dc.the_engine(instantiated_providers, dc.the_provider_selection_policy(), config.settings),
+        engine,
         dc.the_permission_manager(config.outgoing),
         location::service::Harvester::Configuration
         {
