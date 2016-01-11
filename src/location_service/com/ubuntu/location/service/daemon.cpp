@@ -168,23 +168,8 @@ void location::service::Daemon::print_help(std::ostream& out)
     mutable_daemon_options().print_help(out);
 }
 
-int location::service::Daemon::main(const location::service::Daemon::Configuration& config)
+void location::service::Daemon::load_providers(const Configuration &config, std::shared_ptr<Engine> engine)
 {
-    auto trap = core::posix::trap_signals_for_all_subsequent_threads(
-    {
-        core::posix::Signal::sig_term,
-        core::posix::Signal::sig_int
-    });
-
-    trap->signal_raised().connect([trap](const core::posix::Signal&)
-    {
-        trap->stop();
-    });
-
-    auto runtime = location::service::Runtime::create(4);
-
-    location::service::DefaultConfiguration dc;
-    auto engine = dc.the_engine(std::set<location::Provider::Ptr>{}, dc.the_provider_selection_policy(), config.settings);
     for (const std::string& provider : config.providers)
     {
         std::cout << "Instantiating and configuring: " << provider << std::endl;
@@ -207,6 +192,26 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
             std::cerr << "Issue instantiating provider: " << e.what() << std::endl;
         }
     }
+}
+
+int location::service::Daemon::main(const location::service::Daemon::Configuration& config)
+{
+    auto trap = core::posix::trap_signals_for_all_subsequent_threads(
+    {
+        core::posix::Signal::sig_term,
+        core::posix::Signal::sig_int
+    });
+
+    trap->signal_raised().connect([trap](const core::posix::Signal&)
+    {
+        trap->stop();
+    });
+
+    auto runtime = location::service::Runtime::create(4);
+
+    location::service::DefaultConfiguration dc;
+    auto engine = dc.the_engine(std::set<location::Provider::Ptr>{}, dc.the_provider_selection_policy(), config.settings);
+    load_providers(config, engine);
 
     config.incoming->install_executor(dbus::asio::make_executor(config.incoming, runtime->service()));
     config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing, runtime->service()));
