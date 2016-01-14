@@ -19,6 +19,7 @@
 #include <com/ubuntu/location/provider_factory.h>
 
 #include "dummy/provider.h"
+#include "dummy/delayed_provider.h"
 
 #include <map>
 
@@ -39,6 +40,12 @@ static FactoryInjector dummy_injector
 {
     "dummy::Provider",
     com::ubuntu::location::providers::dummy::Provider::create_instance
+};
+
+static FactoryInjector dummy_delayed_injector
+{
+    "dummy::DelayedProvider",
+    com::ubuntu::location::providers::dummy::DelayedProvider::create_instance
 };
 
 #include <com/ubuntu/location/providers/remote/provider.h>
