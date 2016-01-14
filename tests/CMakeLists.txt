@@ -92,6 +92,7 @@ LOCATION_SERVICE_ADD_TEST(provider_factory_test provider_factory_test.cpp)
 LOCATION_SERVICE_ADD_TEST(provider_test provider_test.cpp)
 LOCATION_SERVICE_ADD_TEST(wgs84_test wgs84_test.cpp)
 LOCATION_SERVICE_ADD_TEST(trust_store_permission_manager_test trust_store_permission_manager_test.cpp)
+LOCATION_SERVICE_ADD_TEST(runtime_test runtime_test.cpp)
 
 # Provider-specific test-cases go here.
 if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
@@ -124,3 +125,4 @@ LOCATION_SERVICE_ADD_TEST(remote_providerd_test remote_providerd_test.cpp)
 
 LOCATION_SERVICE_ADD_TEST(remote_provider_test remote_provider_test.cpp)
 LOCATION_SERVICE_ADD_TEST(espoo_provider_test espoo_provider_test.cpp)
+LOCATION_SERVICE_ADD_TEST(delayed_service_test delayed_service_test.cpp)
