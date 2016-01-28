@@ -108,6 +108,9 @@ location::service::Daemon::Configuration location::service::Daemon::Configuratio
 {
     location::service::Daemon::Configuration result;
 
+    // Make sure options are cleared between runs (needed for testing)
+    mutable_daemon_options().clear();
+
     if (!mutable_daemon_options().parse_from_command_line_args(argc, (const char**)argv))
         throw std::runtime_error{"Could not parse command-line, aborting..."};
 
