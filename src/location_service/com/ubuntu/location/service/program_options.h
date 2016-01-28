@@ -157,6 +157,11 @@ struct ProgramOptions
             enumerator(s);
     }
 
+    void clear()
+    {
+        vm.clear();
+    }
+
     void print(std::ostream& out) const
     {
         for (const auto& pair : vm)
