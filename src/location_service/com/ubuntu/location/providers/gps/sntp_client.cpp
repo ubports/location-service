@@ -18,6 +18,8 @@
 
 #include <com/ubuntu/location/providers/gps/sntp_client.h>
 
+#include <com/ubuntu/location/time_since_boot.h>
+
 #include <boost/asio/ip/udp.hpp>
 #include <boost/endian/buffers.hpp>
 
@@ -25,47 +27,17 @@
 #include <fstream>
 #include <iostream>
 
-namespace gps = com::ubuntu::location::providers::gps;
+namespace location = com::ubuntu::location;
+namespace gps = location::providers::gps;
 namespace ip = boost::asio::ip;
 
 namespace
 {
-// boot_time returns the time since the epoch when the system booted.
-std::chrono::system_clock::time_point boot_time()
-{
-    std::ifstream in{"/proc/stat"};
-    std::string line;
-
-    while (std::getline(in, line))
-    {
-        if (line.empty())
-            continue;
-
-        std::stringstream ss{line};
-        std::string name; ss >> name;
-
-        if (name != "btime")
-            continue;
-
-        std::uint64_t ts; ss >> ts;
-        return std::chrono::system_clock::time_point{std::chrono::seconds{ts}};
-    }
-
-    // Fallback to the best estimate we can give.
-    return std::chrono::system_clock::now();
-}
-
-std::chrono::milliseconds elapsed_realtime_since_boot()
-{
-    static const auto btime = boot_time();
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - btime);
-}
-
 struct Now
 {
-    std::chrono::milliseconds time = std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::nanoseconds time = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch());
-    std::chrono::milliseconds ticks = elapsed_realtime_since_boot();
+    std::chrono::nanoseconds ticks = location::time_since_boot();
 };
 }
 
@@ -78,7 +50,7 @@ const std::chrono::seconds& gps::sntp::offset_1900_to_1970()
 
 gps::sntp::LeapIndicator gps::sntp::Packet::LeapIndicatorVersionMode::leap_indicator() const
 {
-    return static_cast<LeapIndicator>((livm.value() >> 6) & 0b11);
+    return static_cast<LeapIndicator>((livm.value() >> 6) & 0x3);
 }
 
 gps::sntp::Packet::LeapIndicatorVersionMode& gps::sntp::Packet::LeapIndicatorVersionMode::leap_indicator(LeapIndicator li)
@@ -89,7 +61,7 @@ gps::sntp::Packet::LeapIndicatorVersionMode& gps::sntp::Packet::LeapIndicatorVer
 
 std::uint8_t gps::sntp::Packet::LeapIndicatorVersionMode::version() const
 {
-    return (livm.value() >> 3) & 0b111;
+    return (livm.value() >> 3) & 0x7;
 }
 
 gps::sntp::Packet::LeapIndicatorVersionMode& gps::sntp::Packet::LeapIndicatorVersionMode::version(std::uint8_t version)
@@ -100,7 +72,7 @@ gps::sntp::Packet::LeapIndicatorVersionMode& gps::sntp::Packet::LeapIndicatorVer
 
 gps::sntp::Mode gps::sntp::Packet::LeapIndicatorVersionMode::mode() const
 {
-    return static_cast<Mode>(livm.value() & 0b111);
+    return static_cast<Mode>(livm.value() & 0x7);
 }
 
 gps::sntp::Packet::LeapIndicatorVersionMode& gps::sntp::Packet::LeapIndicatorVersionMode::mode(Mode m)
@@ -151,12 +123,18 @@ gps::sntp::Client::Response gps::sntp::Client::request_time(const std::string& h
     auto rtt = after.ticks - before.ticks - (transmit - receive);
     auto offset = ((receive - originate) + (transmit - after.time))/2;
 
-    return {packet, after.time + offset, after.ticks, rtt};
+    return
+    {
+        packet,
+        std::chrono::duration_cast<std::chrono::milliseconds>(after.time + offset),
+        std::chrono::duration_cast<std::chrono::milliseconds>(after.ticks),
+        std::chrono::duration_cast<std::chrono::milliseconds>(rtt)
+    };
 }
 
 gps::sntp::Packet gps::sntp::Client::request(boost::asio::ip::udp::socket& socket)
 {
-    sntp::Packet packet; ::memset(&packet, 0, sizeof(packet));
+    sntp::Packet packet;
     packet.transmit.from_milliseconds_since_epoch(
                 std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()));

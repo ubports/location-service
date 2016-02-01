@@ -44,7 +44,7 @@ struct SntpClient : public ::testing::Test
     }
 
     std::shared_ptr<location::service::Runtime> rt = location::service::Runtime::create();
-    std::string host = env::get("UBUNTU_LOCATION_SERVICE_NTP_HOST_FOR_TESTING", "ntp0.fau.de");
+    std::string host = env::get("UBUNTU_LOCATION_SERVICE_NTP_HOST_FOR_TESTING", "ntp.ubuntu.com");
 };
 }
 
@@ -80,7 +80,7 @@ TEST_F(SntpClient, returns_correct_data_in_packet)
         location::providers::gps::sntp::Client sntp_client;
         try
         {
-            auto response = sntp_client.request_time(host, std::chrono::milliseconds{500}, rt->service());
+            auto response = sntp_client.request_time(host, std::chrono::milliseconds{1000}, rt->service());
 
             EXPECT_EQ(1, response.packet.stratum.value());
             EXPECT_EQ(sntp::ReferenceIdentifier::gps, static_cast<sntp::ReferenceIdentifier>(response.packet.reference_identifier.value()));
