@@ -18,8 +18,13 @@ if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
 
         gps.conf
 
+        hardware_abstraction_layer.cpp
+
         android_hardware_abstraction_layer.h
         android_hardware_abstraction_layer.cpp
+
+        sntp_reference_time_source.h
+        sntp_reference_time_source.cpp
 
         sntp_client.h
         sntp_client.cpp
