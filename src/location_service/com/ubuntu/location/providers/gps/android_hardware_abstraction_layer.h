@@ -19,6 +19,7 @@
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GPS_ANDROID_HARDWARE_ABSTRACTION_LAYER_H_
 
 #include <com/ubuntu/location/providers/gps/hardware_abstraction_layer.h>
+#include <com/ubuntu/location/providers/gps/sntp_client.h>
 
 #include <ubuntu/hardware/gps.h>
 
@@ -66,7 +67,24 @@ struct GpsXtraDownloader
 };
 
 struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
-{
+{    
+    /** @brief A ReferenceTimeSource provides samples of an arbitrary reference time source. */
+    class ReferenceTimeSource
+    {
+    public:
+        /** @cond */
+        typedef std::shared_ptr<ReferenceTimeSource> Ptr;
+
+        virtual ~ReferenceTimeSource() = default;
+        /** @endcond */
+
+        /** @brief sample returns a sample of the current ReferenceTimeSource. */
+        virtual ReferenceTimeSample sample() = 0;
+
+    protected:
+        ReferenceTimeSource() = default;
+    };
+
     /** @brief Implements gps::HardwareAbstractionLayer::SuplAssistant interface for the android gps HAL. */
     struct SuplAssistant : public gps::HardwareAbstractionLayer::SuplAssistant
     {
@@ -186,6 +204,8 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
             std::shared_ptr<GpsXtraDownloader> downloader;
             GpsXtraDownloader::Configuration configuration;
         } gps_xtra;
+
+        ReferenceTimeSource::Ptr reference_time_source;
     };
 
     HardwareAbstractionLayer(const Configuration& configuration);
@@ -227,8 +247,8 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
     bool set_position_mode(gps::PositionMode mode) override;
 
     bool inject_reference_position(const location::Position& position) override;
-    bool inject_reference_time(const std::chrono::microseconds& reference_time,
-                               const std::chrono::microseconds& sample_time) override;
+    bool inject_reference_time(const ReferenceTimeSample& sample) override;
+
     struct Impl
     {
         // Bootstraps access to the GPS chipset, wiring up all callbacks.
@@ -252,8 +272,8 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         // An implementation of the gps::HardwareAbstractionLayer::SuplAssistant interface.
         SuplAssistant supl_assistant;
 
-        // Callback for handling utc time requests.
-        gps::HardwareAbstractionLayer::UtcTimeRequestHandler utc_time_request_handler;
+        // An implementation of ReferenceTimeSource.
+        ReferenceTimeSource::Ptr reference_time_source;
 
         // Emitted whenever the set of visible space vehicles changes.
         core::Signal<std::set<location::SpaceVehicle>> space_vehicle_updates;

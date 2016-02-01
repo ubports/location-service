@@ -19,11 +19,13 @@
 #include <com/ubuntu/location/providers/gps/sntp_client.h>
 
 #include <boost/asio/ip/udp.hpp>
+#include <boost/endian/buffers.hpp>
 
+#include <bitset>
 #include <fstream>
+#include <iostream>
 
 namespace gps = com::ubuntu::location::providers::gps;
-
 namespace ip = boost::asio::ip;
 
 namespace
@@ -59,154 +61,109 @@ std::chrono::milliseconds elapsed_realtime_since_boot()
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - btime);
 }
 
-namespace sntp
+struct Now
 {
-enum class LeapIndicator : std::uint8_t
-{
-    no_warning = 0,
-    last_minute_has_61_seconds = 1,
-    last_minute_has_59_seconds = 2,
-    alarm = 3
+    std::chrono::milliseconds time = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch());
+    std::chrono::milliseconds ticks = elapsed_realtime_since_boot();
 };
+}
 
-enum class Mode : std::uint8_t
+const std::chrono::seconds& gps::sntp::offset_1900_to_1970()
 {
-    reserved = 0,
-    symmetric_active = 1,
-    symmetric_passive = 2,
-    client = 3,
-    server = 4,
-    broadcast = 5,
-    reserved_for_control = 6,
-    reserved_for_private_use = 7
-};
-
-enum class ReferenceIdentifier : std::uint32_t
-{
-    locl = 'LOCL',
-    cesm = 'CESM',
-    rbdm = 'RBDM',
-    pps = 'PPS',
-    irig = 'IRIG',
-    acts = 'ACTS',
-    usno = 'USNO',
-    ptb = 'PTB',
-    tdf = 'TDF',
-    dcf = 'DCF',
-    msf = 'MSF',
-    wwv = 'WWV',
-    wwvb = 'WWVB',
-    wwvh = 'WWVH',
-    chu = 'CHU',
-    lorc = 'LORC',
-    omeg = 'OMEG',
-    gps = 'GPS'
-};
-
-static const std::chrono::seconds& offset_1900_to_1970()
-{
-    static const auto secs = ((365 * 70) + 17) * 24 * 60 * 60;
+    static const std::uint64_t secs = ((365ull * 70ull) + 17ull) * 24ull * 60ull * 60ull;
     static const std::chrono::seconds seconds{secs};
     return seconds;
 }
 
-template<typename Seconds, typename FractionalSeconds = Seconds>
-struct Timestamp
+gps::sntp::LeapIndicator gps::sntp::Packet::LeapIndicatorVersionMode::leap_indicator() const
 {
-    void from_milliseconds_since_epoch(const std::chrono::milliseconds& ms)
-    {
-        auto secs = std::chrono::duration_cast<std::chrono::seconds>(ms);
-        auto msecs = ms - secs;
-
-        secs += offset_1900_to_1970();
-
-        seconds = secs.count();
-        fractional_seconds = msecs.count() * std::numeric_limits<FractionalSeconds>::max() / 1000;
-    }
-
-    std::chrono::milliseconds to_milliseconds_since_epoch() const
-    {
-        std::uint32_t n_seconds{seconds};
-        std::uint32_t n_fractional_seconds{fractional_seconds};
-
-        return std::chrono::seconds{ntohl(n_seconds)} - offset_1900_to_1970() +
-               std::chrono::milliseconds{(ntohl(n_fractional_seconds) * 1000) / std::numeric_limits<FractionalSeconds>::max()};
-    }
-
-    Seconds seconds;
-    FractionalSeconds fractional_seconds;
-};
-
-template<typename T, typename U>
-using Duration = Timestamp<T, U>;
-
-struct Packet
-{
-    /*   2 */ LeapIndicator leap_indicator : 2;
-    /*   5 */ std::uint8_t version : 3;
-    /*   8 */ Mode mode : 3;
-    /*  16 */ std::uint8_t stratum;
-    /*  24 */ std::uint8_t poll_interval;
-    /*  32 */ std::int8_t precision;
-    /*  64 */ Duration<std::int16_t, std::uint16_t> root_delay;
-    /*  96 */ Duration<std::uint16_t, std::uint16_t> root_dispersion;
-    /* 128 */ ReferenceIdentifier reference_identifier;
-    /* 192 */ Timestamp<std::uint32_t> reference;
-    /* 256 */ Timestamp<std::uint32_t> originate;
-    /* 320 */ Timestamp<std::uint32_t> receive;
-    /* 384 */ Timestamp<std::uint32_t> transmit;
-};
-
-static constexpr const std::uint8_t version = 3;
-}
+    return static_cast<LeapIndicator>((livm.value() >> 6) & 0b11);
 }
 
-gps::SntpClient::SntpClient(boost::asio::io_service& service) : service{service}
+gps::sntp::Packet::LeapIndicatorVersionMode& gps::sntp::Packet::LeapIndicatorVersionMode::leap_indicator(LeapIndicator li)
 {
+    livm = livm.value() | (static_cast<uint8_t>(li) << 6);
+    return *this;
 }
 
-gps::SntpClient::Response gps::SntpClient::request_time_with_timeout(const std::string& host, const boost::asio::yield_context& ctxt)
+std::uint8_t gps::sntp::Packet::LeapIndicatorVersionMode::version() const
 {
-    ip::udp::resolver resolver(service);
-    ip::udp::resolver::query query{ip::udp::v4(), host, "sntp"};
+    return (livm.value() >> 3) & 0b111;
+}
 
-    boost::system::error_code ec;
-    auto iter = resolver.async_resolve(query, ctxt[ec]);
+gps::sntp::Packet::LeapIndicatorVersionMode& gps::sntp::Packet::LeapIndicatorVersionMode::version(std::uint8_t version)
+{
+    livm = livm.value() | (version << 3);
+    return *this;
+}
 
-    if (ec)
-        throw std::runtime_error{"Failed to resolve host name: " + ec.message()};
+gps::sntp::Mode gps::sntp::Packet::LeapIndicatorVersionMode::mode() const
+{
+    return static_cast<Mode>(livm.value() & 0b111);
+}
 
-    auto socket = ip::udp::socket{service};
-    socket.async_connect(*iter, ctxt[ec]);
+gps::sntp::Packet::LeapIndicatorVersionMode& gps::sntp::Packet::LeapIndicatorVersionMode::mode(Mode m)
+{
+    livm = static_cast<uint8_t>(m) | livm.value();
+    return *this;
+}
 
-    if (ec)
-        throw std::runtime_error{"Failed to connect to endpoint: " + ec.message()};
+gps::sntp::Client::Response gps::sntp::Client::request_time(const std::string& host, const std::chrono::milliseconds& timeout, boost::asio::io_service& ios)
+{
+    ip::udp::resolver resolver(ios);
+    ip::udp::resolver::query query{ip::udp::v4(), host, "ntp"};
 
-    sntp::Packet packet; ::memset(&packet, 0, sizeof(packet));
-    packet.mode = sntp::Mode::client;
-    packet.version = sntp::version;
-    packet.transmit.from_milliseconds_since_epoch(std::chrono::duration_cast<std::chrono::milliseconds>(
-                                                      std::chrono::system_clock::now().time_since_epoch()));
-    auto request = elapsed_realtime_since_boot();
+    auto socket = ip::udp::socket{ios};
+    socket.connect(*resolver.resolve(query));
+
+    sntp::Packet packet;
+
+    Now before;
     {
-        auto transferred = socket.async_send(boost::asio::buffer(&packet, sizeof(packet)), ctxt[ec]);
+        bool timed_out{false};
 
-        if (transferred < sizeof(packet) || ec)
-            throw std::runtime_error{"Failed to write sntp::Packet from socket: " + ec.message()};
+        boost::asio::deadline_timer timer{ios};
+        timer.expires_from_now(boost::posix_time::milliseconds{timeout.count()});
+        timer.async_wait([&timed_out, &socket](const boost::system::error_code& ec)
+        {
+            std::cout << ec.message() << std::endl;
+            if (ec) return;
 
-        transferred = socket.async_receive(boost::asio::buffer(&packet, sizeof(packet)), ctxt[ec]);
+            timed_out = true;
 
-        if (transferred < sizeof(packet) || ec)
-            throw std::runtime_error{"Failed to read sntp::Packet from socket: " + ec.message()};
+            socket.shutdown(ip::udp::socket::shutdown_both);
+            socket.close();
+        });
+
+        packet = request(socket);
+        timer.cancel();
+
+        if (timed_out)
+            throw std::runtime_error("Operation timed out.");
     }
-    auto response = elapsed_realtime_since_boot();
+    Now after;
 
     auto originate = packet.originate.to_milliseconds_since_epoch();
     auto receive = packet.receive.to_milliseconds_since_epoch();
     auto transmit = packet.transmit.to_milliseconds_since_epoch();
 
-    auto rtt = response - request - (transmit - receive);
-    auto offset = ((receive - originate) + (transmit - response))/2;
+    auto rtt = after.ticks - before.ticks - (transmit - receive);
+    auto offset = ((receive - originate) + (transmit - after.time))/2;
 
-    return {response + offset, response};
+    return {packet, after.time + offset, after.ticks, rtt};
+}
+
+gps::sntp::Packet gps::sntp::Client::request(boost::asio::ip::udp::socket& socket)
+{
+    sntp::Packet packet; ::memset(&packet, 0, sizeof(packet));
+    packet.transmit.from_milliseconds_since_epoch(
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()));
+    packet.livm.mode(sntp::Mode::client).version(sntp::version);
+
+    socket.send(boost::asio::buffer(&packet, sizeof(packet)));
+    socket.receive(boost::asio::buffer(&packet, sizeof(packet)));
+
+    return packet;
 }

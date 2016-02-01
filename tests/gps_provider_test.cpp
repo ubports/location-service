@@ -81,6 +81,11 @@ struct UpdateTrap
     MOCK_METHOD1(on_space_vehicles_updated, void(const std::set<location::SpaceVehicle>&));
 };
 
+struct MockReferenceTimeSource : public gps::android::HardwareAbstractionLayer::ReferenceTimeSource
+{
+    MOCK_METHOD0(sample, gps::HardwareAbstractionLayer::ReferenceTimeSample());
+};
+
 struct MockSuplAssistant : public gps::HardwareAbstractionLayer::SuplAssistant
 {
     MockSuplAssistant()
@@ -133,9 +138,7 @@ struct MockHardwareAbstractionLayer : public gps::HardwareAbstractionLayer
     MOCK_METHOD1(set_assistance_mode, bool(gps::AssistanceMode));
     MOCK_METHOD1(set_position_mode, bool(gps::PositionMode));
     MOCK_METHOD1(inject_reference_position, bool(const location::Position&));
-    MOCK_METHOD2(inject_reference_time,
-                 bool(const std::chrono::microseconds&,
-                      const std::chrono::microseconds&));
+    MOCK_METHOD1(inject_reference_time, bool(const location::providers::gps::HardwareAbstractionLayer::ReferenceTimeSample&));
 
     MockSuplAssistant supl_assistant_;
     core::Signal<location::Position> position_updates_;
@@ -322,24 +325,54 @@ TEST(GpsProvider, injecting_a_reference_position_calls_into_the_hal)
     provider.on_reference_location_updated(pos);
 }
 
-TEST(GpsProvider, time_requests_inject_current_time_into_the_hal)
+TEST(GpsProvider, time_requests_query_reference_time_source)
 {
     using namespace ::testing;
 
     NiceMock<MockHardwareGps> hardwareGps;
 
-    gps::android::HardwareAbstractionLayer::Configuration configuration;
-    gps::android::HardwareAbstractionLayer hal(configuration);
-    std::shared_ptr<gps::HardwareAbstractionLayer> hal_ptr(&hal, [](gps::HardwareAbstractionLayer*){});
+    auto mock_reference_time_source = std::make_shared<MockReferenceTimeSource>();
+    EXPECT_CALL(*mock_reference_time_source, sample())
+            .Times(1)
+            .WillRepeatedly(Return(gps::HardwareAbstractionLayer::ReferenceTimeSample{}));
 
-    gps::Provider provider(hal_ptr);
+    gps::android::HardwareAbstractionLayer::Configuration configuration;
+    configuration.reference_time_source = mock_reference_time_source;
+    gps::android::HardwareAbstractionLayer hal(configuration);
+
+    gps::android::HardwareAbstractionLayer::on_request_utc_time(&hal);
+}
+
+TEST(GpsProvider, time_requests_inject_current_time_into_the_hal)
+{
+    using namespace ::testing;
+
+    auto sample_reference_time = []()
+    {
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(location::Clock::now().time_since_epoch());
+        std::cout << duration.count() << std::endl;
+        return gps::HardwareAbstractionLayer::ReferenceTimeSample{duration, duration, std::chrono::milliseconds{0}};
+    };
+
+    NiceMock<MockHardwareGps> hardwareGps;
+
+    auto mock_reference_time_source = std::make_shared<MockReferenceTimeSource>();
+    EXPECT_CALL(*mock_reference_time_source, sample())
+            .Times(1)
+            .WillRepeatedly(Invoke(sample_reference_time));
+
+    gps::android::HardwareAbstractionLayer::Configuration configuration;
+    configuration.reference_time_source = mock_reference_time_source;
+    gps::android::HardwareAbstractionLayer hal(configuration);
+    hal.capabilities() = U_HARDWARE_GPS_CAPABILITY_ON_DEMAND_TIME;
+
     int64_t time = 0;
     EXPECT_CALL(hardwareGps, inject_time(_, _, 0)).Times(1).WillOnce(SaveArg<0>(&time));
 
     auto t0 = std::chrono::duration_cast<std::chrono::milliseconds>(location::Clock::now().time_since_epoch());
-
+    //std::this_thread::sleep_for(std::chrono::milliseconds{10});
     gps::android::HardwareAbstractionLayer::on_request_utc_time(&hal);
-
+    //std::this_thread::sleep_for(std::chrono::milliseconds{10});
     auto t1 = std::chrono::duration_cast<std::chrono::milliseconds>(location::Clock::now().time_since_epoch());
     EXPECT_THAT(time, AllOf(Ge(t0.count()), Le(t1.count())));
 }
@@ -929,4 +962,3 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
                          static_cast<std::uint64_t>(variance(stats)))).count()
               << std::endl;
 }
-
