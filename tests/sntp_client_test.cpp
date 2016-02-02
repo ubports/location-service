@@ -64,7 +64,7 @@ TEST(EnumConstant, yields_same_value_as_multibyte_constant)
 TEST_F(SntpClient, succeeds_in_querying_time_from_server)
 {
     location::providers::gps::sntp::Client sntp_client;
-    sntp_client.request_time(host, std::chrono::milliseconds{1000}, rt->service());
+    sntp_client.request_time(host, std::chrono::milliseconds{5000}, rt->service());
 }
 
 TEST_F(SntpClient, throws_for_timed_out_operation)
@@ -82,8 +82,12 @@ TEST_F(SntpClient, returns_correct_data_in_packet)
         {
             auto response = sntp_client.request_time(host, std::chrono::milliseconds{1000}, rt->service());
 
-            EXPECT_EQ(1, response.packet.stratum.value());
-            EXPECT_EQ(sntp::ReferenceIdentifier::gps, static_cast<sntp::ReferenceIdentifier>(response.packet.reference_identifier.value()));
+            EXPECT_GE(0, response.packet.stratum.value());
+            if (response.packet.stratum.value() <= 1)
+            {
+                std::stringstream ss; ss << response.packet.reference_identifier;
+                EXPECT_TRUE(ss.str().size() > 0);
+            }
         }
         catch(...)
         {
