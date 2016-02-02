@@ -25,6 +25,8 @@
 
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
+#include <system_error>
 
 namespace location = com::ubuntu::location;
 

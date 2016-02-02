@@ -70,6 +70,8 @@ if (CLANG_FORMAT_COMMAND)
 endif()
 
 include_directories(
+  3rd-party/
+
   ${Boost_INCLUDE_DIRS}
   ${DBUS_INCLUDE_DIRS}
   ${DBUS_CPP_INCLUDE_DIRS}
