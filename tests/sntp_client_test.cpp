@@ -82,7 +82,7 @@ TEST_F(SntpClient, returns_correct_data_in_packet)
         {
             auto response = sntp_client.request_time(host, std::chrono::milliseconds{1000}, rt->service());
 
-            EXPECT_GE(0, response.packet.stratum.value());
+            EXPECT_LE(0, response.packet.stratum.value());
             if (response.packet.stratum.value() <= 1)
             {
                 std::stringstream ss; ss << response.packet.reference_identifier;
