@@ -99,7 +99,6 @@ gps::sntp::Client::Response gps::sntp::Client::request_time(const std::string& h
         timer.expires_from_now(boost::posix_time::milliseconds{timeout.count()});
         timer.async_wait([&timed_out, &socket](const boost::system::error_code& ec)
         {
-            std::cout << ec.message() << std::endl;
             if (ec) return;
 
             timed_out = true;
