@@ -18,6 +18,7 @@ add_library(
   default_provider_selection_policy.cpp
   non_selecting_provider_selection_policy.cpp
 
+  bag_of_providers.cpp
   criteria.cpp
   engine.cpp
   init_and_shutdown.cpp
