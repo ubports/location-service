@@ -25,7 +25,9 @@
 
 #include <bitset>
 #include <fstream>
+#include <future>
 #include <iostream>
+#include <thread>
 
 namespace location = com::ubuntu::location;
 namespace gps = location::providers::gps;
@@ -33,6 +35,13 @@ namespace ip = boost::asio::ip;
 
 namespace
 {
+
+template<typename T>
+void sync_or_throw(std::future<T>& f)
+{
+    f.get();
+}
+
 struct Now
 {
     std::chrono::nanoseconds time = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -83,30 +92,56 @@ gps::sntp::Packet::LeapIndicatorVersionMode& gps::sntp::Packet::LeapIndicatorVer
 
 gps::sntp::Client::Response gps::sntp::Client::request_time(const std::string& host, const std::chrono::milliseconds& timeout, boost::asio::io_service& ios)
 {
-    ip::udp::resolver resolver(ios);
+    ip::udp::resolver resolver{ios};
+    ip::udp::socket socket{ios};
+    bool timed_out{false};
+
+    std::promise<ip::udp::resolver::iterator> promise_resolve;
+    auto future_resolve= promise_resolve.get_future();
+
+    boost::asio::deadline_timer timer{ios};
+    timer.expires_from_now(boost::posix_time::milliseconds{timeout.count()});
+    timer.async_wait([&timed_out, &resolver, &socket](const boost::system::error_code& ec)
+    {
+        if (ec)
+            return;
+
+        timed_out = true;
+
+        resolver.cancel();
+        socket.shutdown(ip::udp::socket::shutdown_both);
+        socket.close();
+    });
+
     ip::udp::resolver::query query{ip::udp::v4(), host, "ntp"};
 
-    auto socket = ip::udp::socket{ios};
-    socket.connect(*resolver.resolve(query));
+    resolver.async_resolve(query, [&promise_resolve](const boost::system::error_code& ec, ip::udp::resolver::iterator it)
+    {
+        if (ec)
+            promise_resolve.set_exception(std::make_exception_ptr(boost::system::system_error(ec)));
+        else
+            promise_resolve.set_value(it);
+    });
+
+    sync_or_throw(future_resolve);
+
+    std::promise<void> promise_connect;
+    auto future_connect = promise_connect.get_future();
+
+    socket.async_connect(*future_resolve.get(), [&promise_connect](const boost::system::error_code& ec)
+    {
+        if (ec)
+            promise_connect.set_exception(std::make_exception_ptr(boost::system::system_error(ec)));
+        else
+            promise_connect.set_value();
+    });
+
+    sync_or_throw(future_connect);
 
     sntp::Packet packet;
 
     Now before;
-    {
-        bool timed_out{false};
-
-        boost::asio::deadline_timer timer{ios};
-        timer.expires_from_now(boost::posix_time::milliseconds{timeout.count()});
-        timer.async_wait([&timed_out, &socket](const boost::system::error_code& ec)
-        {
-            if (ec) return;
-
-            timed_out = true;
-
-            socket.shutdown(ip::udp::socket::shutdown_both);
-            socket.close();
-        });
-
+    {        
         packet = request(socket);
         timer.cancel();
 
@@ -139,8 +174,31 @@ gps::sntp::Packet gps::sntp::Client::request(boost::asio::ip::udp::socket& socke
                     std::chrono::system_clock::now().time_since_epoch()));
     packet.livm.mode(sntp::Mode::client).version(sntp::version);
 
-    socket.send(boost::asio::buffer(&packet, sizeof(packet)));
-    socket.receive(boost::asio::buffer(&packet, sizeof(packet)));
+    std::promise<std::size_t> promise_send;
+    auto future_send = promise_send.get_future();
+
+    socket.async_send(boost::asio::buffer(&packet, sizeof(packet)), [&promise_send](const boost::system::error_code& ec, std::size_t transferred)
+    {
+        if (ec)
+            promise_send.set_exception(std::make_exception_ptr(boost::system::system_error(ec)));
+        else
+            promise_send.set_value(transferred);
+    });
+
+    sync_or_throw(future_send);
+
+    std::promise<std::size_t> promise_receive;
+    auto future_receive = promise_receive.get_future();
+
+    socket.async_receive(boost::asio::buffer(&packet, sizeof(packet)), [&promise_receive](const boost::system::error_code& ec, std::size_t transferred)
+    {
+        if (ec)
+            promise_receive.set_exception(std::make_exception_ptr(boost::system::system_error(ec)));
+        else
+            promise_receive.set_value(transferred);
+    });
+
+    sync_or_throw(future_receive);
 
     return packet;
 }
