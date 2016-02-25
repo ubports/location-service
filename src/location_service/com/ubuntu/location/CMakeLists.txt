@@ -16,11 +16,13 @@ add_library(
   ${UBUNTU_LOCATION_SERVICE_PUBLIC_HEADERS}
 
   default_provider_selection_policy.cpp
+  fusion_provider_selection_policy.cpp
   non_selecting_provider_selection_policy.cpp
 
   bag_of_providers.cpp
   criteria.cpp
   engine.cpp
+  fusion_provider.cpp
   init_and_shutdown.cpp
   position.cpp
   provider.cpp
