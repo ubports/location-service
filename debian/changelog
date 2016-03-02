@@ -1,3 +1,10 @@
+location-service (2.1+15.04.20160302.1-0ubuntu1) vivid; urgency=medium
+
+  * Remove explicit option to disable satellite-based positioning
+    services.
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Wed, 02 Mar 2016 15:28:02 +0000
+
 location-service (2.1+15.04.20160106-0ubuntu1) vivid; urgency=medium
 
   [ Alberto Mardegan ]
