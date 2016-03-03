@@ -37,7 +37,13 @@ namespace
 {
 
 template<typename T>
-void sync_or_throw(std::future<T>& f)
+T sync_or_throw(std::future<T>& f)
+{
+    return f.get();
+}
+
+template<>
+void sync_or_throw<>(std::future<void>& f)
 {
     f.get();
 }
@@ -123,12 +129,12 @@ gps::sntp::Client::Response gps::sntp::Client::request_time(const std::string& h
             promise_resolve.set_value(it);
     });
 
-    sync_or_throw(future_resolve);
+    auto it = sync_or_throw(future_resolve);
 
     std::promise<void> promise_connect;
     auto future_connect = promise_connect.get_future();
 
-    socket.async_connect(*future_resolve.get(), [&promise_connect](const boost::system::error_code& ec)
+    socket.async_connect(*it, [&promise_connect](const boost::system::error_code& ec)
     {
         if (ec)
             promise_connect.set_exception(std::make_exception_ptr(boost::system::system_error(ec)));
