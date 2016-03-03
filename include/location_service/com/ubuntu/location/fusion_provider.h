@@ -37,7 +37,7 @@ public:
     ~FusionProvider() = default;
 
 private:
-    Update<Position> last_position;
+    Optional<Update<Position>> last_position;
 };
 }
 }
