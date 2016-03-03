@@ -27,11 +27,6 @@ bool is_better_than(cul::Update<cul::Position> a, cul::Update<cul::Position> b)
     // Basically copied this value from the Android fusion provider
     const std::chrono::seconds cutoff(11);
 
-    // if b is a bogus (initial) position return true
-    if (b.value == cul::Position()) {
-        return true;
-    }
-
     // If the new position is newer by a significant margin then just use it
     if (a.when > b.when + cutoff) {
         return true;
@@ -57,7 +52,7 @@ cul::FusionProvider::FusionProvider(const std::set<location::Provider::Ptr>& pro
         connections.push_back(provider->updates().position.connect(
               [this](const cul::Update<cul::Position>& u)
               {
-                  if (is_better_than(u, last_position)) {
+                  if (!last_position || is_better_than(u, *last_position)) {
                       mutable_updates().position(u);
                       last_position = u;
                   }
