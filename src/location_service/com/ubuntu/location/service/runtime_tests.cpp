@@ -50,7 +50,7 @@ void expect(bool value, const std::string& what)
 // running service instance and restarting it after the tests have been run.
 struct Fixture
 {
-    Fixture() : runtime{location::service::Runtime::create()}
+    Fixture()
     {
         // We need to make sure that we are running as root. In addition, we will stop
         // any running location service instance prior to executing the test.
@@ -59,9 +59,6 @@ struct Fixture
         int rc = ::system("service ubuntu-location-service stop");
         // We consciously ignore any issues and assume that we are good to go.
         (void) rc;
-
-        // We finally start up the runtime.
-        runtime->start();
     }
 
     ~Fixture()
@@ -71,11 +68,7 @@ struct Fixture
         // as we would make an otherwise fine test-suite failing just because
         // an "uninteresting" post-condition is not satisfied.
         (void) rc;
-
-        runtime->stop();
     }
-
-    std::shared_ptr<location::service::Runtime> runtime;
 };
 
 #if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GPS)

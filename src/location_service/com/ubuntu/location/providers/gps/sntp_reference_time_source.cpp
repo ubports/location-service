@@ -48,6 +48,7 @@ gps::SntpReferenceTimeSource::SntpReferenceTimeSource(const Configuration& confi
 gps::HardwareAbstractionLayer::ReferenceTimeSample gps::SntpReferenceTimeSource::sample()
 {
     auto rt = location::service::Runtime::create();
+    rt->start();
 
     location::providers::gps::sntp::Client sntp_client;
     auto result = sntp_client.request_time(config.host, config.timeout, rt->service());
