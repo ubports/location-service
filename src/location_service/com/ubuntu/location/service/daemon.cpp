@@ -171,7 +171,7 @@ void location::service::Daemon::print_help(std::ostream& out)
     mutable_daemon_options().print_help(out);
 }
 
-void location::service::Daemon::load_providers(const Configuration &config, std::shared_ptr<Engine> engine)
+void location::service::Daemon::load_providers(const Configuration& config, std::shared_ptr<Engine> engine)
 {
     for (const std::string& provider : config.providers)
     {

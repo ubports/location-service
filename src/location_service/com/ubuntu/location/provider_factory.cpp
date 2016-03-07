@@ -79,7 +79,7 @@ void cul::ProviderFactory::enumerate(
         });
 }
 
-std::string cul::ProviderFactory::extract_undecorated_name(const std::string &name)
+std::string cul::ProviderFactory::extract_undecorated_name(const std::string& name)
 {
     return name.substr(0, name.find("@"));
 }
