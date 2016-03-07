@@ -17,7 +17,8 @@
  */
 
 #include <com/ubuntu/location/non_selecting_provider_selection_policy.h>
-#include "bag_of_providers.h"
+#include <com/ubuntu/location/fusion_provider.h>
+#include <com/ubuntu/location/newer_update_selector.h>
 
 #include <set>
 
@@ -34,7 +35,7 @@ location::ProviderSelection location::NonSelectingProviderSelectionPolicy::deter
         bag.insert(provider);
     });
 
-    auto bag_of_providers = std::make_shared<BagOfProviders>(bag);
+    auto bag_of_providers = std::make_shared<FusionProvider>(bag, std::make_shared<NewerUpdateSelector>());
 
     // Our bag of providers is responsible for delivering position/heading/velocity updates.
     return location::ProviderSelection

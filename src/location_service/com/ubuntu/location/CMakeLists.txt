@@ -19,7 +19,6 @@ add_library(
   fusion_provider_selection_policy.cpp
   non_selecting_provider_selection_policy.cpp
 
-  bag_of_providers.cpp
   criteria.cpp
   engine.cpp
   fusion_provider.cpp

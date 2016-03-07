@@ -1,6 +1,6 @@
 #include <com/ubuntu/location/fusion_provider.h>
-
-#include "fusion_provider_selection_policy.h"
+#include <com/ubuntu/location/fusion_provider_selection_policy.h>
+#include <com/ubuntu/location/newer_or_more_accurate_update_selector.h>
 
 namespace location = com::ubuntu::location;
 
@@ -15,7 +15,7 @@ location::ProviderSelection location::FusionProviderSelectionPolicy::determine_p
         bag.insert(provider);
     });
 
-    auto fusion_providers = std::make_shared<FusionProvider>(bag);
+    auto fusion_providers = std::make_shared<location::FusionProvider>(bag, std::make_shared<location::NewerOrMoreAccurateUpdateSelector>());
 
     return location::ProviderSelection
     {
