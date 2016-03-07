@@ -37,7 +37,7 @@ cul::Provider::Requirements all_requirements()
 }
 
 
-cul::FusionProvider::FusionProvider(const std::set<location::Provider::Ptr>& providers, const UpdateSelector::Ptr update_selector)
+cul::FusionProvider::FusionProvider(const std::set<location::Provider::Ptr>& providers, const UpdateSelector::Ptr& update_selector)
     : Provider{all_features(), all_requirements()},
       providers{providers}
 {

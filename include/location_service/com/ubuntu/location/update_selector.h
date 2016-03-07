@@ -32,8 +32,8 @@ class UpdateSelector
 public:
     typedef std::shared_ptr<UpdateSelector> Ptr;
 
-    virtual Update<Position> select(const Update<Position>& older,
-                                    const Update<Position>& newer) = 0;
+    const virtual Update<Position>& select(const Update<Position>& older,
+                                           const Update<Position>& newer) = 0;
 };
 }
 }
