@@ -286,6 +286,7 @@ TEST(ProxyProvider, update_signals_are_routed_from_correct_providers)
 }
 
 #include <com/ubuntu/location/fusion_provider.h>
+#include <com/ubuntu/location/newer_or_more_accurate_update_selector.h>
 
 TEST(FusionProvider, start_and_stop_of_updates_propagates_to_correct_providers)
 {
@@ -307,7 +308,7 @@ TEST(FusionProvider, start_and_stop_of_updates_propagates_to_correct_providers)
     std::set<cul::Provider::Ptr> providers{p1, p2, p3};
 
     //cul::FusionProvider pp{selection};
-    cul::FusionProvider fp{providers};
+    cul::FusionProvider fp{providers, std::make_shared<cul::NewerOrMoreAccurateUpdateSelector>()};
 
     fp.start_position_updates();
     fp.stop_position_updates();
@@ -331,7 +332,7 @@ TEST(FusionProvider, update_signals_are_routed_from_correct_providers)
 
     std::set<cul::Provider::Ptr> providers{p1, p2, p3};
 
-    cul::FusionProvider fp{providers};
+    cul::FusionProvider fp{providers, std::make_shared<cul::NewerOrMoreAccurateUpdateSelector>()};
 
     NiceMock<MockEventConsumer> mec;
     EXPECT_CALL(mec, on_new_position(_)).Times(1);
@@ -360,7 +361,7 @@ TEST(FusionProvider, more_timely_update_is_chosen)
 
     std::set<cul::Provider::Ptr> providers{p1, p2};
 
-    cul::FusionProvider fp{providers};
+    cul::FusionProvider fp{providers, std::make_shared<cul::NewerOrMoreAccurateUpdateSelector>()};
 
     cul::Update<cul::Position> before, after;
     before.when = cul::Clock::now() - std::chrono::seconds(12);
@@ -374,9 +375,7 @@ TEST(FusionProvider, more_timely_update_is_chosen)
 
     fp.updates().position.connect([&mec](const cul::Update<cul::Position>& p){mec.on_new_position(p);});
 
-    std::cout << "Injecting before update!" << std::endl;
     mp1.inject_update(before);
-    std::cout << "Injecting after update!" << std::endl;
     mp2.inject_update(after);
 
 }
@@ -392,7 +391,7 @@ TEST(FusionProvider, more_accurate_update_is_chosen)
 
     std::set<cul::Provider::Ptr> providers{p1, p2};
 
-    cul::FusionProvider fp{providers};
+    cul::FusionProvider fp{providers, std::make_shared<cul::NewerOrMoreAccurateUpdateSelector>()};
 
     cul::Update<cul::Position> before, after;
     before.when = cul::Clock::now() - std::chrono::seconds(5);
@@ -401,7 +400,8 @@ TEST(FusionProvider, more_accurate_update_is_chosen)
     after.value = cul::Position(cul::wgs84::Latitude(), cul::wgs84::Longitude(), cul::wgs84::Altitude(), cul::Position::Accuracy::Horizontal{500*cul::units::Meters});
 
     NiceMock<MockEventConsumer> mec;
-    EXPECT_CALL(mec, on_new_position(before)).Times(1);
+    // We should see the "older" position in two events
+    EXPECT_CALL(mec, on_new_position(before)).Times(2);
 
     fp.updates().position.connect([&mec](const cul::Update<cul::Position>& p){mec.on_new_position(p);});
 
