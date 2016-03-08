@@ -405,9 +405,7 @@ TEST(FusionProvider, more_accurate_update_is_chosen)
 
     fp.updates().position.connect([&mec](const cul::Update<cul::Position>& p){mec.on_new_position(p);});
 
-    std::cout << "Injecting before update! " << before.value << std::endl;
     mp1.inject_update(before);
-    std::cout << "Injecting after update!" << after.value << std::endl;
     mp2.inject_update(after);
 
 }
