@@ -1,3 +1,9 @@
+location-service (2.1+15.04.20160308.1-0ubuntu1) vivid; urgency=medium
+
+  * Add SntpClient for querying reference time information.
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Tue, 08 Mar 2016 08:54:07 +0000
+
 location-service (2.1+15.04.20160302.1-0ubuntu1) vivid; urgency=medium
 
   * Remove explicit option to disable satellite-based positioning
