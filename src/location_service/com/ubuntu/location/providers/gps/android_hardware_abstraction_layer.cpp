@@ -324,8 +324,19 @@ void android::HardwareAbstractionLayer::on_request_utc_time(void* context)
 {
     VLOG(1) << __PRETTY_FUNCTION__;
 
-    if (auto thiz = static_cast<android::HardwareAbstractionLayer*>(context))
-        thiz->inject_reference_time(thiz->impl.reference_time_source->sample());
+    try
+    {
+        if (auto thiz = static_cast<android::HardwareAbstractionLayer*>(context))
+            thiz->inject_reference_time(thiz->impl.reference_time_source->sample());
+    }
+    catch (const std::runtime_error& e)
+    {
+        LOG(WARNING) << "Failed to inject reference time to chipset: " << e.what();
+    }
+    catch (...)
+    {
+        LOG(WARNING) << "Failed to inject reference time to chipset.";
+    }
 }
 
 android::HardwareAbstractionLayer::HardwareAbstractionLayer(const android::HardwareAbstractionLayer::Configuration& config)
