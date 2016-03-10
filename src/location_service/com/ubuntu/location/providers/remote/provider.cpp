@@ -23,6 +23,7 @@
 #include <com/ubuntu/location/logging.h>
 
 #include <core/dbus/object.h>
+#include <core/dbus/service_watcher.h>
 #include <core/dbus/signal.h>
 #include <core/dbus/asio/executor.h>
 
@@ -190,6 +191,28 @@ cul::Provider::Ptr remote::Provider::Stub::create_instance(const cul::ProviderFa
     auto bus = bus_from_name(bus_name);
     auto service = dbus::Service::use_service(bus, name);
     auto object = service->object_for_path(path);
+
+    // Check if the service has come up
+    if (!bus->has_owner_for_name(name)) {
+        // If it hasn't wait for it to come up
+        bool valid = false;
+        std::mutex guard;
+        std::condition_variable cv;
+        dbus::DBus daemon(bus);
+        dbus::ServiceWatcher::Ptr service_watcher(
+            daemon.make_service_watcher(name, dbus::DBus::WatchMode::registration));
+
+        service_watcher->service_registered().connect([&valid, &guard, &cv]()
+            {
+                std::unique_lock<std::mutex> ul(guard);
+                valid = true;
+                cv.notify_all();
+            });
+
+        std::unique_lock<std::mutex> ul(guard);
+        if (not cv.wait_for(ul, std::chrono::seconds{30}, [&valid]() { return valid; }))
+            throw std::runtime_error("Remote service failed to start");
+    }
 
     return create_instance_with_config(remote::stub::Configuration{object});
 }

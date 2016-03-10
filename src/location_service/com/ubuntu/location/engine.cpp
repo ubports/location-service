@@ -97,10 +97,7 @@ cul::Engine::Engine(const cul::ProviderSelectionPolicy::Ptr& provider_selection_
                 Configuration::Keys::engine_state,
                 Configuration::Defaults::engine_state);
 
-    configuration.satellite_based_positioning_state =
-            settings->get_enum_for_key<SatelliteBasedPositioningState>(
-                Configuration::Keys::satellite_based_positioning_state,
-                Configuration::Defaults::satellite_based_positioning_state);
+    configuration.satellite_based_positioning_state = Configuration::Defaults::satellite_based_positioning_state;
 
     configuration.wifi_and_cell_id_reporting_state =
             settings->get_enum_for_key<WifiAndCellIdReportingState>(
@@ -110,12 +107,7 @@ cul::Engine::Engine(const cul::ProviderSelectionPolicy::Ptr& provider_selection_
     configuration.engine_state.changed().connect([this](const Engine::Status& status)
     {
         Engine::settings->set_enum_for_key<Engine::Status>(Configuration::Keys::engine_state, status);
-    });
-
-    configuration.satellite_based_positioning_state.changed().connect([this](SatelliteBasedPositioningState state)
-    {
-        Engine::settings->set_enum_for_key<SatelliteBasedPositioningState>(Configuration::Keys::satellite_based_positioning_state, state);
-    });
+    });    
 
     configuration.wifi_and_cell_id_reporting_state.changed().connect([this](WifiAndCellIdReportingState state)
     {
@@ -128,10 +120,6 @@ cul::Engine::~Engine()
     settings->set_enum_for_key<Engine::Status>(
         Configuration::Keys::engine_state,
         configuration.engine_state);
-
-    settings->set_enum_for_key<SatelliteBasedPositioningState>(
-        Configuration::Keys::satellite_based_positioning_state,
-        configuration.satellite_based_positioning_state);
 
     settings->set_enum_for_key<WifiAndCellIdReportingState>(
         Configuration::Keys::wifi_and_cell_id_reporting_state,

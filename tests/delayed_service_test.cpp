@@ -14,10 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
+ *              Scott Sweeny <scott.sweeny@canonical.com>
  */
 
 #include <com/ubuntu/location/service/daemon.h>
 #include <com/ubuntu/location/service/provider_daemon.h>
+#include <com/ubuntu/location/providers/remote/provider.h>
 
 #include <com/ubuntu/location/service/stub.h>
 
@@ -29,6 +31,8 @@
 #include <core/dbus/asio/executor.h>
 
 #include <core/posix/fork.h>
+#include <core/posix/signal.h>
+#include <core/posix/this_process.h>
 
 #include "did_finish_successfully.h"
 #include "mock_event_receiver.h"
@@ -36,27 +40,33 @@
 #include <gmock/gmock.h>
 
 namespace location = com::ubuntu::location;
+namespace remote = com::ubuntu::location::providers::remote;
 
 namespace
 {
-struct RemoteProviderdTest : public core::dbus::testing::Fixture
+struct DelayedServiceTest : public core::dbus::testing::Fixture, public ::testing::WithParamInterface<int>
 {
 
 };
 }
 
-TEST_F(RemoteProviderdTest, AClientReceivesUpdatesFromAnOutOfProcessProvider)
+TEST_P(DelayedServiceTest, AClientReceivesUpdatesFromADelayedProvider)
 {
     auto oopp = core::posix::fork([this]()
     {
         auto bus = session_bus();
+
+        // Pass the delay value to the provider
+        char delay[50];
+        sprintf(delay, "--dummy::DelayedProvider::DelayInMs=%d", GetParam());
 
         const char* argv[] =
         {
             "--bus", "session",                                         // 2
             "--service-name", "com.ubuntu.location.providers.Dummy",    // 4
             "--service-path", "/com/ubuntu/location/providers/Dummy",   // 6
-            "--provider", "dummy::Provider"                             // 8
+            "--provider", "dummy::DelayedProvider",                     // 8
+            delay                                                       // 9
         };
 
         auto dbus_connection_factory = [bus](core::dbus::WellKnownBus)
@@ -67,7 +77,7 @@ TEST_F(RemoteProviderdTest, AClientReceivesUpdatesFromAnOutOfProcessProvider)
         return static_cast<core::posix::exit::Status>(
                     location::service::ProviderDaemon::main(
                         location::service::ProviderDaemon::Configuration::from_command_line_args(
-                            8, argv, dbus_connection_factory)));
+                            9, argv, dbus_connection_factory)));
     }, core::posix::StandardStream::empty);
 
     std::this_thread::sleep_for(std::chrono::milliseconds{250});
@@ -99,7 +109,8 @@ TEST_F(RemoteProviderdTest, AClientReceivesUpdatesFromAnOutOfProcessProvider)
                             7, argv, dbus_connection_factory)));
     }, core::posix::StandardStream::empty);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds{250});
+    // Wait to setup the client until the service is up
+    std::this_thread::sleep_for(std::chrono::milliseconds{250 + GetParam()});
 
     auto client = core::posix::fork([this]()
     {
@@ -177,3 +188,6 @@ TEST_F(RemoteProviderdTest, AClientReceivesUpdatesFromAnOutOfProcessProvider)
     oopp.send_signal_or_throw(core::posix::Signal::sig_term);
     EXPECT_TRUE(did_finish_successfully(oopp.wait_for(core::posix::wait::Flags::untraced)));
 }
+
+INSTANTIATE_TEST_CASE_P(ServiceDelays, DelayedServiceTest,
+                        ::testing::Values(0, 250, 500, 1000, 2000, 5000, 10000));
