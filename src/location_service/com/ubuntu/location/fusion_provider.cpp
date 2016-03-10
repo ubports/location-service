@@ -16,6 +16,7 @@
  * Authored by: Scott Sweeny <scott.sweeny@canonical.com
  */
  #include <com/ubuntu/location/fusion_provider.h>
+ #include <com/ubuntu/location/logging.h>
  #include <com/ubuntu/location/update.h>
 
 namespace cu = com::ubuntu;
@@ -49,11 +50,13 @@ cul::FusionProvider::FusionProvider(const std::set<location::Provider::Ptr>& pro
               {
                   // if this is the first update, use it
                   if (!last_position) {
-                      mutable_updates().position(u);
-                      last_position = u;
+                      mutable_updates().position(*(last_position = u));
                   } else {
-                      *last_position = update_selector->select(*last_position, u);
-                      mutable_updates().position(*last_position);
+                      try {
+                          mutable_updates().position(*(last_position = update_selector->select(*last_position, u)));
+                      } catch (const std::exception& e) {
+                          LOG(WARNING) << "Error while updating position";
+                      }
                   }
               }));
         connections.push_back(provider->updates().heading.connect(
