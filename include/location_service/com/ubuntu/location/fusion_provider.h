@@ -34,7 +34,6 @@ public:
     typedef std::shared_ptr<FusionProvider> Ptr;
 
     FusionProvider(const std::set<Provider::Ptr>& providers, const UpdateSelector::Ptr& update_selector);
-    ~FusionProvider() = default;
 
     bool matches_criteria(const Criteria &criteria) override;
     void on_wifi_and_cell_reporting_state_changed(location::WifiAndCellIdReportingState state) override;

@@ -31,11 +31,11 @@ class NewerOrMoreAccurateUpdateSelector : public UpdateSelector
 public:
     typedef std::shared_ptr<NewerOrMoreAccurateUpdateSelector> Ptr;
 
-    const Update<Position>& select(const Update<Position>& older,
-                                   const Update<Position>& newer) override
+    Update<Position> select(const Update<Position>& older,
+                            const Update<Position>& newer) override
     {
         // Basically copied this value from the Android fusion provider
-        const std::chrono::seconds cutoff(11);
+        static const std::chrono::seconds cutoff(11);
 
         // If the new position is newer by a significant margin then just use it
         if (newer.when > older.when + cutoff) {

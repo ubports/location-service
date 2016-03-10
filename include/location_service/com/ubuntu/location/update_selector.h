@@ -32,8 +32,15 @@ class UpdateSelector
 public:
     typedef std::shared_ptr<UpdateSelector> Ptr;
 
-    const virtual Update<Position>& select(const Update<Position>& older,
-                                           const Update<Position>& newer) = 0;
+    UpdateSelector(const UpdateSelector&) = delete;
+    UpdateSelector& operator=(const UpdateSelector&) = delete;
+    virtual ~UpdateSelector() = default;
+
+    virtual Update<Position> select(const Update<Position>& older,
+                                    const Update<Position>& newer) = 0;
+
+protected:
+    UpdateSelector() = default;
 };
 }
 }
