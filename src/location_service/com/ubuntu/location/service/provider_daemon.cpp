@@ -112,7 +112,7 @@ namespace
 {
 std::shared_ptr<location::service::Runtime> runtime()
 {
-    static const auto inst = location::service::Runtime::create(1);
+    static const auto inst = location::service::Runtime::create(2);
     return inst;
 }
 }
