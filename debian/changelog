@@ -1,3 +1,16 @@
+location-service (3.0.0-0ubuntu2) wily; urgency=medium
+
+  * libubuntu-location-service3: Replaces libubuntu-location-service2,
+    config file /etc/gps.conf in both packages.
+
+ -- Matthias Klose <doko@ubuntu.com>  Thu, 30 Jul 2015 09:57:50 +0200
+
+location-service (3.0.0) wily; urgency=medium
+
+  * Bump major revision and fix LP:#1478750 to account for toolchain update.
+
+ -- Thomas Voß <thomas.voss@canonical.com>  Thu, 30 Jul 2015 08:33:13 +0200
+
 location-service (2.1+15.10.20150727-0ubuntu1) wily; urgency=medium
 
   [ CI Train Bot ]
@@ -35,36 +48,6 @@ location-service (2.1+15.10.20150528.3-0ubuntu1) wily; urgency=medium
     on_access_point_added. (LP: #1426307)
 
  -- CI Train Bot <ci-train-bot@canonical.com>  Thu, 28 May 2015 11:40:58 +0000
-
-location-service (2.1+15.04.20160302.1-0ubuntu1) vivid; urgency=medium
-
-  * Remove explicit option to disable satellite-based positioning
-    services.
-
- -- Thomas Voß <ci-train-bot@canonical.com>  Wed, 02 Mar 2016 15:28:02 +0000
-
-location-service (2.1+15.04.20160106-0ubuntu1) vivid; urgency=medium
-
-  [ Alberto Mardegan ]
-  * Set debian source format to "3.0 (native)"
-
-  [ Scott Sweeny ]
-  * Allow providers to register themselves asynchronously (LP: #1415029)
-
- -- Thomas Voß <ci-train-bot@canonical.com>  Wed, 06 Jan 2016 16:15:29 +0000
-
-location-service (2.1+15.04.20151211-0ubuntu1) vivid; urgency=medium
-
-  * Account for changes in trust-store w.r.t. assembling the description
-    of a trust prompt.
-
- -- Thomas Voß <ci-train-bot@canonical.com>  Fri, 11 Dec 2015 08:57:44 +0000
-
-location-service (2.1+15.04.20151209-0ubuntu1) vivid; urgency=medium
-
-  * Fix settings not being applied correctly.
-
- -- Thomas Voß <ci-train-bot@canonical.com>  Wed, 09 Dec 2015 15:22:22 +0000
 
 location-service (2.1+15.04.20151202.1-0ubuntu1) vivid; urgency=medium
 
