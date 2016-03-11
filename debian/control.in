@@ -1,0 +1,123 @@
+Source: location-service
+Section: utils
+Priority: optional
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Thomas Voß <thomas.voss@canonical.com>
+Build-Depends: cmake,
+               curl,
+               libdbus-cpp-dev (>= 4.1.0),
+               debhelper (>= 9),
+               doxygen,
+               geoclue-ubuntu-geoip,
+               google-mock (>= 1.6.0+svn437),
+               graphviz,
+               libapparmor-dev,
+               libboost-filesystem-dev,
+               libboost-program-options-dev,
+               libboost-system-dev,
+               libdbus-1-dev,
+               libdbus-cpp-dev,
+               libgoogle-glog-dev,
+               libgtest-dev,
+               libiw-dev,
+               libjson-c-dev,
+               libnet-cpp-dev,
+               libprocess-cpp-dev,
+               libtrust-store-dev,
+               libubuntu-platform-hardware-api-headers [!arm64 !ppc64el !powerpc],
+               libubuntu-platform-hardware-api-dev [!arm64 !ppc64el !powerpc],
+               libproperties-cpp-dev,
+               lsb-release,
+               trust-store-bin,
+Standards-Version: 3.9.4
+Homepage: http://launchpad.net/location-service
+# If you aren't a member of ~phablet-team but need to upload packaging changes,
+# just go ahead.  ~phablet-team will notice and sync up the code again.
+Vcs-Bzr: https://code.launchpad.net/~phablet-team/location-service/trunk
+Vcs-Browser: http://bazaar.launchpad.net/~phablet-team/location-service/trunk/files
+
+Package: libubuntu-location-service@UBUNTU_LOCATION_SERVICE_SOVERSION@
+Section: libs
+Architecture: any
+Multi-Arch: same
+Pre-Depends: ${misc:Pre-Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains the shared library needed by client applications.
+
+Package: libubuntu-location-service-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: foreign
+Recommends: ubuntu-location-service-doc,
+Depends: libubuntu-location-service@UBUNTU_LOCATION_SERVICE_SOVERSION@ (= ${binary:Version}),
+         libdbus-1-dev,
+         libdbus-cpp-dev,
+         libboost-dev,
+         ${misc:Depends},
+Suggests: ubuntu-location-service-doc,
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains header files required to develop clients talking to the ubuntu
+ location service.
+
+Package: libubuntu-location-service-dbg
+Section: debug
+Architecture: any
+Multi-Arch: foreign
+Depends: libubuntu-location-service@UBUNTU_LOCATION_SERVICE_SOVERSION@ (= ${binary:Version}),
+         ${misc:Depends},
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains debug symbols.
+
+Package: ubuntu-location-service-tests
+Architecture: any
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains all test executables
+
+Package: ubuntu-location-service-bin
+Architecture: any
+Depends: libubuntu-location-service@UBUNTU_LOCATION_SERVICE_SOVERSION@ (= ${binary:Version}),
+         ${misc:Depends},
+         ${shlibs:Depends},
+         trust-store-bin,
+Breaks: ubuntu-location-service-examples (<< 0.0.2),
+Replaces: ubuntu-location-service-examples (<< 0.0.2),
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains the service executable and man pages.
+
+Package: ubuntu-location-service-examples
+Architecture: any
+Multi-Arch: same
+Depends: libubuntu-location-service@UBUNTU_LOCATION_SERVICE_SOVERSION@ (= ${binary:Version}),
+         ${misc:Depends},
+         ${shlibs:Depends},
+         ubuntu-location-service-doc,
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains example service and client.
+
+Package: ubuntu-location-service-doc
+Section: doc
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+Recommends: ubuntu-location-service-examples,
+Description: location service aggregating position/velocity/heading
+ updates and exporting them over dbus.
+ .
+ Contains documentation for service and client.
