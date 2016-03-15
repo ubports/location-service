@@ -11,43 +11,35 @@ location-service (3.0.0) wily; urgency=medium
 
  -- Thomas Voß <thomas.voss@canonical.com>  Thu, 30 Jul 2015 08:33:13 +0200
 
-location-service (2.1+15.10.20150727-0ubuntu1) wily; urgency=medium
+location-service (2.1+15.04.20160302.1-0ubuntu1) vivid; urgency=medium
 
-  [ CI Train Bot ]
-  * New rebuild forced.
+  * Remove explicit option to disable satellite-based positioning
+    services.
 
-  [ Charles Kerr ]
-  * drop build-dependency on g++-4.9 (LP: #1452329)
+ -- Thomas Voß <ci-train-bot@canonical.com>  Wed, 02 Mar 2016 15:28:02 +0000
 
- -- CI Train Bot <ci-train-bot@canonical.com>  Mon, 27 Jul 2015 18:07:37 +0000
+location-service (2.1+15.04.20160106-0ubuntu1) vivid; urgency=medium
 
-location-service (2.1+15.10.20150706-0ubuntu1) wily; urgency=medium
+  [ Alberto Mardegan ]
+  * Set debian source format to "3.0 (native)"
 
-  [ Alberto Aguirre ]
-  * No change rebuild against platform-api 3
+  [ Scott Sweeny ]
+  * Allow providers to register themselves asynchronously (LP: #1415029)
 
-  [ CI Train Bot ]
-  * New rebuild forced.
+ -- Thomas Voß <ci-train-bot@canonical.com>  Wed, 06 Jan 2016 16:15:29 +0000
 
- -- CI Train Bot <ci-train-bot@canonical.com>  Mon, 06 Jul 2015 18:22:22 +0000
+location-service (2.1+15.04.20151211-0ubuntu1) vivid; urgency=medium
 
-location-service (2.1+15.10.20150601.2-0ubuntu1) wily; urgency=medium
+  * Account for changes in trust-store w.r.t. assembling the description
+    of a trust prompt.
 
-  [ CI Train Bot ]
-  * New rebuild forced.
+ -- Thomas Voß <ci-train-bot@canonical.com>  Fri, 11 Dec 2015 08:57:44 +0000
 
-  [ Manuel de la Pena ]
-  * Ensure that the trust store is started when is needed.
+location-service (2.1+15.04.20151209-0ubuntu1) vivid; urgency=medium
 
- -- CI Train Bot <ci-train-bot@canonical.com>  Mon, 01 Jun 2015 15:13:06 +0000
+  * Fix settings not being applied correctly.
 
-location-service (2.1+15.10.20150528.3-0ubuntu1) wily; urgency=medium
-
-  [ Thomas Voß ]
-  * Make sure we always hand a lock owning its mutex to
-    on_access_point_added. (LP: #1426307)
-
- -- CI Train Bot <ci-train-bot@canonical.com>  Thu, 28 May 2015 11:40:58 +0000
+ -- Thomas Voß <ci-train-bot@canonical.com>  Wed, 09 Dec 2015 15:22:22 +0000
 
 location-service (2.1+15.04.20151202.1-0ubuntu1) vivid; urgency=medium
 
