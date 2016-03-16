@@ -1,3 +1,11 @@
+location-service (3.0.0-0ubuntu3) UNRELEASED; urgency=medium
+
+  * Enable dual landings according to https://wiki.ubuntu.com/citrain/LandingProcess#Dual-landing_for_stable_and_devel:
+    * Both vivid+overlay and xenial packages are built from the same source.
+    * To account for differences in major revisions (necessary to handle the g++ 5 ABI break), we generate install files on the fly.
+
+ -- Thomas Voß <thomas.voss@canonical.com>  Wed, 16 Mar 2016 20:15:57 +0100
+
 location-service (3.0.0-0ubuntu2) wily; urgency=medium
 
   * libubuntu-location-service3: Replaces libubuntu-location-service2,
