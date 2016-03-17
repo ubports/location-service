@@ -98,6 +98,7 @@ LOCATION_SERVICE_ADD_TEST(runtime_test runtime_test.cpp)
 if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
   include_directories(${CMAKE_SOURCE_DIR}/src/location_service)
   LOCATION_SERVICE_ADD_TEST(gps_provider_test gps_provider_test.cpp)
+  LOCATION_SERVICE_ADD_TEST(sntp_client_test sntp_client_test.cpp)
 endif(LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
 
 if (LOCATION_SERVICE_ENABLE_GEOCLUE_PROVIDERS)

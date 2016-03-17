@@ -18,6 +18,7 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GPS_HARDWARE_ABSTRACTION_LAYER_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_GPS_HARDWARE_ABSTRACTION_LAYER_H_
 
+#include <com/ubuntu/location/clock.h>
 #include <com/ubuntu/location/heading.h>
 #include <com/ubuntu/location/position.h>
 #include <com/ubuntu/location/space_vehicle.h>
@@ -104,6 +105,13 @@ enum class PositionMode
 class HardwareAbstractionLayer
 {
 public:
+    /** @brief ReferenceTimeSample bundles together the local reference. */
+    struct ReferenceTimeSample
+    {
+        std::chrono::milliseconds since_epoch;  /**< Reference wall-clock time since the epoch (UTC). */
+        std::chrono::milliseconds since_boot;   /**< Reference time since boot. */
+        std::chrono::milliseconds uncertainty;  /**< Uncertainty estimate of the sample. */
+    };
 
     class SuplAssistant
     {
@@ -304,16 +312,17 @@ public:
 
     /**
      * @brief Injects a new reference time to the underlying gps driver/chipset.
-     * @param reference_time The new reference time.
-     * @param sample_time When the reference time was sampled.
+     * @param sample The reference time sample
      * @return true iff the injection was successful, false otherwise.
      */
-    virtual bool inject_reference_time(const std::chrono::microseconds& reference_time,
-                                       const std::chrono::microseconds& sample_time) = 0;
+    virtual bool inject_reference_time(const ReferenceTimeSample& sample) = 0;
 
 protected:
     HardwareAbstractionLayer() = default;
 };
+
+/** @brief operator<< inserts sample into out. */
+std::ostream& operator<<(std::ostream& out, const HardwareAbstractionLayer::ReferenceTimeSample& sample);
 }
 }
 }
