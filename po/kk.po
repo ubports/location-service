@@ -1,0 +1,27 @@
+# Kazakh translation for location-service
+# Copyright (c) 2016 Rosetta Contributors and Canonical Ltd 2016
+# This file is distributed under the same license as the location-service package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: location-service\n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2014-09-19 01:04+0200\n"
+"PO-Revision-Date: 2016-03-19 16:37+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Kazakh <kk@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Launchpad-Export-Date: 2016-03-20 05:41+0000\n"
+"X-Generator: Launchpad (build 17947)\n"
+
+#: /tmp/i18n/src/location_service/com/ubuntu/location/service/trust_store_permission_manager.cpp:170
+msgid "An unconfined application wants to access your current location."
+msgstr "Шектеуі жоқ бағдарлама сіздің орналасқан жеріңізді сұрайды."
+
+#: /tmp/i18n/src/location_service/com/ubuntu/location/service/trust_store_permission_manager.cpp:173
+#, boost-format
+msgid "%1% wants to access your current location."
+msgstr "%1% сіздің ағымдағы орналасқан жеріңіз туралы ақпарат алғысы келеді."
