@@ -54,7 +54,6 @@ and /etc/init/ubuntu-location-service.override and changing the start
 sequence to add some env vars:
 
     export GLOG_v=200
-    export GLOG_logtostderr=1
 
 before the exec. Reboot, and start some app. You should have some log
 files under /var/log/upstart/ubuntu-espoo-service.log and
