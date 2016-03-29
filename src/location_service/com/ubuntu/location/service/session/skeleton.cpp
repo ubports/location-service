@@ -287,7 +287,7 @@ void culss::Skeleton::on_position_changed(const cul::Update<cul::Position>& posi
         {
             if (result.is_error())
             {
-                LOG(INFO) << "Failed to communicate position update to client: " << result.error().print();    
+                VLOG(10) << "Failed to communicate position update to client: " << result.error().print();
             }
         }, position);
     } catch(const std::exception&)
@@ -310,7 +310,7 @@ void culss::Skeleton::on_heading_changed(const cul::Update<cul::Heading>& headin
         {
             if (result.is_error())
             {
-                LOG(INFO) << "Failed to communicate position update to client: " << result.error().print();    
+                VLOG(10) << "Failed to communicate heading update to client: " << result.error().print();
             }
         }, heading);
     } catch(const std::exception&)
@@ -333,7 +333,7 @@ void culss::Skeleton::on_velocity_changed(const cul::Update<cul::Velocity>& velo
         {
             if (result.is_error())
             {
-                LOG(INFO) << "Failed to communicate position update to client: " << result.error().print();    
+                VLOG(10) << "Failed to communicate velocity update to client: " << result.error().print();
             }
         }, velocity);
     } catch(const std::exception&)
