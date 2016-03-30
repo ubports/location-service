@@ -26,6 +26,13 @@ namespace location = com::ubuntu::location;
 
 int main(int argc, const char** argv)
 {
+    // Ensure that log files dating back to before the fix
+    // for lp:1447110 are removed and do not waste space.
+    {
+        static const boost::filesystem::path old_log_dir{"/var/log/ubuntu-location-service"};
+        boost::system::error_code ec;
+        boost::filesystem::remove(old_log_dir, ec);
+    }
     // Setup logging for the daemon.
     FLAGS_logtostderr = true;
     FLAGS_stop_logging_if_full_disk = true;
