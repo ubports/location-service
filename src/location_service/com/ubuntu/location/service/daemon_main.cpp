@@ -31,7 +31,7 @@ int main(int argc, const char** argv)
     {
         static const boost::filesystem::path old_log_dir{"/var/log/ubuntu-location-service"};
         boost::system::error_code ec;
-        boost::filesystem::remove(old_log_dir, ec);
+        boost::filesystem::remove_all(old_log_dir, ec);
     }
     // Setup logging for the daemon.
     FLAGS_logtostderr = true;
