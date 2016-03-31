@@ -17,6 +17,7 @@
  */
 
 #include "android_hardware_abstraction_layer.h"
+#include "sntp_reference_time_source.h"
 
 #if defined(COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP)
 #include "net_cpp_gps_xtra_downloader.h"
@@ -323,23 +324,18 @@ void android::HardwareAbstractionLayer::on_request_utc_time(void* context)
 {
     VLOG(1) << __PRETTY_FUNCTION__;
 
-    auto thiz = static_cast<android::HardwareAbstractionLayer*>(context);
-
-    if (thiz->impl.utc_time_request_handler)
+    try
     {
-        thiz->impl.utc_time_request_handler();
-    } else
+        if (auto thiz = static_cast<android::HardwareAbstractionLayer*>(context))
+            thiz->inject_reference_time(thiz->impl.reference_time_source->sample());
+    }
+    catch (const std::runtime_error& e)
     {
-        auto now = location::Clock::now().time_since_epoch();
-        auto ms_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(now);
-
-        static const int zero_uncertainty = 0;
-
-        u_hardware_gps_inject_time(
-                    thiz->impl.gps_handle,
-                    ms_since_epoch.count(),
-                    ms_since_epoch.count(),
-                    zero_uncertainty);
+        LOG(WARNING) << "Failed to inject reference time to chipset: " << e.what();
+    }
+    catch (...)
+    {
+        LOG(WARNING) << "Failed to inject reference time to chipset.";
     }
 }
 
@@ -534,19 +530,22 @@ bool android::HardwareAbstractionLayer::inject_reference_position(const location
     return true;
 }
 
-bool android::HardwareAbstractionLayer::inject_reference_time(
-        const std::chrono::microseconds& reference_time,
-        const std::chrono::microseconds& sample_time)
+bool android::HardwareAbstractionLayer::inject_reference_time(const ReferenceTimeSample& sample)
 {
     if (!is_capable_of(gps::Capability::on_demand_time_injection))
         return false;
 
     // TODO(tvoss): We should expose the int return type of the underyling
     //  Android HAL to capture errors here.
+    //
+    // Please see:
+    //   http://androidxref.com/5.1.1_r6/xref/frameworks/base/core/java/android/net/SntpClient.java#72
+    // for the bloody details of relating the system wall clock time to the elapsed realtime since boot
+    // including deep sleep.
     u_hardware_gps_inject_time(impl.gps_handle,
-                               reference_time.count(),
-                               sample_time.count(),
-                               10);
+                               sample.since_epoch.count(),
+                               sample.since_boot.count(),
+                               sample.uncertainty.count());
     return true;
 }
 
@@ -557,6 +556,7 @@ android::HardwareAbstractionLayer::Impl::Impl(
       assistance_mode(gps::AssistanceMode::mobile_station_based),
       position_mode(gps::PositionMode::periodic),
       supl_assistant(*parent),
+      reference_time_source(configuration.reference_time_source),
       gps_xtra_configuration(configuration.gps_xtra.configuration),
       gps_xtra_downloader(configuration.gps_xtra.downloader)
 {
@@ -615,6 +615,22 @@ bool android::HardwareAbstractionLayer::Impl::dispatch_updated_modes_to_driver()
 
 namespace
 {
+gps::SntpReferenceTimeSource::Configuration sntp_reference_time_source_configuration(std::istream& in)
+{
+    gps::SntpReferenceTimeSource::Configuration config;
+
+    try
+    {
+        config = gps::SntpReferenceTimeSource::Configuration::from_gps_conf_ini_file(in);
+    }
+    catch (...)
+    {
+        // Consciously dropping all exceptions here.
+    }
+
+    return config;
+}
+
 android::GpsXtraDownloader::Configuration gps_xtra_downloader_configuration(std::istream& in)
 {
     android::GpsXtraDownloader::Configuration config;
@@ -641,6 +657,8 @@ android::GpsXtraDownloader::Configuration gps_xtra_downloader_configuration(std:
 
     return config;
 }
+
+
 }
 
 std::shared_ptr<gps::HardwareAbstractionLayer> gps::HardwareAbstractionLayer::create_default_instance()
@@ -664,7 +682,8 @@ std::shared_ptr<gps::HardwareAbstractionLayer> gps::HardwareAbstractionLayer::cr
         {
             create_xtra_downloader(),
             gps_xtra_downloader_configuration((in_system_gps_conf ? in_system_gps_conf : in_gps_conf))
-        }
+        },
+        std::make_shared<gps::SntpReferenceTimeSource>(sntp_reference_time_source_configuration((in_system_gps_conf ? in_system_gps_conf : in_gps_conf)))
     };
 
     static std::shared_ptr<gps::HardwareAbstractionLayer> instance

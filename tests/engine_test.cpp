@@ -273,12 +273,8 @@ TEST(Engine, reads_state_from_settings_on_construction)
     auto selection_policy = std::make_shared<NiceMock<MockProviderSelectionPolicy>>();
 
     EXPECT_CALL(*settings, has_value_for_key(_))
-            .Times(3)
+            .Times(2)
             .WillRepeatedly(Return(true));
-    EXPECT_CALL(*settings, get_string_for_key_or_throw(
-                    location::Engine::Configuration::Keys::satellite_based_positioning_state))
-            .Times(1)
-            .WillRepeatedly(Return(ss_satellite_based_positioning_state.str()));
     EXPECT_CALL(*settings, get_string_for_key_or_throw(
                     location::Engine::Configuration::Keys::wifi_and_cell_id_reporting_state))
             .Times(1)
@@ -298,11 +294,6 @@ TEST(Engine, stores_state_from_settings_on_destruction)
     auto settings = std::make_shared<NiceMock<MockSettings>>();
     auto selection_policy = std::make_shared<NiceMock<MockProviderSelectionPolicy>>();
 
-    EXPECT_CALL(*settings, set_string_for_key(
-                    location::Engine::Configuration::Keys::satellite_based_positioning_state,
-                    _))
-            .Times(1)
-            .WillRepeatedly(Return(true));
     EXPECT_CALL(*settings, set_string_for_key(
                     location::Engine::Configuration::Keys::wifi_and_cell_id_reporting_state,
                     _))

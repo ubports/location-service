@@ -16,6 +16,7 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
+#include <com/ubuntu/location/service/runtime.h>
 #include <com/ubuntu/location/service/runtime_tests.h>
 
 #include <com/ubuntu/location/clock.h>

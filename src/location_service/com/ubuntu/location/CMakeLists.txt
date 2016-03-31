@@ -1,3 +1,7 @@
+if (UBUNTU_PLATFORM_HARDWARE_API_FOUND)
+  add_definitions(-DCOM_UBUNTU_LOCATION_SERVICE_HAVE_UBUNTU_PLATFORM_HARDWARE_API)
+endif()
+
 if (NET_CPP_FOUND)
   add_definitions(-DCOM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP=1)
 
@@ -9,6 +13,8 @@ add_subdirectory(providers)
 configure_file(
   service/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/service/config.h @ONLY
 )
+
+include_directories(${UBUNTU_PLATFORM_HARDWARE_API_INCLUDE_DIRS})
 
 add_library(
   ubuntu-location-service SHARED
@@ -29,6 +35,7 @@ add_library(
   settings.cpp
   time_based_update_policy.cpp
   set_name_for_thread.cpp
+  time_since_boot.cpp
   wifi_and_cell_reporting_state.cpp
 
   boost_ptree_settings.cpp
@@ -126,6 +133,7 @@ target_link_libraries(
   ${LIBAPPARMOR_LDFLAGS}
   ${NET_CPP_LDFLAGS}
   ${TRUST_STORE_LDFLAGS}
+  ${UBUNTU_PLATFORM_HARDWARE_API_LDFLAGS}
   ${GLog_LIBRARY}
   ${GFlags_LIBRARY}
 )
