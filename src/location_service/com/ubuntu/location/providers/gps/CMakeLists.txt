@@ -4,22 +4,26 @@ option(
     ON
 )
 
-if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
-  find_file(
-    UBUNTU_HARDWARE_GPS_H gps.h
-    NAMES ubuntu/hardware/gps.h
-  )
-
-  if (UBUNTU_HARDWARE_GPS_H)
+if ((LOCATION_SERVICE_ENABLE_GPS_PROVIDER) AND (UBUNTU_PLATFORM_HARDWARE_API_FOUND))
     message(STATUS "Enabling GPS location provider")
+
+    include_directories(${UBUNTU_PLATFORM_HARDWARE_API_INCLUDE_DIRS})
 
     add_library(
         gps
 
         gps.conf
 
+        hardware_abstraction_layer.cpp
+
         android_hardware_abstraction_layer.h
         android_hardware_abstraction_layer.cpp
+
+        sntp_reference_time_source.h
+        sntp_reference_time_source.cpp
+
+        sntp_client.h
+        sntp_client.cpp
 
         hardware_abstraction_layer.h
         # hardware_abstraction_layer.cpp
@@ -27,7 +31,7 @@ if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
         provider.h
         provider.cpp)
 
-    target_link_libraries(gps ubuntu_platform_hardware_api.so)
+    target_link_libraries(gps ${UBUNTU_PLATFORM_HARDWARE_API_LDFLAGS})
   
     set(
       ENABLED_PROVIDER_TARGETS
@@ -41,5 +45,4 @@ if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
     )
 
     install(FILES gps.conf DESTINATION /etc/)
-  endif (UBUNTU_HARDWARE_GPS_H)
-endif (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
+endif ()

@@ -34,6 +34,7 @@ pkg_check_modules(NET_CPP net-cpp REQUIRED)
 pkg_check_modules(PROCESS_CPP process-cpp REQUIRED)
 pkg_check_modules(PROPERTIES_CPP properties-cpp REQUIRED)
 pkg_check_modules(TRUST_STORE trust-store REQUIRED)
+pkg_check_modules(UBUNTU_PLATFORM_HARDWARE_API ubuntu-platform-hardware-api)
 #####################################################################
 # Enable code coverage calculation with gcov/gcovr/lcov
 # Usage:
@@ -69,6 +70,8 @@ if (CLANG_FORMAT_COMMAND)
 endif()
 
 include_directories(
+  3rd-party/
+
   ${Boost_INCLUDE_DIRS}
   ${DBUS_INCLUDE_DIRS}
   ${DBUS_CPP_INCLUDE_DIRS}
