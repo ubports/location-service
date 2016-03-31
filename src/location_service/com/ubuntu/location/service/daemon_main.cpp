@@ -18,41 +18,10 @@
 
 #include "daemon.h"
 
-#include <com/ubuntu/location/logging.h>
-
-#include <boost/filesystem.hpp>
-
 namespace location = com::ubuntu::location;
-
-namespace
-{
-// The directory we put log files in.
-constexpr const char* log_dir{"/var/log/ubuntu-location-service"};
-}
 
 int main(int argc, const char** argv)
 {
-    // Setup logging for the daemon.
-    boost::system::error_code ec;
-    boost::filesystem::create_directories(boost::filesystem::path{log_dir}, ec);
-
-    // According to http://www.boost.org/doc/libs/1_55_0/libs/filesystem/doc/reference.html#create_directories
-    //   Creation failure because p resolves to an existing directory shall not be treated as an error.
-    // With that, we are free to check the error condition and adjust to stderr
-    // logging accordingly.
-    if (ec)
-    {
-        FLAGS_logtostderr = true;
-        VLOG(1) << "Problem creating directory for log files: " << ec << "."
-                << "Falling back to stderr logging.";
-    }
-
-    FLAGS_log_dir = log_dir;
-    FLAGS_stop_logging_if_full_disk = true;
-    FLAGS_max_log_size = 5;
-
-    google::InitGoogleLogging("com.ubuntu.location");
-
     location::service::Daemon::Configuration config;
     try
     {
