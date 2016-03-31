@@ -18,28 +18,10 @@
 
 #include "daemon.h"
 
-#include <com/ubuntu/location/logging.h>
-
-#include <boost/filesystem.hpp>
-
 namespace location = com::ubuntu::location;
 
 int main(int argc, const char** argv)
 {
-    // Ensure that log files dating back to before the fix
-    // for lp:1447110 are removed and do not waste space.
-    {
-        static const boost::filesystem::path old_log_dir{"/var/log/ubuntu-location-service"};
-        boost::system::error_code ec;
-        boost::filesystem::remove_all(old_log_dir, ec);
-    }
-    // Setup logging for the daemon.
-    FLAGS_logtostderr = true;
-    FLAGS_stop_logging_if_full_disk = true;
-    FLAGS_max_log_size = 5;
-
-    google::InitGoogleLogging("com.ubuntu.location");
-
     location::service::Daemon::Configuration config;
     try
     {
