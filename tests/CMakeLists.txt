@@ -127,3 +127,5 @@ LOCATION_SERVICE_ADD_TEST(remote_providerd_test remote_providerd_test.cpp)
 LOCATION_SERVICE_ADD_TEST(remote_provider_test remote_provider_test.cpp)
 LOCATION_SERVICE_ADD_TEST(espoo_provider_test espoo_provider_test.cpp)
 LOCATION_SERVICE_ADD_TEST(delayed_service_test delayed_service_test.cpp)
+
+LOCATION_SERVICE_ADD_TEST(bug_1447110 bug_1447110.cpp)
