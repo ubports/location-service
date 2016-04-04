@@ -1,40 +1,37 @@
-location-service (2.1+15.10.20150727-0ubuntu1) wily; urgency=medium
+location-service (3.0.0-0ubuntu5) UNRELEASED; urgency=medium
 
-  [ CI Train Bot ]
-  * New rebuild forced.
+  * Enable dual landings according to https://wiki.ubuntu.com/citrain/LandingProcess#Dual-landing_for_stable_and_devel:
+    * Both vivid+overlay and xenial packages are built from the same
+      source.
+    * To account for differences in major revisions (necessary to handle
+      the g++ 5 ABI break), we generate install files on the fly.
 
-  [ Charles Kerr ]
-  * drop build-dependency on g++-4.9 (LP: #1452329)
+ -- Thomas Voß <thomas.voss@canonical.com>  Wed, 16 Mar 2016 20:15:57 +0100
 
- -- CI Train Bot <ci-train-bot@canonical.com>  Mon, 27 Jul 2015 18:07:37 +0000
+location-service (3.0.0-0ubuntu4) wily-proposed; urgency=medium
 
-location-service (2.1+15.10.20150706-0ubuntu1) wily; urgency=medium
+  * No change rebuild.
 
-  [ Alberto Aguirre ]
-  * No change rebuild against platform-api 3
+ -- Ken VanDine <ken.vandine@canonical.com>  Mon, 03 Aug 2015 13:33:13 -0400
 
-  [ CI Train Bot ]
-  * New rebuild forced.
+location-service (3.0.0-0ubuntu3) wily; urgency=medium
 
- -- CI Train Bot <ci-train-bot@canonical.com>  Mon, 06 Jul 2015 18:22:22 +0000
+  * No change rebuild.
 
-location-service (2.1+15.10.20150601.2-0ubuntu1) wily; urgency=medium
+ -- Matthias Klose <doko@ubuntu.com>  Fri, 31 Jul 2015 00:23:18 +0200
 
-  [ CI Train Bot ]
-  * New rebuild forced.
+location-service (3.0.0-0ubuntu2) wily; urgency=medium
 
-  [ Manuel de la Pena ]
-  * Ensure that the trust store is started when is needed.
+  * libubuntu-location-service3: Replaces libubuntu-location-service2,
+    config file /etc/gps.conf in both packages.
 
- -- CI Train Bot <ci-train-bot@canonical.com>  Mon, 01 Jun 2015 15:13:06 +0000
+ -- Matthias Klose <doko@ubuntu.com>  Thu, 30 Jul 2015 09:57:50 +0200
 
-location-service (2.1+15.10.20150528.3-0ubuntu1) wily; urgency=medium
+location-service (3.0.0) wily; urgency=medium
 
-  [ Thomas Voß ]
-  * Make sure we always hand a lock owning its mutex to
-    on_access_point_added. (LP: #1426307)
+  * Bump major revision and fix LP:#1478750 to account for toolchain update.
 
- -- CI Train Bot <ci-train-bot@canonical.com>  Thu, 28 May 2015 11:40:58 +0000
+ -- Thomas Voß <thomas.voss@canonical.com>  Thu, 30 Jul 2015 08:33:13 +0200
 
 location-service (2.1+15.04.20160331.2-0ubuntu1) vivid; urgency=medium
 
