@@ -818,7 +818,7 @@ struct LocationServiceStandaloneLoad : public LocationServiceStandalone
 
         options.add(Keys::client_count,
                     "Number of clients that should be fired up.",
-                    std::uint32_t{50});
+                    std::uint32_t{10});
 
         options.add(Keys::test_duration,
                     "Test duration in [s]",
