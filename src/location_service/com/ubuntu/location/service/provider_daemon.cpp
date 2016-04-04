@@ -25,6 +25,7 @@
 
 #include <com/ubuntu/location/service/configuration.h>
 #include <com/ubuntu/location/service/program_options.h>
+#include <com/ubuntu/location/service/runtime.h>
 
 #include <core/dbus/asio/executor.h>
 
@@ -65,7 +66,6 @@ location::service::ProviderDaemon::Configuration location::service::ProviderDaem
     location::service::ProviderDaemon::Configuration result;
 
     result.connection = factory(mutable_daemon_options().bus());
-    result.connection->install_executor(core::dbus::asio::make_executor(result.connection));
 
     auto service = core::dbus::Service::add_service(
                 result.connection,
@@ -108,7 +108,15 @@ location::service::ProviderDaemon::Configuration location::service::ProviderDaem
     return result;
 }
 
-int location::service::ProviderDaemon::main(const location::service::ProviderDaemon::Configuration& configuration)
+namespace
+{
+std::shared_ptr<location::service::Runtime> runtime()
+{
+    static const auto inst = location::service::Runtime::create(2);
+    return inst;
+}
+}
+int location::service::ProviderDaemon::main(const location::service::ProviderDaemon::Configuration& config)
 {
     auto trap = core::posix::trap_signals_for_all_subsequent_threads(
     {
@@ -121,27 +129,20 @@ int location::service::ProviderDaemon::main(const location::service::ProviderDae
         trap->stop();
     });
 
-    std::thread worker
-    {
-        [configuration]()
-        {
-            configuration.connection->run();
-        }
-    };
+    config.connection->install_executor(core::dbus::asio::make_executor(config.connection, runtime()->service()));
 
     auto skeleton = location::providers::remote::skeleton::create_with_configuration(location::providers::remote::skeleton::Configuration
     {
-        configuration.object,
-        configuration.connection,
-        configuration.provider
+        config.object,
+        config.connection,
+        config.provider
     });
+
+    runtime()->start();
 
     trap->run();
 
-    configuration.connection->stop();
-
-    if (worker.joinable())
-        worker.join();
+    config.connection->stop();
 
     return EXIT_SUCCESS;
 }

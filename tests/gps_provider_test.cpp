@@ -48,12 +48,42 @@ namespace location = com::ubuntu::location;
 
 namespace
 {
+
+struct MockHardwareGps
+{
+    MockHardwareGps()
+    {
+        instance_ = this;
+    }
+    ~MockHardwareGps()
+    {
+        instance_ = nullptr;
+    }
+
+    MOCK_METHOD5(set_position_mode, bool(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t));
+    MOCK_METHOD3(inject_time, void(int64_t, int64_t, int));
+
+    static MockHardwareGps *mocked(UHardwareGps self) {
+        return reinterpret_cast<MockHardwareGps*>(self);
+    }
+    static MockHardwareGps *instance() { return instance_; }
+
+    static MockHardwareGps *instance_;
+};
+
+MockHardwareGps *MockHardwareGps::instance_ = nullptr;
+
 struct UpdateTrap
 {
     MOCK_METHOD1(on_position_updated, void(const location::Position&));
     MOCK_METHOD1(on_heading_updated, void(const location::Heading&));
     MOCK_METHOD1(on_velocity_updated, void(const location::Velocity&));
     MOCK_METHOD1(on_space_vehicles_updated, void(const std::set<location::SpaceVehicle>&));
+};
+
+struct MockReferenceTimeSource : public gps::android::HardwareAbstractionLayer::ReferenceTimeSource
+{
+    MOCK_METHOD0(sample, gps::HardwareAbstractionLayer::ReferenceTimeSample());
 };
 
 struct MockSuplAssistant : public gps::HardwareAbstractionLayer::SuplAssistant
@@ -108,9 +138,7 @@ struct MockHardwareAbstractionLayer : public gps::HardwareAbstractionLayer
     MOCK_METHOD1(set_assistance_mode, bool(gps::AssistanceMode));
     MOCK_METHOD1(set_position_mode, bool(gps::PositionMode));
     MOCK_METHOD1(inject_reference_position, bool(const location::Position&));
-    MOCK_METHOD2(inject_reference_time,
-                 bool(const std::chrono::microseconds&,
-                      const std::chrono::microseconds&));
+    MOCK_METHOD1(inject_reference_time, bool(const location::providers::gps::HardwareAbstractionLayer::ReferenceTimeSample&));
 
     MockSuplAssistant supl_assistant_;
     core::Signal<location::Position> position_updates_;
@@ -211,6 +239,42 @@ A_GLONASS_POS_PROTOCOL_SELECT = 0
 
 }
 
+/* Mock the hardware GPS platform API: the methods defined here will be invoked
+ * instead of those exported by the system library.
+ * We redefine these methods using the MockHardwareGps class above, which is
+ * implemented using google-mock. This effectively allows us to test that the
+ * right calls to the platform API are made.
+ */
+UHardwareGps
+u_hardware_gps_new(UHardwareGpsParams *)
+{
+    using namespace ::testing;
+
+    return reinterpret_cast<UHardwareGps>(MockHardwareGps::instance());
+}
+
+void
+u_hardware_gps_delete(UHardwareGps)
+{
+}
+
+bool
+u_hardware_gps_set_position_mode(UHardwareGps self, uint32_t mode, uint32_t recurrence,
+                                 uint32_t min_interval, uint32_t preferred_accuracy,
+                                 uint32_t preferred_time)
+{
+    MockHardwareGps *thiz = MockHardwareGps::mocked(self);
+    return thiz->set_position_mode(mode, recurrence, min_interval,
+                                   preferred_accuracy, preferred_time);
+}
+
+void
+u_hardware_gps_inject_time(UHardwareGps self, int64_t time, int64_t time_reference, int uncertainty)
+{
+    MockHardwareGps* thiz = MockHardwareGps::mocked(self);
+    return thiz->inject_time(time, time_reference, uncertainty);
+}
+
 TEST(AndroidGpsXtraDownloader, reading_configuration_from_valid_conf_file_works)
 {
     std::stringstream ss{gps_conf};
@@ -259,6 +323,58 @@ TEST(GpsProvider, injecting_a_reference_position_calls_into_the_hal)
     EXPECT_CALL(hal, inject_reference_position(pos)).Times(1);
 
     provider.on_reference_location_updated(pos);
+}
+
+TEST(GpsProvider, time_requests_query_reference_time_source)
+{
+    using namespace ::testing;
+
+    NiceMock<MockHardwareGps> hardwareGps;
+
+    auto mock_reference_time_source = std::make_shared<MockReferenceTimeSource>();
+    EXPECT_CALL(*mock_reference_time_source, sample())
+            .Times(1)
+            .WillRepeatedly(Return(gps::HardwareAbstractionLayer::ReferenceTimeSample{}));
+
+    gps::android::HardwareAbstractionLayer::Configuration configuration;
+    configuration.reference_time_source = mock_reference_time_source;
+    gps::android::HardwareAbstractionLayer hal(configuration);
+
+    gps::android::HardwareAbstractionLayer::on_request_utc_time(&hal);
+}
+
+TEST(GpsProvider, time_requests_inject_current_time_into_the_hal)
+{
+    using namespace ::testing;
+
+    auto sample_reference_time = []()
+    {
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(location::Clock::now().time_since_epoch());
+        std::cout << duration.count() << std::endl;
+        return gps::HardwareAbstractionLayer::ReferenceTimeSample{duration, duration, std::chrono::milliseconds{0}};
+    };
+
+    NiceMock<MockHardwareGps> hardwareGps;
+
+    auto mock_reference_time_source = std::make_shared<MockReferenceTimeSource>();
+    EXPECT_CALL(*mock_reference_time_source, sample())
+            .Times(1)
+            .WillRepeatedly(Invoke(sample_reference_time));
+
+    gps::android::HardwareAbstractionLayer::Configuration configuration;
+    configuration.reference_time_source = mock_reference_time_source;
+    gps::android::HardwareAbstractionLayer hal(configuration);
+    hal.capabilities() = U_HARDWARE_GPS_CAPABILITY_ON_DEMAND_TIME;
+
+    int64_t time = 0;
+    EXPECT_CALL(hardwareGps, inject_time(_, _, 0)).Times(1).WillOnce(SaveArg<0>(&time));
+
+    auto t0 = std::chrono::duration_cast<std::chrono::milliseconds>(location::Clock::now().time_since_epoch());
+    //std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    gps::android::HardwareAbstractionLayer::on_request_utc_time(&hal);
+    //std::this_thread::sleep_for(std::chrono::milliseconds{10});
+    auto t1 = std::chrono::duration_cast<std::chrono::milliseconds>(location::Clock::now().time_since_epoch());
+    EXPECT_THAT(time, AllOf(Ge(t0.count()), Le(t1.count())));
 }
 
 TEST(GpsProvider, updates_from_hal_are_passed_on_by_the_provider)
@@ -846,4 +962,3 @@ TEST_F(HardwareAbstractionLayerFixture, time_to_first_fix_cold_start_with_supl_b
                          static_cast<std::uint64_t>(variance(stats)))).count()
               << std::endl;
 }
-

@@ -38,12 +38,14 @@
 #include <com/ubuntu/location/service/stub.h>
 
 #include <core/dbus/announcer.h>
+#include <core/dbus/bus.h>
 #include <core/dbus/fixture.h>
 #include <core/dbus/resolver.h>
 
 #include <core/dbus/asio/executor.h>
 
 #include <core/posix/signal.h>
+#include <core/posix/this_process.h>
 
 #include <core/testing/cross_process_sync.h>
 #include <core/testing/fork_and_run.h>
@@ -663,6 +665,110 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
     EXPECT_EQ(core::testing::ForkAndRunResult::empty, core::testing::fork_and_run(server, client));
 }
 
+TEST_F(LocationServiceStandalone, NewSessionsGetLastKnownPosition)
+{
+    core::testing::CrossProcessSync sync_start;
+
+    auto server = [this, &sync_start]()
+    {
+        SCOPED_TRACE("Server");
+
+        auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_term});
+        trap->signal_raised().connect([trap](core::posix::Signal)
+        {
+            trap->stop();
+        });
+
+        auto incoming = session_bus();
+        auto outgoing = session_bus();
+
+        incoming->install_executor(core::dbus::asio::make_executor(incoming));
+        outgoing->install_executor(core::dbus::asio::make_executor(outgoing));
+
+        auto dummy = new DummyProvider();
+        cul::Provider::Ptr helper(dummy);
+
+        cul::service::DefaultConfiguration config;
+        cul::service::Implementation::Configuration configuration
+        {
+            incoming,
+            outgoing,
+            config.the_engine(config.the_provider_set(helper), config.the_provider_selection_policy(), null_settings()),
+            config.the_permission_manager(incoming),
+            cul::service::Harvester::Configuration
+            {
+                cul::connectivity::platform_default_manager(),
+                std::make_shared<NullReporter>()
+            }
+        };
+        auto location_service = std::make_shared<cul::service::Implementation>(configuration);
+
+        configuration.engine->updates.last_known_location.set(reference_position_update);
+        std::thread t1{[incoming](){incoming->run();}};
+        std::thread t2{[outgoing](){outgoing->run();}};
+
+        sync_start.try_signal_ready_for(std::chrono::milliseconds{500});
+
+        trap->run();
+
+        incoming->stop();
+        outgoing->stop();
+
+        if (t1.joinable())
+            t1.join();
+
+        if (t2.joinable())
+            t2.join();
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
+    };
+
+    auto client = [this, &sync_start]()
+    {
+        SCOPED_TRACE("Client");
+
+        EXPECT_EQ(1, sync_start.wait_for_signal_ready_for(std::chrono::milliseconds{500}));
+
+        auto bus = session_bus();
+        bus->install_executor(dbus::asio::make_executor(bus));
+        std::thread t{[bus](){bus->run();}};
+
+        auto location_service = dbus::resolve_service_on_bus<
+            cul::service::Interface,
+            cul::service::Stub>(bus);
+
+        auto s1 = location_service->create_session_for_criteria(cul::Criteria{});
+
+        std::cout << "Successfully created session" << std::endl;
+
+        cul::Update<cul::Position> position;
+        auto c1 = s1->updates().position.changed().connect(
+            [&](const cul::Update<cul::Position>& new_position) {
+                std::cout << "On position updated: " << new_position << std::endl;
+                position = new_position;
+            });
+
+        std::cout << "Created event connections, starting updates..." << std::endl;
+
+        s1->updates().position_status = culss::Interface::Updates::Status::enabled;
+
+        std::cout << "done" << std::endl;
+
+        std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+
+        bus->stop();
+
+        if (t.joinable())
+            t.join();
+
+        EXPECT_EQ(reference_position_update, position);
+
+        return ::testing::Test::HasFailure() ? core::posix::exit::Status::failure : core::posix::exit::Status::success;
+    };
+
+    EXPECT_EQ(core::testing::ForkAndRunResult::empty, core::testing::fork_and_run(server, client));
+}
+
 namespace
 {
 struct LocationServiceStandaloneLoad : public LocationServiceStandalone
@@ -708,7 +814,7 @@ struct LocationServiceStandaloneLoad : public LocationServiceStandalone
 
         options.add(Keys::update_period,
                     "Update period length for dummy::Provider setup.",
-                    std::uint32_t{100});
+                    std::uint32_t{10});
 
         options.add(Keys::client_count,
                     "Number of clients that should be fired up.",
@@ -761,6 +867,8 @@ struct LocationServiceStandaloneLoad : public LocationServiceStandalone
 };
 }
 
+#include "did_finish_successfully.h"
+
 TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingWorks)
 {
     EXPECT_TRUE(trust_store_is_set_up_for_testing);
@@ -801,8 +909,8 @@ TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingW
         };
 
         cul::service::Daemon::Configuration config;
-        config.incoming = session_bus();
-        config.outgoing = session_bus();
+        config.incoming = std::make_shared<core::dbus::Bus>(core::posix::this_process::env::get_or_throw("DBUS_SESSION_BUS_ADDRESS"));
+        config.outgoing = std::make_shared<core::dbus::Bus>(core::posix::this_process::env::get_or_throw("DBUS_SESSION_BUS_ADDRESS"));
         config.is_testing_enabled = false;
         config.providers =
         {
@@ -829,7 +937,7 @@ TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingW
                     status;
     }, core::posix::StandardStream::empty);
 
-    std::this_thread::sleep_for(std::chrono::seconds{2});
+    std::this_thread::sleep_for(std::chrono::seconds{15});
 
     auto client = [this]()
     {
@@ -957,17 +1065,11 @@ TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingW
     {
         VLOG(1) << "Stopping client...: " << client.pid();
         client.send_signal_or_throw(core::posix::Signal::sig_term);
-        auto result = client.wait_for(core::posix::wait::Flags::untraced);
-
-        EXPECT_EQ(core::posix::wait::Result::Status::exited, result.status);
-        EXPECT_EQ(core::posix::exit::Status::success, result.detail.if_exited.status);
+        EXPECT_TRUE(did_finish_successfully(client.wait_for(core::posix::wait::Flags::untraced)));
     }
 
     VLOG(1) << "Cleaned up clients, shutting down the service...";
 
     server.send_signal_or_throw(core::posix::Signal::sig_term);
-    auto result = server.wait_for(core::posix::wait::Flags::untraced);
-
-    EXPECT_EQ(core::posix::wait::Result::Status::exited, result.status);
-    EXPECT_EQ(core::posix::exit::Status::success, result.detail.if_exited.status);
+    EXPECT_TRUE(did_finish_successfully(server.wait_for(core::posix::wait::Flags::untraced)));
 }
