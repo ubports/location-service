@@ -1,12 +1,14 @@
-location-service (3.0.0-0ubuntu5) UNRELEASED; urgency=medium
+location-service (3.0.0+16.04.20160404-0ubuntu1) xenial; urgency=medium
 
   * Enable dual landings according to https://wiki.ubuntu.com/citrain/LandingProcess#Dual-landing_for_stable_and_devel:
     * Both vivid+overlay and xenial packages are built from the same
       source.
     * To account for differences in major revisions (necessary to handle
       the g++ 5 ABI break), we generate install files on the fly.
+  * Lower number of concurrent clients to stabilize acceptance test on
+    loaded builders.
 
- -- Thomas Voß <thomas.voss@canonical.com>  Wed, 16 Mar 2016 20:15:57 +0100
+ -- Thomas Voß <ci-train-bot@canonical.com>  Mon, 04 Apr 2016 19:22:15 +0000
 
 location-service (3.0.0-0ubuntu4) wily-proposed; urgency=medium
 
