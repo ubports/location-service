@@ -20,6 +20,9 @@
 #include <com/ubuntu/location/boost_ptree_settings.h>
 #include <com/ubuntu/location/provider_factory.h>
 
+#include <com/ubuntu/location/logging.h>
+#include <com/ubuntu/location/connectivity/dummy_connectivity_manager.h>
+
 #include <com/ubuntu/location/service/default_configuration.h>
 #include <com/ubuntu/location/service/demultiplexing_reporter.h>
 #include <com/ubuntu/location/service/ichnaea_reporter.h>
@@ -30,12 +33,16 @@
 
 #include "program_options.h"
 #include "daemon.h"
+#include "runtime.h"
 
 #include <core/dbus/announcer.h>
 #include <core/dbus/resolver.h>
 #include <core/dbus/asio/executor.h>
 
 #include <core/posix/signal.h>
+
+#include <boost/asio.hpp>
+#include <boost/filesystem.hpp>
 
 #include <system_error>
 #include <thread>
@@ -164,6 +171,20 @@ void location::service::Daemon::print_help(std::ostream& out)
 
 int location::service::Daemon::main(const location::service::Daemon::Configuration& config)
 {
+    // Ensure that log files dating back to before the fix
+    // for lp:1447110 are removed and do not waste space.
+    {
+        static const boost::filesystem::path old_log_dir{"/var/log/ubuntu-location-service"};
+        boost::system::error_code ec;
+        boost::filesystem::remove_all(old_log_dir, ec);
+    }
+    // Setup logging for the daemon.
+    FLAGS_logtostderr = true;
+    FLAGS_stop_logging_if_full_disk = true;
+    FLAGS_max_log_size = 5;
+
+    google::InitGoogleLogging("com.ubuntu.location");
+
     auto trap = core::posix::trap_signals_for_all_subsequent_threads(
     {
         core::posix::Signal::sig_term,
@@ -175,115 +196,54 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
         trap->stop();
     });
 
-    const location::Configuration empty_provider_configuration;
+    auto runtime = location::service::Runtime::create(4);
 
-    std::set<location::Provider::Ptr> instantiated_providers;
-
+    location::service::DefaultConfiguration dc;
+    auto engine = dc.the_engine(std::set<location::Provider::Ptr>{}, dc.the_provider_selection_policy(), config.settings);
     for (const std::string& provider : config.providers)
     {
         std::cout << "Instantiating and configuring: " << provider << std::endl;
 
         try
         {
-            auto p = location::ProviderFactory::instance().create_provider_for_name_with_config(
-                        provider,
-                        config.provider_options.count(provider) > 0 ?
-                            config.provider_options.at(provider) : empty_provider_configuration);
-
-            if (p)
-                instantiated_providers.insert(p);
-            else
-                throw std::runtime_error("Problem instantiating provider");
-
+            auto result = std::async(std::launch::async, [provider, config, engine] {
+                return location::ProviderFactory::instance().create_provider_for_name_with_config(
+                    provider,
+                    config.provider_options.count(provider) > 0 ?
+                        config.provider_options.at(provider) : location::Configuration {},
+                    [engine](Provider::Ptr provider)
+                    {
+                        engine->add_provider(provider);
+                    }
+                );
+            });
         } catch(const std::runtime_error& e)
         {
             std::cerr << "Issue instantiating provider: " << e.what() << std::endl;
         }
     }
 
-    config.incoming->install_executor(dbus::asio::make_executor(config.incoming));
-    config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing));
+    config.incoming->install_executor(dbus::asio::make_executor(config.incoming, runtime->service()));
+    config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing, runtime->service()));
 
-    location::service::DefaultConfiguration dc;
+    runtime->start();
 
     location::service::Implementation::Configuration configuration
     {
         config.incoming,
         config.outgoing,
-        dc.the_engine(instantiated_providers, dc.the_provider_selection_policy(), config.settings),
+        engine,
         dc.the_permission_manager(config.outgoing),
         location::service::Harvester::Configuration
         {
-            location::connectivity::platform_default_manager(),
-            // We submit location/wifi/cell measurements to both
-            // Mozilla's location service and to Ubuntu's own instance.
-            std::make_shared<service::DemultiplexingReporter>(
-            std::initializer_list<service::Harvester::Reporter::Ptr>
-            {
-                std::make_shared<service::ichnaea::Reporter>(
-                     service::ichnaea::Reporter::Configuration
-                     {
-                         "https://location.services.mozilla.com",
-                         "UbuntuLocationService",
-                         "UbuntuLocationService"
-                     }
-                ),
-                std::make_shared<service::ichnaea::Reporter>(
-                     service::ichnaea::Reporter::Configuration
-                     {
-                         "https://162.213.35.107",
-                         "UbuntuLocationService",
-                         "UbuntuLocationService"
-                     }
-                )
-            })
+            std::make_shared<dummy::ConnectivityManager>(),
+            std::make_shared<NullReporter>()
         }
     };
 
     auto location_service = std::make_shared<location::service::Implementation>(configuration);
-    // We need to ensure that any exception raised by the executor does not crash the app
-    // and also gets logged.
-    auto execute = [] (std::shared_ptr<core::dbus::Bus> bus) {
-        while(true)
-        {
-            try
-            {
-                VLOG(10) << "Starting a bus executor";
-                bus->run();
-                break; // run() exited normally
-            }
-            catch (const std::exception& e)
-            {
-                LOG(WARNING) << e.what();
-            }
-            catch (...)
-            {
-                LOG(WARNING) << "Unexpected exception was raised by the bus executor";
-            }
-        }
-    };
-
-    std::thread t1{execute, config.incoming};
-    std::thread t2{execute, config.incoming};
-    std::thread t3{execute, config.incoming};
-    std::thread t4{execute, config.outgoing};
 
     trap->run();
-
-    config.incoming->stop();
-    config.outgoing->stop();
-
-    if (t1.joinable())
-        t1.join();
-
-    if (t2.joinable())
-        t2.join();
-
-    if (t3.joinable())
-        t3.join();
-
-    if (t4.joinable())
-        t4.join();
 
     return EXIT_SUCCESS;
 }

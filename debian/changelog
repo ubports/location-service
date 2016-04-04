@@ -36,6 +36,117 @@ location-service (2.1+15.10.20150528.3-0ubuntu1) wily; urgency=medium
 
  -- CI Train Bot <ci-train-bot@canonical.com>  Thu, 28 May 2015 11:40:58 +0000
 
+location-service (2.1+15.04.20160331.2-0ubuntu1) vivid; urgency=medium
+
+  * Log to stderr by default, relying on upstart to rotate logs
+    appropriately. (LP: #1447110)
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Thu, 31 Mar 2016 11:03:46 +0000
+
+location-service (2.1+15.04.20160308.1-0ubuntu1) vivid; urgency=medium
+
+  * Add SntpClient for querying reference time information.
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Tue, 08 Mar 2016 08:54:07 +0000
+
+location-service (2.1+15.04.20160302.1-0ubuntu1) vivid; urgency=medium
+
+  * Remove explicit option to disable satellite-based positioning
+    services.
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Wed, 02 Mar 2016 15:28:02 +0000
+
+location-service (2.1+15.04.20160106-0ubuntu1) vivid; urgency=medium
+
+  [ Alberto Mardegan ]
+  * Set debian source format to "3.0 (native)"
+
+  [ Scott Sweeny ]
+  * Allow providers to register themselves asynchronously (LP: #1415029)
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Wed, 06 Jan 2016 16:15:29 +0000
+
+location-service (2.1+15.04.20151211-0ubuntu1) vivid; urgency=medium
+
+  * Account for changes in trust-store w.r.t. assembling the description
+    of a trust prompt.
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Fri, 11 Dec 2015 08:57:44 +0000
+
+location-service (2.1+15.04.20151209-0ubuntu1) vivid; urgency=medium
+
+  * Fix settings not being applied correctly.
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Wed, 09 Dec 2015 15:22:22 +0000
+
+location-service (2.1+15.04.20151202.1-0ubuntu1) vivid; urgency=medium
+
+  * Ensure that event connections are cleaned up on destruction. (LP:
+    #1480877)
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Wed, 02 Dec 2015 12:12:21 +0000
+
+location-service (2.1+15.04.20151127-0ubuntu1) vivid; urgency=medium
+
+  [ Alberto Mardegan ]
+  * Send last known position on session start
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+  [ Thomas Voß ]
+  * Factor out service::Runtime from daemon.cpp into its own .h/.cpp
+    pair of files. Add test cases around correct operation of
+    service::Runtime. added:
+    src/location_service/com/ubuntu/location/service/runtime.cpp
+    src/location_service/com/ubuntu/location/service/runtime.h
+    tests/runtime_test.cpp
+
+  [ thomas-voss ]
+  * Factor out service::Runtime from daemon.cpp into its own .h/.cpp
+    pair of files. Add test cases around correct operation of
+    service::Runtime. added:
+    src/location_service/com/ubuntu/location/service/runtime.cpp
+    src/location_service/com/ubuntu/location/service/runtime.h
+    tests/runtime_test.cpp
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Fri, 27 Nov 2015 13:00:33 +0000
+
+location-service (2.1+15.04.20151113-0ubuntu1) vivid; urgency=medium
+
+  * Adjust default timeout for downloading GPS XTRA data.
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Fri, 13 Nov 2015 10:33:56 +0000
+
+location-service (2.1+15.04.20151109.2-0ubuntu1) vivid; urgency=medium
+
+  [ Alberto Mardegan ]
+  * Make sure that injected time is given in milliseconds
+
+  [ Thomas Voß ]
+  * Cherry-pick rev. 196 and 199 from lp:location-service. The changes
+    got accidentally removed by merging the outstanding documentation
+    branch.
+  * Handle responses of clients to updates asynchronously. Rely on
+    dummy::ConnectivityManager as harvesting is disabled anyway. (LP:
+    #1462664, #1387643)
+
+ -- David Barth <david.barth@canonical.com>  Mon, 09 Nov 2015 20:48:48 +0000
+
+location-service (2.1+15.04.20151022-0ubuntu1) vivid; urgency=medium
+
+  [ Thomas Voß ]
+  * Add documentation for debugging, hacking and debugging the location
+    service. Pull manual testing instructions over from the wiki. Add
+    tools for formatting the source.
+
+  [ thomas-voss ]
+  * Add documentation for debugging, hacking and debugging the location
+    service. Pull manual testing instructions over from the wiki. Add
+    tools for formatting the source.
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Thu, 22 Oct 2015 07:16:50 +0000
+
 location-service (2.1+15.04.20150427.1-0ubuntu1) vivid; urgency=medium
 
   [ CI Train Bot ]

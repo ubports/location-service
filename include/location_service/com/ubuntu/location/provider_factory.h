@@ -54,6 +54,9 @@ class ProviderFactory
     // --provider=remote::Provider@gps --remote::Provider@gps::name="com.ubuntu.android.gps.Provider" --remote::Provider@gps::path="/com/ubuntu/android/gps/Provider"
     Provider::Ptr create_provider_for_name_with_config(const std::string& name, const Configuration& config);
 
+    // Async version of above.
+    void create_provider_for_name_with_config(const std::string& name, const Configuration& config, const std::function<void(Provider::Ptr)>& cb);
+
     void enumerate(const std::function<void(const std::string&, const Factory&)>& enumerator);
 
   private:

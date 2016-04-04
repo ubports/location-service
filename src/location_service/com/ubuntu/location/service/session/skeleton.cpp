@@ -283,7 +283,13 @@ void culss::Skeleton::on_position_changed(const cul::Update<cul::Position>& posi
     VLOG(10) << __PRETTY_FUNCTION__;
     try
     {
-        configuration.remote.object->invoke_method_asynchronously<culs::session::Interface::UpdatePosition, void>(position);
+        configuration.remote.object->invoke_method_asynchronously_with_callback<culs::session::Interface::UpdatePosition, void>([](const core::dbus::Result<void>& result)
+        {
+            if (result.is_error())
+            {
+                VLOG(10) << "Failed to communicate position update to client: " << result.error().print();
+            }
+        }, position);
     } catch(const std::exception&)
     {
         // We consider the session to be dead once we hit an exception here.
@@ -300,7 +306,13 @@ void culss::Skeleton::on_heading_changed(const cul::Update<cul::Heading>& headin
     VLOG(10) << __PRETTY_FUNCTION__;
     try
     {
-        configuration.remote.object->invoke_method_asynchronously<culs::session::Interface::UpdateHeading, void>(heading);
+        configuration.remote.object->invoke_method_asynchronously_with_callback<culs::session::Interface::UpdateHeading, void>([](const core::dbus::Result<void>& result)
+        {
+            if (result.is_error())
+            {
+                VLOG(10) << "Failed to communicate heading update to client: " << result.error().print();
+            }
+        }, heading);
     } catch(const std::exception&)
     {
         // We consider the session to be dead once we hit an exception here.
@@ -317,7 +329,13 @@ void culss::Skeleton::on_velocity_changed(const cul::Update<cul::Velocity>& velo
     VLOG(10) << __PRETTY_FUNCTION__;
     try
     {
-        configuration.remote.object->invoke_method_asynchronously<culs::session::Interface::UpdateVelocity, void>(velocity);
+        configuration.remote.object->invoke_method_asynchronously_with_callback<culs::session::Interface::UpdateVelocity, void>([](const core::dbus::Result<void>& result)
+        {
+            if (result.is_error())
+            {
+                VLOG(10) << "Failed to communicate velocity update to client: " << result.error().print();
+            }
+        }, velocity);
     } catch(const std::exception&)
     {
         // We consider the session to be dead once we hit an exception here.

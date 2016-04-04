@@ -97,10 +97,7 @@ cul::Engine::Engine(const cul::ProviderSelectionPolicy::Ptr& provider_selection_
                 Configuration::Keys::engine_state,
                 Configuration::Defaults::engine_state);
 
-    configuration.satellite_based_positioning_state =
-            settings->get_enum_for_key<SatelliteBasedPositioningState>(
-                Configuration::Keys::satellite_based_positioning_state,
-                Configuration::Defaults::satellite_based_positioning_state);
+    configuration.satellite_based_positioning_state = Configuration::Defaults::satellite_based_positioning_state;
 
     configuration.wifi_and_cell_id_reporting_state =
             settings->get_enum_for_key<WifiAndCellIdReportingState>(
@@ -110,12 +107,7 @@ cul::Engine::Engine(const cul::ProviderSelectionPolicy::Ptr& provider_selection_
     configuration.engine_state.changed().connect([this](const Engine::Status& status)
     {
         Engine::settings->set_enum_for_key<Engine::Status>(Configuration::Keys::engine_state, status);
-    });
-
-    configuration.satellite_based_positioning_state.changed().connect([this](SatelliteBasedPositioningState state)
-    {
-        Engine::settings->set_enum_for_key<SatelliteBasedPositioningState>(Configuration::Keys::satellite_based_positioning_state, state);
-    });
+    });    
 
     configuration.wifi_and_cell_id_reporting_state.changed().connect([this](WifiAndCellIdReportingState state)
     {
@@ -128,10 +120,6 @@ cul::Engine::~Engine()
     settings->set_enum_for_key<Engine::Status>(
         Configuration::Keys::engine_state,
         configuration.engine_state);
-
-    settings->set_enum_for_key<SatelliteBasedPositioningState>(
-        Configuration::Keys::satellite_based_positioning_state,
-        configuration.satellite_based_positioning_state);
 
     settings->set_enum_for_key<WifiAndCellIdReportingState>(
         Configuration::Keys::wifi_and_cell_id_reporting_state,
@@ -169,19 +157,28 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
 
     // We wire up changes in the engine's configuration to the respective slots
     // of the provider.
-    auto cp = updates.reference_location.changed().connect([provider](const cul::Update<cul::Position>& pos)
+    auto cp = updates.last_known_location.changed().connect([provider](const cul::Optional<cul::Update<cul::Position>>& pos)
     {
-        provider->on_reference_location_updated(pos);
+        if (pos)
+        {
+            provider->on_reference_location_updated(pos.get());
+        }
     });
 
-    auto cv = updates.reference_velocity.changed().connect([provider](const cul::Update<cul::Velocity>& velocity)
+    auto cv = updates.last_known_velocity.changed().connect([provider](const cul::Optional<cul::Update<cul::Velocity>>& velocity)
     {
-        provider->on_reference_velocity_updated(velocity);
+        if (velocity)
+        {
+            provider->on_reference_velocity_updated(velocity.get());
+        }
     });
 
-    auto ch = updates.reference_heading.changed().connect([provider](const cul::Update<cul::Heading>& heading)
+    auto ch = updates.last_known_heading.changed().connect([provider](const cul::Optional<cul::Update<cul::Heading>>& heading)
     {
-        provider->on_reference_heading_updated(heading);
+        if (heading)
+        {
+            provider->on_reference_heading_updated(heading.get());
+        }
     });
 
     auto cr = configuration.wifi_and_cell_id_reporting_state.changed().connect([provider](cul::WifiAndCellIdReportingState state)
@@ -207,7 +204,7 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
     // We should come up with a better heuristic here.
     auto cpr = provider->updates().position.connect([this](const cul::Update<cul::Position>& src)
     {
-        updates.reference_location = update_policy->verify_update(src);
+        updates.last_known_location = update_policy->verify_update(src);
     });
 
     std::lock_guard<std::mutex> lg(guard);

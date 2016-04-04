@@ -41,6 +41,8 @@ struct CachedWirelessNetwork : public com::ubuntu::location::connectivity::Wirel
             const org::freedesktop::NetworkManager::Device& device,
             const org::freedesktop::NetworkManager::AccessPoint& ap);
 
+    ~CachedWirelessNetwork();
+
     // Timestamp when the network became visible.
     const core::Property<std::chrono::system_clock::time_point>& last_seen() const override;
 
@@ -66,6 +68,16 @@ struct CachedWirelessNetwork : public com::ubuntu::location::connectivity::Wirel
     org::freedesktop::NetworkManager::Device device_;
     // The actual access point stub.
     org::freedesktop::NetworkManager::AccessPoint access_point_;
+
+    // Encapsulates all event connections that have to be cut on destruction.
+    struct
+    {
+        core::dbus::Signal
+        <
+            org::freedesktop::NetworkManager::AccessPoint::PropertiesChanged,
+            org::freedesktop::NetworkManager::AccessPoint::PropertiesChanged::ArgumentType
+        >::SubscriptionToken ap_properties_changed;
+    } connections;
 
     core::Property<std::chrono::system_clock::time_point> last_seen_;
     core::Property<std::string> bssid_;
