@@ -43,7 +43,7 @@ cul::Provider::Ptr cul::ProviderFactory::create_provider_for_name_with_config(
     const std::string& name, 
     const cul::ProviderFactory::Configuration& config)
 {
-    auto undecorated_name = name.substr(0, name.find("@"));
+    auto undecorated_name = extract_undecorated_name(name);
 
     std::lock_guard<std::mutex> lg(guard);
     if (factory_store.count(undecorated_name) == 0)
@@ -57,7 +57,7 @@ void cul::ProviderFactory::create_provider_for_name_with_config(
     const cul::ProviderFactory::Configuration& config,
     const std::function<void(Provider::Ptr)>& cb)
 {
-    auto undecorated_name = name.substr(0, name.find("@"));
+    auto undecorated_name = extract_undecorated_name(name);
 
     std::lock_guard<std::mutex> lg(guard);
     if (factory_store.count(undecorated_name) == 0)
@@ -77,6 +77,11 @@ void cul::ProviderFactory::enumerate(
         {
             enumerator(value.first, value.second);
         });
+}
+
+std::string cul::ProviderFactory::extract_undecorated_name(const std::string& name)
+{
+    return name.substr(0, name.find("@"));
 }
 
 
