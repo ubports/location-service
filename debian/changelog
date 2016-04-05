@@ -1,3 +1,21 @@
+location-service (3.0.0+16.04.20160405-0ubuntu1) xenial; urgency=medium
+
+  * Small fixes around provider loading added: tests/mock_engine.h
+  * Use a fusion engine provider to generate higher quality position
+    updates added:
+    include/location_service/com/ubuntu/location/fusion_provider.h
+    include/location_service/com/ubuntu/location/fusion_provider_selecti
+    on_policy.h
+    include/location_service/com/ubuntu/location/newer_or_more_accurate_
+    update_selector.h
+    include/location_service/com/ubuntu/location/newer_update_selector.h
+    include/location_service/com/ubuntu/location/update_selector.h
+    src/location_service/com/ubuntu/location/fusion_provider.cpp
+    src/location_service/com/ubuntu/location/fusion_provider_selection_p
+    olicy.cpp
+
+ -- Scott Sweeny <ci-train-bot@canonical.com>  Tue, 05 Apr 2016 21:33:22 +0000
+
 location-service (3.0.0+16.04.20160404-0ubuntu1) xenial; urgency=medium
 
   * Enable dual landings according to https://wiki.ubuntu.com/citrain/LandingProcess#Dual-landing_for_stable_and_devel:
