@@ -17,6 +17,7 @@
  */
 
 #include <com/ubuntu/location/service/daemon.h>
+#include <com/ubuntu/location/service/default_configuration.h>
 
 #include <com/ubuntu/location/boost_ptree_settings.h>
 #include <com/ubuntu/location/space_vehicle.h>
@@ -28,7 +29,10 @@
 #include <core/testing/cross_process_sync.h>
 #include <core/testing/fork_and_run.h>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+#include "mock_engine.h"
 
 #include <ctime>
 
@@ -262,4 +266,40 @@ TEST(Daemon, CommandLineParsingWorksForProvidersAndProviderOptions)
     EXPECT_EQ("test1", config.provider_options.at(config.providers[0]).get<std::string>("option1"));
     EXPECT_EQ("test2", config.provider_options.at(config.providers[0]).get<std::string>("option2"));
     EXPECT_EQ("test3", config.provider_options.at(config.providers[0]).get<std::string>("option3"));
+}
+
+TEST(Daemon, ProviderLoadingWorks)
+{
+    const char* args[] =
+    {
+        "--bus", "session",
+        "--provider", "dummy::Provider",
+    };
+
+    auto config = location::service::Daemon::Configuration::from_command_line_args(4, args, null_dbus_connection_factory);
+    location::service::DefaultConfiguration dc;
+    auto engine = std::make_shared<MockEngine>(dc.the_provider_selection_policy(), config.settings);
+
+    EXPECT_CALL(*engine, add_provider(::testing::_));
+
+    location::service::Daemon::load_providers(config, engine);
+}
+
+TEST(Daemon, MultipleProviderLoadingWorks)
+{
+    const char* args[] =
+    {
+        "--bus", "session",
+        "--provider", "dummy::Provider",
+        "--provider", "dummy::DelayedProvider",
+        "--dummy::DelayedProvider::DelayInMs=250"
+    };
+
+    auto config = location::service::Daemon::Configuration::from_command_line_args(7, args, null_dbus_connection_factory);
+    location::service::DefaultConfiguration dc;
+    auto engine = std::make_shared<MockEngine>(dc.the_provider_selection_policy(), config.settings);
+
+    EXPECT_CALL(*engine, add_provider(::testing::_)).Times(2);
+
+    location::service::Daemon::load_providers(config, engine);
 }

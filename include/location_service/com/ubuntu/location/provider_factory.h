@@ -59,6 +59,8 @@ class ProviderFactory
 
     void enumerate(const std::function<void(const std::string&, const Factory&)>& enumerator);
 
+    static std::string extract_undecorated_name(const std::string& name);
+
   private:
     ProviderFactory() = default;
     ~ProviderFactory() = default;
