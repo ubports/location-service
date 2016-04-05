@@ -49,5 +49,5 @@ override_dh_auto_clean:
 	rm -f $(CURDIR)/debian/libubuntu-location-service$(major).install.amd64
 	rm -f $(CURDIR)/debian/libubuntu-location-service$(major).install.armhf
 	rm -f $(CURDIR)/debian/libubuntu-location-service$(major).install.i386
-	/bin/sh $(CURDIR)/debian/gen-debian-files.sh $(CURDIR)/debian
+	/bin/sh $(CURDIR)/debian/bileto_pre_release_hook
 	dh_auto_clean
