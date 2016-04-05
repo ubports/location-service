@@ -284,3 +284,128 @@ TEST(ProxyProvider, update_signals_are_routed_from_correct_providers)
     mp2.inject_update(cul::Update<cul::Heading>());
     mp3.inject_update(cul::Update<cul::Velocity>());
 }
+
+#include <com/ubuntu/location/fusion_provider.h>
+#include <com/ubuntu/location/newer_or_more_accurate_update_selector.h>
+
+TEST(FusionProvider, start_and_stop_of_updates_propagates_to_correct_providers)
+{
+    using namespace ::testing;
+
+    NiceMock<MockProvider> mp1, mp2, mp3;
+    EXPECT_CALL(mp1, start_position_updates()).Times(Exactly(1));
+    EXPECT_CALL(mp1, stop_position_updates()).Times(Exactly(1));
+    EXPECT_CALL(mp2, start_heading_updates()).Times(Exactly(1));
+    EXPECT_CALL(mp2, stop_heading_updates()).Times(Exactly(1));
+    EXPECT_CALL(mp3, start_velocity_updates()).Times(Exactly(1));
+    EXPECT_CALL(mp3, stop_velocity_updates()).Times(Exactly(1));
+
+    cul::Provider::Ptr p1{std::addressof(mp1), [](cul::Provider*){}};
+    cul::Provider::Ptr p2{std::addressof(mp2), [](cul::Provider*){}};
+    cul::Provider::Ptr p3{std::addressof(mp3), [](cul::Provider*){}};
+
+    cul::ProviderSelection selection{p1, p2, p3};
+    std::set<cul::Provider::Ptr> providers{p1, p2, p3};
+
+    //cul::FusionProvider pp{selection};
+    cul::FusionProvider fp{providers, std::make_shared<cul::NewerOrMoreAccurateUpdateSelector>()};
+
+    fp.start_position_updates();
+    fp.stop_position_updates();
+
+    fp.start_heading_updates();
+    fp.stop_heading_updates();
+
+    fp.start_velocity_updates();
+    fp.stop_velocity_updates();
+}
+
+TEST(FusionProvider, update_signals_are_routed_from_correct_providers)
+{
+    using namespace ::testing;
+
+    NiceMock<MockProvider> mp1, mp2, mp3;
+
+    cul::Provider::Ptr p1{std::addressof(mp1), [](cul::Provider*){}};
+    cul::Provider::Ptr p2{std::addressof(mp2), [](cul::Provider*){}};
+    cul::Provider::Ptr p3{std::addressof(mp3), [](cul::Provider*){}};
+
+    std::set<cul::Provider::Ptr> providers{p1, p2, p3};
+
+    cul::FusionProvider fp{providers, std::make_shared<cul::NewerOrMoreAccurateUpdateSelector>()};
+
+    NiceMock<MockEventConsumer> mec;
+    EXPECT_CALL(mec, on_new_position(_)).Times(1);
+    EXPECT_CALL(mec, on_new_velocity(_)).Times(1);
+    EXPECT_CALL(mec, on_new_heading(_)).Times(1);
+
+    fp.updates().position.connect([&mec](const cul::Update<cul::Position>& p){mec.on_new_position(p);});
+    fp.updates().heading.connect([&mec](const cul::Update<cul::Heading>& h){mec.on_new_heading(h);});
+    fp.updates().velocity.connect([&mec](const cul::Update<cul::Velocity>& v){mec.on_new_velocity(v);});
+
+    mp1.inject_update(cul::Update<cul::Position>());
+    mp2.inject_update(cul::Update<cul::Heading>());
+    mp3.inject_update(cul::Update<cul::Velocity>());
+}
+
+#include <com/ubuntu/location/clock.h>
+
+TEST(FusionProvider, more_timely_update_is_chosen)
+{
+    using namespace ::testing;
+
+    NiceMock<MockProvider> mp1, mp2;
+
+    cul::Provider::Ptr p1{std::addressof(mp1), [](cul::Provider*){}};
+    cul::Provider::Ptr p2{std::addressof(mp2), [](cul::Provider*){}};
+
+    std::set<cul::Provider::Ptr> providers{p1, p2};
+
+    cul::FusionProvider fp{providers, std::make_shared<cul::NewerOrMoreAccurateUpdateSelector>()};
+
+    cul::Update<cul::Position> before, after;
+    before.when = cul::Clock::now() - std::chrono::seconds(12);
+    before.value = cul::Position(cul::wgs84::Latitude(), cul::wgs84::Longitude(), cul::wgs84::Altitude(), cul::Position::Accuracy::Horizontal{50*cul::units::Meters});
+    after.when = cul::Clock::now();
+    after.value = cul::Position(cul::wgs84::Latitude(), cul::wgs84::Longitude(), cul::wgs84::Altitude(), cul::Position::Accuracy::Horizontal{500*cul::units::Meters});
+
+    NiceMock<MockEventConsumer> mec;
+    EXPECT_CALL(mec, on_new_position(before)).Times(1);
+    EXPECT_CALL(mec, on_new_position(after)).Times(1);
+
+    fp.updates().position.connect([&mec](const cul::Update<cul::Position>& p){mec.on_new_position(p);});
+
+    mp1.inject_update(before);
+    mp2.inject_update(after);
+
+}
+
+TEST(FusionProvider, more_accurate_update_is_chosen)
+{
+    using namespace ::testing;
+
+    NiceMock<MockProvider> mp1, mp2;
+
+    cul::Provider::Ptr p1{std::addressof(mp1), [](cul::Provider*){}};
+    cul::Provider::Ptr p2{std::addressof(mp2), [](cul::Provider*){}};
+
+    std::set<cul::Provider::Ptr> providers{p1, p2};
+
+    cul::FusionProvider fp{providers, std::make_shared<cul::NewerOrMoreAccurateUpdateSelector>()};
+
+    cul::Update<cul::Position> before, after;
+    before.when = cul::Clock::now() - std::chrono::seconds(5);
+    before.value = cul::Position(cul::wgs84::Latitude(), cul::wgs84::Longitude(), cul::wgs84::Altitude(), cul::Position::Accuracy::Horizontal{50*cul::units::Meters});
+    after.when = cul::Clock::now();
+    after.value = cul::Position(cul::wgs84::Latitude(), cul::wgs84::Longitude(), cul::wgs84::Altitude(), cul::Position::Accuracy::Horizontal{500*cul::units::Meters});
+
+    NiceMock<MockEventConsumer> mec;
+    // We should see the "older" position in two events
+    EXPECT_CALL(mec, on_new_position(before)).Times(2);
+
+    fp.updates().position.connect([&mec](const cul::Update<cul::Position>& p){mec.on_new_position(p);});
+
+    mp1.inject_update(before);
+    mp2.inject_update(after);
+
+}
