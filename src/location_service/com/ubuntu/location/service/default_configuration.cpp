@@ -20,7 +20,7 @@
 #include <com/ubuntu/location/service/trust_store_permission_manager.h>
 
 #include <com/ubuntu/location/engine.h>
-#include <com/ubuntu/location/non_selecting_provider_selection_policy.h>
+#include <com/ubuntu/location/fusion_provider_selection_policy.h>
 
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
@@ -39,7 +39,7 @@ cul::Engine::Ptr culs::DefaultConfiguration::the_engine(
 
 cul::ProviderSelectionPolicy::Ptr culs::DefaultConfiguration::the_provider_selection_policy()
 {
-    return std::make_shared<cul::NonSelectingProviderSelectionPolicy>();
+    return std::make_shared<cul::FusionProviderSelectionPolicy>();
 }
 
 std::set<cul::Provider::Ptr> culs::DefaultConfiguration::the_provider_set(
