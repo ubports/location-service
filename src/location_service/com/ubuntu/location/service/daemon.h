@@ -19,6 +19,7 @@
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_DAEMON_H_
 
 #include <com/ubuntu/location/configuration.h>
+#include <com/ubuntu/location/engine.h>
 #include <com/ubuntu/location/settings.h>
 
 #include <com/ubuntu/location/service/dbus_connection_factory.h>
@@ -162,6 +163,9 @@ struct Daemon
 
     /** @brief Pretty-prints the CLI's help text to the given output stream. */
     static void print_help(std::ostream& out);
+
+    /** @brief Instantiates and configures each provider selected in the config */
+    static void load_providers(const Configuration& config, std::shared_ptr<location::Engine> engine);
 
     /**
      * @brief Executes the daemon with the given configuration.

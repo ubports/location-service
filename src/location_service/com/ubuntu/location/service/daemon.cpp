@@ -109,6 +109,9 @@ location::service::Daemon::Configuration location::service::Daemon::Configuratio
 {
     location::service::Daemon::Configuration result;
 
+    // Make sure options are cleared between runs (needed for testing)
+    mutable_daemon_options().clear();
+
     if (!mutable_daemon_options().parse_from_command_line_args(argc, (const char**)argv))
         throw std::runtime_error{"Could not parse command-line, aborting..."};
 
@@ -169,6 +172,32 @@ void location::service::Daemon::print_help(std::ostream& out)
     mutable_daemon_options().print_help(out);
 }
 
+void location::service::Daemon::load_providers(const Configuration& config, std::shared_ptr<Engine> engine)
+{
+    for (const std::string& provider : config.providers)
+    {
+        std::cout << "Instantiating and configuring: " << provider << std::endl;
+
+        try
+        {
+            auto result = std::async(std::launch::async, [provider, config, engine] {
+                return location::ProviderFactory::instance().create_provider_for_name_with_config(
+                    provider,
+                    config.provider_options.count(provider) > 0 ?
+                        config.provider_options.at(provider) : location::Configuration {},
+                    [engine](Provider::Ptr provider)
+                    {
+                        engine->add_provider(provider);
+                    }
+                );
+            });
+        } catch(const std::runtime_error& e)
+        {
+            std::cerr << "Issue instantiating provider: " << e.what() << std::endl;
+        }
+    }
+}
+
 int location::service::Daemon::main(const location::service::Daemon::Configuration& config)
 {
     // Ensure that log files dating back to before the fix
@@ -200,28 +229,7 @@ int location::service::Daemon::main(const location::service::Daemon::Configurati
 
     location::service::DefaultConfiguration dc;
     auto engine = dc.the_engine(std::set<location::Provider::Ptr>{}, dc.the_provider_selection_policy(), config.settings);
-    for (const std::string& provider : config.providers)
-    {
-        std::cout << "Instantiating and configuring: " << provider << std::endl;
-
-        try
-        {
-            auto result = std::async(std::launch::async, [provider, config, engine] {
-                return location::ProviderFactory::instance().create_provider_for_name_with_config(
-                    provider,
-                    config.provider_options.count(provider) > 0 ?
-                        config.provider_options.at(provider) : location::Configuration {},
-                    [engine](Provider::Ptr provider)
-                    {
-                        engine->add_provider(provider);
-                    }
-                );
-            });
-        } catch(const std::runtime_error& e)
-        {
-            std::cerr << "Issue instantiating provider: " << e.what() << std::endl;
-        }
-    }
+    load_providers(config, engine);
 
     config.incoming->install_executor(dbus::asio::make_executor(config.incoming, runtime->service()));
     config.outgoing->install_executor(dbus::asio::make_executor(config.outgoing, runtime->service()));
