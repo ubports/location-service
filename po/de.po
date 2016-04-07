@@ -6,24 +6,26 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ubuntu-location-service\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-09-19 01:04+0200\n"
+"POT-Creation-Date: 2015-11-27 14:07+0100\n"
 "PO-Revision-Date: 2015-09-02 16:50+0000\n"
 "Last-Translator: Tobias Bannert <Unknown>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2015-09-03 05:38+0000\n"
-"X-Generator: Launchpad (build 17706)\n"
+"X-Launchpad-Export-Date: 2016-04-06 05:53+0000\n"
+"X-Generator: Launchpad (build 17972)\n"
 "Language: DE\n"
 
-#: /tmp/i18n/src/location_service/com/ubuntu/location/service/trust_store_permission_manager.cpp:170
-msgid "An unconfined application wants to access your current location."
+#: /home/tvoss/ubuntu/scratch/fix-prompt-string/src/location_service/com/ubuntu/location/service/trust_store_permission_manager.cpp:149
+msgid "wants to access your current location."
 msgstr ""
-"Eine Anwendung mit uneingeschränkten Zugriffsrechten auf Ihren aktuellen "
-"Standort zugreifen."
 
-#: /tmp/i18n/src/location_service/com/ubuntu/location/service/trust_store_permission_manager.cpp:173
 #, boost-format
-msgid "%1% wants to access your current location."
-msgstr "%1% will auf Ihren aktuellen Standort zugreifen."
+#~ msgid "%1% wants to access your current location."
+#~ msgstr "%1% will auf Ihren aktuellen Standort zugreifen."
+
+#~ msgid "An unconfined application wants to access your current location."
+#~ msgstr ""
+#~ "Eine Anwendung mit uneingeschränkten Zugriffsrechten möchte auf Ihren "
+#~ "aktuellen Standort zugreifen."

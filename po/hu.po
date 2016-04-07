@@ -7,23 +7,25 @@ msgid ""
 msgstr ""
 "Project-Id-Version: location-service\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
-"POT-Creation-Date: 2014-09-19 01:04+0200\n"
-"PO-Revision-Date: 2014-11-01 10:04+0000\n"
+"POT-Creation-Date: 2015-11-27 14:07+0100\n"
+"PO-Revision-Date: 2016-04-06 19:11+0000\n"
 "Last-Translator: Richard Somlói <ricsipontaz@gmail.com>\n"
 "Language-Team: Hungarian <hu@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2015-08-04 05:40+0000\n"
-"X-Generator: Launchpad (build 17656)\n"
+"X-Launchpad-Export-Date: 2016-04-07 05:56+0000\n"
+"X-Generator: Launchpad (build 17972)\n"
 
-#: /tmp/i18n/src/location_service/com/ubuntu/location/service/trust_store_permission_manager.cpp:170
-msgid "An unconfined application wants to access your current location."
-msgstr ""
-"Egy nem korlátozott alkalmazás szeretne hozzáférni az Ön jelenlegi "
-"helyzetéhez."
+#: /home/tvoss/ubuntu/scratch/fix-prompt-string/src/location_service/com/ubuntu/location/service/trust_store_permission_manager.cpp:149
+msgid "wants to access your current location."
+msgstr "hozzá szeretne férni a jelenlegi helyzetéhez."
 
-#: /tmp/i18n/src/location_service/com/ubuntu/location/service/trust_store_permission_manager.cpp:173
 #, boost-format
-msgid "%1% wants to access your current location."
-msgstr "%1% hozzá szeretne férni az Ön jelenlegi helyzetéhez."
+#~ msgid "%1% wants to access your current location."
+#~ msgstr "%1% hozzá szeretne férni az Ön jelenlegi helyzetéhez."
+
+#~ msgid "An unconfined application wants to access your current location."
+#~ msgstr ""
+#~ "Egy nem korlátozott alkalmazás szeretne hozzáférni az Ön jelenlegi "
+#~ "helyzetéhez."
