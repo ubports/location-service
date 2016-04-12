@@ -68,8 +68,8 @@ process "$dir/libubuntu-location-service.install.in" >"$dir/libubuntu-location-s
 process "$dir/libubuntu-location-service.install.with-gps.in" >"$dir/libubuntu-location-service${UBUNTU_LOCATION_SERVICE_SOVERSION}.install.with-gps"
 process "$dir/libubuntu-location-service-dev.install.in" >"$dir/libubuntu-location-service-dev.install"
 
-ln -vsf "$dir/libubuntu-location-service${UBUNTU_LOCATION_SERVICE_SOVERSION}.install.with-gps" "$dir/libubuntu-location-service${UBUNTU_LOCATION_SERVICE_SOVERSION}.install.amd64"
-ln -vsf "$dir/libubuntu-location-service${UBUNTU_LOCATION_SERVICE_SOVERSION}.install.with-gps" "$dir/libubuntu-location-service${UBUNTU_LOCATION_SERVICE_SOVERSION}.install.armhf"
-ln -vsf "$dir/libubuntu-location-service${UBUNTU_LOCATION_SERVICE_SOVERSION}.install.with-gps" "$dir/libubuntu-location-service${UBUNTU_LOCATION_SERVICE_SOVERSION}.install.i386"
+ln -vsf "libubuntu-location-service${UBUNTU_LOCATION_SERVICE_SOVERSION}.install.with-gps" "$dir/libubuntu-location-service${UBUNTU_LOCATION_SERVICE_SOVERSION}.install.amd64"
+ln -vsf "libubuntu-location-service${UBUNTU_LOCATION_SERVICE_SOVERSION}.install.with-gps" "$dir/libubuntu-location-service${UBUNTU_LOCATION_SERVICE_SOVERSION}.install.armhf"
+ln -vsf "libubuntu-location-service${UBUNTU_LOCATION_SERVICE_SOVERSION}.install.with-gps" "$dir/libubuntu-location-service${UBUNTU_LOCATION_SERVICE_SOVERSION}.install.i386"
 
 exit 0
