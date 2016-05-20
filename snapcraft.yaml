@@ -1,0 +1,89 @@
+name: location-service
+version: 0.0.1
+summary: Location service mediates access to positioning providers.
+description: Location service mediates access to positioning providers.
+apps:
+  location-service:
+    daemon: simple
+    command: bin/ubuntu-location-serviced --bus system --provider dummy::Provider
+    slots: [service, cli]
+  cli:
+    command: bin/ubuntu-location-serviced-cli
+    plugs: [cli]
+  example-client:
+    command: libexec/examples/client
+    plugs: [client]
+  example-service:
+    command: libexec/examples/service
+    plugs: [client]
+
+slots:
+    service:
+        interface: location-observe
+    cli:
+        interface: location-control
+plugs:
+    client:
+        interface: location-observe
+    cli:
+        interface: location-control
+
+parts:
+  location-service:
+    plugin: cmake
+    configflags:
+      - -DCMAKE_VERBOSE_MAKEFILE=ON
+      - -DSNAPPY_UBUNTU_CORE=yes
+    source: .
+    build-packages:
+      - curl
+      - doxygen
+      - gcc
+      - geoclue-ubuntu-geoip
+      - gettext
+      - google-mock
+      - graphviz
+      - g++
+      - libapparmor-dev
+      - libboost-filesystem-dev
+      - libboost-program-options-dev
+      - libboost-system-dev
+      - libc6-dev
+      - libdbus-1-dev
+      - libdbus-cpp-dev
+      - libgoogle-glog-dev
+      - libgtest-dev
+      - libiw-dev
+      - libjson-c-dev
+      - libnet-cpp-dev
+      - libprocess-cpp-dev
+      - libtrust-store-dev
+      - libproperties-cpp-dev
+      - libubuntu-platform-hardware-api-headers
+      - libubuntu-platform-hardware-api-dev
+      - trust-store-bin
+    stage-packages:
+      - libapparmor1
+      - libboost-filesystem1.58.0
+      - libboost-program-options1.58.0
+      - libboost-system1.58.0
+      - libdbus-cpp5
+      - libgflags2v5
+      - libgoogle-glog0v5
+      - libjson-c2
+      - libnet-cpp2
+      - libprocess-cpp3
+      - libtrust-store2
+      - libubuntu-platform-hardware-api3
+      - trust-store-bin
+    snap:
+      - bin/ubuntu-location-service-providerd
+      - bin/ubuntu-location-serviced
+      - bin/ubuntu-location-serviced-cli
+      - etc/dbus-1/system.d
+      - etc/gps.conf
+      - lib/libubuntu-location-service*
+      - lib/
+      - usr/lib/
+      - share/ubuntu-location-service
+      - libexec/
