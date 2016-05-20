@@ -13,9 +13,6 @@ apps:
   example-client:
     command: libexec/examples/client
     plugs: [client]
-  example-service:
-    command: libexec/examples/service
-    plugs: [client]
 
 slots:
     service:
