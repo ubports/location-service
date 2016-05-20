@@ -18,6 +18,7 @@
 #ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_INTERFACE_H_
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_INTERFACE_H_
 
+#include <com/ubuntu/location/service/state.h>
 #include <com/ubuntu/location/service/session/interface.h>
 
 #include <com/ubuntu/location/space_vehicle.h>
@@ -87,6 +88,23 @@ class Interface
 
     struct Properties
     {
+        struct State
+        {
+            inline static const std::string& name()
+            {
+                static const std::string s
+                {
+                    "State"
+                };
+                return s;
+            }
+
+            typedef com::ubuntu::location::service::Interface Interface;
+            typedef com::ubuntu::location::service::State ValueType;
+            static const bool readable = true;
+            static const bool writable = true;
+        };
+
         struct DoesSatelliteBasedPositioning
         {
             inline static const std::string& name()
@@ -174,6 +192,12 @@ class Interface
     Interface(const Interface&) = delete;
     Interface& operator=(const Interface&) = delete;
     virtual ~Interface() = default;
+
+    /**
+      * @brief The overall state of the service.
+      * @return a getable/observable property.
+      */
+    virtual const core::Property<State>& state() const = 0;
 
     /**
      * @brief Whether the service uses satellite-based positioning.

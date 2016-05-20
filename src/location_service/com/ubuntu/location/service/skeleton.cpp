@@ -73,6 +73,7 @@ culs::Skeleton::Skeleton(const culs::Skeleton::Configuration& configuration)
       properties_changed(object->get_signal<core::dbus::interfaces::Properties::Signals::PropertiesChanged>()),
       properties
       {
+          object->get_property<culs::Interface::Properties::State>(),
           object->get_property<culs::Interface::Properties::DoesSatelliteBasedPositioning>(),
           object->get_property<culs::Interface::Properties::DoesReportCellAndWifiIds>(),
           object->get_property<culs::Interface::Properties::IsOnline>(),
@@ -80,6 +81,10 @@ culs::Skeleton::Skeleton(const culs::Skeleton::Configuration& configuration)
       },
       connections
       {
+          properties.state->changed().connect([this](State state)
+          {
+              on_state_changed(state);
+          }),
           properties.does_satellite_based_positioning->changed().connect([this](bool value)
           {
               on_does_satellite_based_positioning_changed(value);
@@ -103,6 +108,11 @@ culs::Skeleton::Skeleton(const culs::Skeleton::Configuration& configuration)
 culs::Skeleton::~Skeleton() noexcept
 {
     object->uninstall_method_handler<culs::Interface::CreateSessionForCriteria>();
+}
+
+core::Property<culs::State>& culs::Skeleton::mutable_state()
+{
+    return *properties.state;
 }
 
 void culs::Skeleton::handle_create_session_for_criteria(const dbus::Message::Ptr& in)
@@ -208,6 +218,24 @@ void culs::Skeleton::remove_from_session_store_for_path(const core::dbus::types:
     session_store.erase(path);
 }
 
+void culs::Skeleton::on_state_changed(culs::State state)
+{
+    std::map<std::string, core::dbus::types::Variant> dict
+    {
+        {
+            culs::Interface::Properties::State::name(),
+            core::dbus::types::Variant::encode(state)
+        }
+    };
+
+    properties_changed->emit(
+                std::tie(
+                    core::dbus::traits::Service<culs::Interface>::interface_name(),
+                    dict,
+                    the_empty_array_of_invalidated_properties()));
+}
+
+
 void culs::Skeleton::on_does_satellite_based_positioning_changed(bool value)
 {
     std::map<std::string, core::dbus::types::Variant> dict
@@ -256,6 +284,11 @@ void culs::Skeleton::on_is_online_changed(bool value)
                 core::dbus::traits::Service<culs::Interface>::interface_name(),
                 dict,
                 the_empty_array_of_invalidated_properties()));
+}
+
+const core::Property<culs::State>& culs::Skeleton::state() const
+{
+    return *properties.state;
 }
 
 core::Property<bool>& culs::Skeleton::does_satellite_based_positioning()

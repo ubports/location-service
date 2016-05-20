@@ -25,6 +25,7 @@
 #include <com/ubuntu/location/space_vehicle.h>
 #include <com/ubuntu/location/update.h>
 #include <com/ubuntu/location/velocity.h>
+#include <com/ubuntu/location/service/state.h>
 #include <com/ubuntu/location/units/units.h>
 #include <com/ubuntu/location/wgs84/altitude.h>
 #include <com/ubuntu/location/wgs84/latitude.h>
@@ -32,10 +33,54 @@
 
 #include <core/dbus/codec.h>
 
+#include <sstream>
+
 namespace core
 {
 namespace dbus
 {
+namespace helper
+{
+template<>
+struct TypeMapper<com::ubuntu::location::service::State>
+{
+    constexpr static ArgumentType type_value()
+    {
+        return ArgumentType::string;
+    }
+
+    constexpr static bool is_basic_type()
+    {
+        return true;
+    }
+    constexpr static bool requires_signature()
+    {
+        return false;
+    }
+
+    static std::string signature()
+    {
+        static const std::string s = TypeMapper<std::string>::signature();
+        return s;
+    }
+};
+}
+
+template<>
+struct Codec<com::ubuntu::location::service::State>
+{
+    static void encode_argument(Message::Writer& writer, const com::ubuntu::location::service::State& in)
+    {
+        std::stringstream ss; ss << in; auto s = ss.str();
+        writer.push_stringn(s.c_str(), s.size());
+    }
+
+    static void decode_argument(Message::Reader& reader, com::ubuntu::location::service::State& in)
+    {
+        auto s = reader.pop_string();
+        std::stringstream ss{s}; ss >> in;
+    }
+};
 namespace helper
 {
 template<typename T>

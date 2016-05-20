@@ -40,6 +40,8 @@ class Stub : public core::dbus::Stub<Interface>
     ~Stub() noexcept;
 
     session::Interface::Ptr create_session_for_criteria(const Criteria& criteria);
+
+    const core::Property<State>& state() const;
     core::Property<bool>& does_satellite_based_positioning();
     core::Property<bool>& does_report_cell_and_wifi_ids();
     core::Property<bool>& is_online();    
