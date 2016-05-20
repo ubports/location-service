@@ -63,6 +63,8 @@ struct Daemon
         {
             /** @brief Marks the unknown property. */
             unknown,
+            /** @brief State describes the overall state of the service. */
+            state,
             /** @brief Indicates whether the positioning engine is online. */
             is_online,
             /** @brief Indicates whether the positioning engine uses satellite-based positioning. */
@@ -82,6 +84,7 @@ struct Daemon
              * --help                    Produces this help message
              * --property arg (=unknown) Property to set/get from a running service, known
                                          properties are:
+                                            state [get]
                                             is_online [get/set]
                                             does_satellite_based_positioning [get/set]
                                             does_report_wifi_and_cell_ids [get/set]
