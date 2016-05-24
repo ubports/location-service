@@ -190,7 +190,7 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
                         item.get(Reporter::Json::lon).to_double());
 
             auto wifis = item.get(Reporter::Json::wifi);
-            EXPECT_EQ(1u, wifis.array_size());
+            EXPECT_EQ(1u, wifis.array_size());            
 
             auto wifi = wifis.get_object_for_index(0);
             EXPECT_EQ(ref_bssid.get(), wifi.get(Reporter::Json::Wifi::key).to_string());
@@ -213,7 +213,7 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
 
     core::posix::ChildProcess server = core::posix::fork(
                 std::bind(testing::a_web_server(web_server_configuration), cps),
-                core::posix::StandardStream::empty);
+                core::posix::StandardStream::empty);    
 
     using namespace ::testing;
 
@@ -224,6 +224,8 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
     ON_CALL(*wireless_network, mode()).WillByDefault(ReturnRef(ref_mode));
     ON_CALL(*wireless_network, frequency()).WillByDefault(ReturnRef(ref_frequency));
     ON_CALL(*wireless_network, signal_strength()).WillByDefault(ReturnRef(ref_strength));
+
+    cps.wait_for_signal_ready_for(std::chrono::seconds{2});
 
     location::service::ichnaea::Reporter::Configuration config
     {
@@ -237,7 +239,7 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
     reporter.start();
     reporter.report(reference_position_update, {wireless_network}, {ref_cell});
 
-    cps.wait_for_signal_ready_for(std::chrono::seconds{2});
+    std::this_thread::sleep_for(std::chrono::milliseconds{500});
 
     server.send_signal_or_throw(core::posix::Signal::sig_term);
     auto result = server.wait_for(core::posix::wait::Flags::untraced);

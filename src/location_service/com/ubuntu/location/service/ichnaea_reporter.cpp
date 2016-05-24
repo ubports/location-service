@@ -122,8 +122,12 @@ std::int64_t Object::to_int64() const
 
 double Object::to_double() const
 {
-    throw_if_type_mismatch<json_type_double>(object);
-    return json_object_get_double(object);
+    if (json_object_is_type(object, json_type_double))
+        return json_object_get_double(object);
+    if (json_object_is_type(object, json_type_int))
+        return json_object_get_int(object);
+
+    throw std::logic_error{"Type mismatch"};
 }
 
 std::string Object::to_string() const
