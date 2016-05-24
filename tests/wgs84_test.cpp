@@ -23,6 +23,8 @@
 
 #include <gtest/gtest.h>
 
+#include <random>
+
 TEST(Latitude, constructing_a_latitude_with_invalid_value_throws)
 {
     static const double min_value = com::ubuntu::location::wgs84::CoordinateTraits<com::ubuntu::location::wgs84::Latitude>::min();

@@ -24,6 +24,8 @@
 #include <core/net/http/request.h>
 #include <core/net/http/response.h>
 
+#include <random>
+
 namespace com { namespace ubuntu { namespace location { namespace providers { namespace gps { namespace android {
 struct NetCppGpsXtraDownloader : public GpsXtraDownloader
 {
