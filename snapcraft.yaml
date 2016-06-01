@@ -5,14 +5,18 @@ description: Location service mediates access to positioning providers.
 apps:
   location-service:
     daemon: simple
-    command: bin/ubuntu-location-serviced --bus system --provider dummy::Provider
+    command: bin/ubuntu-location-serviced --bus system --provider geoclue::Provider GLOG_v=100
     slots: [service, cli]
+    plugs: [network-manager]
   cli:
     command: bin/ubuntu-location-serviced-cli
     plugs: [cli]
   example-client:
     command: libexec/examples/client
     plugs: [client]
+  example-service:
+    command: libexec/examples/service
+    plugs: [client, network-manager]
 
 slots:
     service:
@@ -60,6 +64,7 @@ parts:
       - libubuntu-platform-hardware-api-dev
       - trust-store-bin
     stage-packages:
+      - geoclue-ubuntu-geoip
       - libapparmor1
       - libboost-filesystem1.58.0
       - libboost-program-options1.58.0
@@ -72,15 +77,15 @@ parts:
       - libprocess-cpp3
       - libtrust-store2
       - libubuntu-platform-hardware-api3
-      - trust-store-bin
     snap:
       - bin/ubuntu-location-service-providerd
       - bin/ubuntu-location-serviced
       - bin/ubuntu-location-serviced-cli
       - etc/dbus-1/system.d
       - etc/gps.conf
-      - lib/libubuntu-location-service*
       - lib/
-      - usr/lib/
-      - share/ubuntu-location-service
+      - lib/libubuntu-location-service*
       - libexec/
+      - share/ubuntu-location-service
+      - usr/lib/
+      - usr/share/geoclue-providers

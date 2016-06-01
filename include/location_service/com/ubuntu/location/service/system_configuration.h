@@ -46,11 +46,11 @@ public:
     
     // runtime_data_dir returns the path to the directory the service should
     // use to store runtime persistent data.
-    virtual fs::path runtime_persistent_data_dir() = 0;
+    virtual fs::path runtime_persistent_data_dir() const = 0;
     
     // create_permission_manager returns an instance of PermissionManager that 
     // is meant to be used by the service to verify incoming connection requests.
-    virtual PermissionManager::Ptr create_permission_manager(const std::shared_ptr<core::dbus::Bus>& bus) = 0;
+    virtual PermissionManager::Ptr create_permission_manager(const std::shared_ptr<core::dbus::Bus>& bus) const = 0;
     
 protected:
     SystemConfiguration() = default;

@@ -21,19 +21,32 @@
 #include <com/ubuntu/location/service/always_granting_permission_manager.h>
 #include <com/ubuntu/location/service/trust_store_permission_manager.h>
 
+#include <com/ubuntu/location/logging.h>
+
+#include <core/posix/this_process.h>
+
 namespace culs = com::ubuntu::location::service;
+namespace env = core::posix::this_process::env;
 
 #if defined(SNAPPY_UBUNTU_CORE)
 namespace
 {
 struct SnappySystemConfiguration : public culs::SystemConfiguration
 {
-    fs::path runtime_persistent_data_dir()
+    fs::path runtime_persistent_data_dir() const
     {
-        return std::getenv("SNAP_DATA");
+        if (std::string data_dir = env::get("SNAP_DATA")) {
+            return data_dir;
+        } else {
+            LOG(WARNING) << "SNAP_DATA environment variable is not defined.";
+
+            // If SNAP_DATA isn't set it's almost certain we're not running
+            // from a snap, so return the conventional path
+            return "/var/lib/ubuntu-location-service";
+        }
     }
     
-    culs::PermissionManager::Ptr create_permission_manager(const std::shared_ptr<core::dbus::Bus>&)
+    culs::PermissionManager::Ptr create_permission_manager(const std::shared_ptr<core::dbus::Bus>&) const
     {
         return std::make_shared<culs::AlwaysGrantingPermissionManager>();
     }
@@ -50,12 +63,12 @@ namespace
 {
 struct UbuntuSystemConfiguration : public culs::SystemConfiguration
 {
-    fs::path runtime_persistent_data_dir()
+    fs::path runtime_persistent_data_dir() const
     {
         return "/var/lib/ubuntu-location-service";
     }
     
-    culs::PermissionManager::Ptr create_permission_manager(const std::shared_ptr<core::dbus::Bus>& bus)
+    culs::PermissionManager::Ptr create_permission_manager(const std::shared_ptr<core::dbus::Bus>& bus) const
     {
         return culs::TrustStorePermissionManager::create_default_instance_with_bus(bus);
     }    
