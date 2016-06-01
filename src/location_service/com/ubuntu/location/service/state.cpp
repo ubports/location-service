@@ -56,7 +56,7 @@ bool culs::operator==(culs::State lhs, culs::State rhs)
 
 bool culs::operator!=(culs::State lhs, culs::State rhs)
 {
-    return static_cast<UT>(lhs) == static_cast<UT>(rhs);
+    return static_cast<UT>(lhs) != static_cast<UT>(rhs);
 }
 
 std::ostream& culs::operator<<(std::ostream& out, culs::State state)
