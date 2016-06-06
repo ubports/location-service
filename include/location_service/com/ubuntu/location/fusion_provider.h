@@ -49,6 +49,7 @@ public:
 
 private:
     Optional<Update<Position>> last_position;
+    Optional<std::string> last_provider;
     std::set<Provider::Ptr> providers;
     std::vector<core::ScopedConnection> connections;
 };

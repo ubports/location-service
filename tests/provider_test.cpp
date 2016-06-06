@@ -350,11 +350,18 @@ TEST(FusionProvider, update_signals_are_routed_from_correct_providers)
 
 #include <com/ubuntu/location/clock.h>
 
+// Need to define a new type here since behavior now depends on the type
+
+struct MockProvider2 : public MockProvider
+{
+};
+
 TEST(FusionProvider, more_timely_update_is_chosen)
 {
     using namespace ::testing;
 
-    NiceMock<MockProvider> mp1, mp2;
+    NiceMock<MockProvider> mp1;
+    NiceMock<MockProvider2> mp2;
 
     cul::Provider::Ptr p1{std::addressof(mp1), [](cul::Provider*){}};
     cul::Provider::Ptr p2{std::addressof(mp2), [](cul::Provider*){}};
@@ -384,7 +391,8 @@ TEST(FusionProvider, more_accurate_update_is_chosen)
 {
     using namespace ::testing;
 
-    NiceMock<MockProvider> mp1, mp2;
+    NiceMock<MockProvider> mp1;
+    NiceMock<MockProvider2> mp2;
 
     cul::Provider::Ptr p1{std::addressof(mp1), [](cul::Provider*){}};
     cul::Provider::Ptr p2{std::addressof(mp2), [](cul::Provider*){}};
@@ -408,4 +416,34 @@ TEST(FusionProvider, more_accurate_update_is_chosen)
     mp1.inject_update(before);
     mp2.inject_update(after);
 
+}
+
+TEST(FusionProvider, update_from_same_provider_is_chosen)
+{
+    using namespace ::testing;
+
+    NiceMock<MockProvider> mp1;
+
+    cul::Provider::Ptr p1{std::addressof(mp1), [](cul::Provider*){}};
+
+    std::set<cul::Provider::Ptr> providers{p1};
+
+    cul::FusionProvider fp{providers, std::make_shared<cul::NewerOrMoreAccurateUpdateSelector>()};
+
+    cul::Update<cul::Position> before, after;
+    before.when = cul::Clock::now() - std::chrono::seconds(5);
+    before.value = cul::Position(cul::wgs84::Latitude(), cul::wgs84::Longitude(), cul::wgs84::Altitude(), cul::Position::Accuracy::Horizontal{50*cul::units::Meters});
+    after.when = cul::Clock::now();
+    after.value = cul::Position(cul::wgs84::Latitude(), cul::wgs84::Longitude(), cul::wgs84::Altitude(), cul::Position::Accuracy::Horizontal{500*cul::units::Meters});
+
+    NiceMock<MockEventConsumer> mec;
+    // We should see the newer" position even though it's less accurate since
+    // it came from the same source
+    EXPECT_CALL(mec, on_new_position(before)).Times(1);
+    EXPECT_CALL(mec, on_new_position(after)).Times(1);
+
+    fp.updates().position.connect([&mec](const cul::Update<cul::Position>& p){mec.on_new_position(p);});
+
+    mp1.inject_update(before);
+    mp1.inject_update(after);
 }
