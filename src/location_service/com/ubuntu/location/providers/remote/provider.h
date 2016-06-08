@@ -92,7 +92,6 @@ struct Provider
 
         struct Private;
         std::shared_ptr<Private> d;
-        std::string dbus_name;
     };
 
     class Skeleton : public com::ubuntu::location::Provider
