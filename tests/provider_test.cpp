@@ -437,7 +437,7 @@ TEST(FusionProvider, update_from_same_provider_is_chosen)
     after.value = cul::Position(cul::wgs84::Latitude(), cul::wgs84::Longitude(), cul::wgs84::Altitude(), cul::Position::Accuracy::Horizontal{500*cul::units::Meters});
 
     NiceMock<MockEventConsumer> mec;
-    // We should see the newer" position even though it's less accurate since
+    // We should see the "newer" position even though it's less accurate since
     // it came from the same source
     EXPECT_CALL(mec, on_new_position(before)).Times(1);
     EXPECT_CALL(mec, on_new_position(after)).Times(1);
