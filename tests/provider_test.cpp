@@ -350,18 +350,11 @@ TEST(FusionProvider, update_signals_are_routed_from_correct_providers)
 
 #include <com/ubuntu/location/clock.h>
 
-// Need to define a new type here since behavior now depends on the type
-
-struct MockProvider2 : public MockProvider
-{
-};
-
 TEST(FusionProvider, more_timely_update_is_chosen)
 {
     using namespace ::testing;
 
-    NiceMock<MockProvider> mp1;
-    NiceMock<MockProvider2> mp2;
+    NiceMock<MockProvider> mp1, mp2;
 
     cul::Provider::Ptr p1{std::addressof(mp1), [](cul::Provider*){}};
     cul::Provider::Ptr p2{std::addressof(mp2), [](cul::Provider*){}};
@@ -391,8 +384,7 @@ TEST(FusionProvider, more_accurate_update_is_chosen)
 {
     using namespace ::testing;
 
-    NiceMock<MockProvider> mp1;
-    NiceMock<MockProvider2> mp2;
+    NiceMock<MockProvider> mp1, mp2;
 
     cul::Provider::Ptr p1{std::addressof(mp1), [](cul::Provider*){}};
     cul::Provider::Ptr p2{std::addressof(mp2), [](cul::Provider*){}};
