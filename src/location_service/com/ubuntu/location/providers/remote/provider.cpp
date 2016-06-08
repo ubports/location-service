@@ -480,12 +480,6 @@ void remote::Provider::Stub::stop_velocity_updates()
     VLOG(10) << "< " << __PRETTY_FUNCTION__;
 }
 
-std::string remote::Provider::Stub::get_dbus_path()
-{
-    VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    return d->object->path().as_string();
-}
-
 struct remote::Provider::Skeleton::Private
 {
     Private(const remote::skeleton::Configuration& config)

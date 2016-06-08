@@ -78,9 +78,6 @@ struct Provider
         virtual void start_velocity_updates() override;
         virtual void stop_velocity_updates() override;
 
-        // Returns the name of the remote provider on the bus (useful for fusioning)
-        std::string get_dbus_path();
-
     private:
         Stub(const stub::Configuration& config);
 
