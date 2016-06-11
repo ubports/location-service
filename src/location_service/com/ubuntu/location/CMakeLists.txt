@@ -35,6 +35,7 @@ add_library(
   proxy_provider.cpp
   satellite_based_positioning_state.cpp
   settings.cpp
+  state_tracking_provider.h
   time_based_update_policy.cpp
   set_name_for_thread.cpp
   time_since_boot.cpp
