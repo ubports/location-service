@@ -93,6 +93,7 @@ LOCATION_SERVICE_ADD_TEST(provider_test provider_test.cpp)
 LOCATION_SERVICE_ADD_TEST(wgs84_test wgs84_test.cpp)
 LOCATION_SERVICE_ADD_TEST(trust_store_permission_manager_test trust_store_permission_manager_test.cpp)
 LOCATION_SERVICE_ADD_TEST(runtime_test runtime_test.cpp)
+LOCATION_SERVICE_ADD_TEST(state_tracking_provider_test state_tracking_provider_test.cpp)
 
 # Provider-specific test-cases go here.
 if (LOCATION_SERVICE_ENABLE_GPS_PROVIDER)
