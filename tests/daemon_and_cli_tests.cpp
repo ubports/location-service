@@ -122,6 +122,16 @@ std::function<core::posix::exit::Status ()> adjusting_cli_for_property(
 }
 }
 
+TEST_F(DaemonAndCli, QueryingStatePropertyWorks)
+{
+    EXPECT_EQ(core::testing::ForkAndRunResult::empty,
+              core::testing::fork_and_run(
+                  testing_daemon(*this),
+                  querying_cli_for_property(
+                      location::service::Daemon::Cli::Property::state,
+                      *this)));
+}
+
 TEST_F(DaemonAndCli, QueryingIsOnlinePropertyWorks)
 {
     EXPECT_EQ(core::testing::ForkAndRunResult::empty,

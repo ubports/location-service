@@ -34,6 +34,7 @@ struct culs::Stub::Private
             const dbus::Object::Ptr& object)
         : bus(connection),
           object(object),
+          state(object->get_property<culs::Interface::Properties::State>()),
           does_satellite_based_positioning(object->get_property<culs::Interface::Properties::DoesSatelliteBasedPositioning>()),
           does_report_cell_and_wifi_ids(object->get_property<culs::Interface::Properties::DoesReportCellAndWifiIds>()),
           is_online(object->get_property<culs::Interface::Properties::IsOnline>()),
@@ -43,6 +44,7 @@ struct culs::Stub::Private
 
     dbus::Bus::Ptr bus;
     dbus::Object::Ptr object;
+    std::shared_ptr<dbus::Property<culs::Interface::Properties::State>> state;
     std::shared_ptr<dbus::Property<culs::Interface::Properties::DoesSatelliteBasedPositioning>> does_satellite_based_positioning;
     std::shared_ptr<dbus::Property<culs::Interface::Properties::DoesReportCellAndWifiIds>> does_report_cell_and_wifi_ids;
     std::shared_ptr<dbus::Property<culs::Interface::Properties::IsOnline>> is_online;
@@ -72,6 +74,11 @@ culss::Interface::Ptr culs::Stub::create_session_for_criteria(const cul::Criteri
     }
 
     return culss::Interface::Ptr(new culss::Stub{d->bus, op.value()});
+}
+
+const core::Property<culs::State>& culs::Stub::state() const
+{
+    return *d->state;
 }
 
 core::Property<bool>& culs::Stub::does_satellite_based_positioning()

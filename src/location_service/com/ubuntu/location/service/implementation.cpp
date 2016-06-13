@@ -98,9 +98,21 @@ culs::Implementation::Implementation(const culs::Implementation::Configuration& 
           configuration.engine->configuration.engine_state.changed().connect(
               [this](Engine::Status status)
               {
-                  is_online() =
-                          status == Engine::Status::on ||
-                          status == Engine::Status::active;
+                  switch (status)
+                  {
+                      case Engine::Status::off:
+                          is_online() = false;
+                          mutable_state() = State::disabled;
+                          break;
+                      case Engine::Status::on:
+                          is_online() = true;
+                          mutable_state() = State::enabled;
+                          break;
+                      case Engine::Status::active:
+                          is_online() = true;
+                          mutable_state() = State::active;
+                          break;
+                  }
               }),
           configuration.engine->configuration.satellite_based_positioning_state.changed().connect(
               [this](cul::SatelliteBasedPositioningState state)
@@ -132,9 +144,22 @@ culs::Implementation::Implementation(const culs::Implementation::Configuration& 
     if (!configuration.permission_manager)
         throw std::runtime_error("Cannot create service for null permission manager.");
 
-    is_online() =
-            configuration.engine->configuration.engine_state == Engine::Status::on ||
-            configuration.engine->configuration.engine_state == Engine::Status::active;
+    switch (configuration.engine->configuration.engine_state)
+    {
+        case Engine::Status::off:
+            is_online() = false;
+            mutable_state() = State::disabled;
+            break;
+        case Engine::Status::on:
+            is_online() = true;
+            mutable_state() = State::enabled;
+            break;
+          case Engine::Status::active:
+            is_online() = true;
+            mutable_state() = State::active;
+            break;
+    };
+
     does_report_cell_and_wifi_ids() =
             configuration.engine->configuration.wifi_and_cell_id_reporting_state ==
             cul::WifiAndCellIdReportingState::on;
