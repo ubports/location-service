@@ -19,6 +19,7 @@
 
 #include <com/ubuntu/location/logging.h>
 #include <com/ubuntu/location/provider_selection_policy.h>
+#include <com/ubuntu/location/state_tracking_provider.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -138,15 +139,12 @@ cul::ProviderSelection cul::Engine::determine_provider_selection_for_criteria(co
     return provider_selection_policy->determine_provider_selection_for_criteria(criteria, *this);
 }
 
-bool cul::Engine::has_provider(const cul::Provider::Ptr& provider) noexcept
+void cul::Engine::add_provider(const cul::Provider::Ptr& impl)
 {
-    return providers.count(provider) > 0;
-}
-
-void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
-{
-    if (!provider)
+    if (!impl)
         throw std::runtime_error("Cannot add null provider");
+
+    auto provider = std::make_shared<StateTrackingProvider>(impl);
 
     // We synchronize to the engine state.
     if (provider->requires(Provider::Requirements::satellites) && configuration.satellite_based_positioning_state == SatelliteBasedPositioningState::off)
@@ -207,24 +205,24 @@ void cul::Engine::add_provider(const cul::Provider::Ptr& provider)
         updates.last_known_location = update_policy->verify_update(src);
     });
 
-    std::lock_guard<std::mutex> lg(guard);
-    providers.emplace(provider, std::move(ProviderConnections{cp, ch, cv, cr, cs, cpr}));
-}
-
-void cul::Engine::remove_provider(const cul::Provider::Ptr& provider) noexcept
-{
-    std::lock_guard<std::mutex> lg(guard);
-
-    auto it = providers.find(provider);
-    if (it != providers.end())
+    auto cps = provider->state().changed().connect([this](const StateTrackingProvider::State&)
     {
-        providers.erase(it);
-    }
+        bool is_any_active = false;
+
+        std::lock_guard<std::recursive_mutex> lg(guard);
+        for (const auto& pair : providers)
+            is_any_active = pair.first->state() == StateTrackingProvider::State::active;
+
+        configuration.engine_state = is_any_active ? Engine::Status::active : Engine::Status::on;
+    });
+
+    std::lock_guard<std::recursive_mutex> lg(guard);
+    providers.emplace(provider, std::move(ProviderConnections{cp, ch, cv, cr, cs, cpr, cps}));
 }
 
 void cul::Engine::for_each_provider(const std::function<void(const Provider::Ptr&)>& enumerator) const noexcept
 {
-    std::lock_guard<std::mutex> lg(guard);
+    std::lock_guard<std::recursive_mutex> lg(guard);
     for (const auto& provider : providers)
     {
         try
