@@ -1,3 +1,10 @@
+location-service (3.0.0+16.10.20160613.1-0ubuntu1) yakkety; urgency=medium
+
+  [ Thomas Voß ]
+  * Expose service::State to the bus. (LP: #1536774)
+
+ -- marcus.tomlinson@canonical.com <marcus.tomlinson@canonical.com>  Mon, 13 Jun 2016 13:38:47 +0000
+
 location-service (3.0.0+16.10.20160524.3-0ubuntu1) yakkety; urgency=medium
 
   [ CI Train Bot ]
