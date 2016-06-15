@@ -1,0 +1,29 @@
+# Corsican translation for location-service
+# Copyright (c) 2016 Rosetta Contributors and Canonical Ltd 2016
+# This file is distributed under the same license as the location-service package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: location-service\n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2015-11-27 14:07+0100\n"
+"PO-Revision-Date: 2016-06-14 11:56+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Corsican <co@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Launchpad-Export-Date: 2016-06-15 06:19+0000\n"
+"X-Generator: Launchpad (build 18097)\n"
+
+#: /home/tvoss/ubuntu/scratch/fix-prompt-string/src/location_service/com/ubuntu/location/service/trust_store_permission_manager.cpp:149
+msgid "wants to access your current location."
+msgstr ""
+
+#, boost-format
+#~ msgid "%1% wants to access your current location."
+#~ msgstr "%1% vole accede à a to lucalità attuale"
+
+#~ msgid "An unconfined application wants to access your current location."
+#~ msgstr "Un'applicazione micca cunfirmata vole accede à a to lucalità attuale"
