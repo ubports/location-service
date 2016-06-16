@@ -48,7 +48,7 @@ public:
     void stop_velocity_updates() override;
 
 private:
-    Optional<Update<Position>> last_position;
+    Optional<WithSource<Update<Position>>> last_position;
     std::set<Provider::Ptr> providers;
     std::vector<core::ScopedConnection> connections;
 };

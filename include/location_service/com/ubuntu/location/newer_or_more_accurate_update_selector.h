@@ -31,23 +31,28 @@ class NewerOrMoreAccurateUpdateSelector : public UpdateSelector
 public:
     typedef std::shared_ptr<NewerOrMoreAccurateUpdateSelector> Ptr;
 
-    Update<Position> select(const Update<Position>& older,
-                            const Update<Position>& newer) override
+    WithSource<Update<Position>> select(const WithSource<Update<Position>>& older,
+                                        const WithSource<Update<Position>>& newer) override
     {
         // Basically copied this value from the Android fusion provider
         static const std::chrono::seconds cutoff(11);
 
+        // If the new position is from the same source as the old one then just use it
+        if (newer.source == older.source) {
+            return newer;
+        }
+
         // If the new position is newer by a significant margin then just use it
-        if (newer.when > older.when + cutoff) {
+        if (newer.value.when > older.value.when + cutoff) {
             return newer;
         }
 
         // Choose the position with the smaller accuracy circle if both have them
-        if (!older.value.accuracy.horizontal)
+        if (!older.value.value.accuracy.horizontal)
             return newer;
-        if (!newer.value.accuracy.horizontal)
+        if (!newer.value.value.accuracy.horizontal)
             return older;
-        if (newer.value.accuracy.horizontal < older.value.accuracy.horizontal)
+        if (newer.value.value.accuracy.horizontal < older.value.value.accuracy.horizontal)
             return newer;
         else
             return older;
