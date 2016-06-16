@@ -27,6 +27,10 @@ namespace ubuntu
 {
 namespace location
 {
+
+template<typename T>
+struct WithSource { std::shared_ptr<Provider> source; T value; };
+
 class UpdateSelector
 {
 public:
@@ -36,8 +40,8 @@ public:
     UpdateSelector& operator=(const UpdateSelector&) = delete;
     virtual ~UpdateSelector() = default;
 
-    virtual Update<Position> select(const Update<Position>& older,
-                                    const Update<Position>& newer) = 0;
+    virtual WithSource<Update<Position>> select(const WithSource<Update<Position>>& older,
+                                                const WithSource<Update<Position>>& newer) = 0;
 
 protected:
     UpdateSelector() = default;
