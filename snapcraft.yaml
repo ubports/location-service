@@ -2,10 +2,14 @@ name: location-service
 version: 0.0.1
 summary: Location service mediates access to positioning providers.
 description: Location service mediates access to positioning providers.
+  **Note** Currently only the dummy provider is supported in this snap. Additional
+  providers will be made available in the near future.
+
+
 apps:
   location-service:
     daemon: simple
-    command: bin/ubuntu-location-serviced --bus system --provider geoclue::Provider GLOG_v=100
+    command: bin/ubuntu-location-serviced --bus system --provider dummy::Provider
     slots: [service, cli]
     plugs: [network-manager]
   cli:
@@ -14,9 +18,6 @@ apps:
   example-client:
     command: libexec/examples/client
     plugs: [client]
-  example-service:
-    command: libexec/examples/service
-    plugs: [client, network-manager]
 
 slots:
     service:
