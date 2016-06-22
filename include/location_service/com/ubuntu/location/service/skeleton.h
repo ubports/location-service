@@ -111,11 +111,15 @@ public:
     ~Skeleton() noexcept;
 
     // From com::ubuntu::location::service::Interface
+    const core::Property<State>& state() const;
     core::Property<bool>& does_satellite_based_positioning();
     core::Property<bool>& does_report_cell_and_wifi_ids();
     core::Property<bool>& is_online();
     core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles();
 
+protected:
+    // Enable subclasses to alter the state.
+    core::Property<State>& mutable_state();
 private:
     // Handles incoming message calls for create_session_for_criteria.
     // Dispatches to the actual implementation, and manages object lifetimes.
@@ -131,6 +135,8 @@ private:
     // Removes the session with the given path from the session store.
     void remove_from_session_store_for_path(const core::dbus::types::ObjectPath& path);
 
+    // Called whenever the overall state of the service changes.
+    void on_state_changed(State state);
     // Called whenever the value of the respective property changes.
     void on_does_satellite_based_positioning_changed(bool value);
     // Called whenever the value of the respective property changes.
@@ -154,6 +160,7 @@ private:
     // DBus properties as exposed on the bus for com.ubuntu.location.service.Interface
     struct
     {
+        std::shared_ptr< core::dbus::Property<Interface::Properties::State> > state;
         std::shared_ptr< core::dbus::Property<Interface::Properties::DoesSatelliteBasedPositioning> > does_satellite_based_positioning;
         std::shared_ptr< core::dbus::Property<Interface::Properties::DoesReportCellAndWifiIds> > does_report_cell_and_wifi_ids;
         std::shared_ptr< core::dbus::Property<Interface::Properties::IsOnline> > is_online;
@@ -162,6 +169,7 @@ private:
     // We sign up to property changes here, to be able to report them to the bus
     struct
     {
+        core::ScopedConnection state;
         core::ScopedConnection does_satellite_based_positioning;
         core::ScopedConnection does_report_cell_and_wifi_ids;
         core::ScopedConnection is_online;

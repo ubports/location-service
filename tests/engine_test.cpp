@@ -72,26 +72,6 @@ location::Settings::Ptr mock_settings()
 }
 }
 
-TEST(Engine, adding_and_removing_providers_inserts_and_erases_from_underlying_collection)
-{
-    location::Engine engine {std::make_shared<NullProviderSelectionPolicy>(), mock_settings()};
-
-    auto provider1 = std::make_shared<testing::NiceMock<MockProvider>>();
-    auto provider2 = std::make_shared<testing::NiceMock<MockProvider>>();
-
-    engine.add_provider(provider1);
-    EXPECT_TRUE(engine.has_provider(provider1));
-
-    engine.add_provider(provider2);
-    EXPECT_TRUE(engine.has_provider(provider2));
-
-    engine.remove_provider(provider1);
-    EXPECT_FALSE(engine.has_provider(provider1));
-
-    engine.remove_provider(provider2);
-    EXPECT_FALSE(engine.has_provider(provider2));
-}
-
 TEST(Engine, adding_a_null_provider_throws)
 {
     location::Engine engine {std::make_shared<NullProviderSelectionPolicy>(), mock_settings()};

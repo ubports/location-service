@@ -268,6 +268,7 @@ location::ProgramOptions init_cli_options()
     options.add("help", "Produces this help message");
     options.add("property",
                 "Property to set/get from a running service, known properties are:\n"
+                "   state [get]\n"
                 "   is_online [get/set]\n"
                 "   does_satellite_based_positioning [get/set]\n"
                 "   does_report_wifi_and_cell_ids [get/set]\n"
@@ -349,6 +350,15 @@ int location::service::Daemon::Cli::main(const location::service::Daemon::Cli::C
 
     switch (config.property)
     {
+    case Property::state:
+        switch (config.command)
+        {
+        case Command::get:
+            std::cout << "Location service is " << location_service->state() << std::endl;
+            break;
+        default:
+            break;
+        }
     case Property::is_online:
         switch (config.command)
         {
@@ -471,6 +481,7 @@ std::istream& location::service::operator>>(std::istream& in, location::service:
 {
     static const std::map<std::string, location::service::Daemon::Cli::Property> lut =
     {
+        {"state", location::service::Daemon::Cli::Property::state},
         {"is_online", location::service::Daemon::Cli::Property::is_online},
         {"does_satellite_based_positioning", location::service::Daemon::Cli::Property::does_satellite_based_positioning},
         {"does_report_wifi_and_cell_ids", location::service::Daemon::Cli::Property::does_report_wifi_and_cell_ids},
@@ -495,6 +506,8 @@ std::ostream& location::service::operator<<(std::ostream& out, location::service
 {
     switch (property)
     {
+    case location::service::Daemon::Cli::Property::state:
+        out << "state"; break;
     case location::service::Daemon::Cli::Property::is_online:
         out << "is_online"; break;
     case location::service::Daemon::Cli::Property::does_satellite_based_positioning:

@@ -1,3 +1,29 @@
+location-service (3.0.0+16.10.20160616-0ubuntu1) yakkety; urgency=medium
+
+  [ Scott Sweeny ]
+  * Fusion provider: Always use an update that came from the same source
+    as the previous used update (fixes LP: #1570878) (LP: #1570878)
+
+ -- Thomas Voß <thomas.voss@canonical.com>  Thu, 16 Jun 2016 06:03:16 +0000
+
+location-service (3.0.0+16.10.20160613.1-0ubuntu1) yakkety; urgency=medium
+
+  [ Thomas Voß ]
+  * Expose service::State to the bus. (LP: #1536774)
+
+ -- marcus.tomlinson@canonical.com <marcus.tomlinson@canonical.com>  Mon, 13 Jun 2016 13:38:47 +0000
+
+location-service (3.0.0+16.10.20160524.3-0ubuntu1) yakkety; urgency=medium
+
+  [ CI Train Bot ]
+  * Resync trunk.
+
+  [ Thomas Voß ]
+  * Fix #1584860. The NM update altered the type of LastSeen to int32.
+    (LP: #1584860)
+
+ -- Thomas Voß <ci-train-bot@canonical.com>  Tue, 24 May 2016 09:45:00 +0000
+
 location-service (3.0.0+16.04.20160405-0ubuntu1) xenial; urgency=medium
 
   * Small fixes around provider loading added: tests/mock_engine.h

@@ -24,6 +24,7 @@
 #include <com/ubuntu/location/provider_selection_policy.h>
 #include <com/ubuntu/location/satellite_based_positioning_state.h>
 #include <com/ubuntu/location/space_vehicle.h>
+#include <com/ubuntu/location/state_tracking_provider.h>
 #include <com/ubuntu/location/wifi_and_cell_reporting_state.h>
 
 #include <com/ubuntu/location/settings.h>
@@ -151,22 +152,10 @@ public:
     virtual ProviderSelection determine_provider_selection_for_criteria(const Criteria& criteria);
 
     /**
-     * @brief Checks if the engine knows about a specific provider.
-     * @return True iff the engine knows about the provider.
-     */
-    virtual bool has_provider(const Provider::Ptr& provider) noexcept;
-
-    /**
      * @brief Makes a provider known to the engine.
      * @param provider The new provider.
      */
     virtual void add_provider(const Provider::Ptr& provider);
-
-    /**
-     * @brief Removes a provider from the engine.
-     * @param provider The provider to be removed.
-     */
-    virtual void remove_provider(const Provider::Ptr& provider) noexcept;
 
     /**
      * @brief Iterates all known providers and invokes the provided enumerator for each of them.
@@ -189,10 +178,11 @@ private:
         core::ScopedConnection wifi_and_cell_id_reporting_state_updates;
         core::ScopedConnection space_vehicle_visibility_updates;
         core::ScopedConnection provider_position_updates;
+        core::ScopedConnection provider_state_updates;
     };
 
-    mutable std::mutex guard;
-    std::map<Provider::Ptr, ProviderConnections> providers;
+    mutable std::recursive_mutex guard;
+    std::map<StateTrackingProvider::Ptr, ProviderConnections> providers;
     ProviderSelectionPolicy::Ptr provider_selection_policy;
     Settings::Ptr settings;
     UpdatePolicy::Ptr update_policy;
