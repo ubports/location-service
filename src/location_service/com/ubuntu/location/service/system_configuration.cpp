@@ -35,7 +35,8 @@ struct SnappySystemConfiguration : public culs::SystemConfiguration
 {
     fs::path runtime_persistent_data_dir() const
     {
-        if (std::string data_dir = env::get("SNAP_DATA")) {
+        std::string data_dir = env::get("SNAP_DATA");
+        if (!data_dir.empty()) {
             return data_dir;
         } else {
             LOG(WARNING) << "SNAP_DATA environment variable is not defined.";
