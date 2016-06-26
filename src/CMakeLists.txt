@@ -1,1 +1,1 @@
-add_subdirectory(location_service)
+add_subdirectory(location)

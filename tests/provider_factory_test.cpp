@@ -1,11 +1,11 @@
-#include <com/ubuntu/location/provider_factory.h>
+#include <location/provider_factory.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <iostream>
 
-namespace cul = com::ubuntu::location;
+namespace cul = location;
 
 namespace
 {

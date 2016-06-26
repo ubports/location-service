@@ -8,5 +8,4 @@ Description: A location service aggregating position/velocity/heading
  updates and exporting them over dbus.
 Version: @UBUNTU_LOCATION_SERVICE_VERSION_MAJOR@.@UBUNTU_LOCATION_SERVICE_VERSION_MINOR@.@UBUNTU_LOCATION_SERVICE_VERSION_PATCH@
 Libs: -L${libdir} -lubuntu-location-service
-Cflags: -I${includedir}/ubuntu-location-service-@UBUNTU_LOCATION_SERVICE_VERSION_MAJOR@
 Requires: dbus-cpp

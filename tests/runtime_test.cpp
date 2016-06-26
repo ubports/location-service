@@ -15,14 +15,14 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include <com/ubuntu/location/service/runtime.h>
+#include <location/service/runtime.h>
 
 #include <gtest/gtest.h>
 
 #include <condition_variable>
 #include <thread>
 
-namespace culs = com::ubuntu::location::service;
+namespace culs = location::service;
 
 TEST(Runtime, cleanly_shuts_down_threads)
 {

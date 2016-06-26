@@ -1,4 +1,4 @@
-#include <com/ubuntu/location/init_and_shutdown.h>
+#include <location/init_and_shutdown.h>
 
 #include <gtest/gtest.h>
 

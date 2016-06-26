@@ -15,11 +15,9 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include <com/ubuntu/location/criteria.h>
+#include <location/criteria.h>
 
 #include <gtest/gtest.h>
-
-namespace location = com::ubuntu::location;
 
 TEST(Criteria, SatisfiesReturnsFalseForNonSatisfyingCriteria)
 {

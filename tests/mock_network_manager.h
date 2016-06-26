@@ -19,7 +19,7 @@
 #ifndef MOCK_NETWORK_MANAGER_H_
 #define MOCK_NETWORK_MANAGER_H_
 
-#include <com/ubuntu/location/connectivity/nm.h>
+#include <location/connectivity/nm.h>
 
 #include <gmock/gmock.h>
 

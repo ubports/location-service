@@ -17,24 +17,22 @@
  */
 #include "program_options.h"
 
-#include <com/ubuntu/location/provider_factory.h>
-#include <com/ubuntu/location/boost_ptree_settings.h>
+#include <location/provider_factory.h>
+#include <location/boost_ptree_settings.h>
 
-#include <com/ubuntu/location/service/default_configuration.h>
-#include <com/ubuntu/location/service/implementation.h>
+#include <location/service/default_configuration.h>
+#include <location/service/implementation.h>
 
 #include <core/dbus/announcer.h>
 #include <core/dbus/asio/executor.h>
 
 #include <thread>
 
-namespace cul = com::ubuntu::location;
-namespace culs = com::ubuntu::location::service;
 namespace dbus = core::dbus;
 
 namespace
 {
-struct NullReporter : public culs::Harvester::Reporter
+struct NullReporter : public location::service::Harvester::Reporter
 {
     NullReporter() = default;
 
@@ -51,9 +49,9 @@ struct NullReporter : public culs::Harvester::Reporter
     /**
      * @brief Triggers the reporter to send off the information.
      */
-    void report(const cul::Update<cul::Position>&,
-                const std::vector<cul::connectivity::WirelessNetwork::Ptr>&,
-                const std::vector<cul::connectivity::RadioCell::Ptr>&)
+    void report(const location::Update<location::Position>&,
+                const std::vector<com::ubuntu::location::connectivity::WirelessNetwork::Ptr>&,
+                const std::vector<com::ubuntu::location::connectivity::RadioCell::Ptr>&)
     {
     }
 };
@@ -61,7 +59,7 @@ struct NullReporter : public culs::Harvester::Reporter
 
 int main(int argc, char** argv)
 {
-    cul::ProgramOptions options;
+    location::ProgramOptions options;
 
     options.add("help", "Produces this help message");
     options.add(
@@ -88,8 +86,8 @@ int main(int argc, char** argv)
     if (options.value_count_for_key("provider") == 0)
     {
         std::cout << "A set of providers need to be specified. The following providers are known:" << std::endl;
-        cul::ProviderFactory::instance().enumerate(
-            [](const std::string& name, const cul::ProviderFactory::Factory&)
+        location::ProviderFactory::instance().enumerate(
+            [](const std::string& name, const location::ProviderFactory::Factory&)
             {
                 std::cout << "\t" << name << std::endl;
             });
@@ -98,11 +96,11 @@ int main(int argc, char** argv)
 
     auto selected_providers = options.value_for_key<std::vector<std::string>>("provider");
 
-    std::map<std::string, cul::ProviderFactory::Configuration> config_lut;
+    std::map<std::string, location::ProviderFactory::Configuration> config_lut;
 
-    culs::DefaultConfiguration config;
-    auto settings = std::make_shared<cul::BoostPtreeSettings>(options.value_for_key<std::string>("config-file"));
-    auto engine = config.the_engine(std::set<cul::Provider::Ptr>{}, config.the_provider_selection_policy(), settings);
+    location::service::DefaultConfiguration config;
+    auto settings = std::make_shared<location::BoostPtreeSettings>(options.value_for_key<std::string>("config-file"));
+    auto engine = config.the_engine(std::set<location::Provider::Ptr>{}, config.the_provider_selection_policy(), settings);
 
     for (const std::string& provider : selected_providers)
     {
@@ -133,10 +131,10 @@ int main(int argc, char** argv)
         try
         {
             auto result = std::async(std::launch::async, [provider, config_lut, engine] {
-                return cul::ProviderFactory::instance().create_provider_for_name_with_config(
+                return location::ProviderFactory::instance().create_provider_for_name_with_config(
                     provider,
                     config_lut.at(provider),
-                    [engine](cul::Provider::Ptr provider)
+                    [engine](location::Provider::Ptr provider)
                     {
                         engine->add_provider(provider);
                     });
@@ -166,20 +164,20 @@ int main(int argc, char** argv)
     };
     outgoing->install_executor(dbus::asio::make_executor(outgoing));
 
-    culs::Implementation::Configuration configuration
+    location::service::Implementation::Configuration configuration
     {
         incoming,
         outgoing,
         engine,
         config.the_permission_manager(incoming),
-        culs::Harvester::Configuration
+        location::service::Harvester::Configuration
         {
-            cul::connectivity::platform_default_manager(),
+            com::ubuntu::location::connectivity::platform_default_manager(),
             std::make_shared<NullReporter>()
         }
     };
 
-    auto location_service = std::make_shared<culs::Implementation>(configuration);
+    auto location_service = std::make_shared<location::service::Implementation>(configuration);
     
     std::thread t1{[incoming](){incoming->run();}};
     std::thread t2{[outgoing](){outgoing->run();}};

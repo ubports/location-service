@@ -16,9 +16,9 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <com/ubuntu/location/connectivity/manager.h>
+#include <location/connectivity/manager.h>
 
-#include <com/ubuntu/location/connectivity/ofono_nm_connectivity_manager.h>
+#include <location/connectivity/ofono_nm_connectivity_manager.h>
 
 #include "did_finish_successfully.h"
 #include "mock_network_manager.h"
@@ -32,7 +32,6 @@
 
 #include <gtest/gtest.h>
 
-namespace location = com::ubuntu::location;
 namespace connectivity = com::ubuntu::location::connectivity;
 
 namespace
@@ -98,55 +97,55 @@ struct ConnectivityManager : public core::dbus::testing::Fixture
 TEST(RadioCell, explicit_construction_yields_correct_type)
 {
     {
-        location::connectivity::RadioCell::Gsm gsm
+        com::ubuntu::location::connectivity::RadioCell::Gsm gsm
         {
-            location::connectivity::RadioCell::Gsm::MCC{42},
-            location::connectivity::RadioCell::Gsm::MNC{42},
-            location::connectivity::RadioCell::Gsm::LAC{42},
-            location::connectivity::RadioCell::Gsm::ID{42},
-            location::connectivity::RadioCell::Gsm::SignalStrength{21}
+            com::ubuntu::location::connectivity::RadioCell::Gsm::MCC{42},
+            com::ubuntu::location::connectivity::RadioCell::Gsm::MNC{42},
+            com::ubuntu::location::connectivity::RadioCell::Gsm::LAC{42},
+            com::ubuntu::location::connectivity::RadioCell::Gsm::ID{42},
+            com::ubuntu::location::connectivity::RadioCell::Gsm::SignalStrength{21}
         };
 
-        location::connectivity::RadioCell cell{gsm};
+        com::ubuntu::location::connectivity::RadioCell cell{gsm};
 
-        EXPECT_EQ(location::connectivity::RadioCell::Type::gsm, cell.type());
+        EXPECT_EQ(com::ubuntu::location::connectivity::RadioCell::Type::gsm, cell.type());
     }
 
     {
-        location::connectivity::RadioCell::Umts umts
+        com::ubuntu::location::connectivity::RadioCell::Umts umts
         {
-            location::connectivity::RadioCell::Umts::MCC{42},
-            location::connectivity::RadioCell::Umts::MNC{42},
-            location::connectivity::RadioCell::Umts::LAC{42},
-            location::connectivity::RadioCell::Umts::ID{42},
-            location::connectivity::RadioCell::Umts::SignalStrength{21}
+            com::ubuntu::location::connectivity::RadioCell::Umts::MCC{42},
+            com::ubuntu::location::connectivity::RadioCell::Umts::MNC{42},
+            com::ubuntu::location::connectivity::RadioCell::Umts::LAC{42},
+            com::ubuntu::location::connectivity::RadioCell::Umts::ID{42},
+            com::ubuntu::location::connectivity::RadioCell::Umts::SignalStrength{21}
         };
 
-        location::connectivity::RadioCell cell{umts};
+        com::ubuntu::location::connectivity::RadioCell cell{umts};
 
-        EXPECT_EQ(location::connectivity::RadioCell::Type::umts, cell.type());
+        EXPECT_EQ(com::ubuntu::location::connectivity::RadioCell::Type::umts, cell.type());
     }
 
     {
-        location::connectivity::RadioCell::Lte lte
+        com::ubuntu::location::connectivity::RadioCell::Lte lte
         {
-            location::connectivity::RadioCell::Lte::MCC{42},
-            location::connectivity::RadioCell::Lte::MNC{42},
-            location::connectivity::RadioCell::Lte::TAC{42},
-            location::connectivity::RadioCell::Lte::ID{42},
-            location::connectivity::RadioCell::Lte::PID{42},
-            location::connectivity::RadioCell::Lte::SignalStrength{21}
+            com::ubuntu::location::connectivity::RadioCell::Lte::MCC{42},
+            com::ubuntu::location::connectivity::RadioCell::Lte::MNC{42},
+            com::ubuntu::location::connectivity::RadioCell::Lte::TAC{42},
+            com::ubuntu::location::connectivity::RadioCell::Lte::ID{42},
+            com::ubuntu::location::connectivity::RadioCell::Lte::PID{42},
+            com::ubuntu::location::connectivity::RadioCell::Lte::SignalStrength{21}
         };
 
-        location::connectivity::RadioCell cell{lte};
+        com::ubuntu::location::connectivity::RadioCell cell{lte};
 
-        EXPECT_EQ(location::connectivity::RadioCell::Type::lte, cell.type());
+        EXPECT_EQ(com::ubuntu::location::connectivity::RadioCell::Type::lte, cell.type());
     }
 }*/
 
 TEST(ConnectivityManagerOnDevice, repeatedly_requesting_network_scans_works_requires_hardware)
 {
-    auto manager = location::connectivity::platform_default_manager();
+    auto manager = com::ubuntu::location::connectivity::platform_default_manager();
 
     for (unsigned int i = 0; i < 100; i++)
         manager->request_scan_for_wireless_networks();
@@ -154,11 +153,11 @@ TEST(ConnectivityManagerOnDevice, repeatedly_requesting_network_scans_works_requ
 
 TEST(ConnectivityManagerOnDevice, repeatedly_querying_the_connected_cell_works_requires_hardware)
 {
-    auto manager = location::connectivity::platform_default_manager();
+    auto manager = com::ubuntu::location::connectivity::platform_default_manager();
 
     for (unsigned int i = 0; i < 100; i++)
     {
-        manager->enumerate_connected_radio_cells([](const location::connectivity::RadioCell::Ptr& cell)
+        manager->enumerate_connected_radio_cells([](const com::ubuntu::location::connectivity::RadioCell::Ptr& cell)
         {
             std::cout << *cell << std::endl;
         });
@@ -167,14 +166,14 @@ TEST(ConnectivityManagerOnDevice, repeatedly_querying_the_connected_cell_works_r
 
 TEST(ConnectivityManagerOnDevice, default_implementation_is_queryable_for_wifis_and_radio_cells_requires_hardware)
 {
-    auto manager = location::connectivity::platform_default_manager();
+    auto manager = com::ubuntu::location::connectivity::platform_default_manager();
 
-    manager->enumerate_connected_radio_cells([](const location::connectivity::RadioCell::Ptr& cell)
+    manager->enumerate_connected_radio_cells([](const com::ubuntu::location::connectivity::RadioCell::Ptr& cell)
     {
         std::cout << *cell << std::endl;
     });
 
-    manager->enumerate_visible_wireless_networks([](location::connectivity::WirelessNetwork::Ptr wifi)
+    manager->enumerate_visible_wireless_networks([](com::ubuntu::location::connectivity::WirelessNetwork::Ptr wifi)
     {
         std::cout << *wifi << std::endl;
     });
@@ -182,7 +181,7 @@ TEST(ConnectivityManagerOnDevice, default_implementation_is_queryable_for_wifis_
 
 TEST(ConnectivityManagerOnDevice, default_implementation_is_queryable_for_wifi_and_wwan_status_requires_hardware)
 {
-    auto manager = location::connectivity::platform_default_manager();
+    auto manager = com::ubuntu::location::connectivity::platform_default_manager();
 
     std::cout << std::boolalpha << manager->is_wifi_enabled().get() << std::endl;
     std::cout << std::boolalpha << manager->is_wwan_enabled().get() << std::endl;

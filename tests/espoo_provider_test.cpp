@@ -16,11 +16,11 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <com/ubuntu/location/providers/remote/provider.h>
+#include <location/providers/remote/provider.h>
 
-#include <com/ubuntu/location/logging.h>
+#include <location/logging.h>
 
-#include <com/ubuntu/location/connectivity/manager.h>
+#include <location/connectivity/manager.h>
 
 #include <core/dbus/service.h>
 #include <core/dbus/asio/executor.h>
@@ -38,8 +38,7 @@
 
 #include <gtest/gtest.h>
 
-namespace cul = com::ubuntu::location;
-namespace remote = com::ubuntu::location::providers::remote;
+namespace remote = location::providers::remote;
 namespace statistics = boost::accumulators;
 
 namespace
@@ -217,21 +216,21 @@ struct EspooProviderTest : public ::testing::Test
 
     static constexpr const char* path
     {
-        "/com/ubuntu/espoo/Service/Provider"
+        "/espoo/Service/Provider"
     };
 
-    static std::uint64_t numeric_cell_id_from_cell(const cul::connectivity::RadioCell::Ptr& cell)
+    static std::uint64_t numeric_cell_id_from_cell(const com::ubuntu::location::connectivity::RadioCell::Ptr& cell)
     {
         std::uint64_t cid;
         switch (cell->type())
         {
-        case cul::connectivity::RadioCell::Type::gsm:
+        case com::ubuntu::location::connectivity::RadioCell::Type::gsm:
             cid = cell->gsm().id.get();
             break;
-        case cul::connectivity::RadioCell::Type::umts:
+        case com::ubuntu::location::connectivity::RadioCell::Type::umts:
             cid = cell->umts().id.get();
             break;
-        case cul::connectivity::RadioCell::Type::lte:
+        case com::ubuntu::location::connectivity::RadioCell::Type::lte:
             cid = cell->lte().id.get();
             break;
         default:
@@ -244,49 +243,49 @@ struct EspooProviderTest : public ::testing::Test
     EspooProviderTest()
         : bus{bus_instance_according_to_env()},
           trap{core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_int})},
-          cm{cul::connectivity::platform_default_manager()}
+          cm{com::ubuntu::location::connectivity::platform_default_manager()}
     {
         // Bootstrap wifi stats
-        cm->enumerate_visible_wireless_networks([this](const cul::connectivity::WirelessNetwork::Ptr&)
+        cm->enumerate_visible_wireless_networks([this](const com::ubuntu::location::connectivity::WirelessNetwork::Ptr&)
         {
             ++connectivity_stats.wifi_counter;
         });
 
         connectivity_stats.over_wifi_count.update(*connectivity_stats.wifi_counter);
 
-        cm->wireless_network_added().connect([this](const cul::connectivity::WirelessNetwork::Ptr&)
+        cm->wireless_network_added().connect([this](const com::ubuntu::location::connectivity::WirelessNetwork::Ptr&)
         {
             connectivity_stats.over_wifi_count.update(*(++connectivity_stats.wifi_counter));
         });
 
-        cm->wireless_network_removed().connect([this](const cul::connectivity::WirelessNetwork::Ptr&)
+        cm->wireless_network_removed().connect([this](const com::ubuntu::location::connectivity::WirelessNetwork::Ptr&)
         {
             connectivity_stats.over_wifi_count.update(*(--connectivity_stats.wifi_counter));
         });
 
         // Bootstrap cell stats
-        cm->enumerate_connected_radio_cells([this](const cul::connectivity::RadioCell::Ptr& cell)
+        cm->enumerate_connected_radio_cells([this](const com::ubuntu::location::connectivity::RadioCell::Ptr& cell)
         {
             on_radio_cell_added(cell);
         });
 
-        cm->connected_cell_added().connect([this](const cul::connectivity::RadioCell::Ptr& cell)
+        cm->connected_cell_added().connect([this](const com::ubuntu::location::connectivity::RadioCell::Ptr& cell)
         {
             on_radio_cell_added(cell);
         });
 
-        cm->connected_cell_removed().connect([this](const cul::connectivity::RadioCell::Ptr& cell)
+        cm->connected_cell_removed().connect([this](const com::ubuntu::location::connectivity::RadioCell::Ptr& cell)
         {
             cells_to_ids.erase(cell);
         });
     }
 
-    void on_radio_cell_added(const cul::connectivity::RadioCell::Ptr& cell)
+    void on_radio_cell_added(const com::ubuntu::location::connectivity::RadioCell::Ptr& cell)
     {
         // We store the cell characteristics here.
         cells_to_ids.insert(std::make_pair(cell, std::make_tuple(cell->type(), numeric_cell_id_from_cell(cell))));
 
-        std::weak_ptr<cul::connectivity::RadioCell> wp{cell};
+        std::weak_ptr<com::ubuntu::location::connectivity::RadioCell> wp{cell};
 
         // Subscribe to changes on the cell
         cell->changed().connect([wp, this]()
@@ -323,12 +322,12 @@ struct EspooProviderTest : public ::testing::Test
     // Our signal trap.
     std::shared_ptr<core::posix::SignalTrap> trap;
     // We monitor the connectivity subsystems.
-    std::shared_ptr<cul::connectivity::Manager> cm;
+    std::shared_ptr<com::ubuntu::location::connectivity::Manager> cm;
     // We store individual cell ids together with their type.
     std::map
     <
-        cul::connectivity::RadioCell::Ptr,
-        std::tuple<cul::connectivity::RadioCell::Type, std::uint64_t>
+        com::ubuntu::location::connectivity::RadioCell::Ptr,
+        std::tuple<com::ubuntu::location::connectivity::RadioCell::Type, std::uint64_t>
     > cells_to_ids;
     struct
     {
@@ -368,7 +367,7 @@ TEST_F(EspooProviderTest, receives_position_updates_requires_daemons)
 
     auto provider = remote::Provider::Stub::create_instance_with_config(config);
 
-    provider->updates().position.connect([&stats](const cul::Update<cul::Position>& update)
+    provider->updates().position.connect([&stats](const location::Update<location::Position>& update)
     {
         VLOG(1) << update;
         // We track the number of position updates

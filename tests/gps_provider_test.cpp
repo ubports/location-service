@@ -15,13 +15,13 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include <com/ubuntu/location/providers/gps/provider.h>
-#include <com/ubuntu/location/providers/gps/android_hardware_abstraction_layer.h>
+#include <location/providers/gps/provider.h>
+#include <location/providers/gps/android_hardware_abstraction_layer.h>
 
-#include <com/ubuntu/location/providers/gps/net_cpp_gps_xtra_downloader.h>
+#include <location/providers/gps/net_cpp_gps_xtra_downloader.h>
 
-#include <com/ubuntu/location/logging.h>
-#include <com/ubuntu/location/service/program_options.h>
+#include <location/logging.h>
+#include <location/service/program_options.h>
 
 #include <core/posix/fork.h>
 #include <core/posix/this_process.h>
@@ -43,8 +43,7 @@
 
 #include "web_server.h"
 
-namespace gps = com::ubuntu::location::providers::gps;
-namespace location = com::ubuntu::location;
+namespace gps = location::providers::gps;
 
 namespace
 {
@@ -525,7 +524,7 @@ TEST(GpsXtraDownloader, download_attempt_throws_if_timeout_is_reached)
  ****************************************************************/
 TEST(GpsProvider, DISABLED_accessing_starting_and_stopping_gps_provider_works_requires_hardware)
 {
-    com::ubuntu::location::providers::gps::Provider provider;
+    location::providers::gps::Provider provider;
     EXPECT_NO_THROW(provider.start_position_updates());
     EXPECT_NO_THROW(provider.stop_position_updates());
     EXPECT_NO_THROW(provider.start_velocity_updates());
@@ -537,8 +536,8 @@ TEST(GpsProvider, DISABLED_accessing_starting_and_stopping_gps_provider_works_re
 // We are carrying out quite some positioning here and leverage that fact for feeding location
 // and wifi/cell data to Mozilla location service instances. Please note that we feed to the mozilla location service
 // in the general case.
-#include <com/ubuntu/location/service/harvester.h>
-#include <com/ubuntu/location/service/ichnaea_reporter.h>
+#include <location/service/harvester.h>
+#include <location/service/ichnaea_reporter.h>
 
 namespace
 {
@@ -560,8 +559,8 @@ struct NullReporter : public location::service::Harvester::Reporter
      * @brief Triggers the reporter to send off the information.
      */
     void report(const location::Update<location::Position>&,
-                const std::vector<location::connectivity::WirelessNetwork::Ptr>&,
-                const std::vector<location::connectivity::RadioCell::Ptr>&)
+                const std::vector<com::ubuntu::location::connectivity::WirelessNetwork::Ptr>&,
+                const std::vector<com::ubuntu::location::connectivity::RadioCell::Ptr>&)
     {
     }
 };
@@ -687,7 +686,7 @@ struct HardwareAbstractionLayerFixture : public ::testing::Test
     // The harvester instance and its configuration.
     location::service::Harvester::Configuration harvester_configuration
     {
-        location::connectivity::platform_default_manager(),
+        com::ubuntu::location::connectivity::platform_default_manager(),
         reporter
     };
     location::service::Harvester harvester

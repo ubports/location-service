@@ -16,13 +16,11 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <com/ubuntu/location/boost_ptree_settings.h>
+#include <location/boost_ptree_settings.h>
 
 #include <gtest/gtest.h>
 
 #include <cstdio>
-
-namespace location = com::ubuntu::location;
 
 namespace
 {

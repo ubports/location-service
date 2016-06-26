@@ -7,6 +7,12 @@ global:
         VTT?for?com::ubuntu::location::*;
         virtual?thunk?to?com::ubuntu::location::*;
         vtable?for?com::ubuntu::location::*;
+        location::*;
+        typeinfo?for?location::*;
+        typeinfo?name?for?location::*;
+        VTT?for?location::*;
+        virtual?thunk?to?location::*;
+        vtable?for?location::*;
 	std::hash*;
         json::*;
     };

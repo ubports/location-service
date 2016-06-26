@@ -18,32 +18,32 @@
 #ifndef MOCK_PROVIDER_H_
 #define MOCK_PROVIDER_H_
 
-#include <com/ubuntu/location/provider.h>
+#include <location/provider.h>
 
 #include <gmock/gmock.h>
 
-struct MockProvider : public com::ubuntu::location::Provider
+struct MockProvider : public location::Provider
 {
-    MockProvider() : com::ubuntu::location::Provider()
+    MockProvider() : location::Provider()
     {
     }
 
-    MOCK_METHOD1(matches_criteria, bool(const com::ubuntu::location::Criteria&));
+    MOCK_METHOD1(matches_criteria, bool(const location::Criteria&));
 
-    MOCK_CONST_METHOD1(supports, bool(const com::ubuntu::location::Provider::Features&));
-    MOCK_CONST_METHOD1(requires, bool(const com::ubuntu::location::Provider::Requirements&));
+    MOCK_CONST_METHOD1(supports, bool(const location::Provider::Features&));
+    MOCK_CONST_METHOD1(requires, bool(const location::Provider::Requirements&));
 
     // Called by the engine whenever the wifi and cell ID reporting state changes.
-    MOCK_METHOD1(on_wifi_and_cell_reporting_state_changed, void(com::ubuntu::location::WifiAndCellIdReportingState state));
+    MOCK_METHOD1(on_wifi_and_cell_reporting_state_changed, void(location::WifiAndCellIdReportingState state));
 
     // Called by the engine whenever the reference location changed.
-    MOCK_METHOD1(on_reference_location_updated, void(const com::ubuntu::location::Update<com::ubuntu::location::Position>& position));
+    MOCK_METHOD1(on_reference_location_updated, void(const location::Update<location::Position>& position));
 
     // Called by the engine whenever the reference velocity changed.
-    MOCK_METHOD1(on_reference_velocity_updated, void(const com::ubuntu::location::Update<com::ubuntu::location::Velocity>& velocity));
+    MOCK_METHOD1(on_reference_velocity_updated, void(const location::Update<location::Velocity>& velocity));
 
     // Called by the engine whenever the reference heading changed.
-    MOCK_METHOD1(on_reference_heading_updated, void(const com::ubuntu::location::Update<com::ubuntu::location::Heading>& heading));
+    MOCK_METHOD1(on_reference_heading_updated, void(const location::Update<location::Heading>& heading));
 
     MOCK_METHOD0(start_position_updates, void());
     MOCK_METHOD0(stop_position_updates, void());
@@ -55,19 +55,19 @@ struct MockProvider : public com::ubuntu::location::Provider
     MOCK_METHOD0(stop_velocity_updates, void());
 
     // Inject a position update from the outside.
-    void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Position>& update)
+    void inject_update(const location::Update<location::Position>& update)
     {
         mutable_updates().position(update);
     }
 
     // Inject a velocity update from the outside.
-    void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Velocity>& update)
+    void inject_update(const location::Update<location::Velocity>& update)
     {
         mutable_updates().velocity(update);
     }
 
     // Inject a heading update from the outside.
-    void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Heading>& update)
+    void inject_update(const location::Update<location::Heading>& update)
     {
         mutable_updates().heading(update);
     }
