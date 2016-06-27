@@ -16,7 +16,7 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <com/ubuntu/location/service/harvester.h>
+#include <location/service/harvester.h>
 
 #include "mock_connectivity_manager.h"
 #include "mock_reporter.h"
@@ -24,8 +24,6 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
-namespace location = com::ubuntu::location;
 
 namespace
 {
@@ -51,7 +49,7 @@ TEST(Harvester, calls_start_and_stop_on_reporter)
 
     location::service::Harvester::Configuration config
     {
-        location::connectivity::platform_default_manager(),
+        com::ubuntu::location::connectivity::platform_default_manager(),
         reporter
     };
 
@@ -70,7 +68,7 @@ TEST(Harvester, invokes_reporter_on_location_update_only_if_started)
 
     location::service::Harvester::Configuration config
     {
-        location::connectivity::platform_default_manager(),
+        com::ubuntu::location::connectivity::platform_default_manager(),
         reporter
     };
 

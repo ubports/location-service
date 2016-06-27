@@ -16,14 +16,11 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <com/ubuntu/location/service/demultiplexing_reporter.h>
+#include <location/service/demultiplexing_reporter.h>
 
 #include <gtest/gtest.h>
 
 #include "mock_reporter.h"
-
-namespace location = com::ubuntu::location;
-namespace service = com::ubuntu::location::service;
 
 namespace
 {
@@ -41,7 +38,7 @@ TEST(DemultiplexingReporter, dispatches_calls_to_all_reporters)
 {
     using namespace ::testing;
 
-    std::set<service::Harvester::Reporter::Ptr> reporters;
+    std::set<location::service::Harvester::Reporter::Ptr> reporters;
 
     for (unsigned int i = 0; i < 5; i++)
     {
@@ -54,7 +51,7 @@ TEST(DemultiplexingReporter, dispatches_calls_to_all_reporters)
         reporters.insert(reporter);
     }
 
-    service::DemultiplexingReporter reporter{reporters};
+    location::service::DemultiplexingReporter reporter{reporters};
 
     reporter.start();
     reporter.report(reference_position_update,{}, {});

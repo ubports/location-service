@@ -1,4 +1,4 @@
-#include <com/ubuntu/location/provider_selection_policy.h>
+#include <location/provider_selection_policy.h>
 
 #include "mock_event_consumer.h"
 #include "mock_provider.h"
@@ -6,7 +6,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-namespace cul = com::ubuntu::location;
+namespace cul = location;
 
 namespace
 {
@@ -31,7 +31,7 @@ class DummyProvider : public cul::Provider
 public:
     DummyProvider(cul::Provider::Features feats = cul::Provider::Features::none,
                   cul::Provider::Requirements requs= cul::Provider::Requirements::none)
-        : com::ubuntu::location::Provider(feats, requs)
+        : location::Provider(feats, requs)
     {
     }
 
@@ -76,7 +76,7 @@ TEST(ProviderSelection, feature_flags_calculation_works_correctly)
     EXPECT_EQ(all_features, selection.to_feature_flags());
 }
 
-#include <com/ubuntu/location/default_provider_selection_policy.h>
+#include <location/default_provider_selection_policy.h>
 
 TEST(DefaultProviderSelectionPolicy, if_no_provider_matches_criteria_null_is_returned)
 {
@@ -142,7 +142,7 @@ TEST(DefaultProviderSelectionPolicy, an_already_running_provider_is_preferred)
               policy.determine_provider_selection_for_criteria(cul::Criteria{}, enumerator));
 }
 
-#include <com/ubuntu/location/non_selecting_provider_selection_policy.h>
+#include <location/non_selecting_provider_selection_policy.h>
 
 TEST(NonSelectingProviderSelectionPolicy, returns_a_selection_of_providers_that_dispatches_to_all_underlying_providers)
 {

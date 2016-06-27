@@ -16,7 +16,7 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <com/ubuntu/location/providers/dummy/provider.h>
+#include <location/providers/dummy/provider.h>
 
 #include <gtest/gtest.h>
 
@@ -24,7 +24,7 @@
 #include <mutex>
 #include <thread>
 
-namespace location = com::ubuntu::location;
+namespace location = location;
 
 TEST(DummyProvider, ConstructionWithConfigurationWorks)
 {

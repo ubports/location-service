@@ -17,21 +17,18 @@
  */
 #include "program_options.h"
 
-#include <com/ubuntu/location/service/stub.h>
+#include <location/service/stub.h>
 
 #include <core/dbus/resolver.h>
 #include <core/dbus/asio/executor.h>
 
 #include <thread>
 
-namespace cul = com::ubuntu::location;
-namespace culs = com::ubuntu::location::service;
-namespace culss = com::ubuntu::location::service::session;
 namespace dbus = core::dbus;
 
 int main(int argc, char** argv)
 {
-    cul::ProgramOptions options;
+    location::ProgramOptions options;
 
     options.add("help", "Produces this help message");
     options.add(
@@ -62,26 +59,26 @@ int main(int argc, char** argv)
     std::thread t{[bus](){bus->run();}};
     
     auto location_service = 
-            dbus::resolve_service_on_bus<culs::Interface, culs::Stub>(bus);
+            dbus::resolve_service_on_bus<location::service::Interface, location::service::Stub>(bus);
         
-    auto s1 = location_service->create_session_for_criteria(cul::Criteria{});
+    auto s1 = location_service->create_session_for_criteria(location::Criteria{});
         
     s1->updates().position.changed().connect(
-        [&](const cul::Update<cul::Position>& new_position) {
+        [&](const location::Update<location::Position>& new_position) {
             std::cout << "On position updated: " << new_position << std::endl;
         });
     s1->updates().velocity.changed().connect(
-        [&](const cul::Update<cul::Velocity>& new_velocity) {
+        [&](const location::Update<location::Velocity>& new_velocity) {
             std::cout << "On velocity_changed " << new_velocity << std::endl;
         });
     s1->updates().heading.changed().connect(
-        [&](const cul::Update<cul::Heading>& new_heading) {
+        [&](const location::Update<location::Heading>& new_heading) {
             std::cout << "On heading changed: " << new_heading << std::endl;
         });
         
-    s1->updates().position_status = culss::Interface::Updates::Status::enabled;
-    s1->updates().heading_status = culss::Interface::Updates::Status::enabled;
-    s1->updates().velocity_status = culss::Interface::Updates::Status::enabled;
+    s1->updates().position_status = location::service::session::Interface::Updates::Status::enabled;
+    s1->updates().heading_status = location::service::session::Interface::Updates::Status::enabled;
+    s1->updates().velocity_status = location::service::session::Interface::Updates::Status::enabled;
         
     if (t.joinable())
         t.join();

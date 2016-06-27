@@ -109,9 +109,9 @@ include_directories(
   ${GLog_INCLUDE_DIR}
   ${GFlags_INCLUDE_DIR}
 
-  ${CMAKE_SOURCE_DIR}/include/location_service
-  ${CMAKE_SOURCE_DIR}/src/location_service
-  ${CMAKE_BINARY_DIR}/src/location_service
+  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_BINARY_DIR}/src
 )
 
 file(GLOB_RECURSE UBUNTU_LOCATION_SERVICE_PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR} *.h)

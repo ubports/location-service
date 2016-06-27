@@ -65,9 +65,9 @@ class MockEventConsumer
         return velocity.wait_condition.wait_for(ul, timeout, [this] { return velocity.update_arrived; });
     }
 
-    MOCK_METHOD1(on_new_position, void(const com::ubuntu::location::Update<com::ubuntu::location::Position>&));
-    MOCK_METHOD1(on_new_heading, void(const com::ubuntu::location::Update<com::ubuntu::location::Heading>&));
-    MOCK_METHOD1(on_new_velocity, void(const com::ubuntu::location::Update<com::ubuntu::location::Velocity>&));
+    MOCK_METHOD1(on_new_position, void(const location::Update<location::Position>&));
+    MOCK_METHOD1(on_new_heading, void(const location::Update<location::Heading>&));
+    MOCK_METHOD1(on_new_velocity, void(const location::Update<location::Velocity>&));
 
 private:
     // Notes down the arrival of a position update

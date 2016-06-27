@@ -19,20 +19,20 @@
 #ifndef NULL_PROVIDER_SELECTION_POLICY_
 #define NULL_PROVIDER_SELECTION_POLICY_
 
-#include <com/ubuntu/location/provider_selection_policy.h>
+#include <location/provider_selection_policy.h>
 
-struct NullProviderSelectionPolicy : public com::ubuntu::location::ProviderSelectionPolicy
+struct NullProviderSelectionPolicy : public location::ProviderSelectionPolicy
 {
-    com::ubuntu::location::ProviderSelection
+    location::ProviderSelection
     determine_provider_selection_for_criteria(
-            const com::ubuntu::location::Criteria&,
-            const com::ubuntu::location::ProviderEnumerator&)
+            const location::Criteria&,
+            const location::ProviderEnumerator&)
     {
-        return com::ubuntu::location::ProviderSelection
+        return location::ProviderSelection
         {
-            com::ubuntu::location::Provider::Ptr{},
-            com::ubuntu::location::Provider::Ptr{},
-            com::ubuntu::location::Provider::Ptr{}
+            location::Provider::Ptr{},
+            location::Provider::Ptr{},
+            location::Provider::Ptr{}
         };
     }
 };

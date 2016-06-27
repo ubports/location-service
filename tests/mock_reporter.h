@@ -18,11 +18,11 @@
 #ifndef MOCK_REPORTER_H_
 #define MOCK_REPORTER_H_
 
-#include <com/ubuntu/location/service/harvester.h>
+#include <location/service/harvester.h>
 
 #include <gmock/gmock.h>
 
-struct MockReporter : public com::ubuntu::location::service::Harvester::Reporter
+struct MockReporter : public location::service::Harvester::Reporter
 {
     MockReporter() = default;
 
@@ -37,7 +37,7 @@ struct MockReporter : public com::ubuntu::location::service::Harvester::Reporter
      */
     MOCK_METHOD3(report,
                  void(
-                     const com::ubuntu::location::Update<com::ubuntu::location::Position>&,
+                     const location::Update<location::Position>&,
                      const std::vector<com::ubuntu::location::connectivity::WirelessNetwork::Ptr>&,
                      const std::vector<com::ubuntu::location::connectivity::RadioCell::Ptr>&));
 };

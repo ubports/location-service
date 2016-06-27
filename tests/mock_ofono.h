@@ -18,7 +18,7 @@
 #ifndef MOCK_OFONO_H_
 #define MOCK_OFONO_H_
 
-#include <com/ubuntu/location/connectivity/ofono.h>
+#include <location/connectivity/ofono.h>
 
 #include <core/dbus/types/variant.h>
 

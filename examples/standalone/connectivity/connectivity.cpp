@@ -1,4 +1,4 @@
-#include <com/ubuntu/location/connectivity/manager.h>
+#include <location/connectivity/manager.h>
 
 #include <core/posix/signal.h>
 

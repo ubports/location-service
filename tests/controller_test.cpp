@@ -15,38 +15,38 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include <com/ubuntu/location/provider.h>
+#include <location/provider.h>
 
 #include "mock_provider.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-namespace cul = com::ubuntu::location;
+namespace cul = location;
 
 namespace
 {
-auto timestamp = com::ubuntu::location::Clock::now();
+auto timestamp = location::Clock::now();
 
-com::ubuntu::location::Update<com::ubuntu::location::Position> reference_position_update
+location::Update<location::Position> reference_position_update
 {
     {
-        com::ubuntu::location::wgs84::Latitude{9. * com::ubuntu::location::units::Degrees},
-        com::ubuntu::location::wgs84::Longitude{53. * com::ubuntu::location::units::Degrees},
-        com::ubuntu::location::wgs84::Altitude{-2. * com::ubuntu::location::units::Meters}
+        location::wgs84::Latitude{9. * location::units::Degrees},
+        location::wgs84::Longitude{53. * location::units::Degrees},
+        location::wgs84::Altitude{-2. * location::units::Meters}
     },
     timestamp
 };
 
-com::ubuntu::location::Update<com::ubuntu::location::Velocity> reference_velocity_update
+location::Update<location::Velocity> reference_velocity_update
 {
-    {5. * com::ubuntu::location::units::MetersPerSecond},
+    {5. * location::units::MetersPerSecond},
     timestamp
 };
 
-com::ubuntu::location::Update<com::ubuntu::location::Heading> reference_heading_update
+location::Update<location::Heading> reference_heading_update
 {
-    {120. * com::ubuntu::location::units::Degrees},
+    {120. * location::units::Degrees},
     timestamp
 };
 }

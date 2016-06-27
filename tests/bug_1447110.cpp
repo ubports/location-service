@@ -16,14 +16,12 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <com/ubuntu/location/service/daemon.h>
+#include <location/service/daemon.h>
 
 #include <core/posix/fork.h>
 
 #include <gtest/gtest.h>
 #include <boost/filesystem.hpp>
-
-namespace location = com::ubuntu::location;
 
 namespace
 {

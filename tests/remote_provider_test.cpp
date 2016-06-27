@@ -16,14 +16,14 @@
  * Authored by: Manuel de la Peña <manuel.delapena@canonical.com>
  */
 
-#include <com/ubuntu/location/logging.h>
-#include <com/ubuntu/location/provider.h>
+#include <location/logging.h>
+#include <location/provider.h>
 
-#include <com/ubuntu/location/providers/remote/interface.h>
-#include <com/ubuntu/location/providers/remote/skeleton.h>
-#include <com/ubuntu/location/providers/remote/stub.h>
+#include <location/providers/remote/interface.h>
+#include <location/providers/remote/skeleton.h>
+#include <location/providers/remote/stub.h>
 
-#include <com/ubuntu/location/providers/remote/provider.h>
+#include <location/providers/remote/provider.h>
 
 #include "mock_event_consumer.h"
 #include "mock_provider.h"
@@ -42,9 +42,9 @@
 
 #include <condition_variable>
 
-namespace cul = com::ubuntu::location;
+namespace cul = location;
 namespace dbus = core::dbus;
-namespace remote = com::ubuntu::location::providers::remote;
+namespace remote = location::providers::remote;
 
 using namespace ::testing;
 
@@ -87,7 +87,7 @@ struct RemoteProvider : public core::dbus::testing::Fixture
 
     static constexpr const char* stub_remote_provider_path
     {
-        "/com/ubuntu/remote/Provider"
+        "/remote/Provider"
     };
 };
 }

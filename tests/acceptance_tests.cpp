@@ -16,26 +16,26 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <com/ubuntu/location/criteria.h>
-#include <com/ubuntu/location/clock.h>
-#include <com/ubuntu/location/engine.h>
-#include <com/ubuntu/location/heading.h>
-#include <com/ubuntu/location/logging.h>
-#include <com/ubuntu/location/position.h>
-#include <com/ubuntu/location/provider.h>
-#include <com/ubuntu/location/update.h>
-#include <com/ubuntu/location/velocity.h>
-#include <com/ubuntu/location/wgs84/altitude.h>
-#include <com/ubuntu/location/wgs84/latitude.h>
-#include <com/ubuntu/location/wgs84/longitude.h>
+#include <location/criteria.h>
+#include <location/clock.h>
+#include <location/engine.h>
+#include <location/heading.h>
+#include <location/logging.h>
+#include <location/position.h>
+#include <location/provider.h>
+#include <location/update.h>
+#include <location/velocity.h>
+#include <location/wgs84/altitude.h>
+#include <location/wgs84/latitude.h>
+#include <location/wgs84/longitude.h>
 
-#include <com/ubuntu/location/providers/dummy/provider.h>
+#include <location/providers/dummy/provider.h>
 
-#include <com/ubuntu/location/service/daemon.h>
-#include <com/ubuntu/location/service/default_configuration.h>
-#include <com/ubuntu/location/service/implementation.h>
-#include <com/ubuntu/location/service/program_options.h>
-#include <com/ubuntu/location/service/stub.h>
+#include <location/service/daemon.h>
+#include <location/service/default_configuration.h>
+#include <location/service/implementation.h>
+#include <location/service/program_options.h>
+#include <location/service/stub.h>
 
 #include <core/dbus/announcer.h>
 #include <core/dbus/bus.h>
@@ -60,9 +60,9 @@
 #include <set>
 #include <stdexcept>
 
-namespace cul = com::ubuntu::location;
-namespace culs = com::ubuntu::location::service;
-namespace culss = com::ubuntu::location::service::session;
+namespace cul = location;
+namespace culs = location::service;
+namespace culss = location::service::session;
 namespace dbus = core::dbus;
 
 namespace
@@ -94,8 +94,8 @@ struct NullReporter : public culs::Harvester::Reporter
      * @brief Triggers the reporter to send off the information.
      */
     void report(const cul::Update<cul::Position>&,
-                const std::vector<cul::connectivity::WirelessNetwork::Ptr>&,
-                const std::vector<cul::connectivity::RadioCell::Ptr>&)
+                const std::vector<com::ubuntu::location::connectivity::WirelessNetwork::Ptr>&,
+                const std::vector<com::ubuntu::location::connectivity::RadioCell::Ptr>&)
     {
     }
 };
@@ -247,7 +247,7 @@ TEST_F(LocationServiceStandalone, SessionsReceiveUpdatesViaDBus)
             config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
-                cul::connectivity::platform_default_manager(),
+                com::ubuntu::location::connectivity::platform_default_manager(),
                 std::make_shared<NullReporter>()
             }
         };
@@ -369,7 +369,7 @@ TEST_F(LocationServiceStandalone, EngineStatusCanBeQueriedAndAdjusted)
             config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
-                cul::connectivity::platform_default_manager(),
+                com::ubuntu::location::connectivity::platform_default_manager(),
                 std::make_shared<NullReporter>()
             }
         };
@@ -450,7 +450,7 @@ TEST_F(LocationServiceStandalone, SatellitePositioningStatusCanBeQueriedAndAdjus
             config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
-                cul::connectivity::platform_default_manager(),
+                com::ubuntu::location::connectivity::platform_default_manager(),
                 std::make_shared<NullReporter>()
             }
         };
@@ -530,7 +530,7 @@ TEST_F(LocationServiceStandalone, WifiAndCellIdReportingStateCanBeQueriedAndAjdu
             config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
-                cul::connectivity::platform_default_manager(),
+                com::ubuntu::location::connectivity::platform_default_manager(),
                 std::make_shared<NullReporter>()
             }
         };
@@ -618,7 +618,7 @@ TEST_F(LocationServiceStandalone, VisibleSpaceVehiclesCanBeQueried)
             config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
-                cul::connectivity::platform_default_manager(),
+                com::ubuntu::location::connectivity::platform_default_manager(),
                 std::make_shared<NullReporter>()
             }
         };
@@ -698,7 +698,7 @@ TEST_F(LocationServiceStandalone, NewSessionsGetLastKnownPosition)
             config.the_permission_manager(incoming),
             cul::service::Harvester::Configuration
             {
-                cul::connectivity::platform_default_manager(),
+                com::ubuntu::location::connectivity::platform_default_manager(),
                 std::make_shared<NullReporter>()
             }
         };

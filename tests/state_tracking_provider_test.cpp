@@ -16,21 +16,21 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <com/ubuntu/location/state_tracking_provider.h>
+#include <location/state_tracking_provider.h>
 
-#include <com/ubuntu/location/clock.h>
-#include <com/ubuntu/location/update.h>
-#include <com/ubuntu/location/position.h>
-#include <com/ubuntu/location/units/units.h>
-#include <com/ubuntu/location/wgs84/latitude.h>
-#include <com/ubuntu/location/wgs84/longitude.h>
-#include <com/ubuntu/location/wgs84/altitude.h>
+#include <location/clock.h>
+#include <location/update.h>
+#include <location/position.h>
+#include <location/units/units.h>
+#include <location/wgs84/latitude.h>
+#include <location/wgs84/longitude.h>
+#include <location/wgs84/altitude.h>
 
 #include "mock_provider.h"
 
 #include <gtest/gtest.h>
 
-namespace cul = com::ubuntu::location;
+namespace cul = location;
 
 namespace
 {
@@ -78,11 +78,11 @@ TEST(StateTrackingProviderTest, forwards_calls_to_impl)
     EXPECT_CALL(*impl, start_heading_updates()).Times(1);
     EXPECT_CALL(*impl, stop_heading_updates()).Times(1);
 
-    com::ubuntu::location::StateTrackingProvider stp{impl};
-    EXPECT_TRUE(stp.supports(com::ubuntu::location::Provider::Features::none));
-    EXPECT_FALSE(stp.requires(com::ubuntu::location::Provider::Requirements::none));
-    EXPECT_FALSE(stp.matches_criteria(com::ubuntu::location::Criteria{}));
-    stp.on_wifi_and_cell_reporting_state_changed(com::ubuntu::location::WifiAndCellIdReportingState::on);
+    location::StateTrackingProvider stp{impl};
+    EXPECT_TRUE(stp.supports(location::Provider::Features::none));
+    EXPECT_FALSE(stp.requires(location::Provider::Requirements::none));
+    EXPECT_FALSE(stp.matches_criteria(location::Criteria{}));
+    stp.on_wifi_and_cell_reporting_state_changed(location::WifiAndCellIdReportingState::on);
     stp.on_reference_location_updated(reference_position_update);
     stp.on_reference_heading_updated(reference_heading_update);
     stp.on_reference_velocity_updated(reference_velocity_update);

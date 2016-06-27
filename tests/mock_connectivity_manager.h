@@ -19,7 +19,7 @@
 #ifndef MOCK_CONNECTIVITY_MANAGER_H_
 #define MOCK_CONNECTIVITY_MANAGER_H_
 
-#include <com/ubuntu/location/connectivity/manager.h>
+#include <location/connectivity/manager.h>
 
 #include <core/property.h>
 

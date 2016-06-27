@@ -22,10 +22,7 @@
 #include <functional>
 #include <iostream>
 
-namespace com {
-namespace ubuntu {
 namespace location {
-
 struct ProgramOptions
 {
     ProgramOptions(bool do_allow_unregistered = true) : allow_unregistered(do_allow_unregistered)
@@ -114,6 +111,4 @@ struct ProgramOptions
     std::vector<std::string> unrecognized;
 };
 
-}
-}
 }

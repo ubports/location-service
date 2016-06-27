@@ -15,12 +15,12 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include <com/ubuntu/location/provider.h>
+#include <location/provider.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-namespace cul = com::ubuntu::location;
+namespace cul = location;
 
 namespace
 {
@@ -30,26 +30,26 @@ cul::Update<T> update_as_of_now(const T& value = T())
     return cul::Update<T>{value, cul::Clock::now()};
 }
 
-class DummyProvider : public com::ubuntu::location::Provider
+class DummyProvider : public location::Provider
 {
 public:
     DummyProvider(cul::Provider::Features feats = cul::Provider::Features::none,
                   cul::Provider::Requirements requs= cul::Provider::Requirements::none)
-        : com::ubuntu::location::Provider(feats, requs)
+        : location::Provider(feats, requs)
     {
     }
 
-    void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Position>& update)
+    void inject_update(const location::Update<location::Position>& update)
     {
         mutable_updates().position(update);
     }
 
-    void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Velocity>& update)
+    void inject_update(const location::Update<location::Velocity>& update)
     {
         mutable_updates().velocity(update);
     }
 
-    void inject_update(const com::ubuntu::location::Update<com::ubuntu::location::Heading>& update)
+    void inject_update(const location::Update<location::Heading>& update)
     {
         mutable_updates().heading(update);
     }
@@ -67,10 +67,10 @@ TEST(Provider, requirement_flags_passed_at_construction_are_correctly_stored)
 
     DummyProvider provider(features, requirements);
 
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::satellites));
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::cell_network));
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::data_network));
-    EXPECT_TRUE(provider.requires(com::ubuntu::location::Provider::Requirements::monetary_spending));
+    EXPECT_TRUE(provider.requires(location::Provider::Requirements::satellites));
+    EXPECT_TRUE(provider.requires(location::Provider::Requirements::cell_network));
+    EXPECT_TRUE(provider.requires(location::Provider::Requirements::data_network));
+    EXPECT_TRUE(provider.requires(location::Provider::Requirements::monetary_spending));
 }
 
 TEST(Provider, feature_flags_passed_at_construction_are_correctly_stored)
@@ -81,9 +81,9 @@ TEST(Provider, feature_flags_passed_at_construction_are_correctly_stored)
           cul::Provider::Features::velocity;
     DummyProvider provider(all_features);
 
-    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Features::position));
-    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Features::velocity));
-    EXPECT_TRUE(provider.supports(com::ubuntu::location::Provider::Features::heading));
+    EXPECT_TRUE(provider.supports(location::Provider::Features::position));
+    EXPECT_TRUE(provider.supports(location::Provider::Features::velocity));
+    EXPECT_TRUE(provider.supports(location::Provider::Features::heading));
 }
 
 TEST(Provider, delivering_a_message_invokes_subscribers)
@@ -94,19 +94,19 @@ TEST(Provider, delivering_a_message_invokes_subscribers)
     bool velocity_update_triggered {false};
 
     auto c1 = dp.updates().position.connect(
-        [&](const com::ubuntu::location::Update<com::ubuntu::location::Position>&)
+        [&](const location::Update<location::Position>&)
         {
             position_update_triggered = true;
         });
 
     auto c2 = dp.updates().heading.connect(
-        [&](const com::ubuntu::location::Update<com::ubuntu::location::Heading>&)
+        [&](const location::Update<location::Heading>&)
         {
             heading_update_triggered = true;
         });
 
     auto c3 = dp.updates().velocity.connect(
-        [&](const com::ubuntu::location::Update<com::ubuntu::location::Velocity>&)
+        [&](const location::Update<location::Velocity>&)
         {
             velocity_update_triggered = true;
         });
@@ -122,7 +122,7 @@ TEST(Provider, delivering_a_message_invokes_subscribers)
 
 namespace
 {
-struct MockProvider : public com::ubuntu::location::Provider
+struct MockProvider : public location::Provider
 {
     MockProvider() : cul::Provider()
     {
@@ -218,7 +218,7 @@ TEST(Provider, disabling_a_provider_stops_all_updates)
     p.state_controller()->disable();
 }
 
-#include <com/ubuntu/location/proxy_provider.h>
+#include <location/proxy_provider.h>
 
 TEST(ProxyProvider, start_and_stop_of_updates_propagates_to_correct_providers)
 {
@@ -285,8 +285,8 @@ TEST(ProxyProvider, update_signals_are_routed_from_correct_providers)
     mp3.inject_update(cul::Update<cul::Velocity>());
 }
 
-#include <com/ubuntu/location/fusion_provider.h>
-#include <com/ubuntu/location/newer_or_more_accurate_update_selector.h>
+#include <location/fusion_provider.h>
+#include <location/newer_or_more_accurate_update_selector.h>
 
 TEST(FusionProvider, start_and_stop_of_updates_propagates_to_correct_providers)
 {
@@ -348,7 +348,7 @@ TEST(FusionProvider, update_signals_are_routed_from_correct_providers)
     mp3.inject_update(cul::Update<cul::Velocity>());
 }
 
-#include <com/ubuntu/location/clock.h>
+#include <location/clock.h>
 
 TEST(FusionProvider, more_timely_update_is_chosen)
 {

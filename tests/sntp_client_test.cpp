@@ -16,8 +16,8 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <com/ubuntu/location/providers/gps/sntp_client.h>
-#include <com/ubuntu/location/service/runtime.h>
+#include <location/providers/gps/sntp_client.h>
+#include <location/service/runtime.h>
 
 #include <future>
 
@@ -26,7 +26,6 @@
 #include <gtest/gtest.h>
 
 namespace env = core::posix::this_process::env;
-namespace location = com::ubuntu::location;
 namespace sntp = location::providers::gps::sntp;
 
 namespace

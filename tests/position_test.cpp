@@ -15,11 +15,11 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include <com/ubuntu/location/position.h>
+#include <location/position.h>
 
 #include <gtest/gtest.h>
 
-namespace cul = com::ubuntu::location;
+namespace cul = location;
 
 TEST(Position, AllFieldsAreInvalidForDefaultConstructor)
 {
@@ -43,7 +43,7 @@ TEST(Position, InitWithLatLonAltGivesValidFieldsForLatLonAlt)
     EXPECT_TRUE(p.altitude ? true : false);
 }
 
-#include <com/ubuntu/location/codec.h>
+#include <location/codec.h>
 
 #include <core/dbus/message_streaming_operators.h>
 

@@ -16,7 +16,7 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <com/ubuntu/location/service/ichnaea_reporter.h>
+#include <location/service/ichnaea_reporter.h>
 
 #include "web_server.h"
 
@@ -33,11 +33,9 @@
 
 #include <condition_variable>
 
-namespace location = com::ubuntu::location;
-
 namespace
 {
-struct MockWirelessNetwork : public location::connectivity::WirelessNetwork
+struct MockWirelessNetwork : public com::ubuntu::location::connectivity::WirelessNetwork
 {
     /** @brief Timestamp when the network became visible. */
     MOCK_CONST_METHOD0(last_seen, const core::Property<std::chrono::system_clock::time_point>&());
@@ -58,7 +56,7 @@ struct MockWirelessNetwork : public location::connectivity::WirelessNetwork
     MOCK_CONST_METHOD0(signal_strength, const core::Property<SignalStrength>&());
 };
 
-struct MockRadioCell : public location::connectivity::RadioCell
+struct MockRadioCell : public com::ubuntu::location::connectivity::RadioCell
 {
     typedef std::shared_ptr<MockRadioCell> Ptr;
 
@@ -94,13 +92,13 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
 {
     using namespace ::testing;
 
-    static const location::connectivity::RadioCell::Gsm gsm
+    static const com::ubuntu::location::connectivity::RadioCell::Gsm gsm
     {
-        location::connectivity::RadioCell::Gsm::MCC{42},
-        location::connectivity::RadioCell::Gsm::MNC{42},
-        location::connectivity::RadioCell::Gsm::LAC{42},
-        location::connectivity::RadioCell::Gsm::ID{42},
-        location::connectivity::RadioCell::Gsm::SignalStrength{21}
+        com::ubuntu::location::connectivity::RadioCell::Gsm::MCC{42},
+        com::ubuntu::location::connectivity::RadioCell::Gsm::MNC{42},
+        com::ubuntu::location::connectivity::RadioCell::Gsm::LAC{42},
+        com::ubuntu::location::connectivity::RadioCell::Gsm::ID{42},
+        com::ubuntu::location::connectivity::RadioCell::Gsm::SignalStrength{21}
     };
 
     static const MockRadioCell::Ptr ref_cell
@@ -108,7 +106,7 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
         new NiceMock<MockRadioCell>()
     };
 
-    ON_CALL(*ref_cell, type()).WillByDefault(Return(location::connectivity::RadioCell::Type::gsm));
+    ON_CALL(*ref_cell, type()).WillByDefault(Return(com::ubuntu::location::connectivity::RadioCell::Type::gsm));
     ON_CALL(*ref_cell, gsm()).WillByDefault(ReturnRef(gsm));
 
     static const core::Property<std::chrono::system_clock::time_point> ref_timestamp
@@ -126,19 +124,19 @@ TEST(IchnaeaReporter, issues_correct_posts_requests)
         "ssid:42"
     };
 
-    static const core::Property<location::connectivity::WirelessNetwork::Mode> ref_mode
+    static const core::Property<com::ubuntu::location::connectivity::WirelessNetwork::Mode> ref_mode
     {
-        location::connectivity::WirelessNetwork::Mode::infrastructure
+        com::ubuntu::location::connectivity::WirelessNetwork::Mode::infrastructure
     };
 
-    static const core::Property<location::connectivity::WirelessNetwork::Frequency> ref_frequency
+    static const core::Property<com::ubuntu::location::connectivity::WirelessNetwork::Frequency> ref_frequency
     {
-        location::connectivity::WirelessNetwork::Frequency{4242}
+        com::ubuntu::location::connectivity::WirelessNetwork::Frequency{4242}
     };
 
-    static const core::Property<location::connectivity::WirelessNetwork::SignalStrength> ref_strength
+    static const core::Property<com::ubuntu::location::connectivity::WirelessNetwork::SignalStrength> ref_strength
     {
-        location::connectivity::WirelessNetwork::SignalStrength{80}
+        com::ubuntu::location::connectivity::WirelessNetwork::SignalStrength{80}
     };
 
     static const std::string api_key

@@ -16,16 +16,14 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <com/ubuntu/location/engine.h>
-#include <com/ubuntu/location/provider.h>
-#include <com/ubuntu/location/provider_selection_policy.h>
+#include <location/engine.h>
+#include <location/provider.h>
+#include <location/provider_selection_policy.h>
 
 #include "null_provider_selection_policy.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
-namespace location = com::ubuntu::location;
 
 namespace
 {
