@@ -19,11 +19,7 @@
 #include "android_hardware_abstraction_layer.h"
 #include "sntp_reference_time_source.h"
 
-#if defined(COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP)
 #include "net_cpp_gps_xtra_downloader.h"
-#else
-#include "null_gps_xtra_downloader.h"
-#endif
 
 #include <location/clock.h>
 #include <location/configuration.h>
@@ -42,11 +38,7 @@ namespace
 {
 std::shared_ptr<android::GpsXtraDownloader> create_xtra_downloader()
 {
-#if defined(COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP)
     return std::make_shared<android::NetCppGpsXtraDownloader>();
-#else
-    return std::make_shared<android::NullGpsXtraDownloader>();
-#endif // COM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP
 }
 }
 

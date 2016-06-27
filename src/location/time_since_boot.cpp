@@ -19,9 +19,9 @@
 #include <location/time_since_boot.h>
 #include <location/logging.h>
 
-#if defined(COM_UBUNTU_LOCATION_SERVICE_HAVE_UBUNTU_PLATFORM_HARDWARE_API)
+#if defined(LOCATION_HAVE_UBUNTU_PLATFORM_HARDWARE_API)
 #include <ubuntu/hardware/alarm.h>
-#endif // COM_UBUNTU_LOCATION_SERVICE_HAVE_UBUNTU_PLATFORM_HARDWARE_API
+#endif // LOCATION_HAVE_UBUNTU_PLATFORM_HARDWARE_API
 
 #include <fstream>
 #include <sstream>
@@ -32,16 +32,16 @@ namespace
 {
 bool have_ubuntu_hardware_alarm()
 {
-#if defined(COM_UBUNTU_LOCATION_SERVICE_HAVE_UBUNTU_PLATFORM_HARDWARE_API)
+#if defined(LOCATION_HAVE_UBUNTU_PLATFORM_HARDWARE_API)
     return true;
 #else
     return false;
-#endif // COM_UBUNTU_LOCATION_SERVICE_HAVE_UBUNTU_PLATFORM_HARDWARE_API
+#endif // LOCATION_HAVE_UBUNTU_PLATFORM_HARDWARE_API
 }
 
 std::chrono::nanoseconds from_ubuntu_hardware_alarm()
 {
-#if defined(COM_UBUNTU_LOCATION_SERVICE_HAVE_UBUNTU_PLATFORM_HARDWARE_API)
+#if defined(LOCATION_HAVE_UBUNTU_PLATFORM_HARDWARE_API)
     struct Scope
     {
         Scope() : alarm{u_hardware_alarm_create()}
@@ -68,7 +68,7 @@ std::chrono::nanoseconds from_ubuntu_hardware_alarm()
     return std::chrono::seconds{ts.tv_sec} + std::chrono::nanoseconds{ts.tv_nsec};
 #else
     throw std::logic_error{"not implemented"};
-#endif // COM_UBUNTU_LOCATION_SERVICE_HAVE_UBUNTU_PLATFORM_HARDWARE_API
+#endif // LOCATION_HAVE_UBUNTU_PLATFORM_HARDWARE_API
 }
 
 

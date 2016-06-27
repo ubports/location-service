@@ -15,8 +15,8 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SET_NAME_FOR_THREAD_H
-#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SET_NAME_FOR_THREAD_H
+#ifndef LOCATION_SET_NAME_FOR_THREAD_H
+#define LOCATION_SET_NAME_FOR_THREAD_H
 
 #include <thread>
 
@@ -25,4 +25,4 @@ namespace location
 void set_name_for_thread(std::thread& t, const char* name);
 }
 
-#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_SET_NAME_FOR_THREAD_H
+#endif // LOCATION_SET_NAME_FOR_THREAD_H

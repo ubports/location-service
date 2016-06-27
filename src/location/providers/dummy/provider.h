@@ -15,8 +15,8 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_DUMMY_PROVIDER_H_
-#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_DUMMY_PROVIDER_H_
+#ifndef LOCATION_PROVIDERS_DUMMY_PROVIDER_H_
+#define LOCATION_PROVIDERS_DUMMY_PROVIDER_H_
 
 #include <location/provider.h>
 #include <location/provider_factory.h>
@@ -131,4 +131,4 @@ class Provider : public location::Provider
 }
 }
 
-#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_PROVIDERS_DUMMY_PROVIDER_H_
+#endif // LOCATION_PROVIDERS_DUMMY_PROVIDER_H_

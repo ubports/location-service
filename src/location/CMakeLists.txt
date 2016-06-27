@@ -1,12 +1,8 @@
 if (UBUNTU_PLATFORM_HARDWARE_API_FOUND)
-  add_definitions(-DCOM_UBUNTU_LOCATION_SERVICE_HAVE_UBUNTU_PLATFORM_HARDWARE_API)
+  add_definitions(-DLOCATION_HAVE_UBUNTU_PLATFORM_HARDWARE_API)
 endif()
 
-if (NET_CPP_FOUND)
-  add_definitions(-DCOM_UBUNTU_LOCATION_SERVICE_HAVE_NET_CPP=1)
-
-  set(ICHNAEA_REPORTER_SRCS service/ichnaea_reporter.cpp)
-endif()
+set(ICHNAEA_REPORTER_SRCS service/ichnaea_reporter.cpp)
 
 add_subdirectory(providers)
 

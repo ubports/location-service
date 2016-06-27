@@ -53,29 +53,29 @@ static FactoryInjector remote_injector
     location::providers::remote::Provider::Stub::create_instance
 };
 
-#if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GEOCLUE)
+#if defined(LOCATION_PROVIDERS_GEOCLUE)
 #include <location/providers/geoclue/provider.h>
 static FactoryInjector geoclue_injector
 {
     "geoclue::Provider", 
     location::providers::geoclue::Provider::create_instance
 };
-#endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GEOCLUE
+#endif // LOCATION_PROVIDERS_GEOCLUE
 
-#if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GPS)
+#if defined(LOCATION_PROVIDERS_GPS)
 #include <location/providers/gps/provider.h>
 static FactoryInjector gps_injector
 {
     "gps::Provider", 
     location::providers::gps::Provider::create_instance
 };
-#endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GPS
+#endif // LOCATION_PROVIDERS_GPS
 
-#if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_SKYHOOK)
+#if defined(LOCATION_PROVIDERS_SKYHOOK)
 #include <location/providers/skyhook/provider.h>
 static FactoryInjector skyhook_injector
 {
     "skyhook::Provider", 
     location::providers::skyhook::Provider::create_instance
 };
-#endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_SKYHOOK
+#endif // LOCATION_PROVIDERS_SKYHOOK

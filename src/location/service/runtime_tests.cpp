@@ -70,7 +70,7 @@ struct Fixture
     }
 };
 
-#if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GPS)
+#if defined(LOCATION_PROVIDERS_GPS)
 int snr_and_ttff()
 {
     typedef boost::accumulators::accumulator_set<
@@ -173,7 +173,7 @@ int snr_and_ttff()
 }
 #else
 int snr_and_ttff() { return 0; }
-#endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GPS
+#endif // LOCATION_PROVIDERS_GPS
 }
 
 int location::service::execute_runtime_tests()

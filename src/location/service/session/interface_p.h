@@ -225,4 +225,4 @@ struct Service<location::service::session::Interface>
 
 #include <location/codec.h>
 
-#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_SESSION_INTERFACE_P_H_
+#endif // LOCATION_SERVICE_SESSION_INTERFACE_P_H_

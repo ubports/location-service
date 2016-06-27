@@ -15,8 +15,8 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_CONNECTIVITY_NM_H
-#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_CONNECTIVITY_NM_H
+#ifndef LOCATION_CONNECTIVITY_NM_H
+#define LOCATION_CONNECTIVITY_NM_H
 
 #include <core/dbus/bus.h>
 #include <core/dbus/object.h>
@@ -691,4 +691,4 @@ struct NetworkManager
 }
 }
 
-#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_CONNECTIVITY_NM_H
+#endif // LOCATION_CONNECTIVITY_NM_H

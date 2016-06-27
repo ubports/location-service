@@ -15,8 +15,8 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_ENGINE_H_
-#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_ENGINE_H_
+#ifndef LOCATION_ENGINE_H_
+#define LOCATION_ENGINE_H_
 
 #include <location/provider.h>
 #include <location/provider_enumerator.h>
@@ -190,4 +190,4 @@ std::ostream& operator<<(std::ostream&, Engine::Status);
 std::istream& operator>>(std::istream&, Engine::Status&);
 }
 
-#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_ENGINE_H_
+#endif // LOCATION_ENGINE_H_

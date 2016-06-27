@@ -25,12 +25,12 @@ namespace
 // We use this for debugging purposes.
 const bool also_apply_cell_change_heuristics_to_gsm_cells =
     core::posix::this_process::env::get(
-            "COM_UBUNTU_LOCATION_CONNECTIVITY_DATA_CELL_FOR_GSM_TOO",
+            "LOCATION_CONNECTIVITY_DATA_CELL_FOR_GSM_TOO",
             "false") == "true";
 
 std::int64_t timeout_in_seconds()
 {
-    auto value = core::posix::this_process::env::get("COM_UBUNTU_LOCATION_CONNECTIVITY_DATA_CELL_TIMEOUT", "60");
+    auto value = core::posix::this_process::env::get("LOCATION_CONNECTIVITY_DATA_CELL_TIMEOUT", "60");
     std::stringstream ss(value);
     std::uint64_t result; ss >> result;
 

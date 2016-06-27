@@ -15,8 +15,8 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_SERVICE_COM_UBUNTU_LOCATION_SETTINGS_H_
-#define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SETTINGS_H_
+#ifndef LOCATION_SETTINGS_H_
+#define LOCATION_SETTINGS_H_
 
 #include <cstdint>
 
@@ -141,4 +141,4 @@ inline bool Settings::set_enum_for_key(const std::string& key, T value)
 }
 }
 
-#endif // LOCATION_SERVICE_COM_UBUNTU_LOCATION_SETTINGS_H_
+#endif // LOCATION_SETTINGS_H_
