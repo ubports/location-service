@@ -39,6 +39,18 @@ add_library(
 
   boost_ptree_settings.cpp
 
+  service.cpp
+
+  dbus/skeleton/service.h
+  dbus/skeleton/service.cpp
+  dbus/skeleton/session.h
+  dbus/skeleton/session.cpp
+
+  dbus/stub/service.h
+  dbus/stub/service.cpp
+  dbus/stub/session.h
+  dbus/stub/session.cpp
+
   service/default_configuration.cpp
   service/default_permission_manager.cpp
   service/harvester.cpp

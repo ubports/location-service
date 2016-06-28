@@ -26,7 +26,7 @@
 
 #include <core/dbus/traits/service.h>
 
-#include <location/codec.h>
+#include <location/dbus/codec.h>
 #include <location/update.h>
 
 #include <location/heading.h>

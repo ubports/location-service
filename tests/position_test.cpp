@@ -43,7 +43,7 @@ TEST(Position, InitWithLatLonAltGivesValidFieldsForLatLonAlt)
     EXPECT_TRUE(p.altitude ? true : false);
 }
 
-#include <location/codec.h>
+#include <location/dbus/codec.h>
 
 #include <core/dbus/message_streaming_operators.h>
 
