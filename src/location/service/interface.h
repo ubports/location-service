@@ -256,6 +256,6 @@ struct Service<location::service::Interface>
 }
 }
 
-#include <location/codec.h>
+#include <location/dbus/codec.h>
 
 #endif // LOCATION_SERVICE_INTERFACE_H_

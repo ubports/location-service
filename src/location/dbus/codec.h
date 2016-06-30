@@ -25,6 +25,7 @@
 #include <location/space_vehicle.h>
 #include <location/update.h>
 #include <location/velocity.h>
+#include <location/service.h>
 #include <location/service/state.h>
 #include <location/units/units.h>
 #include <location/wgs84/altitude.h>
@@ -39,6 +40,49 @@ namespace core
 {
 namespace dbus
 {
+namespace helper
+{
+template<>
+struct TypeMapper<location::Service::State>
+{
+    constexpr static ArgumentType type_value()
+    {
+        return ArgumentType::string;
+    }
+
+    constexpr static bool is_basic_type()
+    {
+        return true;
+    }
+    constexpr static bool requires_signature()
+    {
+        return false;
+    }
+
+    static std::string signature()
+    {
+        static const std::string s = TypeMapper<std::string>::signature();
+        return s;
+    }
+};
+}
+
+template<>
+struct Codec<location::Service::State>
+{
+    static void encode_argument(Message::Writer& writer, const location::Service::State& in)
+    {
+        std::stringstream ss; ss << in; auto s = ss.str();
+        writer.push_stringn(s.c_str(), s.size());
+    }
+
+    static void decode_argument(Message::Reader& reader, location::Service::State& in)
+    {
+        auto s = reader.pop_string();
+        std::stringstream ss{s}; ss >> in;
+    }
+};
+
 namespace helper
 {
 template<>
@@ -81,6 +125,7 @@ struct Codec<location::service::State>
         std::stringstream ss{s}; ss >> in;
     }
 };
+
 namespace helper
 {
 template<typename T>

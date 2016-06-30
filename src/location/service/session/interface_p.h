@@ -223,6 +223,6 @@ struct Service<location::service::session::Interface>
 }
 }
 
-#include <location/codec.h>
+#include <location/dbus/codec.h>
 
 #endif // LOCATION_SERVICE_SESSION_INTERFACE_P_H_
