@@ -23,7 +23,7 @@
 namespace cli = location::util::cli;
 
 location::cmds::List::List()
-    : CommandWithFlagsAndAction{cli::Name{"list"}, cli::Usage{"list"}, cli::Description{"Lists known provider implementations"}}
+    : CommandWithFlagsAndAction{cli::Name{"list"}, cli::Usage{"list"}, cli::Description{"lists known provider implementations"}}
 {
     action([this](const Context& ctxt)
     {

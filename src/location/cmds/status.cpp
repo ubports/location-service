@@ -27,7 +27,7 @@
 namespace cli = location::util::cli;
 
 location::cmds::Status::Status()
-    : CommandWithFlagsAndAction{cli::Name{"status"}, cli::Usage{"status"}, cli::Description{"Query status of the daemon"}},
+    : CommandWithFlagsAndAction{cli::Name{"status"}, cli::Usage{"status"}, cli::Description{"queries the status of the daemon"}},
       bus{core::dbus::WellKnownBus::system}
 {
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));

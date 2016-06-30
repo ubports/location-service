@@ -36,13 +36,13 @@
 namespace cli = location::util::cli;
 
 location::cmds::Run::Run()
-    : CommandWithFlagsAndAction{cli::Name{"run"}, cli::Usage{"run"}, cli::Description{"run the daemon"}},
+    : CommandWithFlagsAndAction{cli::Name{"run"}, cli::Usage{"run"}, cli::Description{"runs the daemon"}},
       bus{core::dbus::WellKnownBus::system},
       settings{"/var/lib/ubuntu-location-service/config.ini"}
 {
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
-    flag(cli::make_flag(cli::Name{"config"}, cli::Description{"The daemon configuration"}, config));
-    flag(cli::make_flag(cli::Name{"settings"}, cli::Description{"Path to runtime persistent state data"}, settings));
+    flag(cli::make_flag(cli::Name{"config"}, cli::Description{"daemon configuration"}, config));
+    flag(cli::make_flag(cli::Name{"settings"}, cli::Description{"path to runtime persistent state data"}, settings));
 
     action([this](const Context& ctxt)
     {

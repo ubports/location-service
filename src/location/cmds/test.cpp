@@ -23,7 +23,7 @@
 namespace cli = location::util::cli;
 
 location::cmds::Test::Test()
-    : CommandWithFlagsAndAction{cli::Name{"test"}, cli::Usage{"test"}, cli::Description{"Executes runtime tests against the gps provider."}}
+    : CommandWithFlagsAndAction{cli::Name{"test"}, cli::Usage{"test"}, cli::Description{"executes runtime tests against the gps provider."}}
 {
     action([this](const Context& ctxt)
     {

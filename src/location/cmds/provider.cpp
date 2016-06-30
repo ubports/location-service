@@ -39,7 +39,7 @@ void die_if(bool b, std::ostream& out, const std::string& message)
 }
 
 location::cmds::Provider::Provider()
-    : CommandWithFlagsAndAction{cli::Name{"provider"}, cli::Usage{"provider"}, cli::Description{"execute a built-in provider"}},
+    : CommandWithFlagsAndAction{cli::Name{"provider"}, cli::Usage{"provider"}, cli::Description{"executes a built-in provider"}},
       bus{core::dbus::WellKnownBus::system}
 {
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
