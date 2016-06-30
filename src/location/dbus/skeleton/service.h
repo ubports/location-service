@@ -20,10 +20,9 @@
 #define LOCATION_DBUS_SKELETON_SERVICE_H_
 
 #include <location/service.h>
+#include <location/permission_manager.h>
 
 #include <location/dbus/service.h>
-
-#include <location/service/permission_manager.h>
 
 #include <core/dbus/dbus.h>
 #include <core/dbus/object.h>
@@ -55,7 +54,7 @@ public:
         virtual ~CredentialsResolver() = default;
 
         // Resolves the sender of msg to the respective credentials.
-        virtual service::Credentials resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg) = 0;
+        virtual Credentials resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg) = 0;
     };
 
     // Implements CredentialsResolver by reaching out to the dbus daemon and
@@ -68,7 +67,7 @@ public:
         DBusDaemonCredentialsResolver(const core::dbus::Bus::Ptr& bus);
 
         // Resolves the sender of msg to pid, uid by calling out to the dbus daemon.
-        service::Credentials resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg);
+        Credentials resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg);
 
         // Stub for accessing the dbus daemon.
         core::dbus::DBus daemon;
@@ -90,36 +89,30 @@ public:
         //    [1.] Query the AppArmor profile name for pid in credentials.
         //    [1.1] If the process is running unconfined, rely on a counter to assemble the session name.
         //    [1.2] If the process is confined, use the AppArmor profile name to generate the path.
-        virtual core::dbus::types::ObjectPath object_path_for_caller_credentials(const service::Credentials& credentials);
+        virtual core::dbus::types::ObjectPath object_path_for_caller_credentials(const Credentials& credentials);
     };
 
     struct Configuration
     {
-        // DBus connection set up for handling requests to the service.
-        core::dbus::Bus::Ptr incoming;
-        // DBus connection for reaching out to other services in a non-blocking way.
-        core::dbus::Bus::Ptr outgoing;
-        // Service instance that the skeleton should be exposed upon.
-        core::dbus::Service::Ptr service;
-        // An implementation of CredentialsResolver for resolving incoming message sender
-        // to Credentials = uid, pid.
-        CredentialsResolver::Ptr credentials_resolver;
-        // An implementation of ObjectPathGenerator for generating session names.
-        ObjectPathGenerator::Ptr object_path_generator;
-        // Permission manager implementation for verifying incoming requests.
-        service::PermissionManager::Ptr permission_manager;
+        location::Service::Ptr impl;                        // The actual service implementation.
+        core::dbus::Bus::Ptr incoming;                      // DBus connection set up for handling requests to the service.
+        core::dbus::Bus::Ptr outgoing;                      // DBus connection for reaching out to other services in a non-blocking way.
+        core::dbus::Service::Ptr service;                   // Service instance that the skeleton should be exposed upon.
+        CredentialsResolver::Ptr credentials_resolver;      // An implementation of CredentialsResolver.
+        ObjectPathGenerator::Ptr object_path_generator;     // An implementation of ObjectPathGenerator.
+        PermissionManager::Ptr permission_manager; // A permission manager implementation.
     };
 
     Service(const Configuration& configuration);
     ~Service() noexcept;
 
     // From location::service::Interface
-    const core::Property<State>& state() const;
-    core::Property<bool>& does_satellite_based_positioning();
-    core::Property<bool>& does_report_cell_and_wifi_ids();
-    core::Property<bool>& is_online();
-    core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles();
-
+    const core::Property<State>& state() const override;
+    core::Property<bool>& does_satellite_based_positioning() override;
+    core::Property<bool>& does_report_cell_and_wifi_ids() override;
+    core::Property<bool>& is_online() override;
+    core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles() override;
+    Session::Ptr create_session_for_criteria(const Criteria& criteria) override;
 protected:
     // Enable subclasses to alter the state.
     core::Property<State>& mutable_state();
@@ -172,10 +165,21 @@ private:
     // We sign up to property changes here, to be able to report them to the bus
     struct
     {
-        core::ScopedConnection state;
-        core::ScopedConnection does_satellite_based_positioning;
-        core::ScopedConnection does_report_cell_and_wifi_ids;
-        core::ScopedConnection is_online;
+        struct
+        {
+            core::ScopedConnection state;
+            core::ScopedConnection does_satellite_based_positioning;
+            core::ScopedConnection does_report_cell_and_wifi_ids;
+            core::ScopedConnection is_online;
+        } dbus;
+
+        struct
+        {
+            core::ScopedConnection state;
+            core::ScopedConnection does_satellite_based_positioning;
+            core::ScopedConnection does_report_cell_and_wifi_ids;
+            core::ScopedConnection is_online;
+        } impl;
     } connections;
     // Guards the session store.
     std::mutex guard;

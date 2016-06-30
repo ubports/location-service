@@ -42,17 +42,17 @@ location::dbus::skeleton::Service::DBusDaemonCredentialsResolver::DBusDaemonCred
 {
 }
 
-location::service::Credentials
+location::Credentials
 location::dbus::skeleton::Service::DBusDaemonCredentialsResolver::resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg)
 {
-    return location::service::Credentials
+    return location::Credentials
     {
         static_cast<pid_t>(daemon.get_connection_unix_process_id(msg->sender())),
         static_cast<uid_t>(daemon.get_connection_unix_user(msg->sender()))
     };
 }
 
-core::dbus::types::ObjectPath location::dbus::skeleton::Service::ObjectPathGenerator::object_path_for_caller_credentials(const location::service::Credentials&)
+core::dbus::types::ObjectPath location::dbus::skeleton::Service::ObjectPathGenerator::object_path_for_caller_credentials(const location::Credentials&)
 {
     static std::uint32_t index{0};
     std::stringstream ss; ss << "/sessions/" << index++;
@@ -76,22 +76,42 @@ location::dbus::skeleton::Service::Service(const location::dbus::skeleton::Servi
       },
       connections
       {
-          properties.state->changed().connect([this](State state)
           {
-              on_state_changed(state);
-          }),
-          properties.does_satellite_based_positioning->changed().connect([this](bool value)
+              properties.state->changed().connect([this](State state)
+              {
+                  on_state_changed(state);
+              }),
+              properties.does_satellite_based_positioning->changed().connect([this](bool value) mutable
+              {
+                  on_does_satellite_based_positioning_changed(value); Service::configuration.impl->does_satellite_based_positioning() = value;
+              }),
+              properties.does_report_cell_and_wifi_ids->changed().connect([this](bool value) mutable
+              {
+                  on_does_report_cell_and_wifi_ids_changed(value); Service::configuration.impl->does_report_cell_and_wifi_ids() = value;
+              }),
+              properties.is_online->changed().connect([this](bool value) mutable
+              {
+                  on_is_online_changed(value); Service::configuration.impl->is_online() = value;
+              })
+          },
           {
-              on_does_satellite_based_positioning_changed(value);
-          }),
-          properties.does_report_cell_and_wifi_ids->changed().connect([this](bool value)
-          {
-              on_does_report_cell_and_wifi_ids_changed(value);
-          }),
-          properties.is_online->changed().connect([this](bool value)
-          {
-              on_is_online_changed(value);
-          })
+              Service::configuration.impl->state().changed().connect([this](State state) mutable
+              {
+                  properties.state->set(state);
+              }),
+              Service::configuration.impl->does_satellite_based_positioning().changed().connect([this](bool value) mutable
+              {
+                  properties.does_satellite_based_positioning->set(value);
+              }),
+              Service::configuration.impl->does_report_cell_and_wifi_ids().changed().connect([this](bool value) mutable
+              {
+                  properties.does_report_cell_and_wifi_ids->set(value);
+              }),
+              Service::configuration.impl->is_online().changed().connect([this](bool value) mutable
+              {
+                  properties.is_online->set(value);
+              })
+          }
       }
 {
     object->install_method_handler<location::dbus::Service::CreateSessionForCriteria>([this](const core::dbus::Message::Ptr& msg)
@@ -129,7 +149,7 @@ void location::dbus::skeleton::Service::handle_create_session_for_criteria(const
         auto result =
             configuration.permission_manager->check_permission_for_credentials(criteria, credentials);
 
-        if (service::PermissionManager::Result::rejected == result) throw std::runtime_error
+        if (PermissionManager::Result::rejected == result) throw std::runtime_error
         {
             "Client lacks permissions to access the service with the given criteria"
         };
@@ -305,4 +325,9 @@ core::Property<bool>& location::dbus::skeleton::Service::is_online()
 core::Property<std::map<location::SpaceVehicle::Key, location::SpaceVehicle>>& location::dbus::skeleton::Service::visible_space_vehicles()
 {
     return *properties.visible_space_vehicles;
+}
+
+location::Service::Session::Ptr location::dbus::skeleton::Service::create_session_for_criteria(const Criteria& criteria)
+{
+    return configuration.impl->create_session_for_criteria(criteria);
 }
