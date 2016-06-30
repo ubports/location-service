@@ -19,7 +19,7 @@
 #include <location/providers/gps/sntp_reference_time_source.h>
 
 #include <location/configuration.h>
-#include <location/service/runtime.h>
+#include <location/runtime.h>
 
 #include <boost/property_tree/ini_parser.hpp>
 
@@ -46,7 +46,7 @@ gps::SntpReferenceTimeSource::SntpReferenceTimeSource(const Configuration& confi
 
 gps::HardwareAbstractionLayer::ReferenceTimeSample gps::SntpReferenceTimeSource::sample()
 {
-    auto rt = location::service::Runtime::create();
+    auto rt = location::Runtime::create();
     rt->start();
 
     location::providers::gps::sntp::Client sntp_client;

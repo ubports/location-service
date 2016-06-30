@@ -39,7 +39,42 @@ add_library(
 
   boost_ptree_settings.cpp
 
+  daemon.h
+  daemon.cpp
   service.cpp
+
+  dummy_service.h
+  dummy_service.cpp
+
+  permission_manager.h
+  runtime.h
+  runtime.cpp
+  runtime_tests.h
+  runtime_tests.cpp
+  service_with_engine.h
+  service_with_engine.cpp
+  session_with_provider.h
+  session_with_provider.cpp
+
+  trust_store_permission_manager.h
+  trust_store_permission_manager.cpp
+
+  cmds/list.h
+  cmds/list.cpp
+  cmds/provider.h
+  cmds/provider.cpp
+  cmds/run.h
+  cmds/run.cpp
+  cmds/status.h
+  cmds/status.cpp
+  cmds/test.h
+  cmds/test.cpp
+
+  util/cli.h
+  util/cli.cpp
+  util/do_not_copy_or_move.h
+  util/well_known_bus.h
+  util/well_known_bus.cpp
 
   dbus/skeleton/service.h
   dbus/skeleton/service.cpp
@@ -190,6 +225,12 @@ add_executable(
   service/daemon_cli_main.cpp
 )
 
+add_executable(
+  locationd
+
+  daemon_main.cpp
+)
+
 target_link_libraries(
   ubuntu-location-service-provider-daemon
 
@@ -244,6 +285,20 @@ target_link_libraries(
   ${GFlags_LIBRARY}
 )
 
+target_link_libraries(
+  locationd
+
+  ubuntu-location-service
+
+  ${ENABLED_PROVIDER_TARGETS}
+
+#  ${Boost_LIBRARIES}
+#  ${DBUS_LIBRARIES}
+#  ${DBUS_CPP_LIBRARIES}
+#  ${GLog_LIBRARY}
+#  ${GFlags_LIBRARY}
+)
+
 install(
   TARGETS ubuntu-location-service-providerd
   DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -256,5 +311,10 @@ install(
 
 install(
   TARGETS ubuntu-location-serviced-cli
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(
+  TARGETS locationd
   DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
