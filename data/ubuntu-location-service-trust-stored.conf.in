@@ -4,10 +4,12 @@ description "Location Services Trust Store Daemon"
 # starting; if dbus is available and location-service isn't or vice-versa,
 # startup will fail but the next event firing will trigger another start
 start on (started dbus and xsession SESSION=ubuntu-touch) or \
-    dbus BUS=system SIGNAL=NameOwnerChanged INTERFACE=org.freedesktop.DBus OBJPATH=/org/freedesktop/DBus ARG0=com.ubuntu.location.Service ARG2!=""
+    indicator-services-start or \
+    (dbus BUS=system SIGNAL=NameOwnerChanged INTERFACE=org.freedesktop.DBus OBJPATH=/org/freedesktop/DBus ARG0=com.ubuntu.location.Service ARG2!="") 
 
 stop on desktop-end or \
-    dbus BUS=system SIGNAL=NameOwnerChanged INTERFACE=org.freedesktop.DBus OBJPATH=/org/freedesktop/DBus ARG0=com.ubuntu.location.Service ARG2=""
+    indicator-services-end or \
+    (dbus BUS=system SIGNAL=NameOwnerChanged INTERFACE=org.freedesktop.DBus OBJPATH=/org/freedesktop/DBus ARG0=com.ubuntu.location.Service ARG2="")
 
 respawn
 
