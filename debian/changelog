@@ -1,3 +1,9 @@
+location-service (3.0.0+16.10.20160710-0ubuntu1) yakkety; urgency=medium
+
+  * Reload trust-stored, when use switched locale in welcome wizard.
+
+ -- Rex Tsai <rex.tsai@canonical.com>  Sun, 10 Jul 2016 21:30:34 +0000
+
 location-service (3.0.0+16.10.20160616-0ubuntu1) yakkety; urgency=medium
 
   [ Scott Sweeny ]
