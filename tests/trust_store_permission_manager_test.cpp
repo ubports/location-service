@@ -16,8 +16,7 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <location/service/trust_store_permission_manager.h>
-
+#include <location/trust_store_permission_manager.h>
 #include <location/criteria.h>
 
 #include <core/posix/fork.h>
@@ -28,8 +27,6 @@
 #include <thread>
 
 #include <sys/apparmor.h>
-
-namespace service = location::service;
 
 namespace
 {
@@ -47,7 +44,7 @@ struct MockAppArmorProfileResolver
 {
     MOCK_METHOD1(resolve_pid_to_app_armor_profile, std::string(const core::trust::Pid&));
 
-    service::TrustStorePermissionManager::AppArmorProfileResolver to_functional()
+    location::TrustStorePermissionManager::AppArmorProfileResolver to_functional()
     {
         return [this](const core::trust::Pid& pid)
         {
@@ -69,16 +66,16 @@ TEST(TrustStorePermissionManager, calls_out_to_agent)
             .Times(1)
             .WillRepeatedly(Return(core::trust::Request::Answer::denied));
 
-    service::TrustStorePermissionManager pm
+    location::TrustStorePermissionManager pm
     {
         mock_agent,
-        service::TrustStorePermissionManager::libapparmor_profile_resolver()
+        location::TrustStorePermissionManager::libapparmor_profile_resolver()
     };
 
-    EXPECT_EQ(service::PermissionManager::Result::rejected,
+    EXPECT_EQ(location::PermissionManager::Result::rejected,
               pm.check_permission_for_credentials(
                   default_criteria,
-                  location::service::Credentials{::getpid(), ::getuid()}));
+                  location::Credentials{::getpid(), ::getuid()}));
 }
 
 TEST(TrustStorePermissionManager, returns_rejected_for_throwing_agent)
@@ -91,10 +88,10 @@ TEST(TrustStorePermissionManager, returns_rejected_for_throwing_agent)
             .Times(1)
             .WillRepeatedly(Throw(std::runtime_error{"Thrown from mock agent"}));
 
-    service::TrustStorePermissionManager pm{mock_agent, service::TrustStorePermissionManager::libapparmor_profile_resolver()};
+    location::TrustStorePermissionManager pm{mock_agent, location::TrustStorePermissionManager::libapparmor_profile_resolver()};
 
-    EXPECT_EQ(service::PermissionManager::Result::rejected,
-              pm.check_permission_for_credentials(default_criteria, location::service::Credentials{::getpid(), ::getuid()}));
+    EXPECT_EQ(location::PermissionManager::Result::rejected,
+              pm.check_permission_for_credentials(default_criteria, location::Credentials{::getpid(), ::getuid()}));
 }
 
 TEST(TrustStorePermissionManager, resolves_app_id)
@@ -115,14 +112,14 @@ TEST(TrustStorePermissionManager, resolves_app_id)
             .Times(1)
             .WillRepeatedly(Return(std::string{"does.not.exist"}));
 
-    service::TrustStorePermissionManager pm
+    location::TrustStorePermissionManager pm
     {
         mock_agent,
         resolver.to_functional()
     };
 
-    EXPECT_EQ(service::PermissionManager::Result::rejected,
-              pm.check_permission_for_credentials(default_criteria, location::service::Credentials{pid, uid}));
+    EXPECT_EQ(location::PermissionManager::Result::rejected,
+              pm.check_permission_for_credentials(default_criteria, location::Credentials{pid, uid}));
 }
 
 TEST(TrustStorePermissionManager, returns_rejected_for_throwing_app_id_resolver)
@@ -142,14 +139,14 @@ TEST(TrustStorePermissionManager, returns_rejected_for_throwing_app_id_resolver)
             .Times(1)
             .WillRepeatedly(Throw(std::runtime_error{"Thrown from MockAppArmorProfileResolver"}));
 
-    service::TrustStorePermissionManager pm
+    location::TrustStorePermissionManager pm
     {
         mock_agent,
         resolver.to_functional()
     };
 
-    EXPECT_EQ(service::PermissionManager::Result::rejected,
-              pm.check_permission_for_credentials(default_criteria, location::service::Credentials{pid, uid}));
+    EXPECT_EQ(location::PermissionManager::Result::rejected,
+              pm.check_permission_for_credentials(default_criteria, location::Credentials{pid, uid}));
 }
 
 // We should be provided with this kind of functionality by the trust-store.
@@ -162,14 +159,14 @@ TEST(AppArmorProfileResolver, libapparmor_profile_resolver_returns_correct_profi
                 core::posix::StandardStream::empty);
 
     EXPECT_EQ("unconfined",
-              service::TrustStorePermissionManager::libapparmor_profile_resolver()(core::trust::Pid{child.pid()}));
+              location::TrustStorePermissionManager::libapparmor_profile_resolver()(core::trust::Pid{child.pid()}));
 }
 
 TEST(AppArmorProfileResolver, libapparmor_profile_resolver_throws_for_apparmor_error)
 {
     // Passing -1 as the pid value results in the underlying apparmor call failing
     // and the implementation translating to a std::system_error.
-    EXPECT_THROW(service::TrustStorePermissionManager::libapparmor_profile_resolver()(core::trust::Pid{-1}),
+    EXPECT_THROW(location::TrustStorePermissionManager::libapparmor_profile_resolver()(core::trust::Pid{-1}),
                  std::system_error);
 }
 
@@ -199,5 +196,5 @@ TEST(AppArmorProfileResolver, DISABLED_libapparmor_profile_resolver_returns_corr
     cps.wait_for_signal_ready_for(std::chrono::milliseconds{500});
 
     EXPECT_EQ(for_testing::an_empty_profile_for_testing_purposes,
-              service::TrustStorePermissionManager::libapparmor_profile_resolver()(core::trust::Pid{child.pid()}));
+              location::TrustStorePermissionManager::libapparmor_profile_resolver()(core::trust::Pid{child.pid()}));
 }

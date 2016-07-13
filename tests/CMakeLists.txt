@@ -37,8 +37,6 @@ macro(LOCATION_SERVICE_ADD_TEST test_name src)
 
     ubuntu-location-service
     ubuntu-location-service-connectivity
-    ubuntu-location-service-provider-daemon
-    ubuntu-location-service-daemon
 
     mongoose
 
@@ -76,14 +74,13 @@ LOCATION_SERVICE_ADD_TEST(connectivity_manager_test connectivity_manager_test.cp
 LOCATION_SERVICE_ADD_TEST(controller_test controller_test.cpp)
 LOCATION_SERVICE_ADD_TEST(criteria_test criteria_test.cpp)
 LOCATION_SERVICE_ADD_TEST(daemon_and_cli_tests daemon_and_cli_tests.cpp)
-LOCATION_SERVICE_ADD_TEST(default_permission_manager_test default_permission_manager_test.cpp)
 LOCATION_SERVICE_ADD_TEST(engine_test engine_test.cpp)
-LOCATION_SERVICE_ADD_TEST(harvester_test harvester_test.cpp)
-LOCATION_SERVICE_ADD_TEST(demultiplexing_reporter_test demultiplexing_reporter_test.cpp)
+# LOCATION_SERVICE_ADD_TEST(harvester_test harvester_test.cpp)
+# LOCATION_SERVICE_ADD_TEST(demultiplexing_reporter_test demultiplexing_reporter_test.cpp)
 LOCATION_SERVICE_ADD_TEST(time_based_update_policy_test time_based_update_policy_test.cpp)
 
 if (NET_CPP_FOUND)
-  LOCATION_SERVICE_ADD_TEST(ichnaea_reporter_test ichnaea_reporter_test.cpp)
+#  LOCATION_SERVICE_ADD_TEST(ichnaea_reporter_test ichnaea_reporter_test.cpp)
 endif()
 
 LOCATION_SERVICE_ADD_TEST(position_test position_test.cpp)
@@ -123,10 +120,9 @@ if (LOCATION_SERVICE_ENABLE_GEOCLUE_PROVIDERS)
   endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
 endif (LOCATION_SERVICE_ENABLE_GEOCLUE_PROVIDERS)
 
-LOCATION_SERVICE_ADD_TEST(remote_providerd_test remote_providerd_test.cpp)
+# LOCATION_SERVICE_ADD_TEST(remote_providerd_test remote_providerd_test.cpp)
 
 LOCATION_SERVICE_ADD_TEST(remote_provider_test remote_provider_test.cpp)
 LOCATION_SERVICE_ADD_TEST(espoo_provider_test espoo_provider_test.cpp)
-LOCATION_SERVICE_ADD_TEST(delayed_service_test delayed_service_test.cpp)
 
 LOCATION_SERVICE_ADD_TEST(bug_1447110 bug_1447110.cpp)

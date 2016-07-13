@@ -21,6 +21,7 @@
 #include <location/space_vehicle.h>
 #include <location/heading.h>
 #include <location/position.h>
+#include <location/provider.h>
 #include <location/velocity.h>
 #include <location/update.h>
 
@@ -136,6 +137,11 @@ public:
       * @brief All space vehicles currently visible.
       */
     virtual core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles() = 0;
+
+    /**
+     * @brief add_provider installs provider to the underlying location::Engine.
+     */
+    virtual void add_provider(const Provider::Ptr& provider) = 0;
 
     /**
      * @brief Starts a new session for the given criteria

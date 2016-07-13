@@ -80,6 +80,26 @@ location::ServiceWithEngine::ServiceWithEngine(const Engine::Ptr& engine)
               })
       }
 {
+    switch (engine->configuration.engine_state)
+    {
+        case Engine::Status::off:
+            is_online_ = false;
+            state_ = State::disabled;
+            break;
+        case Engine::Status::on:
+            is_online_ = true;
+            state_ = State::enabled;
+            break;
+        case Engine::Status::active:
+            is_online_ = true;
+            state_ = State::active;
+            break;
+    };
+
+    does_report_cell_and_wifi_ids_ =
+        engine->configuration.wifi_and_cell_id_reporting_state == WifiAndCellIdReportingState::on;
+    does_satellite_based_positioning_ =
+        engine->configuration.satellite_based_positioning_state == SatelliteBasedPositioningState::on;
 }
 
 const core::Property<location::Service::State>& location::ServiceWithEngine::state() const
@@ -126,4 +146,9 @@ location::Service::Session::Ptr location::ServiceWithEngine::create_session_for_
     });
 
     return session;
+}
+
+void location::ServiceWithEngine::add_provider(const Provider::Ptr &provider)
+{
+    engine->add_provider(provider);
 }

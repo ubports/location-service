@@ -21,13 +21,13 @@
 
 #include <location/boost_ptree_settings.h>
 #include <location/fusion_provider_selection_policy.h>
+#include <location/runtime.h>
 #include <location/service_with_engine.h>
 #include <location/settings.h>
 #include <location/trust_store_permission_manager.h>
 
 #include <location/dbus/skeleton/service.h>
-#include <location/runtime.h>
-
+#include <location/providers/dummy/provider.h>
 #include <location/util/well_known_bus.h>
 
 #include <core/dbus/asio/executor.h>
@@ -37,9 +37,11 @@ namespace cli = location::util::cli;
 
 location::cmds::Run::Run()
     : CommandWithFlagsAndAction{cli::Name{"run"}, cli::Usage{"run"}, cli::Description{"runs the daemon"}},
+      testing{false},
       bus{core::dbus::WellKnownBus::system},
       settings{"/var/lib/ubuntu-location-service/config.ini"}
 {
+    flag(cli::make_flag(cli::Name{"testing"}, cli::Description{"whether we are running under testing, defaults to false"}, testing));
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
     flag(cli::make_flag(cli::Name{"config"}, cli::Description{"daemon configuration"}, config));
     flag(cli::make_flag(cli::Name{"settings"}, cli::Description{"path to runtime persistent state data"}, settings));
@@ -53,7 +55,7 @@ location::cmds::Run::Run()
         trap->signal_raised().connect([trap](core::posix::Signal)
         {
             trap->stop();
-        });
+        });        
 
         // The engine instance is the core piece of functionality.
         auto engine = std::make_shared<location::Engine>(
@@ -64,6 +66,13 @@ location::cmds::Run::Run()
             // an ini file, immediately syncing back changes to the underlying file whenever
             // parameters change.
             std::make_shared<location::SyncingSettings>(std::make_shared<location::BoostPtreeSettings>(settings.string())));
+
+        // We make sure that at least one provider is available to clients.
+        if (testing)
+        {
+            ctxt.cout << "Running under testing..." << std::endl;
+            engine->add_provider(std::make_shared<location::providers::dummy::Provider>());
+        }
 
         auto rt = location::Runtime::create();
 

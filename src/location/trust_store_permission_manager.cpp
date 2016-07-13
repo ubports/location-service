@@ -17,6 +17,7 @@
  */
 
 #include <location/trust_store_permission_manager.h>
+#include <location/config.h>
 #include <location/logging.h>
 
 #include <core/trust/dbus_agent.h>
@@ -50,9 +51,6 @@ std::string tr(const std::string& msg)
     return msg;
 }
 }
-
-// At least make the name a constant, no need to expose it, though.
-static constexpr const char* trust_store_service_name{"UbuntuLocationService"};
 }
 
 location::TrustStorePermissionManager::AppArmorProfileResolver location::TrustStorePermissionManager::libapparmor_profile_resolver()

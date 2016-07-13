@@ -21,6 +21,8 @@
 
 #include <location/dbus/codec.h>
 
+#include <location/providers/remote/stub.h>
+
 #include <location/criteria.h>
 #include <location/logging.h>
 
@@ -114,20 +116,55 @@ location::dbus::skeleton::Service::Service(const location::dbus::skeleton::Servi
           }
       }
 {
+    object->install_method_handler<location::dbus::Service::AddProvider>([this](const core::dbus::Message::Ptr& msg)
+    {
+        handle_add_provider(msg);
+    });
+
     object->install_method_handler<location::dbus::Service::CreateSessionForCriteria>([this](const core::dbus::Message::Ptr& msg)
     {
         handle_create_session_for_criteria(msg);
     });
+
+    properties.state->set(configuration.impl->state());
+    properties.is_online->set(configuration.impl->is_online());
+    properties.does_report_cell_and_wifi_ids->set(configuration.impl->does_report_cell_and_wifi_ids());
+    properties.does_satellite_based_positioning->set(configuration.impl->does_satellite_based_positioning());
+    properties.visible_space_vehicles->set(configuration.impl->visible_space_vehicles());
 }
 
 location::dbus::skeleton::Service::~Service() noexcept
 {
+    object->uninstall_method_handler<location::dbus::Service::AddProvider>();
     object->uninstall_method_handler<location::dbus::Service::CreateSessionForCriteria>();
 }
 
 core::Property<location::Service::State>& location::dbus::skeleton::Service::mutable_state()
 {
     return *properties.state;
+}
+
+void location::dbus::skeleton::Service::handle_add_provider(const core::dbus::Message::Ptr& msg)
+{
+    VLOG(1) << __PRETTY_FUNCTION__;
+
+    try
+    {
+        std::string sender = msg->sender();
+        core::dbus::types::ObjectPath path; msg->reader() >> path;
+        auto service = core::dbus::Service::use_service(configuration.outgoing, sender);
+        auto object = service->object_for_path(path);
+
+        add_provider(location::providers::remote::stub::create_with_configuration({object}));
+        configuration.outgoing->send(core::dbus::Message::make_method_return(msg));
+    }
+    catch(...)
+    {
+        // We failed to add the provider and let the requesting party know about the issue
+        // without exposing any detailed information.
+        configuration.outgoing->send(core::dbus::Message::make_error(msg, location::dbus::Service::Errors::AddingProvider::name(), ""));
+
+    }
 }
 
 void location::dbus::skeleton::Service::handle_create_session_for_criteria(const core::dbus::Message::Ptr& in)
@@ -330,4 +367,9 @@ core::Property<std::map<location::SpaceVehicle::Key, location::SpaceVehicle>>& l
 location::Service::Session::Ptr location::dbus::skeleton::Service::create_session_for_criteria(const Criteria& criteria)
 {
     return configuration.impl->create_session_for_criteria(criteria);
+}
+
+void location::dbus::skeleton::Service::add_provider(const Provider::Ptr& provider)
+{
+    configuration.impl->add_provider(provider);
 }

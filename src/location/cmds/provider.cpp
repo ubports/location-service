@@ -22,6 +22,7 @@
 #include <location/provider_factory.h>
 #include <location/runtime.h>
 
+#include <location/dbus/stub/service.h>
 #include <location/providers/remote/skeleton.h>
 
 #include <core/dbus/service.h>
@@ -43,14 +44,10 @@ location::cmds::Provider::Provider()
       bus{core::dbus::WellKnownBus::system}
 {
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
-    flag(cli::make_flag(cli::Name{"service"}, cli::Description{"name of the service hosting the provider."}, service));
-    flag(cli::make_flag(cli::Name{"path"}, cli::Description{"dbus object path hosting the provider."}, path));
     flag(cli::make_flag(cli::Name{"id"}, cli::Description{"id of the actual provider implementation."}, id));
 
     action([this](const Context& ctxt)
     {
-        die_if(not service, ctxt.cout, "service name is missing");
-        die_if(not path, ctxt.cout, "object path is missing");
         die_if(not id, ctxt.cout, "name of actual provider implementation is missing");
 
         // We exit cleanly for SIGINT and SIGTERM.
@@ -62,16 +59,15 @@ location::cmds::Provider::Provider()
 
         auto impl = location::ProviderFactory::instance().create_provider_for_name_with_config(*id, location::Configuration{});
 
-        auto rt = location::Runtime::create();
-        rt->start();
+        auto rt = location::Runtime::create(); rt->start();
 
         auto incoming = std::make_shared<core::dbus::Bus>(bus);
         incoming->install_executor(core::dbus::asio::make_executor(incoming, rt->service()));
-        auto object = core::dbus::Service::add_service(incoming, *service)
-                        ->add_object_for_path(core::dbus::types::ObjectPath{*path});
 
-        location::providers::remote::skeleton::Configuration config{object, incoming, impl};
-        auto skeleton = location::providers::remote::skeleton::create_with_configuration(config);
+        auto service = core::dbus::Service::use_service<location::dbus::Service>(incoming);
+        auto stub = std::make_shared<location::dbus::stub::Service>(incoming, service, service->object_for_path(core::dbus::types::ObjectPath{location::dbus::Service::path()}));
+
+        stub->add_provider(impl);
 
         trap->run();
 
@@ -80,4 +76,3 @@ location::cmds::Provider::Provider()
         return EXIT_SUCCESS;
     });
 }
-

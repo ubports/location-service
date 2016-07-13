@@ -146,13 +146,15 @@ void dummy::Provider::start_position_updates()
 
         while (!d->stop_requested)
         {
+            VLOG(10) << position_update;
+
             position_update.when = location::Clock::now();
             heading_update.when = location::Clock::now();
             velocity_update.when = location::Clock::now();
 
             mutable_updates().position(position_update);
             mutable_updates().heading(heading_update);
-            mutable_updates().velocity(velocity_update);
+            mutable_updates().velocity(velocity_update);           
 
             std::this_thread::sleep_for(d->configuration.update_period);
         }

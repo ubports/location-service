@@ -160,7 +160,7 @@ void location::dbus::skeleton::Session::on_start_heading_updates(const core::dbu
 
     try
     {
-        configuration.local.impl->updates().position_status = Updates::Status::enabled;
+        configuration.local.impl->updates().heading_status = Updates::Status::enabled;
         reply = core::dbus::Message::make_method_return(msg);
     } catch(const std::runtime_error& e)
     {

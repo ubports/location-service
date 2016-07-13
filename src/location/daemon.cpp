@@ -20,6 +20,7 @@
 #include <location/daemon.h>
 
 #include <location/cmds/list.h>
+#include <location/cmds/monitor.h>
 #include <location/cmds/provider.h>
 #include <location/cmds/run.h>
 #include <location/cmds/status.h>
@@ -35,6 +36,7 @@ location::Daemon::Daemon()
     : cmd{cli::Name{"locationd"}, cli::Usage{"locationd"}, cli::Description{"locationd"}}
 {    
     cmd.command(std::make_shared<location::cmds::List>());
+    cmd.command(std::make_shared<location::cmds::Monitor>());
     cmd.command(std::make_shared<location::cmds::Provider>());
     cmd.command(std::make_shared<location::cmds::Run>());
     cmd.command(std::make_shared<location::cmds::Status>());

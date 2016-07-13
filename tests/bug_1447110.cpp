@@ -16,22 +16,25 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <location/service/daemon.h>
+#include <location/cmds/run.h>
 
+#include <core/dbus/fixture.h>
 #include <core/posix/fork.h>
 
-#include <gtest/gtest.h>
 #include <boost/filesystem.hpp>
+#include <gtest/gtest.h>
+
+#include <thread>
 
 namespace
 {
-auto null_dbus_connection_factory = [](core::dbus::WellKnownBus)
+struct Bug1447110 : public core::dbus::testing::Fixture
 {
-    return core::dbus::Bus::Ptr{};
+
 };
 }
 
-TEST(Bug1447110, obsolete_log_directory_is_removed_on_startup)
+TEST_F(Bug1447110, obsolete_log_directory_is_removed_on_startup)
 {
     // We are trying to establish the pre-condition that a non-empty
     // directory /var/log/ubuntu-location-service exists. If we fail to do
@@ -48,15 +51,9 @@ TEST(Bug1447110, obsolete_log_directory_is_removed_on_startup)
 
     auto cp = core::posix::fork([]()
     {
-        const char* args[] =
-        {
-            "--bus", "session",
-            "--testing"
-        };
-        auto config = location::service::Daemon::Configuration::from_command_line_args(3, args, null_dbus_connection_factory);
-        location::service::Daemon::main(config);
-
-        return core::posix::exit::Status::success;
+        SCOPED_TRACE("Server");
+        location::cmds::Run run;
+        return static_cast<core::posix::exit::Status>(run.run(location::util::cli::Command::Context{std::cin, std::cout, {"--testing", "1"}}));
     }, core::posix::StandardStream::stderr);
 
     std::this_thread::sleep_for(std::chrono::seconds{1});

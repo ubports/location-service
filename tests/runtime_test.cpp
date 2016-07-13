@@ -15,18 +15,17 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#include <location/service/runtime.h>
+
+#include <location/runtime.h>
 
 #include <gtest/gtest.h>
 
 #include <condition_variable>
 #include <thread>
 
-namespace culs = location::service;
-
 TEST(Runtime, cleanly_shuts_down_threads)
 {
-    culs::Runtime::create();
+    location::Runtime::create();
 }
 
 TEST(Runtime, executes_service)
@@ -37,7 +36,7 @@ TEST(Runtime, executes_service)
 
     bool signaled = false;
 
-    auto rt = culs::Runtime::create();
+    auto rt = location::Runtime::create();
     rt->start();
     boost::asio::deadline_timer timer{rt->service(), boost::posix_time::milliseconds(500)};
     timer.async_wait([&wc, &signaled](const boost::system::error_code&)
@@ -58,7 +57,7 @@ TEST(Runtime, catches_exceptions_thrown_from_handlers)
 
     bool signaled = false;
 
-    auto rt = culs::Runtime::create();
+    auto rt = location::Runtime::create();
     rt->start();
     boost::asio::deadline_timer fast{rt->service(), boost::posix_time::milliseconds(100)};
     fast.async_wait([](const boost::system::error_code&)
@@ -96,7 +95,7 @@ TEST(Runtime, sets_up_pool_of_threads)
 
     auto state = std::make_shared<State>();
 
-    auto rt = culs::Runtime::create(2);
+    auto rt = location::Runtime::create(2);
     rt->start();
     boost::asio::deadline_timer fast{rt->service(), boost::posix_time::milliseconds(100)};
     fast.async_wait([state](const boost::system::error_code&)
