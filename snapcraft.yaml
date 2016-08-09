@@ -40,6 +40,7 @@ parts:
     configflags:
       - -DCMAKE_VERBOSE_MAKEFILE=ON
       - -DSNAPPY_UBUNTU_CORE=yes
+      - -DUBUNTU_LOCATION_SERVICE_VERSION_MAJOR=3
     source: .
     build-packages:
       - curl
