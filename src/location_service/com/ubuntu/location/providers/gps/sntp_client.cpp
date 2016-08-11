@@ -109,13 +109,10 @@ gps::sntp::Client::Response gps::sntp::Client::request_time(const std::string& h
     timer.expires_from_now(boost::posix_time::milliseconds{timeout.count()});
     timer.async_wait([&timed_out, &resolver, &socket](const boost::system::error_code& ec)
     {
-        if (ec)
-            return;
+        if (ec) return;
 
         timed_out = true;
-
         resolver.cancel();
-        socket.shutdown(ip::udp::socket::shutdown_both);
         socket.close();
     });
 
@@ -134,6 +131,13 @@ gps::sntp::Client::Response gps::sntp::Client::request_time(const std::string& h
     std::promise<void> promise_connect;
     auto future_connect = promise_connect.get_future();
 
+    // We are subject to a race here as the timeout handler might have been triggered
+    // _before_ we have started connecting the socket. For that, we check whether we are
+    // already past the deadline prior to establishing a connection. Once we are past this point,
+    // the usual mechanisms for closed sockets kick in.
+    if (timer.expires_at() <= boost::asio::deadline_timer::traits_type::now())
+        throw std::runtime_error{"Timed out"};
+
     socket.async_connect(*it, [&promise_connect](const boost::system::error_code& ec)
     {
         if (ec)
@@ -147,12 +151,15 @@ gps::sntp::Client::Response gps::sntp::Client::request_time(const std::string& h
     sntp::Packet packet;
 
     Now before;
-    {        
+    {
+        if (timer.expires_at() <= boost::asio::deadline_timer::traits_type::now())
+            throw std::runtime_error{"Timed out"};
+
         packet = request(socket);
         timer.cancel();
 
-        if (timed_out)
-            throw std::runtime_error("Operation timed out.");
+        if (timer.expires_at() <= boost::asio::deadline_timer::traits_type::now())
+            throw std::runtime_error{"Timed out"};
     }
     Now after;
 
