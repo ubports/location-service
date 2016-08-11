@@ -1,3 +1,16 @@
+location-service (3.0.0+16.10.20160811-0ubuntu1) yakkety; urgency=medium
+
+  [ Alberto Mardegan ]
+  * Don't sent last known position to new sessions (LP: #1604446)
+
+  [ Scott Sweeny ]
+  * Enable running location-service on Snappy Ubuntu Core
+
+  [ Thomas Voß ]
+  * Make sure that we are not racing with the timeout handler.
+
+ -- Thomas Voß <thomas.voss@canonical.com>  Thu, 11 Aug 2016 08:27:10 +0000
+
 location-service (3.0.0+16.10.20160710-0ubuntu1) yakkety; urgency=medium
 
   * Reload trust-stored, when use switched locale in welcome wizard.
