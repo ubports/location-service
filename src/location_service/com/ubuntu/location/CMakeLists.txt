@@ -52,6 +52,7 @@ add_library(
   service/runtime_tests.h
   service/runtime_tests.cpp
   service/state.cpp
+  service/system_configuration.cpp
   service/trust_store_permission_manager.cpp
 
   service/implementation.cpp

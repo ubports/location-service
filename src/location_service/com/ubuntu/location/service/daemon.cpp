@@ -28,6 +28,7 @@
 #include <com/ubuntu/location/service/ichnaea_reporter.h>
 #include <com/ubuntu/location/service/implementation.h>
 #include <com/ubuntu/location/service/stub.h>
+#include <com/ubuntu/location/service/system_configuration.h>
 
 #include <com/ubuntu/location/service/runtime_tests.h>
 
@@ -85,9 +86,11 @@ location::ProgramOptions init_daemon_options()
 
     options.add("help", "Produces this help message");
     options.add("testing", "Enables running the service without providers");
+    
+    std::string config_path = location::service::SystemConfiguration::instance().runtime_persistent_data_dir().string();
     options.add("config-file",
                 "The configuration we should read from/write to",
-                std::string{"/var/lib/ubuntu-location-service/config.ini"});
+                config_path.append("/config.ini"));
     options.add_composed<std::vector<std::string>>(
                 "provider",
                 "The providers that should be added to the engine");

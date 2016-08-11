@@ -1,0 +1,101 @@
+name: locationd
+version: 3.0.0+16.10.20160616-0ubuntu1
+summary: Location service mediates access to positioning providers.
+confinement: strict
+description: |
+  Location service mediates access to positioning providers.
+  
+  **Note** Currently only the dummy provider is supported in this snap. Additional
+  providers will be made available in the near future.
+
+  Please find the source for this snap at https://code.launchpad.net/location-service
+
+apps:
+  run:
+    daemon: simple
+    command: bin/ubuntu-location-serviced --bus system --provider dummy::Provider
+    slots: [service, cli]
+    plugs: [network-manager]
+  cli:
+    command: bin/ubuntu-location-serviced-cli
+    plugs: [cli]
+  example-client:
+    command: libexec/examples/client
+    plugs: [client]
+
+slots:
+    service:
+        interface: location-observe
+    cli:
+        interface: location-control
+plugs:
+    client:
+        interface: location-observe
+    cli:
+        interface: location-control
+
+parts:
+  location-service:
+    plugin: cmake
+    configflags:
+      - -DCMAKE_VERBOSE_MAKEFILE=ON
+      - -DSNAPPY_UBUNTU_CORE=yes
+      - -DUBUNTU_LOCATION_SERVICE_VERSION_MAJOR=3
+    source: .
+    build-packages:
+      - curl
+      - doxygen
+      - gcc
+      - geoclue-ubuntu-geoip
+      - gettext
+      - google-mock
+      - graphviz
+      - g++
+      - libapparmor-dev
+      - libboost-filesystem-dev
+      - libboost-program-options-dev
+      - libboost-system-dev
+      - libc6-dev
+      - libdbus-1-dev
+      - libdbus-cpp-dev
+      - libgoogle-glog-dev
+      - libgtest-dev
+      - libiw-dev
+      - libjson-c-dev
+      - libnet-cpp-dev
+      - libprocess-cpp-dev
+      - libtrust-store-dev
+      - libproperties-cpp-dev
+      - libubuntu-platform-hardware-api-headers
+      - libubuntu-platform-hardware-api-dev
+      - trust-store-bin
+    stage-packages:
+      - geoclue-ubuntu-geoip
+      - libapparmor1
+      - libboost-filesystem1.58.0
+      - libboost-program-options1.58.0
+      - libboost-system1.58.0
+      - libdbus-cpp5
+      - libgflags2v5
+      - libgoogle-glog0v5
+      - libjson-c2
+      - libnet-cpp2
+      - libprocess-cpp3
+      - libtrust-store2
+      - libubuntu-platform-hardware-api3
+    filesets:
+      licenses:
+        - usr/share/doc/*/*copyright*
+    snap:
+      - bin/ubuntu-location-service-providerd
+      - bin/ubuntu-location-serviced
+      - bin/ubuntu-location-serviced-cli
+      - etc/dbus-1/system.d
+      - etc/gps.conf
+      - lib/
+      - lib/libubuntu-location-service*
+      - libexec/
+      - share/ubuntu-location-service
+      - usr/lib/
+      - usr/share/geoclue-providers
+      - $licenses

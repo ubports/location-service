@@ -17,7 +17,7 @@
  */
 #include <com/ubuntu/location/service/default_configuration.h>
 #include <com/ubuntu/location/service/default_permission_manager.h>
-#include <com/ubuntu/location/service/trust_store_permission_manager.h>
+#include <com/ubuntu/location/service/system_configuration.h>
 
 #include <com/ubuntu/location/engine.h>
 #include <com/ubuntu/location/fusion_provider_selection_policy.h>
@@ -50,6 +50,6 @@ std::set<cul::Provider::Ptr> culs::DefaultConfiguration::the_provider_set(
 
 culs::PermissionManager::Ptr culs::DefaultConfiguration::the_permission_manager(const core::dbus::Bus::Ptr& bus)
 {
-    return culs::TrustStorePermissionManager::create_default_instance_with_bus(bus);
+    return culs::SystemConfiguration::instance().create_permission_manager(bus);
 }
 

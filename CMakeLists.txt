@@ -94,6 +94,10 @@ if (CLANG_FORMAT_COMMAND)
   add_custom_target(formatcode ${CLANG_FORMAT_COMMAND} -i ${UBUNTU_LOCATION_SERVICE_INTERFACE_HEADER_FILES} ${UBUNTU_LOCATION_SERVICE_IMPLEMENTATION_FILES} SOURCES _clang-format)
 endif()
 
+if (DEFINED SNAPPY_UBUNTU_CORE)
+    add_definitions(-DSNAPPY_UBUNTU_CORE)
+endif()
+
 include_directories(
   3rd-party/
 
