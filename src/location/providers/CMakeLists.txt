@@ -1,8 +1,7 @@
 add_subdirectory(dummy)
+add_subdirectory(fusion)
 add_subdirectory(remote)
-add_subdirectory(geoclue)
 add_subdirectory(gps)
-add_subdirectory(skyhook)
 
 set(
   ENABLED_PROVIDER_TARGETS

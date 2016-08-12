@@ -19,6 +19,7 @@
 #define LOCATION_CODEC_H_
 
 #include <location/criteria.h>
+#include <location/features.h>
 #include <location/heading.h>
 #include <location/position.h>
 #include <location/provider.h>
@@ -26,6 +27,10 @@
 #include <location/update.h>
 #include <location/velocity.h>
 #include <location/service.h>
+#include <location/events/all.h>
+#include <location/events/registry.h>
+#include <location/events/reference_position_updated.h>
+#include <location/events/wifi_and_cell_id_reporting_state_changed.h>
 #include <location/units/units.h>
 #include <location/wgs84/altitude.h>
 #include <location/wgs84/latitude.h>
@@ -107,6 +112,31 @@ struct TypeMapper<location::units::Quantity<T>>
         return s;
     }
 };
+
+template<typename T>
+struct TypeMapper<location::Optional<T>>
+{
+    constexpr static ArgumentType type_value()
+    {
+        return ArgumentType::structure;
+    }
+
+    constexpr static bool is_basic_type()
+    {
+        return false;
+    }
+
+    constexpr static bool requires_signature()
+    {
+        return true;
+    }
+
+    static std::string signature()
+    {
+        static const std::string s = DBUS_STRUCT_BEGIN_CHAR_AS_STRING + TypeMapper<bool>::signature() + DBUS_TYPE_VARIANT_AS_STRING + DBUS_STRUCT_END_CHAR_AS_STRING;
+        return s;
+    }
+};
 }
 
 template<typename T>
@@ -114,24 +144,43 @@ struct Codec<location::Optional<T>>
 {
     static void encode_argument(Message::Writer& writer, const location::Optional<T>& in)
     {
-        bool has_value{in};
-        Codec<bool>::encode_argument(writer, has_value);
-        if (has_value)
-            Codec<typename location::Optional<T>::value_type>::encode_argument(writer, *in);
+        auto sw = writer.open_structure();
+        {
+            bool has_value{in};
+            Codec<bool>::encode_argument(sw, has_value);
+
+            if (has_value)
+            {
+                auto vw = sw.open_variant(types::Signature{helper::TypeMapper<T>::signature()});
+                Codec<T>::encode_argument(vw, *in);
+                sw.close_variant(std::move(vw));
+            }
+            else
+            {
+                auto vw = sw.open_variant(types::Signature{helper::TypeMapper<bool>::signature()});
+                Codec<bool>::encode_argument(vw, false);
+                sw.close_variant(std::move(vw));
+            }
+        }
+        writer.close_structure(std::move(sw));
     }
 
     static void decode_argument(Message::Reader& reader, location::Optional<T>& in)
     {
-        bool has_value{false};
-        Codec<bool>::decode_argument(reader, has_value);
-        if (has_value)
+        auto sr = reader.pop_structure();
         {
-            typename location::Optional<T>::value_type value;
-            Codec<typename location::Optional<T>::value_type>::decode_argument(reader, value);
-            in = value;
-        } else
-        {
-            in.reset();
+            bool has_value{false};
+            Codec<bool>::decode_argument(sr, has_value);
+            auto vr = sr.pop_variant();
+            if (has_value)
+            {
+                T value;
+                Codec<T>::decode_argument(vr, value);
+                in = value;
+            } else
+            {
+                in.reset();
+            }
         }
     }
 };
@@ -152,6 +201,33 @@ struct Codec<location::units::Quantity<T>>
     }
 };
 
+namespace helper
+{
+template<typename T, typename U>
+struct TypeMapper<location::wgs84::Coordinate<T, U>>
+{
+    constexpr static ArgumentType type_value()
+    {
+        return TypeMapper<location::units::Quantity<U>>::type_value();
+    }
+
+    constexpr static bool is_basic_type()
+    {
+        return true;
+    }
+    constexpr static bool requires_signature()
+    {
+        return true;
+    }
+
+    static std::string signature()
+    {
+        static const std::string s = TypeMapper<location::units::Quantity<U>>::signature();
+        return s;
+    }
+};
+}
+
 template<typename T, typename U>
 struct Codec<location::wgs84::Coordinate<T,U>>
 {
@@ -166,6 +242,40 @@ struct Codec<location::wgs84::Coordinate<T,U>>
     }
 };
 
+namespace helper
+{
+template<>
+struct TypeMapper<location::Position>
+{
+    constexpr static ArgumentType type_value()
+    {
+        return ArgumentType::structure;
+    }
+
+    constexpr static bool is_basic_type()
+    {
+        return false;
+    }
+    constexpr static bool requires_signature()
+    {
+        return true;
+    }
+
+    static std::string signature()
+    {
+        static const std::string s =
+                DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
+                TypeMapper<location::wgs84::Latitude>::signature() +
+                TypeMapper<location::wgs84::Longitude>::signature() +
+                TypeMapper<location::Optional<location::wgs84::Altitude>>::signature() +
+                TypeMapper<location::Optional<location::Position::Accuracy::Horizontal>>::signature() +
+                TypeMapper<location::Optional<location::Position::Accuracy::Vertical>>::signature() +
+                DBUS_STRUCT_END_CHAR_AS_STRING;
+        return s;
+    }
+};
+}
+
 template<>
 struct Codec<location::Position>
 {
@@ -174,22 +284,29 @@ struct Codec<location::Position>
 
     static void encode_argument(Message::Writer& writer, const location::Position& in)
     {
-        Codec<location::wgs84::Latitude>::encode_argument(writer, in.latitude);
-        Codec<location::wgs84::Longitude>::encode_argument(writer, in.longitude);
-        Codec<location::Optional<location::wgs84::Altitude>>::encode_argument(writer, in.altitude);
+        auto vw = writer.open_structure();
+        {
+            Codec<location::wgs84::Latitude>::encode_argument(vw, in.latitude);
+            Codec<location::wgs84::Longitude>::encode_argument(vw, in.longitude);
+            Codec<location::Optional<location::wgs84::Altitude>>::encode_argument(vw, in.altitude);
 
-        Codec<location::Optional<HorizontalAccuracy>>::encode_argument(writer, in.accuracy.horizontal);
-        Codec<location::Optional<VerticalAccuracy>>::encode_argument(writer, in.accuracy.vertical);
+            Codec<location::Optional<HorizontalAccuracy>>::encode_argument(vw, in.accuracy.horizontal);
+            Codec<location::Optional<VerticalAccuracy>>::encode_argument(vw, in.accuracy.vertical);
+        }
+        writer.close_structure(std::move(vw));
     }
 
     static void decode_argument(Message::Reader& reader, location::Position& in)
     {
-        Codec<location::wgs84::Latitude>::decode_argument(reader, in.latitude);
-        Codec<location::wgs84::Longitude>::decode_argument(reader, in.longitude);
-        Codec<location::Optional<location::wgs84::Altitude>>::decode_argument(reader, in.altitude);
+        auto vr = reader.pop_structure();
+        {
+            Codec<location::wgs84::Latitude>::decode_argument(vr, in.latitude);
+            Codec<location::wgs84::Longitude>::decode_argument(vr, in.longitude);
+            Codec<location::Optional<location::wgs84::Altitude>>::decode_argument(vr, in.altitude);
 
-        Codec<location::Optional<HorizontalAccuracy>>::decode_argument(reader, in.accuracy.horizontal);
-        Codec<location::Optional<VerticalAccuracy>>::decode_argument(reader, in.accuracy.vertical);
+            Codec<location::Optional<HorizontalAccuracy>>::decode_argument(vr, in.accuracy.horizontal);
+            Codec<location::Optional<VerticalAccuracy>>::decode_argument(vr, in.accuracy.vertical);
+        }
     }
 };
 
@@ -355,6 +472,53 @@ struct Codec<std::map<location::SpaceVehicle::Key, location::SpaceVehicle>>
 };
 
 template<>
+struct Codec<location::Features>
+{
+    static void encode_argument(Message::Writer& writer, const location::Features& in)
+    {
+        writer.push_int32(static_cast<std::int32_t>(in));
+    }
+
+    static void decode_argument(Message::Reader& reader, location::Features& in)
+    {
+        in = static_cast<location::Features>(reader.pop_int32());
+    }
+};
+
+namespace helper
+{
+template<>
+struct TypeMapper<location::Criteria>
+{
+    constexpr static ArgumentType type_value()
+    {
+        return ArgumentType::structure;
+    }
+    constexpr static bool is_basic_type()
+    {
+        return false;
+    }
+    constexpr static bool requires_signature()
+    {
+        return true;
+    }
+
+    inline static std::string signature()
+    {
+        std::string s =
+            DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
+                TypeMapper<std::int32_t>::signature() +
+                TypeMapper<location::Optional<location::Position::Accuracy::Horizontal>>::signature() +
+                TypeMapper<location::Optional<location::Position::Accuracy::Vertical>>::signature() +
+                TypeMapper<location::Optional<location::units::Quantity<location::units::Velocity>>>::signature() +
+                TypeMapper<location::Optional<location::units::Quantity<location::units::PlaneAngle>>>::signature() +
+            DBUS_STRUCT_END_CHAR_AS_STRING;
+        return s;
+    }
+};
+}
+
+template<>
 struct Codec<location::Criteria>
 {
     typedef location::units::Quantity<location::units::Length> HorizontalAccuracy;
@@ -364,12 +528,9 @@ struct Codec<location::Criteria>
 
     static void encode_argument(Message::Writer& writer, const location::Criteria& in)
     {
-        Codec<bool>::encode_argument(writer, in.requires.position);
-        Codec<bool>::encode_argument(writer, in.requires.altitude);
-        Codec<bool>::encode_argument(writer, in.requires.heading);
-        Codec<bool>::encode_argument(writer, in.requires.velocity);
+        Codec<location::Features>::encode_argument(writer, in.requirements);
 
-        Codec<HorizontalAccuracy>::encode_argument(writer, in.accuracy.horizontal);
+        Codec<location::Optional<HorizontalAccuracy>>::encode_argument(writer, in.accuracy.horizontal);
         Codec<location::Optional<VerticalAccuracy>>::encode_argument(writer, in.accuracy.vertical);
         Codec<location::Optional<VelocityAccuracy>>::encode_argument(writer, in.accuracy.velocity);
         Codec<location::Optional<HeadingAccuracy>>::encode_argument(writer, in.accuracy.heading);
@@ -377,29 +538,12 @@ struct Codec<location::Criteria>
 
     static void decode_argument(Message::Reader& reader, location::Criteria& in)
     {
-        Codec<bool>::decode_argument(reader, in.requires.position);
-        Codec<bool>::decode_argument(reader, in.requires.altitude);
-        Codec<bool>::decode_argument(reader, in.requires.heading);
-        Codec<bool>::decode_argument(reader, in.requires.velocity);
+        Codec<location::Features>::decode_argument(reader, in.requirements);
 
-        Codec<HorizontalAccuracy>::decode_argument(reader, in.accuracy.horizontal);
+        Codec<location::Optional<HorizontalAccuracy>>::decode_argument(reader, in.accuracy.horizontal);
         Codec<location::Optional<VerticalAccuracy>>::decode_argument(reader, in.accuracy.vertical);
         Codec<location::Optional<VelocityAccuracy>>::decode_argument(reader, in.accuracy.velocity);
         Codec<location::Optional<HeadingAccuracy>>::decode_argument(reader, in.accuracy.heading);
-    }
-};
-
-template<>
-struct Codec<location::Provider::Features>
-{
-    static void encode_argument(Message::Writer& writer, const location::Provider::Features& in)
-    {
-        writer.push_int32(static_cast<std::int32_t>(in));
-    }
-
-    static void decode_argument(Message::Reader& reader, location::Provider::Features& in)
-    {
-        in = static_cast<location::Provider::Features>(reader.pop_int32());
     }
 };
 
@@ -416,6 +560,33 @@ struct Codec<location::Provider::Requirements>
         in = static_cast<location::Provider::Requirements>(reader.pop_int32());
     }
 };
+
+namespace helper
+{
+template<>
+struct TypeMapper<location::WifiAndCellIdReportingState>
+{
+    constexpr static ArgumentType type_value()
+    {
+        return ArgumentType::int32;
+    }
+    constexpr static bool is_basic_type()
+    {
+        return true;
+    }
+
+    constexpr static bool requires_signature()
+    {
+        return true;
+    }
+
+    static std::string signature()
+    {
+        static const std::string s = helper::TypeMapper<std::int32_t>::signature();
+        return s;
+    }
+};
+}
 
 template<>
 struct Codec<location::WifiAndCellIdReportingState>
@@ -452,8 +623,10 @@ struct TypeMapper<location::Update<T>>
     static std::string signature()
     {
         static const std::string s =
+                DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
                 helper::TypeMapper<T>::signature() +
-                helper::TypeMapper<uint64_t>::signature();
+                helper::TypeMapper<int64_t>::signature() +
+                DBUS_STRUCT_END_CHAR_AS_STRING;
         return s;
     }
 };
@@ -464,15 +637,109 @@ struct Codec<location::Update<T>>
 {
     static void encode_argument(Message::Writer& writer, const location::Update<T>& in)
     {
-        Codec<T>::encode_argument(writer, in.value);
-        Codec<int64_t>::encode_argument(writer, in.when.time_since_epoch().count());
+        auto sw = writer.open_structure();
+        {
+            Codec<T>::encode_argument(sw, in.value);
+            Codec<int64_t>::encode_argument(sw, in.when.time_since_epoch().count());
+        }
+        writer.close_structure(std::move(sw));
     }
 
     static void decode_argument(Message::Reader& reader, location::Update<T>& in)
     {
-        Codec<T>::decode_argument(reader, in.value);
-        in.when = location::Clock::Timestamp(location::Clock::Duration(reader.pop_int64()));
+        auto sr = reader.pop_structure();
+        Codec<T>::decode_argument(sr, in.value);
+        in.when = location::Clock::Timestamp(location::Clock::Duration(sr.pop_int64()));
     }    
+};
+
+template<>
+struct Codec<location::events::ReferencePositionUpdated>
+{
+    static void encode_argument(Message::Writer& out, const location::events::ReferencePositionUpdated& event)
+    {
+        Codec<location::Update<location::Position>>::encode_argument(out, event.update());
+    }
+
+    static void decode_argument(Message::Reader& in, location::events::ReferencePositionUpdated& event)
+    {
+        location::Update<location::Position> update;
+        Codec<location::Update<location::Position>>::decode_argument(in, update);
+        event = location::events::ReferencePositionUpdated{update};
+    }
+};
+
+template<>
+struct Codec<location::events::WifiAndCellIdReportingStateChanged>
+{
+    static void encode_argument(Message::Writer& out, const location::events::WifiAndCellIdReportingStateChanged& event)
+    {
+        Codec<location::WifiAndCellIdReportingState>::encode_argument(out, event.new_state());
+    }
+
+    static void decode_argument(Message::Reader& in, location::events::WifiAndCellIdReportingStateChanged& event)
+    {
+        location::WifiAndCellIdReportingState new_state;
+        Codec<location::WifiAndCellIdReportingState>::decode_argument(in, new_state);
+        event = location::events::WifiAndCellIdReportingStateChanged{new_state};
+    }
+};
+
+template<>
+struct Codec<location::events::All>
+{
+    static void encode_argument(Message::Writer& out, const location::events::All& event)
+    {
+        switch (event.which())
+        {
+        case 1:
+        {
+            const auto& ev = boost::get<location::events::ReferencePositionUpdated>(event);
+            auto name = location::events::Registry::instance().find(ev.type());
+            out.push_stringn(name.c_str(), name.size());
+            auto vw = out.open_variant(types::Signature{helper::TypeMapper<location::Update<location::Position>>::signature()});
+            {
+                Codec<location::events::ReferencePositionUpdated>::encode_argument(vw, ev);
+            }
+            out.close_variant(std::move(vw));
+            break;
+        }
+        case 2:
+        {
+            const auto& ev = boost::get<location::events::WifiAndCellIdReportingStateChanged>(event);
+            auto name = location::events::Registry::instance().find(ev.type());
+            out.push_stringn(name.c_str(), name.size());
+            auto vw = out.open_variant(types::Signature{helper::TypeMapper<location::WifiAndCellIdReportingState>::signature()});
+            {
+                Codec<location::events::WifiAndCellIdReportingStateChanged>::encode_argument(vw, ev);
+            }
+            out.close_variant(std::move(vw));
+            break;
+        }
+        }
+    }
+
+    static void decode_argument(Message::Reader& in, location::events::All& event)
+    {
+        std::string name{in.pop_string()};
+
+        auto type = location::events::Registry::instance().find(name);
+
+        if (type == location::TypeOf<location::events::ReferencePositionUpdated>::query())
+        {
+            location::events::ReferencePositionUpdated ev{location::Update<location::Position>{}};
+            auto vr = in.pop_variant();
+            Codec<location::events::ReferencePositionUpdated>::decode_argument(vr, ev);
+            event = ev;
+        }
+        else if (type == location::TypeOf<location::events::WifiAndCellIdReportingStateChanged>::query())
+        {
+            location::events::WifiAndCellIdReportingStateChanged ev{location::WifiAndCellIdReportingState::off};
+            auto vr = in.pop_variant();
+            Codec<location::events::WifiAndCellIdReportingStateChanged>::decode_argument(vr, ev);
+            event = ev;
+        }
+    }
 };
 }
 }

@@ -21,6 +21,8 @@
 #include <location/provider.h>
 #include <location/provider_factory.h>
 
+#include <thread>
+
 namespace location
 {
 namespace providers
@@ -68,7 +70,7 @@ struct Configuration
     };
 
     // Updates are delivered every update_period milliseconds.
-    std::chrono::milliseconds update_period{500};
+    std::chrono::milliseconds update_period{10};
 
     // The reference position that is delivered in every upate cycle.
     Position reference_position
@@ -115,17 +117,34 @@ class Provider : public location::Provider
     // Cleans up all resources and stops the updates.
     ~Provider() noexcept;
 
-    // Always returns true.
-    bool matches_criteria(const Criteria&);
+    void on_new_event(const Event& event) override;
 
-    // Starts up the updater thread and delivers position updates
-    void start_position_updates();
-    // Stops the updater thread.
-    void stop_position_updates();
+    void enable() override;
+    void disable() override;
+    void activate() override;
+    void deactivate() override;
+
+    Requirements requirements() const override;
+    bool satisfies(const Criteria& criteria) override;
+    const core::Signal<Update<Position>>& position_updates() const override;
+    const core::Signal<Update<Heading>>& heading_updates() const override;
+    const core::Signal<Update<Velocity>>& velocity_updates() const override;
+    void on_wifi_and_cell_reporting_state_changed(WifiAndCellIdReportingState state);
+    void on_reference_location_updated(const Update<Position>& position);
+    void on_reference_velocity_updated(const Update<Velocity>& velocity);
+    void on_reference_heading_updated(const Update<Heading>& heading);
 
   private:
-    struct Private;
-    std::unique_ptr<Private> d;
+    dummy::Configuration configuration;
+    std::atomic<bool> stop_requested{false};
+    std::thread worker{};
+
+    struct
+    {
+        core::Signal<Update<Position>> position;
+        core::Signal<Update<Heading>> heading;
+        core::Signal<Update<Velocity>> velocity;
+    } updates;
 };
 }
 }

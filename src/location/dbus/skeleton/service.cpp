@@ -150,13 +150,22 @@ void location::dbus::skeleton::Service::handle_add_provider(const core::dbus::Me
 
     try
     {
+        auto thiz = shared_from_this(); std::weak_ptr<Service> wp{thiz};
+
         std::string sender = msg->sender();
         core::dbus::types::ObjectPath path; msg->reader() >> path;
-        auto service = core::dbus::Service::use_service(configuration.outgoing, sender);
+        auto service = core::dbus::Service::use_service(configuration.incoming, sender);
         auto object = service->object_for_path(path);
 
-        add_provider(location::providers::remote::stub::create_with_configuration({object}));
-        configuration.outgoing->send(core::dbus::Message::make_method_return(msg));
+        location::providers::remote::stub::create_with_configuration({configuration.outgoing, service, object}, [wp, msg](const Provider::Ptr& provider)
+        {
+            if (auto sp = wp.lock())
+            {
+                sp->add_provider(provider);
+                sp->configuration.outgoing->send(core::dbus::Message::make_method_return(msg));
+            }
+        });
+
     }
     catch(...)
     {
@@ -215,6 +224,7 @@ void location::dbus::skeleton::Service::handle_create_session_for_criteria(const
         auto watcher = daemon.make_service_watcher(sender);
         watcher->owner_changed().connect([thiz, path](const std::string&, const std::string&)
         {
+            LOG(INFO) << "Purging session for path: " << path.as_string();
             thiz->remove_from_session_store_for_path(path);
         });
 

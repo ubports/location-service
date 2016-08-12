@@ -20,6 +20,7 @@
 #include <location/provider.h>
 #include <location/provider_selection_policy.h>
 
+#include "mock_provider.h"
 #include "null_provider_selection_policy.h"
 
 #include <gmock/gmock.h>
@@ -27,29 +28,16 @@
 
 namespace
 {
-struct MockProvider : public location::Provider
+struct MockBus : public location::Bus
 {
-    MockProvider() : location::Provider()
-    {
-    }
+    /// @brief subscribe makes receiver known to the bus.
+    MOCK_METHOD1(subscribe, void(const location::Event::Receiver::Ptr&));
 
-    MOCK_CONST_METHOD1(requires, bool(const location::Provider::Requirements&));
+    /// @brief unsubscribe removes receiver from the bus.
+    MOCK_METHOD1(unsubscribe, void(const location::Event::Receiver::Ptr&));
 
-    MOCK_METHOD0(disable, void());
-    MOCK_METHOD0(enable, void());
-    MOCK_METHOD0(stop_position_updates, void());
-    MOCK_METHOD0(stop_velocity_updates, void());
-    MOCK_METHOD0(stop_heading_updates, void());
-
-    MOCK_METHOD1(on_wifi_and_cell_reporting_state_changed,
-                 void(location::WifiAndCellIdReportingState));
-    MOCK_METHOD1(on_reference_location_updated,
-                 void(const location::Update<location::Position>&));
-    MOCK_METHOD1(on_reference_heading_updated,
-                 void(const location::Update<location::Heading>&));
-    MOCK_METHOD1(on_reference_velocity_updated,
-                 void(const location::Update<location::Velocity>&));
-
+    /// @brief dispatch takes event and hands it to all subscribed receivers.
+    MOCK_METHOD1(dispatch, void(const location::Event::Ptr& event));
 };
 
 struct MockSettings : public location::Settings
@@ -64,6 +52,11 @@ struct MockSettings : public location::Settings
     MOCK_METHOD2(set_string_for_key, bool(const std::string&, const std::string&));
 };
 
+location::Bus::Ptr mock_bus()
+{
+    return std::make_shared<testing::NiceMock<MockBus>>();
+}
+
 location::Settings::Ptr mock_settings()
 {
     return std::make_shared<::testing::NiceMock<MockSettings>>();
@@ -72,7 +65,7 @@ location::Settings::Ptr mock_settings()
 
 TEST(Engine, adding_a_null_provider_throws)
 {
-    location::Engine engine {std::make_shared<NullProviderSelectionPolicy>(), mock_settings()};
+    location::Engine engine {std::make_shared<NullProviderSelectionPolicy>(), mock_bus(), mock_settings()};
 
     EXPECT_ANY_THROW(engine.add_provider(location::Provider::Ptr {}););
 }
@@ -104,6 +97,7 @@ TEST(Engine, provider_selection_policy_is_invoked_when_matching_providers_to_cri
             &policy,
             [](location::ProviderSelectionPolicy*) {}
         },
+        mock_bus(),
         mock_settings()
     };
 
@@ -115,26 +109,6 @@ TEST(Engine, provider_selection_policy_is_invoked_when_matching_providers_to_cri
                         location::Provider::Ptr{}}));
 
     auto selection = engine.determine_provider_selection_for_criteria(location::Criteria {});
-}
-
-TEST(Engine, adding_a_provider_creates_connections_to_engine_configuration_properties)
-{
-    using namespace ::testing;
-    auto provider = std::make_shared<NiceMock<MockProvider>>();
-    auto selection_policy = std::make_shared<NiceMock<MockProviderSelectionPolicy>>();
-    location::Engine engine{selection_policy, mock_settings()};
-    engine.add_provider(provider);
-
-    EXPECT_CALL(*provider, on_wifi_and_cell_reporting_state_changed(_)).Times(1);
-
-    EXPECT_CALL(*provider, on_reference_location_updated(_)).Times(1);
-    EXPECT_CALL(*provider, on_reference_heading_updated(_)).Times(1);
-    EXPECT_CALL(*provider, on_reference_velocity_updated(_)).Times(1);
-
-    engine.configuration.wifi_and_cell_id_reporting_state = location::WifiAndCellIdReportingState::on;
-    engine.updates.last_known_location = location::Update<location::Position>{};
-    engine.updates.last_known_heading = location::Update<location::Heading>{};
-    engine.updates.last_known_velocity = location::Update<location::Velocity>{};
 }
 
 /* TODO(tvoss): We have to disable these tests as the MP is being refactored to not break ABI.
@@ -262,7 +236,7 @@ TEST(Engine, reads_state_from_settings_on_construction)
             .Times(1)
             .WillRepeatedly(Return(ss_engine_state.str()));
 
-    location::Engine engine{selection_policy, settings};
+    location::Engine engine{selection_policy, mock_bus(), settings};
 }
 
 TEST(Engine, stores_state_from_settings_on_destruction)
@@ -283,6 +257,6 @@ TEST(Engine, stores_state_from_settings_on_destruction)
             .Times(1)
             .WillRepeatedly(Return(true));
 
-    {location::Engine engine{selection_policy, settings};}
+    {location::Engine engine{selection_policy, mock_bus(), settings};}
 }
 

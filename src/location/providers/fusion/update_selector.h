@@ -25,7 +25,7 @@ namespace location
 {
 
 template<typename T>
-struct WithSource { std::shared_ptr<Provider> source; T value; };
+struct WithSource { std::weak_ptr<Provider> source; T value; };
 
 class UpdateSelector
 {

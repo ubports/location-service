@@ -27,7 +27,7 @@ class NewerUpdateSelector : public UpdateSelector
 public:
     typedef std::shared_ptr<NewerUpdateSelector> Ptr;
 
-    virtual WithSource<Update<Position>> select(const WithSource<Update<Position>>& older,
+    virtual WithSource<Update<Position>> select(const WithSource<Update<Position>>&,
                                                 const WithSource<Update<Position>>& newer) override
     {
         return newer;

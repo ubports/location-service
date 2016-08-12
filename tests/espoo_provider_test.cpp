@@ -365,9 +365,17 @@ TEST_F(EspooProviderTest, receives_position_updates_requires_daemons)
         Counter position_updates_counter{"Position updates"}; // The number of position updates we received.
     } stats;
 
-    auto provider = remote::Provider::Stub::create_instance_with_config(config);
+    std::mutex guard; std::condition_variable wait_condition; location::Provider::Ptr provider;
+    std::unique_lock<std::mutex> ul{guard};
 
-    provider->updates().position.connect([&stats](const location::Update<location::Position>& update)
+    remote::Provider::Stub::create_instance_with_config(config, [&guard, &wait_condition, &provider](const location::Provider::Ptr& result)
+    {
+        std::unique_lock<std::mutex> ul{guard}; provider = result; wait_condition.notify_all();
+    });
+
+    wait_condition.wait_for(ul, std::chrono::seconds{5}, [&provider]() { return provider != nullptr; });
+
+    provider->position_updates().connect([&stats](const location::Update<location::Position>& update)
     {
         VLOG(1) << update;
         // We track the number of position updates

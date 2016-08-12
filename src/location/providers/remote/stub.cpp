@@ -22,7 +22,7 @@
 
 namespace remote = location::providers::remote;
 
-location::Provider::Ptr remote::stub::  create_with_configuration(const remote::stub::Configuration& configuration)
+void remote::stub::create_with_configuration(const remote::stub::Configuration& configuration, const std::function<void(const location::Provider::Ptr&)>& cb)
 {
-    return remote::Provider::Stub::create_instance_with_config(configuration);
+    remote::Provider::Stub::create_instance_with_config(configuration, cb);
 }

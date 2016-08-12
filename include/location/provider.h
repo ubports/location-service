@@ -18,7 +18,9 @@
 #ifndef LOCATION_PROVIDER_H_
 #define LOCATION_PROVIDER_H_
 
+#include <location/configuration.h>
 #include <location/criteria.h>
+#include <location/event.h>
 #include <location/heading.h>
 #include <location/position.h>
 #include <location/space_vehicle.h>
@@ -35,251 +37,67 @@
 
 namespace location
 {
-/**
- * @brief The Provider class is the abstract base of all positioning providers.
- */
-class Provider
+/// @brief The Provider class is the abstract base of all positioning providers.
+class Provider : public Event::Receiver
 {
 public:
-    typedef std::shared_ptr<Provider> Ptr;
+    typedef std::shared_ptr<Provider> Ptr;    
 
-    /**
-     * @brief Enumerates the known features that can be supported by providers.
-     */
-    enum class Features : std::size_t
-    {
-        none = 0, ///< The provider does not support any feature.
-        position = 1 << 0, ///< The provider features position updates.
-        velocity = 1 << 1, ///< The provider features velocity updates.
-        heading = 1 << 2 ///< The provider features heading updates.
-    };    
-
-    /**
-     * @brief Enumerates the requirements of a provider implementation.
-     */
+    /// @brief Enumerates the requirements of a provider implementation.
     enum class Requirements : std::size_t
     {
-        none = 0, ///< The provider does not require anything.
-        satellites = 1 << 0, ///< The provider requires satellites to be visible.
-        cell_network = 1 << 1, ///< The provider requires a cell-network to work correctly.
-        data_network = 1 << 2, ///< The provider requires a data-network to work correctly.
-        monetary_spending = 1 << 3 ///< Using the provider results in monetary cost.
+        none = 0,                   ///< The provider does not require anything.
+        satellites = 1 << 0,        ///< The provider requires satellites to be visible.
+        cell_network = 1 << 1,      ///< The provider requires a cell-network to work correctly.
+        data_network = 1 << 2,      ///< The provider requires a data-network to work correctly.
+        monetary_spending = 1 << 3  ///< Using the provider results in monetary cost.
     };
 
-    /**
-     * @brief Facade for controlling the state of position/heading/velocity updates.
-     *
-     * Multiple observers can request state changes for updates. This class ensures
-     * that the specific updates are started and stopped if at least one observer
-     * requests them and stopped when the last observer issues a stop request.
-     */
-    class Controller
-    {
-    public:
-        typedef std::shared_ptr<Controller> Ptr; 
-
-        virtual ~Controller() = default;
-        Controller(const Controller&) = delete;
-        Controller& operator=(const Controller&) = delete;        
-
-        /**
-         * @brief disable switches the provider to a disabled state, such that subsequent
-         * calls to start* methods fail.
-         */
-        void disable();
-
-        /**
-         * @brief enable switches the provider to an enabled state, such that subsequent
-         * calls to start* methods succeed.
-         */
-        void enable();
-
-        /**
-         * @brief Request to start position updates if not already running.
-         */
-        virtual void start_position_updates();
-
-        /**
-         * @brief Request to stop position updates. Only stops the provider when the last observer calls this function.
-         */
-        virtual void stop_position_updates();
-
-        /**
-         * @brief Checks if position updates are currently running.
-         * @return true iff position updates are currently running.
-         */
-        bool are_position_updates_running() const;
-
-        /**
-         * @brief Request to start heading updates if not already running.
-         */
-        virtual void start_heading_updates();
-
-        /**
-         * @brief Request to stop heading updates. Only stops the provider when the last observer calls this function.
-         */
-        virtual void stop_heading_updates();
-
-        /**
-         * @brief Checks if position updates are currently running.
-         * @return true iff position updates are currently running.
-         */
-        bool are_heading_updates_running() const;
-
-        /**
-         * @brief Request to start velocity updates if not already running.
-         */
-        virtual void start_velocity_updates();
-
-        /**
-         * @brief Request to stop velocity updates. Only stops the provider when the last observer calls this function.
-         */
-        virtual void stop_velocity_updates();
-
-        /**
-         * @brief Checks if velocity updates are currently running.
-         * @return true iff velocity updates are currently running.
-         */
-        bool are_velocity_updates_running() const;
-
-    protected:
-        friend class Provider;
-        explicit Controller(Provider& instance);
-
-    private:
-        Provider& instance;
-        std::atomic<int> position_updates_counter;
-        std::atomic<int> heading_updates_counter;
-        std::atomic<int> velocity_updates_counter;
-    };
-
-    /**
-     * @brief Wraps all updates that can be delivered by a provider.
-     */
-    struct Updates
-    {
-        /** Position updates. */
-        core::Signal<Update<Position>> position;
-        /** Heading updates. */
-        core::Signal<Update<Heading>> heading;
-        /** Velocity updates. */
-        core::Signal<Update<Velocity>> velocity;
-        /** Space vehicle visibility updates. */
-        core::Signal<Update<std::set<SpaceVehicle>>> svs;
-    };
-
+    /// @cond
     virtual ~Provider() = default;
 
     Provider(const Provider&) = delete;
+    Provider(Provider&&) = delete;
     Provider& operator=(const Provider&) = delete;
+    Provider& operator=(Provider&&) = delete;
+    /// @endcond
 
-    /**
-     * @brief Provides non-mutable access to this provider's updates.
-     * @return A non-mutable reference to the updates.
-     */
-    virtual const Updates& updates() const;
+    /// @brief enable enables the provider, throws in case of issues.
+    virtual void enable() = 0;
 
-    /**
-     * @brief Access to the controller facade of this provider instance.
-     */
-    virtual const Controller::Ptr& state_controller() const;
+    /// @brief start disables the provider, throws in case of issues.
+    virtual void disable() = 0;
 
-    /**
-     * @brief Checks if the provider supports a specific feature.
-     * @param f Feature to test for
-     * @return true iff the provider supports the feature.
-     */
-    virtual bool supports(const Features& f) const;
+    /// @brief activate triggers a state transition from enabled to active.
+    virtual void activate() = 0;
 
-    /**
-     * @brief Checks if the provider has got a specific requirement.
-     * @param r Requirement to test for.
-     * @return true iff the provider has the specific requirement.
-     */
-    virtual bool requires(const Requirements& r) const;
+    /// @brief deactivate triggers a state transition from active to enabled.
+    virtual void deactivate() = 0;
 
-    /**
-     * @brief Checks if a provider satisfies a set of accuracy criteria.
-     * @param [in] criteria The criteria to check.
-     * @return true iff the provider satisfies the given criteria.
-     */
-    virtual bool matches_criteria(const Criteria& criteria);
+    /// @brief requirements returns the requirements of the provider.
+    virtual Requirements requirements() const = 0;
 
-    /**
-     * @brief Called by the engine whenever the wifi and cell ID reporting state changes.
-     * @param state The new state.
-     */
-    virtual void on_wifi_and_cell_reporting_state_changed(WifiAndCellIdReportingState state);
+    /// @brief Checks if a provider satisfies criteria.
+    /// @param [in] criteria The criteria to check.
+    /// @return true iff the provider satisfies the given criteria.
+    virtual bool satisfies(const Criteria& criteria) = 0;
 
-    /**
-     * @brief Called by the engine whenever the reference location changed.
-     * @param position The new reference location.
-     */
-    virtual void on_reference_location_updated(const Update<Position>& position);
+    /// @brief position_updates returns a signal delivering position updates.
+    virtual const core::Signal<Update<Position>>& position_updates() const = 0;
 
-    /**
-     * @brief Called by the engine whenever the reference velocity changed.
-     * @param velocity The new reference velocity.
-     */
-    virtual void on_reference_velocity_updated(const Update<Velocity>& velocity);
+    /// @brief heading_updates returns a signal delivering heading updates.
+    virtual const core::Signal<Update<Heading>>& heading_updates() const = 0;
 
-    /**
-     * @brief Called by the engine whenever the reference heading changed.
-     * @param heading The new reference heading.
-     */
-    virtual void on_reference_heading_updated(const Update<Heading>& heading);
+    /// @brief velocity_updates returns a signal delivering velocity updates.
+    virtual const core::Signal<Update<Velocity>>& velocity_updates() const = 0;
 
 protected:
-    explicit Provider(
-        const Features& features = Features::none,
-        const Requirements& requirements = Requirements::none);
-
-    virtual Updates& mutable_updates();
-
-    /**
-     * @brief Implementation-specific, empty by default.
-     */
-    virtual void start_position_updates();
-
-    /**
-     * @brief Implementation-specific, empty by default.
-     */
-    virtual void stop_position_updates();
-
-    /**
-     * @brief Implementation-specific, empty by default.
-     */
-    virtual void start_heading_updates();
-
-    /**
-     * @brief Implementation-specific, empty by default.
-     */
-    virtual void stop_heading_updates();
-
-    /**
-     * @brief Implementation-specific, empty by default.
-     */
-    virtual void start_velocity_updates();
-
-    /**
-     * @brief Implementation-specific, empty by default.
-     */
-    virtual void stop_velocity_updates();
-
-private:
-    struct
-    {
-        Features features = Features::none;
-        Requirements requirements = Requirements::none;
-        Updates updates;
-        Controller::Ptr controller = Controller::Ptr{};
-    } d;
+    Provider() = default;
 };
 
-Provider::Features operator|(Provider::Features lhs, Provider::Features rhs);
-Provider::Features operator&(Provider::Features lhs, Provider::Features rhs);
-
+/// @brief operator| returns the bitwise or of lhs and rhs.
 Provider::Requirements operator|(Provider::Requirements lhs, Provider::Requirements rhs);
+/// @brief operator& returns the bitwise and of lhs and rhs.
 Provider::Requirements operator&(Provider::Requirements lhs, Provider::Requirements rhs);
 }
 

@@ -22,17 +22,17 @@ location::SessionWithProvider::SessionWithProvider(const Provider::Ptr& provider
     : provider_{provider},
       connections_
       {
-          provider_->updates().position.connect(
+          provider_->position_updates().connect(
               [this](const Update<Position>& update)
               {
                   updates().position = update;
               }),
-          provider_->updates().heading.connect(
+          provider_->heading_updates().connect(
               [this](const Update<Heading>& update)
               {
                   updates().heading = update;
               }),
-          provider_->updates().velocity.connect(
+          provider_->velocity_updates().connect(
               [this](const Update<Velocity>& update)
               {
                   updates().velocity = update;
@@ -81,31 +81,31 @@ location::Service::Session::Updates& location::SessionWithProvider::updates()
 
 void location::SessionWithProvider::start_position_updates()
 {
-    provider_->state_controller()->start_position_updates();
+    provider_->activate();
 }
 
 void location::SessionWithProvider::stop_position_updates()
 {
-    provider_->state_controller()->stop_position_updates();
+    provider_->deactivate();
 }
 
 void location::SessionWithProvider::start_velocity_updates()
 {
-    provider_->state_controller()->start_velocity_updates();
+    provider_->activate();
 }
 
 void location::SessionWithProvider::stop_velocity_updates()
 {
-    provider_->state_controller()->stop_velocity_updates();
+    provider_->deactivate();
 }
 
 void location::SessionWithProvider::start_heading_updates()
 {
-    provider_->state_controller()->start_heading_updates();
+    provider_->activate();
 }
 
 void location::SessionWithProvider::stop_heading_updates()
 {
-    provider_->state_controller()->stop_heading_updates();
+    provider_->deactivate();
 }
 

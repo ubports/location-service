@@ -100,6 +100,7 @@ private:
 
     // Stores all attributes passed at creation time.
     Configuration configuration;
+
     // Scoped connections for automatically disconnecting on destruction
     struct
     {

@@ -16,7 +16,7 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <location/state_tracking_provider.h>
+#include <location/providers/state_tracking_provider.h>
 
 #include <location/clock.h>
 #include <location/update.h>
@@ -34,6 +34,11 @@ namespace cul = location;
 
 namespace
 {
+struct MockEvent : public location::Event
+{
+    MOCK_CONST_METHOD0(type, Type());
+};
+
 auto timestamp = cul::Clock::now();
 
 // Create reference objects for injecting and validating updates.
@@ -64,56 +69,44 @@ TEST(StateTrackingProviderTest, forwards_calls_to_impl)
     using namespace testing;
 
     auto impl = std::make_shared<MockProvider>();
-    EXPECT_CALL(*impl, supports(_)).Times(1).WillOnce(Return(true));
-    EXPECT_CALL(*impl, requires(_)).Times(1).WillOnce(Return(false));
-    EXPECT_CALL(*impl, matches_criteria(_)).Times(1).WillOnce(Return(false));
-    EXPECT_CALL(*impl, on_wifi_and_cell_reporting_state_changed(_)).Times(1);
-    EXPECT_CALL(*impl, on_reference_location_updated(_)).Times(1);
-    EXPECT_CALL(*impl, on_reference_velocity_updated(_)).Times(1);
-    EXPECT_CALL(*impl, on_reference_heading_updated(_)).Times(1);
-    EXPECT_CALL(*impl, start_position_updates()).Times(1);
-    EXPECT_CALL(*impl, stop_position_updates()).Times(1);
-    EXPECT_CALL(*impl, start_velocity_updates()).Times(1);
-    EXPECT_CALL(*impl, stop_velocity_updates()).Times(1);
-    EXPECT_CALL(*impl, start_heading_updates()).Times(1);
-    EXPECT_CALL(*impl, stop_heading_updates()).Times(1);
+    EXPECT_CALL(*impl, on_new_event(_)).Times(1);
+    EXPECT_CALL(*impl, satisfies(_)).Times(1).WillOnce(Return(false));
+    EXPECT_CALL(*impl, requirements()).Times(1).WillOnce(Return(location::Provider::Requirements::none));
+    EXPECT_CALL(*impl, activate()).Times(1);
+    EXPECT_CALL(*impl, deactivate()).Times(1);
+    EXPECT_CALL(*impl, disable()).Times(1);
 
-    location::StateTrackingProvider stp{impl};
-    EXPECT_TRUE(stp.supports(location::Provider::Features::none));
-    EXPECT_FALSE(stp.requires(location::Provider::Requirements::none));
-    EXPECT_FALSE(stp.matches_criteria(location::Criteria{}));
-    stp.on_wifi_and_cell_reporting_state_changed(location::WifiAndCellIdReportingState::on);
-    stp.on_reference_location_updated(reference_position_update);
-    stp.on_reference_heading_updated(reference_heading_update);
-    stp.on_reference_velocity_updated(reference_velocity_update);
-    stp.start_position_updates();
-    stp.stop_position_updates();
-    stp.start_heading_updates();
-    stp.stop_heading_updates();
-    stp.start_velocity_updates();
-    stp.stop_velocity_updates();
+    location::providers::StateTrackingProvider stp{impl};
+
+    stp.on_new_event(MockEvent{});
+    EXPECT_EQ(location::Provider::Requirements::none, stp.requirements());
+    EXPECT_FALSE(stp.satisfies(location::Criteria{}));
+    stp.enable();
+    stp.activate();
+    stp.deactivate();
+    stp.disable();
 }
 
 TEST(StateTrackingProviderTest, state_after_construction_is_enabled)
 {
     using namespace ::testing;
-    cul::StateTrackingProvider stp{std::make_shared<NiceMock<MockProvider>>()};
-    EXPECT_EQ(cul::StateTrackingProvider::State::enabled, stp.state());
+    location::providers::StateTrackingProvider stp{std::make_shared<NiceMock<MockProvider>>()};
+    EXPECT_EQ(location::providers::StateTrackingProvider::State::enabled, stp.state());
 }
 
 TEST(StateTrackingProviderTest, state_after_start_is_active)
 {
     using namespace ::testing;
-    cul::StateTrackingProvider stp{std::make_shared<NiceMock<MockProvider>>()};
-    stp.start_position_updates();
-    EXPECT_EQ(cul::StateTrackingProvider::State::active, stp.state());
+    location::providers::StateTrackingProvider stp{std::make_shared<NiceMock<MockProvider>>()};
+    stp.activate();
+    EXPECT_EQ(location::providers::StateTrackingProvider::State::active, stp.state());
 }
 
 TEST(StateTrackingProviderTest, stop_switches_to_enabled)
 {
     using namespace ::testing;
-    cul::StateTrackingProvider stp{std::make_shared<NiceMock<MockProvider>>()};
-    stp.start_position_updates();
-    stp.stop_position_updates();
-    EXPECT_EQ(cul::StateTrackingProvider::State::enabled, stp.state());
+    location::providers::StateTrackingProvider stp{std::make_shared<NiceMock<MockProvider>>()};
+    stp.activate();
+    stp.deactivate();
+    EXPECT_EQ(location::providers::StateTrackingProvider::State::enabled, stp.state());
 }

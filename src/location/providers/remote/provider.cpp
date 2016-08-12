@@ -17,9 +17,12 @@
  */
 
 #include <location/providers/remote/provider.h>
-
 #include <location/providers/remote/interface.h>
 
+#include <location/dbus/codec.h>
+#include <location/events/registry.h>
+#include <location/events/reference_position_updated.h>
+#include <location/events/wifi_and_cell_id_reporting_state_changed.h>
 #include <location/logging.h>
 
 #include <core/dbus/object.h>
@@ -40,113 +43,6 @@ namespace dbus = core::dbus;
 
 namespace
 {
-struct Runtime
-{
-    static Runtime& instance()
-    {
-        static Runtime runtime;
-        return runtime;
-    }
-
-    Runtime()
-        : running{true},
-          worker1{std::bind(&Runtime::run, this, std::ref(io.service))},
-          worker2{std::bind(&Runtime::run, this, std::ref(task.service))}
-    {
-    }
-
-    ~Runtime()
-    {
-        stop();
-    }
-
-    void run(boost::asio::io_service& service)
-    {
-        while (running)
-        {
-            try
-            {
-                service.run();
-                break;  // provider has exited correctly
-            }
-            catch (const std::exception& e)
-            {
-                LOG(WARNING) << e.what();
-            }
-            catch (...)
-            {
-                LOG(WARNING) << "Caught exception from event loop, restarting.";
-            }
-        }
-    }
-
-    void stop()
-    {
-        running = false;
-
-        task.service.stop();
-
-        if (worker2.joinable())
-            worker2.join();
-
-        io.service.stop();
-
-        if (worker1.joinable())
-            worker1.join();
-    }
-
-    bool running;
-    struct
-    {
-        boost::asio::io_service service;
-        boost::asio::io_service::work keep_alive
-        {
-            service
-        };
-    } io;
-    struct
-    {
-        boost::asio::io_service service;
-        boost::asio::io_service::work keep_alive
-        {
-            service
-        };
-    } task;
-    std::thread worker1;
-    std::thread worker2;
-};
-
-core::dbus::Bus::Ptr bus_from_name(const std::string& bus_name)
-{
-    core::dbus::Bus::Ptr bus;
-
-    if (bus_name == "system")
-        bus = std::make_shared<core::dbus::Bus>(core::dbus::WellKnownBus::system);
-    else if (bus_name == "session")
-        bus = std::make_shared<core::dbus::Bus>(core::dbus::WellKnownBus::session);
-    else if (bus_name == "system_with_address_from_env")
-        bus = std::make_shared<core::dbus::Bus>(core::posix::this_process::env::get_or_throw("DBUS_SYSTEM_BUS_ADDRESS"));
-    else if (bus_name == "session_with_address_from_env")
-        bus = std::make_shared<core::dbus::Bus>(core::posix::this_process::env::get_or_throw("DBUS_SESSION_BUS_ADDRESS"));
-
-    if (not bus) throw std::runtime_error
-    {
-        "Could not create bus for name: " + bus_name
-    };
-
-    bus->install_executor(core::dbus::asio::make_executor(bus, Runtime::instance().io.service));
-
-    return bus;
-}
-
-void throw_if_error(const dbus::Result<void>& result)
-{
-    if (result.is_error()) throw std::runtime_error
-    {
-        result.error().print()
-    };
-}
-
 template<typename T>
 T throw_if_error_or_return(const dbus::Result<T>& result)
 {
@@ -156,13 +52,127 @@ T throw_if_error_or_return(const dbus::Result<T>& result)
     };
     return result.value();
 }
+
+core::dbus::types::ObjectPath generate_path_for_observer()
+{
+    static constexpr const char* pattern{"/com/ubuntu/location/provider/observer/%1%"};
+    static std::size_t counter{0};
+
+    return core::dbus::types::ObjectPath{(boost::format{pattern} % ++counter).str()};
+}
+}
+
+remote::Provider::Observer::Stub::Stub(const core::dbus::Object::Ptr& object)
+    : object{object}
+{
+
+}
+
+void remote::Provider::Observer::Stub::on_new_position(const Update<Position>& update)
+{
+    try
+    {
+        object->invoke_method_asynchronously_with_callback<remote::Interface::Observer::UpdatePosition, void>([](const core::dbus::Result<void>&)
+        {
+
+        }, update);
+    }
+    catch(const std::exception& e)
+    {
+        LOG(WARNING) << e.what();
+    }
+    catch(...)
+    {
+    }
+}
+
+void remote::Provider::Observer::Stub::on_new_heading(const Update<Heading>& update)
+{
+    try
+    {
+        object->invoke_method_asynchronously_with_callback<remote::Interface::Observer::UpdateHeading, void>([](const core::dbus::Result<void>&)
+        {
+
+        }, update);
+    }
+    catch(const std::exception& e)
+    {
+        LOG(WARNING) << e.what();
+    }
+    catch(...)
+    {
+    }
+}
+
+void remote::Provider::Observer::Stub::on_new_velocity(const Update<Velocity>& update)
+{
+    try
+    {
+        object->invoke_method_asynchronously_with_callback<remote::Interface::Observer::UpdateVelocity, void>([](const core::dbus::Result<void>&)
+        {
+
+        }, update);
+    }
+    catch(const std::exception& e)
+    {
+        LOG(WARNING) << e.what();
+    }
+    catch(...)
+    {
+    }
+}
+
+remote::Provider::Observer::Skeleton::Skeleton(const core::dbus::Bus::Ptr& bus, const core::dbus::Object::Ptr& object, const std::shared_ptr<Observer>& impl)
+    : bus{bus}, object{object}, impl{impl}
+{
+    object->install_method_handler<remote::Interface::Observer::UpdatePosition>([this](const core::dbus::Message::Ptr& msg)
+    {
+        VLOG(50) << "remote::Interface::Observer::UpdatePosition";
+        location::Update<location::Position> update; msg->reader() >> update;
+        on_new_position(update);
+        Skeleton::bus->send(dbus::Message::make_method_return(msg));
+    });
+
+    object->install_method_handler<remote::Interface::Observer::UpdateHeading>([this](const core::dbus::Message::Ptr& msg)
+    {
+        VLOG(50) << "remote::Interface::Observer::UpdateHeading";
+        location::Update<location::Heading> update; msg->reader() >> update;
+        on_new_heading(update);
+        Skeleton::bus->send(dbus::Message::make_method_return(msg));
+    });
+
+    object->install_method_handler<remote::Interface::Observer::UpdateVelocity>([this](const core::dbus::Message::Ptr& msg)
+    {
+        VLOG(50) << "remote::Interface::Observer::UpdateVelocity";
+        location::Update<location::Velocity> update; msg->reader() >> update;
+        on_new_velocity(update);
+        Skeleton::bus->send(dbus::Message::make_method_return(msg));
+    });
+}
+
+void remote::Provider::Observer::Skeleton::on_new_position(const Update<Position>& update)
+{
+    impl->on_new_position(update);
+}
+
+void remote::Provider::Observer::Skeleton::on_new_heading(const Update<Heading>& update)
+{
+    impl->on_new_heading(update);
+}
+
+void remote::Provider::Observer::Skeleton::on_new_velocity(const Update<Velocity>& update)
+{
+    impl->on_new_velocity(update);
 }
 
 struct remote::Provider::Stub::Private
 {
-    Private(const remote::stub::Configuration& config)
-            : object(config.object),
-              stub(object)
+    Private(const remote::stub::Configuration& config, location::Provider::Requirements requirements)
+            : bus{config.bus},
+              service{config.service},
+              object{config.object},
+              requirements{requirements},
+              stub{object}
     {
     }
 
@@ -170,125 +180,47 @@ struct remote::Provider::Stub::Private
     {
     }
 
+    dbus::Bus::Ptr bus;
+    dbus::Service::Ptr service;
     dbus::Object::Ptr object;
+    location::Provider::Requirements requirements;
     remote::Interface::Stub stub;
+    std::set<std::shared_ptr<remote::Provider::Observer>> observers;
+    struct
+    {
+        core::Signal<location::Update<location::Position>> position;
+        core::Signal<location::Update<location::Heading>> heading;
+        core::Signal<location::Update<location::Velocity>> velocity;
+    } updates;
 };
 
-std::string remote::Provider::Stub::class_name()
+void remote::Provider::Stub::create_instance_with_config(const remote::stub::Configuration& config, const std::function<void(const Provider::Ptr&)>& cb)
 {
-    return "remote::Provider";
-}
-
-cul::Provider::Ptr remote::Provider::Stub::create_instance(const cul::ProviderFactory::Configuration& config)
-{
-    auto bus_name = config.count(Stub::key_bus) > 0 ? config.get<std::string>(Stub::key_bus) :
-                                                       "system";
-    auto name = config.count(Stub::key_name) > 0 ? config.get<std::string>(Stub::key_name) :
-                                                   throw std::runtime_error("Missing bus-name");
-    auto path = config.count(Stub::key_path) > 0 ? config.get<std::string>(Stub::key_path) :
-                                                   throw std::runtime_error("Missing bus-path");
-
-    auto bus = bus_from_name(bus_name);
-    auto service = dbus::Service::use_service(bus, name);
-    auto object = service->object_for_path(path);
-
-    // Check if the service has come up
-    if (!bus->has_owner_for_name(name)) {
-        // If it hasn't wait for it to come up
-        bool valid = false;
-        std::mutex guard;
-        std::condition_variable cv;
-        dbus::DBus daemon(bus);
-        dbus::ServiceWatcher::Ptr service_watcher(
-            daemon.make_service_watcher(name, dbus::DBus::WatchMode::registration));
-
-        service_watcher->service_registered().connect([&valid, &guard, &cv]()
-            {
-                std::unique_lock<std::mutex> ul(guard);
-                valid = true;
-                cv.notify_all();
-            });
-
-        std::unique_lock<std::mutex> ul(guard);
-        if (not cv.wait_for(ul, std::chrono::seconds{30}, [&valid]() { return valid; }))
-            throw std::runtime_error("Remote service failed to start");
-    }
-
-    return create_instance_with_config(remote::stub::Configuration{object});
-}
-
-cul::Provider::Ptr remote::Provider::Stub::create_instance_with_config(const remote::stub::Configuration& config)
-{
-    std::shared_ptr<remote::Provider::Stub> result{new remote::Provider::Stub{config}};
-
-    // This call throws if we fail to reach the remote end. With that, we make sure that
-    // we do not return a potentially invalid instance that throws later on.
-    result->ping();
-
-    result->setup_event_connections();
-    return result;
-}
-
-remote::Provider::Stub::Stub(const remote::stub::Configuration& config)
-        : location::Provider(/* TODO(tvoss) Features should be all initially*/),
-          d(new Private(config))
-{
-}
-
-void remote::Provider::Stub::setup_event_connections()
-{
-    std::weak_ptr<remote::Provider::Stub> wp{shared_from_this()};
-
-    d->stub.signals.position_changed->connect(
-        [wp](const remote::Interface::Signals::PositionChanged::ArgumentType& arg)
+    config.object->invoke_method_asynchronously_with_callback<remote::Interface::Requirements, Provider::Requirements>([config, cb](const core::dbus::Result<Provider::Requirements>& result)
+    {
+        VLOG(50) << "Finished querying results from remote provider: " << std::boolalpha << result.is_error();
+        if (not result.is_error())
         {
-            VLOG(50) << "remote::Provider::Stub::PositionChanged: " << arg;
-            Runtime::instance().task.service.post([wp, arg]()
-            {
-                auto sp = wp.lock();
-
-                if (not sp)
-                    return;
-
-                sp->mutable_updates().position(arg);
-            });
-        });
-
-    d->stub.signals.heading_changed->connect(
-        [wp](const remote::Interface::Signals::HeadingChanged::ArgumentType& arg)
+            std::shared_ptr<remote::Provider::Stub> provider{new remote::Provider::Stub{config, result.value()}};
+            cb(provider->finalize());
+        }
+        else
         {
-            VLOG(50) << "remote::Provider::Stub::HeadingChanged: " << arg;
-            Runtime::instance().task.service.post([wp, arg]()
-            {
-                auto sp = wp.lock();
-
-                if (not sp)
-                    return;
-
-                sp->mutable_updates().heading(arg);
-            });
-        });
-
-    d->stub.signals.velocity_changed->connect(
-        [wp](const remote::Interface::Signals::VelocityChanged::ArgumentType& arg)
-        {
-            VLOG(50) << "remote::Provider::Stub::VelocityChanged: " << arg;
-            Runtime::instance().task.service.post([wp, arg]()
-            {
-                auto sp = wp.lock();
-
-                if (not sp)
-                    return;
-
-                sp->mutable_updates().velocity(arg);
-            });
-        });
+            LOG(WARNING) << result.error().print();
+        }
+    });
 }
 
-void remote::Provider::Stub::ping()
+remote::Provider::Stub::Stub(const remote::stub::Configuration& config, Provider::Requirements requirements)
+        : d(new Private(config, requirements))
 {
-    // Requires reaches out to the remote side and throws in case of issues.
-    requires(Provider::Requirements::satellites);
+}
+
+std::shared_ptr<remote::Provider::Stub> remote::Provider::Stub::finalize()
+{
+    auto thiz = shared_from_this();
+    add_observer(thiz);
+    return thiz;
 }
 
 remote::Provider::Stub::~Stub() noexcept
@@ -296,188 +228,114 @@ remote::Provider::Stub::~Stub() noexcept
     VLOG(10) << __PRETTY_FUNCTION__;
 }
 
-bool remote::Provider::Stub::matches_criteria(const cul::Criteria& criteria)
+void remote::Provider::Stub::add_observer(const std::shared_ptr<Observer>& observer)
 {
-    VLOG(10) << __PRETTY_FUNCTION__ << std::endl;    
-    return throw_if_error_or_return(d->stub.object->transact_method<remote::Interface::MatchesCriteria, bool>(criteria));
-}
+    auto thiz = shared_from_this();
 
-bool remote::Provider::Stub::supports(const cul::Provider::Features& f) const
-{
-    VLOG(10) << __PRETTY_FUNCTION__;
-    return throw_if_error_or_return(d->stub.object->transact_method<remote::Interface::Supports, bool>(f));
-}
+    auto path = generate_path_for_observer();
+    auto skeleton = std::make_shared<remote::Provider::Observer::Skeleton>(
+                d->bus, d->service->add_object_for_path(path), observer);
 
-bool remote::Provider::Stub::requires(const cul::Provider::Requirements& r) const
-{
-    VLOG(10) << __PRETTY_FUNCTION__;
-    return throw_if_error_or_return(d->stub.object->transact_method<remote::Interface::Requires, bool>(r));
-}
-
-void remote::Provider::Stub::on_wifi_and_cell_reporting_state_changed(cul::WifiAndCellIdReportingState state)
-{
-    VLOG(10) << __PRETTY_FUNCTION__;
-    throw_if_error(d->stub.object->transact_method<remote::Interface::OnWifiAndCellIdReportingStateChanged, void>(state));
-}
-
-void remote::Provider::Stub::on_reference_location_updated(const cul::Update<cul::Position>& position)
-{
-    std::weak_ptr<Private> wp{d};
-    Runtime::instance().task.service.post([wp, position]()
+    d->stub.object->invoke_method_asynchronously_with_callback<remote::Interface::AddObserver, void>([thiz, skeleton](const dbus::Result<void>& result)
     {
-        auto sp = wp.lock();
+        if (not result.is_error())
+            thiz->d->observers.insert(skeleton);
+        else
+            LOG(WARNING) << result.error().print();
+    }, path);
+}
 
-        if (not sp)
-            return;
+void remote::Provider::Stub::on_new_position(const Update<Position>& update)
+{
+    d->updates.position(update);
+}
 
-        try
-        {
-            throw_if_error(sp->stub.object->transact_method<remote::Interface::OnReferenceLocationChanged, void>(position));
-        } catch(const std::exception& e)
-        {
-            // We drop the error and just log it for post-mortem inspection.
-            LOG(WARNING) << "Transaction<remote::Interface::OnReferenceLocationChanged>: " << e.what();
-        }
+void remote::Provider::Stub::on_new_heading(const Update<Heading>& update)
+{
+    d->updates.heading(update);
+}
+
+void remote::Provider::Stub::on_new_velocity(const Update<Velocity>& update)
+{
+    d->updates.velocity(update);
+}
+
+void remote::Provider::Stub::on_new_event(const Event& event)
+{
+    VLOG(50) << __PRETTY_FUNCTION__;
+    events::All all;
+
+    if (event.type() == TypeOf<events::ReferencePositionUpdated>::query())
+        all = dynamic_cast<const events::ReferencePositionUpdated&>(event);
+    else if (event.type() == TypeOf<events::WifiAndCellIdReportingStateChanged>::query())
+        all = dynamic_cast<const events::WifiAndCellIdReportingStateChanged&>(event);
+
+    d->stub.object->invoke_method_asynchronously_with_callback<remote::Interface::OnNewEvent, void>([](const dbus::Result<void>& result)
+    {
+        if (result.is_error())
+            LOG(WARNING) << result.error().print();
+    }, all);
+}
+
+void remote::Provider::Stub::enable()
+{
+    VLOG(50) << __PRETTY_FUNCTION__;
+    d->stub.object->invoke_method_asynchronously_with_callback<remote::Interface::Enable, void>([](const dbus::Result<void>& result)
+    {
+        if (result.is_error()) LOG(WARNING) << result.error().print();
     });
 }
 
-void remote::Provider::Stub::on_reference_velocity_updated(const cul::Update<cul::Velocity>& velocity)
+void remote::Provider::Stub::disable()
 {
-    std::weak_ptr<Private> wp{d};
-    Runtime::instance().task.service.post([wp, velocity]()
+    VLOG(50) << __PRETTY_FUNCTION__;
+    d->stub.object->invoke_method_asynchronously_with_callback<remote::Interface::Disable, void>([](const dbus::Result<void>& result)
     {
-        auto sp = wp.lock();
-
-        if (not sp)
-            return;
-
-        try
-        {
-            throw_if_error(sp->stub.object->transact_method<remote::Interface::OnReferenceVelocityChanged, void>(velocity));
-        } catch(const std::exception& e)
-        {
-            // We drop the error and just log it for post-mortem inspection.
-            LOG(WARNING) << "Transaction<remote::Interface::OnReferenceVelocityChanged>: " << e.what();
-        }
+        if (result.is_error()) LOG(WARNING) << result.error().print();
     });
 }
 
-void remote::Provider::Stub::on_reference_heading_updated(const cul::Update<cul::Heading>& heading)
+void remote::Provider::Stub::activate()
 {
-    std::weak_ptr<Private> wp{d};
-    Runtime::instance().task.service.post([wp, heading]()
+    VLOG(50) << __PRETTY_FUNCTION__;
+    d->stub.object->invoke_method_asynchronously_with_callback<remote::Interface::Activate, void>([](const dbus::Result<void>& result)
     {
-        auto sp = wp.lock();
-
-        if (not sp)
-            return;
-
-        try
-        {
-            throw_if_error(sp->stub.object->transact_method<remote::Interface::OnReferenceHeadingChanged, void>(heading));
-        } catch(const std::exception& e)
-        {
-            // We drop the error and just log it for post-mortem inspection.
-            LOG(WARNING) << "Transaction<remote::Interface::OnReferenceHeadingChanged>: " << e.what();
-        }
+        if (result.is_error()) LOG(WARNING) << result.error().print();
     });
 }
 
-void remote::Provider::Stub::start_position_updates()
+void remote::Provider::Stub::deactivate()
 {
-    VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    std::weak_ptr<Private> wp{d};
-    Runtime::instance().task.service.post([wp]()
+    VLOG(50) << __PRETTY_FUNCTION__;
+    d->stub.object->invoke_method_asynchronously_with_callback<remote::Interface::Deactivate, void>([](const dbus::Result<void>& result)
     {
-        auto sp = wp.lock();
-
-        if (not sp)
-            return;
-
-        throw_if_error(sp->stub.object->transact_method<remote::Interface::StartPositionUpdates, void>());
+        if (result.is_error()) LOG(WARNING) << result.error().print();
     });
-    VLOG(10) << "< " << __PRETTY_FUNCTION__;
 }
 
-void remote::Provider::Stub::stop_position_updates()
+location::Provider::Requirements remote::Provider::Stub::requirements() const
 {
-    VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    std::weak_ptr<Private> wp{d};
-    Runtime::instance().task.service.post([wp]()
-    {
-        auto sp = wp.lock();
-
-        if (not sp)
-            return;
-
-        throw_if_error(sp->stub.object->transact_method<remote::Interface::StopPositionUpdates, void>());
-    });
-    VLOG(10) << "< " << __PRETTY_FUNCTION__;
+    return d->requirements;
 }
 
-void remote::Provider::Stub::start_heading_updates()
+bool remote::Provider::Stub::satisfies(const Criteria& criteria)
 {
-    VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    std::weak_ptr<Private> wp{d};
-    Runtime::instance().task.service.post([wp]()
-    {
-        auto sp = wp.lock();
-
-        if (not sp)
-            return;
-
-        throw_if_error(sp->stub.object->transact_method<remote::Interface::StartHeadingUpdates, void>());
-    });
-    VLOG(10) << "< " << __PRETTY_FUNCTION__;
+    return throw_if_error_or_return(d->stub.object->transact_method<remote::Interface::Satisfies, bool>(criteria));
 }
 
-void remote::Provider::Stub::stop_heading_updates()
+const core::Signal<location::Update<location::Position>>& remote::Provider::Stub::position_updates() const
 {
-    VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    std::weak_ptr<Private> wp{d};
-    Runtime::instance().task.service.post([wp]()
-    {
-        auto sp = wp.lock();
-
-        if (not sp)
-            return;
-
-        throw_if_error(sp->stub.object->transact_method<remote::Interface::StopHeadingUpdates, void>());
-    });
-    VLOG(10) << "< " << __PRETTY_FUNCTION__;
+    return d->updates.position;
 }
 
-void remote::Provider::Stub::start_velocity_updates()
+const core::Signal<location::Update<location::Heading>>& remote::Provider::Stub::heading_updates() const
 {
-    VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    std::weak_ptr<Private> wp{d};
-    Runtime::instance().task.service.post([wp]()
-    {
-        auto sp = wp.lock();
-
-        if (not sp)
-            return;
-
-        throw_if_error(sp->stub.object->transact_method<remote::Interface::StartVelocityUpdates, void>());
-    });
-    VLOG(10) << "< " << __PRETTY_FUNCTION__;
-
+    return d->updates.heading;
 }
 
-void remote::Provider::Stub::stop_velocity_updates()
+const core::Signal<location::Update<location::Velocity>>& remote::Provider::Stub::velocity_updates() const
 {
-    VLOG(10) << "> " << __PRETTY_FUNCTION__;
-    std::weak_ptr<Private> wp{d};
-    Runtime::instance().task.service.post([wp]()
-    {
-        auto sp = wp.lock();
-
-        if (not sp)
-            return;
-
-        throw_if_error(sp->stub.object->transact_method<remote::Interface::StopVelocityUpdates, void>());
-    });
-    VLOG(10) << "< " << __PRETTY_FUNCTION__;
+    return d->updates.velocity;
 }
 
 struct remote::Provider::Skeleton::Private
@@ -488,20 +346,23 @@ struct remote::Provider::Skeleton::Private
               impl(config.provider),
               connections
               {
-                  impl->updates().position.connect([this](const cul::Update<cul::Position>& position)
+                  impl->position_updates().connect([this](const cul::Update<cul::Position>& position)
                   {
                       VLOG(100) << "Position changed reported by impl: " << position;                      
-                      skeleton.signals.position_changed->emit(position.value);
+                      for (const auto& observer : observers)
+                          observer->on_new_position(position);
                   }),
-                  impl->updates().heading.connect([this](const cul::Update<cul::Heading>& heading)
+                  impl->heading_updates().connect([this](const cul::Update<cul::Heading>& heading)
                   {
                       VLOG(100) << "Heading changed reported by impl: " << heading;
-                      skeleton.signals.heading_changed->emit(heading.value);
+                      for (const auto& observer : observers)
+                          observer->on_new_heading(heading);
                   }),
-                  impl->updates().velocity.connect([this](const cul::Update<cul::Velocity>& velocity)
+                  impl->velocity_updates().connect([this](const cul::Update<cul::Velocity>& velocity)
                   {
                       VLOG(100) << "Velocity changed reported by impl: " << velocity;
-                      skeleton.signals.velocity_changed->emit(velocity.value);
+                      for (const auto& observer : observers)
+                          observer->on_new_velocity(velocity);
                   })
               }
     {
@@ -510,7 +371,7 @@ struct remote::Provider::Skeleton::Private
     core::dbus::Bus::Ptr bus;
     remote::Interface::Skeleton skeleton;
     cul::Provider::Ptr impl;
-
+    std::set<std::shared_ptr<remote::Provider::Observer>> observers;
     // All connections to signals go here.
     struct
     {
@@ -525,198 +386,141 @@ remote::Provider::Skeleton::Skeleton(const remote::skeleton::Configuration& conf
       d(new Private(config))
 {
     // And install method handlers.
-    d->skeleton.object->install_method_handler<remote::Interface::MatchesCriteria>([this](const dbus::Message::Ptr & msg)
+    d->skeleton.object->install_method_handler<remote::Interface::Satisfies>([this](const dbus::Message::Ptr & msg)
     {
-        VLOG(1) << "MatchesCriteria";
+        VLOG(1) << "Satisfies";
 
         cul::Criteria criteria; msg->reader() >> criteria;
         auto reply = dbus::Message::make_method_return(msg);
-        reply->writer() << matches_criteria(criteria);
+        reply->writer() << satisfies(criteria);
 
         d->bus->send(reply);
     });
 
-    d->skeleton.object->install_method_handler<remote::Interface::Supports>([this](const dbus::Message::Ptr & msg)
+    d->skeleton.object->install_method_handler<remote::Interface::Requirements>([this](const dbus::Message::Ptr & msg)
     {
-        VLOG(1) << "Supports";
+        VLOG(1) << "Requirements";
 
-        cul::Provider::Features f; msg->reader() >> f;
         auto reply = dbus::Message::make_method_return(msg);
-        reply->writer() << supports(f);
+        reply->writer() << requirements();
 
         d->bus->send(reply);
     });
 
-    d->skeleton.object->install_method_handler<remote::Interface::Requires>([this](const dbus::Message::Ptr & msg)
+    d->skeleton.object->install_method_handler<remote::Interface::Enable>([this](const dbus::Message::Ptr & msg)
     {
-        VLOG(1) << "Requires";
-
-        cul::Provider::Requirements r; msg->reader() >> r;
-        auto reply = dbus::Message::make_method_return(msg);
-        reply->writer() << requires(r);
-
-        d->bus->send(reply);
-    });
-
-    d->skeleton.object->install_method_handler<remote::Interface::OnWifiAndCellIdReportingStateChanged>([this](const dbus::Message::Ptr & msg)
-    {
-        VLOG(1) << "OnWifiAndCellIdReportingStateChanged";
-
-        cul::WifiAndCellIdReportingState s; msg->reader() >> s;
-        d->bus->send(dbus::Message::make_method_return(msg));
-
-        on_wifi_and_cell_reporting_state_changed(s);
-    });
-
-    d->skeleton.object->install_method_handler<remote::Interface::OnReferenceLocationChanged>([this](const dbus::Message::Ptr & msg)
-    {
-        VLOG(1) << "OnReferenceLocationChanged";
-
-        cul::Update<cul::Position> u; msg->reader() >> u;
-        d->bus->send(dbus::Message::make_method_return(msg));
-
-        on_reference_location_updated(u);
-    });
-
-    d->skeleton.object->install_method_handler<remote::Interface::OnReferenceHeadingChanged>([this](const dbus::Message::Ptr & msg)
-    {
-        VLOG(1) << "OnReferenceHeadingChanged";
-
-        cul::Update<cul::Heading> u; msg->reader() >> u;
-        d->bus->send(dbus::Message::make_method_return(msg));
-
-        on_reference_heading_updated(u);
-    });
-
-    d->skeleton.object->install_method_handler<remote::Interface::OnReferenceVelocityChanged>([this](const dbus::Message::Ptr & msg)
-    {
-        VLOG(1) << "OnReferenceVelocityChanged";
-
-        cul::Update<cul::Velocity> u; msg->reader() >> u;
-        d->bus->send(dbus::Message::make_method_return(msg));
-
-        on_reference_velocity_updated(u);
-    });    
-
-    d->skeleton.object->install_method_handler<remote::Interface::StartPositionUpdates>([this](const dbus::Message::Ptr & msg)
-    {
-        VLOG(1) << "StartPositionUpdates";
-        start_position_updates();
+        VLOG(1) << "Enable";
+        enable();
         d->bus->send(dbus::Message::make_method_return(msg));
     });
 
-    d->skeleton.object->install_method_handler<remote::Interface::StopPositionUpdates>([this](const dbus::Message::Ptr & msg)
+    d->skeleton.object->install_method_handler<remote::Interface::Disable>([this](const dbus::Message::Ptr & msg)
     {
-        VLOG(1) << "StopPositionUpdates";
-        stop_position_updates();
+        VLOG(1) << "Disable";
+        disable();
         d->bus->send(dbus::Message::make_method_return(msg));
     });
 
-    d->skeleton.object->install_method_handler<remote::Interface::StartHeadingUpdates>([this](const dbus::Message::Ptr & msg)
+    d->skeleton.object->install_method_handler<remote::Interface::Activate>([this](const dbus::Message::Ptr & msg)
     {
-        VLOG(1) << "StartHeadingUpdates";
-        start_heading_updates();
+        VLOG(1) << "Activate";
+        activate();
         d->bus->send(dbus::Message::make_method_return(msg));
     });
 
-    d->skeleton.object->install_method_handler<remote::Interface::StopHeadingUpdates>([this](const dbus::Message::Ptr & msg)
+    d->skeleton.object->install_method_handler<remote::Interface::Deactivate>([this](const dbus::Message::Ptr & msg)
     {
-        VLOG(1) << "StopHeadingUpdates";
-        stop_heading_updates();
+        VLOG(1) << "Deactivate";
+        deactivate();
         d->bus->send(dbus::Message::make_method_return(msg));
     });
 
-    d->skeleton.object->install_method_handler<remote::Interface::StartVelocityUpdates>([this](const dbus::Message::Ptr & msg)
+    d->skeleton.object->install_method_handler<remote::Interface::AddObserver>([this](const dbus::Message::Ptr& msg)
     {
-        VLOG(1) << "StartVelocityUpdates";
-        start_velocity_updates();
+        VLOG(1) << "AddObserver";
+        core::dbus::types::ObjectPath path; msg->reader() >> path;
+        auto object = dbus::Service::use_service(d->bus, msg->sender())->object_for_path(path);
+        add_observer(std::make_shared<remote::Provider::Observer::Stub>(object));
         d->bus->send(dbus::Message::make_method_return(msg));
     });
 
-    d->skeleton.object->install_method_handler<remote::Interface::StopVelocityUpdates>([this](const dbus::Message::Ptr & msg)
+    d->skeleton.object->install_method_handler<remote::Interface::OnNewEvent>([this](const dbus::Message::Ptr& msg)
     {
-        VLOG(1) << "StartVelocityUpdates";
-        stop_velocity_updates();
+        VLOG(1) << "OnNewEvent";
+        events::All all; msg->reader() >> all;
+        switch (all.which())
+        {
+        case 1: on_new_event(boost::get<events::ReferencePositionUpdated>(all));            break;
+        case 2: on_new_event(boost::get<events::WifiAndCellIdReportingStateChanged>(all));  break;
+        }
         d->bus->send(dbus::Message::make_method_return(msg));
     });
 }
 
 remote::Provider::Skeleton::~Skeleton() noexcept
 {
-    d->skeleton.object->uninstall_method_handler<remote::Interface::MatchesCriteria>();
+    d->skeleton.object->uninstall_method_handler<remote::Interface::Satisfies>();
 
-    d->skeleton.object->uninstall_method_handler<remote::Interface::StartPositionUpdates>();
-    d->skeleton.object->uninstall_method_handler<remote::Interface::StopPositionUpdates>();
+    d->skeleton.object->uninstall_method_handler<remote::Interface::Requirements>();
+    d->skeleton.object->uninstall_method_handler<remote::Interface::Enable>();
+    d->skeleton.object->uninstall_method_handler<remote::Interface::Disable>();
+    d->skeleton.object->uninstall_method_handler<remote::Interface::Activate>();
+    d->skeleton.object->uninstall_method_handler<remote::Interface::Deactivate>();
+    d->skeleton.object->uninstall_method_handler<remote::Interface::AddObserver>();
+}
 
-    d->skeleton.object->uninstall_method_handler<remote::Interface::StartHeadingUpdates>();
-    d->skeleton.object->uninstall_method_handler<remote::Interface::StopHeadingUpdates>();
-
-    d->skeleton.object->uninstall_method_handler<remote::Interface::StartVelocityUpdates>();
-    d->skeleton.object->uninstall_method_handler<remote::Interface::StopVelocityUpdates>();
+void remote::Provider::Skeleton::add_observer(const std::shared_ptr<Observer>& observer)
+{
+    d->observers.insert(observer);
 }
 
 // We just forward calls to the actual implementation
-bool remote::Provider::Skeleton::matches_criteria(const cul::Criteria& criteria)
+bool remote::Provider::Skeleton::satisfies(const cul::Criteria& criteria)
 {
-    return d->impl->matches_criteria(criteria);
+    return d->impl->satisfies(criteria);
 }
 
-bool remote::Provider::Skeleton::supports(const cul::Provider::Features& f) const
+location::Provider::Requirements remote::Provider::Skeleton::requirements() const
 {
-    return d->impl->supports(f);
+    return d->impl->requirements();
 }
 
-bool remote::Provider::Skeleton::requires(const cul::Provider::Requirements& r) const
+void remote::Provider::Skeleton::on_new_event(const Event& e)
 {
-    return d->impl->requires(r);
+    d->impl->on_new_event(e);
 }
 
-void remote::Provider::Skeleton::on_wifi_and_cell_reporting_state_changed(cul::WifiAndCellIdReportingState state)
+void remote::Provider::Skeleton::enable()
 {
-    d->impl->on_wifi_and_cell_reporting_state_changed(state);
+    d->impl->enable();
 }
 
-void remote::Provider::Skeleton::on_reference_location_updated(const cul::Update<cul::Position>& position)
+void remote::Provider::Skeleton::disable()
 {
-    d->impl->on_reference_location_updated(position);
+    d->impl->disable();
 }
 
-void remote::Provider::Skeleton::on_reference_velocity_updated(const cul::Update<cul::Velocity>& velocity)
+void remote::Provider::Skeleton::activate()
 {
-    d->impl->on_reference_velocity_updated(velocity);
+    d->impl->activate();
 }
 
-void remote::Provider::Skeleton::on_reference_heading_updated(const cul::Update<cul::Heading>& heading)
+void remote::Provider::Skeleton::deactivate()
 {
-    d->impl->on_reference_heading_updated(heading);
+    d->impl->deactivate();
 }
 
-void remote::Provider::Skeleton::start_position_updates()
+const core::Signal<location::Update<location::Position>>& remote::Provider::Skeleton::position_updates() const
 {
-    d->impl->state_controller()->start_position_updates();
+    return d->impl->position_updates();
 }
 
-void remote::Provider::Skeleton::stop_position_updates()
+const core::Signal<location::Update<location::Heading>>& remote::Provider::Skeleton::heading_updates() const
 {
-    d->impl->state_controller()->stop_position_updates();
+    return d->impl->heading_updates();
 }
 
-void remote::Provider::Skeleton::start_heading_updates()
+const core::Signal<location::Update<location::Velocity>>& remote::Provider::Skeleton::velocity_updates() const
 {
-    d->impl->state_controller()->start_heading_updates();
-}
-
-void remote::Provider::Skeleton::stop_heading_updates()
-{
-    d->impl->state_controller()->stop_heading_updates();
-}
-
-void remote::Provider::Skeleton::start_velocity_updates()
-{
-    d->impl->state_controller()->start_velocity_updates();
-}
-
-void remote::Provider::Skeleton::stop_velocity_updates()
-{
-    d->impl->state_controller()->stop_velocity_updates();
+    return d->impl->velocity_updates();
 }

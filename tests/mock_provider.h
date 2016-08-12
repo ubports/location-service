@@ -24,53 +24,42 @@
 
 struct MockProvider : public location::Provider
 {
-    MockProvider() : location::Provider()
-    {
-    }
+    MOCK_METHOD1(on_new_event, void(const location::Event&));
+    MOCK_METHOD0(enable, void());
+    MOCK_METHOD0(disable, void());
+    MOCK_METHOD0(activate, void());
+    MOCK_METHOD0(deactivate, void());
 
-    MOCK_METHOD1(matches_criteria, bool(const location::Criteria&));
-
-    MOCK_CONST_METHOD1(supports, bool(const location::Provider::Features&));
-    MOCK_CONST_METHOD1(requires, bool(const location::Provider::Requirements&));
-
-    // Called by the engine whenever the wifi and cell ID reporting state changes.
-    MOCK_METHOD1(on_wifi_and_cell_reporting_state_changed, void(location::WifiAndCellIdReportingState state));
-
-    // Called by the engine whenever the reference location changed.
-    MOCK_METHOD1(on_reference_location_updated, void(const location::Update<location::Position>& position));
-
-    // Called by the engine whenever the reference velocity changed.
-    MOCK_METHOD1(on_reference_velocity_updated, void(const location::Update<location::Velocity>& velocity));
-
-    // Called by the engine whenever the reference heading changed.
-    MOCK_METHOD1(on_reference_heading_updated, void(const location::Update<location::Heading>& heading));
-
-    MOCK_METHOD0(start_position_updates, void());
-    MOCK_METHOD0(stop_position_updates, void());
-
-    MOCK_METHOD0(start_heading_updates, void());
-    MOCK_METHOD0(stop_heading_updates, void());
-
-    MOCK_METHOD0(start_velocity_updates, void());
-    MOCK_METHOD0(stop_velocity_updates, void());
+    MOCK_CONST_METHOD0(requirements, Requirements());
+    MOCK_METHOD1(satisfies, bool(const location::Criteria&));
+    MOCK_CONST_METHOD0(position_updates, const core::Signal<location::Update<location::Position>>&());
+    MOCK_CONST_METHOD0(heading_updates, const core::Signal<location::Update<location::Heading>>&());
+    MOCK_CONST_METHOD0(velocity_updates, const core::Signal<location::Update<location::Velocity>>&());
 
     // Inject a position update from the outside.
     void inject_update(const location::Update<location::Position>& update)
     {
-        mutable_updates().position(update);
+        updates.position(update);
     }
 
     // Inject a velocity update from the outside.
     void inject_update(const location::Update<location::Velocity>& update)
     {
-        mutable_updates().velocity(update);
+        updates.velocity(update);
     }
 
     // Inject a heading update from the outside.
     void inject_update(const location::Update<location::Heading>& update)
     {
-        mutable_updates().heading(update);
+        updates.heading(update);
     }
+
+    struct
+    {
+        core::Signal<location::Update<location::Position>> position;
+        core::Signal<location::Update<location::Heading>> heading;
+        core::Signal<location::Update<location::Velocity>> velocity;
+    } updates;
 };
 
 #endif // MOCK_PROVIDER_H_

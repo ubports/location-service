@@ -143,22 +143,13 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
         // We use this instance to capture incoming requests.
         auto mock_provider = std::make_shared<NiceMock<MockProvider>>();
 
-        EXPECT_CALL(*mock_provider, matches_criteria(_)).Times(1).WillRepeatedly(Return(false));
+        EXPECT_CALL(*mock_provider, satisfies(_)).Times(1).WillRepeatedly(Return(false));
+        EXPECT_CALL(*mock_provider, requirements()).Times(1).WillRepeatedly(Return(location::Provider::Requirements::none));
 
-        EXPECT_CALL(*mock_provider, supports(_)).Times(4).WillRepeatedly(Return(true));
-        EXPECT_CALL(*mock_provider, requires(_)).Times(5).WillRepeatedly(Return(true));
-
-        EXPECT_CALL(*mock_provider, on_wifi_and_cell_reporting_state_changed(_)).Times(1);
-        EXPECT_CALL(*mock_provider, on_reference_location_updated(_)).Times(1);
-        EXPECT_CALL(*mock_provider, on_reference_velocity_updated(_)).Times(1);
-        EXPECT_CALL(*mock_provider, on_reference_heading_updated(_)).Times(1);
-
-        EXPECT_CALL(*mock_provider, start_position_updates()).Times(1);
-        EXPECT_CALL(*mock_provider, start_heading_updates()).Times(1);
-        EXPECT_CALL(*mock_provider, start_velocity_updates()).Times(1);
-        EXPECT_CALL(*mock_provider, stop_position_updates()).Times(1);
-        EXPECT_CALL(*mock_provider, stop_heading_updates()).Times(1);
-        EXPECT_CALL(*mock_provider, stop_velocity_updates()).Times(1);
+        EXPECT_CALL(*mock_provider, enable()).Times(1);
+        EXPECT_CALL(*mock_provider, disable()).Times(1);
+        EXPECT_CALL(*mock_provider, activate()).Times(1);
+        EXPECT_CALL(*mock_provider, deactivate()).Times(1);
 
         auto provider = remote::skeleton::create_with_configuration(remote::skeleton::Configuration
         {
@@ -226,36 +217,25 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
             bus->run();
         });
 
-        remote::stub::Configuration conf
+        auto service = core::dbus::Service::use_service(bus, RemoteProvider::stub_remote_provider_service_name);
+        auto object = service->object_for_path(core::dbus::types::ObjectPath{RemoteProvider::stub_remote_provider_path});
+        remote::stub::Configuration conf{bus, service, object};
+
+        std::mutex guard; std::condition_variable wait_condition; location::Provider::Ptr provider;
+        std::unique_lock<std::mutex> ul{guard};
+
+        remote::Provider::Stub::create_instance_with_config(conf, [&guard, &wait_condition, &provider](const location::Provider::Ptr& result)
         {
-            core::dbus::Service::use_service(
-                bus,
-                RemoteProvider::stub_remote_provider_service_name)->object_for_path(
-                    core::dbus::types::ObjectPath{RemoteProvider::stub_remote_provider_path})
-        };
+            std::unique_lock<std::mutex> ul{guard}; provider = result; wait_condition.notify_all();
+        });
 
-        auto provider = remote::stub::create_with_configuration(conf);
+        wait_condition.wait_for(ul, std::chrono::seconds{5}, [&provider]() { return provider != nullptr; });
 
-        EXPECT_FALSE(provider->matches_criteria(cul::Criteria{}));
+        EXPECT_FALSE(provider->satisfies(cul::Criteria{}));
+        EXPECT_EQ(location::Provider::Requirements::none, provider->requirements());
 
-        EXPECT_TRUE(provider->supports(cul::Provider::Features::none));
-        EXPECT_TRUE(provider->supports(cul::Provider::Features::position));
-        EXPECT_TRUE(provider->supports(cul::Provider::Features::heading));
-        EXPECT_TRUE(provider->supports(cul::Provider::Features::velocity));
-
-        EXPECT_TRUE(provider->requires(cul::Provider::Requirements::cell_network));
-        EXPECT_TRUE(provider->requires(cul::Provider::Requirements::data_network));
-        EXPECT_TRUE(provider->requires(cul::Provider::Requirements::monetary_spending));
-        EXPECT_TRUE(provider->requires(cul::Provider::Requirements::none));
-        EXPECT_TRUE(provider->requires(cul::Provider::Requirements::satellites));
-
-        provider->on_wifi_and_cell_reporting_state_changed(cul::WifiAndCellIdReportingState::on);
-        provider->on_reference_location_updated(cul::Update<cul::Position>{});
-        provider->on_reference_heading_updated(cul::Update<cul::Heading>{});
-        provider->on_reference_velocity_updated(cul::Update<cul::Velocity>{});
-        provider->state_controller()->start_position_updates();
-        provider->state_controller()->start_heading_updates();
-        provider->state_controller()->start_velocity_updates();
+        provider->enable();
+        provider->activate();
 
         MockEventConsumer mec;
         EXPECT_CALL(mec, on_new_position(PositionUpdatesAreEqualExceptForTiming(position))).Times(AtLeast(1));
@@ -264,7 +244,7 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
 
         core::ScopedConnection sc1
         {
-            provider->updates().position.connect([&mec](const cul::Update<cul::Position>& p)
+            provider->position_updates().connect([&mec](const cul::Update<cul::Position>& p)
             {
                 mec.on_new_position(p);
             })
@@ -272,7 +252,7 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
 
         core::ScopedConnection sc2
         {
-            provider->updates().heading.connect([&mec](const cul::Update<cul::Heading>& h)
+            provider->heading_updates().connect([&mec](const cul::Update<cul::Heading>& h)
             {
                 mec.on_new_heading(h);
             })
@@ -280,7 +260,7 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
 
         core::ScopedConnection sc3
         {
-            provider->updates().velocity.connect([&mec](const cul::Update<cul::Velocity>& v)
+            provider->velocity_updates().connect([&mec](const cul::Update<cul::Velocity>& v)
             {
                 mec.on_new_velocity(v);
             })
@@ -290,9 +270,8 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
         EXPECT_TRUE(mec.wait_for_heading_update_for(std::chrono::milliseconds{1000}));
         EXPECT_TRUE(mec.wait_for_velocity_update_for(std::chrono::milliseconds{1000}));
 
-        provider->state_controller()->stop_position_updates();
-        provider->state_controller()->stop_heading_updates();
-        provider->state_controller()->stop_velocity_updates();
+        provider->deactivate();
+        provider->disable();
 
         bus->stop();
 

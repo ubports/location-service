@@ -17,8 +17,7 @@
  */
 
 #include <location/non_selecting_provider_selection_policy.h>
-#include <location/fusion_provider.h>
-#include <location/newer_update_selector.h>
+#include <location/providers/proxy.h>
 
 #include <set>
 
@@ -33,13 +32,13 @@ location::ProviderSelection location::NonSelectingProviderSelectionPolicy::deter
         bag.insert(provider);
     });
 
-    auto bag_of_providers = std::make_shared<FusionProvider>(bag, std::make_shared<NewerUpdateSelector>());
+    auto proxy = std::make_shared<providers::Proxy>(bag);
 
     // Our bag of providers is responsible for delivering position/heading/velocity updates.
     return location::ProviderSelection
     {
-        bag_of_providers, // position
-        bag_of_providers, // heading
-        bag_of_providers  // velocity
+        proxy, // position
+        proxy, // heading
+        proxy  // velocity
     };
 }
