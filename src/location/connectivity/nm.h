@@ -68,7 +68,7 @@ struct NetworkManager
             }
 
             typedef AccessPoint Interface;
-            typedef std::int32_t ValueType;
+            typedef std::uint32_t ValueType;
             static const bool readable = true;
             static const bool writable = false;
         };

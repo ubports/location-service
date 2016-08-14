@@ -1,5 +1,6 @@
 add_subdirectory(dummy)
 add_subdirectory(fusion)
+add_subdirectory(mls)
 add_subdirectory(remote)
 add_subdirectory(gps)
 
