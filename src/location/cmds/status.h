@@ -21,6 +21,7 @@
 #define LOCATION_CMDS_STATUS_H_
 
 #include <location/optional.h>
+#include <location/service.h>
 #include <location/util/cli.h>
 
 #include <core/dbus/well_known_bus.h>
@@ -37,11 +38,44 @@ namespace cmds
 class Status : public util::cli::CommandWithFlagsAndAction
 {
 public:
+    // Summary bundles the state summary of a location::Service instance.
+    struct Summary
+    {
+        bool is_online;
+        Service::State state;
+        bool does_satellite_based_positioning;
+        bool does_report_cell_and_wifi_ids;
+        std::map<SpaceVehicle::Key, SpaceVehicle> svs;
+    };
+
+    // Delegate abstracts handling of an incoming state summary.
+    class Delegate : public util::DoNotCopyOrMove
+    {
+    public:
+        // on_summary is called whenever a state summary of a service instance has been assembled.
+        virtual void on_summary(const Summary& summary) = 0;
+    };
+
+    // PrintingDelegate is a Delegate printing to a std::ostream.
+    class PrintingDelegate : public Delegate
+    {
+    public:
+        // PrintingDelegate initializes a new instance with out.
+        PrintingDelegate(std::ostream& out = std::cout);
+
+        // From Delegate.
+        void on_summary(const Summary& summary) override;
+
+    private:
+        std::ostream& out; // The output stream we print to.
+    };
+
     // Status initializes a new instance.
-    Status();
+    Status(const std::shared_ptr<Delegate>& delegate = std::make_shared<PrintingDelegate>());
 
 private:
-    core::dbus::WellKnownBus bus; // The bus we should connect to.
+    std::shared_ptr<Delegate> delegate; // We dispatch summary information to this delegate implementation.
+    core::dbus::WellKnownBus bus;       // The bus we should connect to.
 };
 }
 }

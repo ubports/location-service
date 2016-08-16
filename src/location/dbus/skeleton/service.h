@@ -113,10 +113,16 @@ public:
     core::Property<bool>& is_online() override;
     core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles() override;
     Session::Ptr create_session_for_criteria(const Criteria& criteria) override;
+    void add_provider(const Provider::Ptr& provider) override;
+
 protected:
     // Enable subclasses to alter the state.
     core::Property<State>& mutable_state();
 private:
+    // Handles incoming message calls for add_provider.
+    // Dispatches to the actual implementation and manages object lifetimes.
+    void handle_add_provider(const core::dbus::Message::Ptr& msg);
+
     // Handles incoming message calls for create_session_for_criteria.
     // Dispatches to the actual implementation, and manages object lifetimes.
     void handle_create_session_for_criteria(const core::dbus::Message::Ptr& msg);

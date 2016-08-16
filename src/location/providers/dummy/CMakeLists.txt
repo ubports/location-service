@@ -2,9 +2,7 @@ add_library(
   dummy
   
   provider.h
-  provider.cpp
-  delayed_provider.h
-  delayed_provider.cpp)
+  provider.cpp)
 
 set(
   ENABLED_PROVIDER_TARGETS

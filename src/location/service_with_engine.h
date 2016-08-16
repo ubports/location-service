@@ -35,6 +35,7 @@ public:
     core::Property<bool>& does_report_cell_and_wifi_ids() override;
     core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles() override;
     Session::Ptr create_session_for_criteria(const Criteria& criteria) override;
+    void add_provider(const Provider::Ptr &provider) override;
 
 private:
     Engine::Ptr engine; // The engine instance we use for positioning.

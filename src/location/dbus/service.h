@@ -42,6 +42,12 @@ struct Service
         {
             inline static std::string name() { return "com.ubuntu.location.Service.Error.InsufficientPermissions";}
         };
+
+        struct AddingProvider
+        {
+            inline static std::string name() { return "com.ubuntu.location.Service.Error.AddingProvider";}
+        };
+
         struct CreatingSession
         {
             inline static std::string name() { return "com.ubuntu.location.Service.Error.CreatingSession"; }
@@ -59,6 +65,24 @@ struct Service
         }
 
         typedef core::dbus::types::ObjectPath ResultType;
+
+        inline static const std::chrono::milliseconds default_timeout()
+        {
+            return std::chrono::seconds{25};
+        }
+    };
+
+    struct AddProvider
+    {
+        typedef dbus::Service Interface;
+
+        inline static const std::string& name()
+        {
+            static const std::string s{"AddProvider"};
+            return s;
+        }
+
+        typedef void ResultType;
 
         inline static const std::chrono::milliseconds default_timeout()
         {

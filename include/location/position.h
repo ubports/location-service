@@ -59,6 +59,7 @@ struct Position
 };
 
 std::ostream& operator<<(std::ostream& out, const Position& position);
+std::istream& operator>>(std::istream& in, Position& position);
 
 units::Quantity<units::Length> haversine_distance(const Position& p1, const Position& p2);
 }

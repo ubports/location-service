@@ -1,5 +1,5 @@
 /*
- * Copyright © 2015 Canonical Ltd.
+ * Copyright © 2012-2013 Canonical Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License version 3,
@@ -15,17 +15,15 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_SERVICE_RUNTIME_TESTS_H_
-#define LOCATION_SERVICE_RUNTIME_TESTS_H_
+#ifndef LOCATION_CONFIG_H_
+#define LOCATION_CONFIG_H_
 
 namespace location
 {
-namespace service
+static constexpr const char* trust_store_service_name
 {
-// execute_runtime_tests runs all configured runtime tests.
-// Returns 0 if successful.
-int execute_runtime_tests();
-}
+    "@UBUNTU_LOCATION_SERVICE_TRUST_STORE_SERVICE_NAME@"
+};
 }
 
-#endif // LOCATION_SERVICE_RUNTIME_TESTS_H_
+#endif // LOCATION_CONFIG_H_

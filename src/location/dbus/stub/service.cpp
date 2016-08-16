@@ -22,9 +22,24 @@
 #include <location/dbus/codec.h>
 #include <location/dbus/service.h>
 
+#include <location/providers/remote/skeleton.h>
+
 #include <location/logging.h>
 
 #include <core/dbus/property.h>
+
+#include <boost/format.hpp>
+
+namespace
+{
+core::dbus::types::ObjectPath generate_path_for_provider()
+{
+    static constexpr const char* pattern{"/com/ubuntu/location/provider/%1%"};
+    static std::size_t counter{0};
+
+    return core::dbus::types::ObjectPath{(boost::format{pattern} % ++counter).str()};
+}
+}
 
 location::dbus::stub::Service::Service(const core::dbus::Bus::Ptr& connection,
                                        const core::dbus::Service::Ptr& service,
@@ -54,6 +69,28 @@ location::Service::Session::Ptr location::dbus::stub::Service::create_session_fo
     }
 
     return std::make_shared<location::dbus::stub::Session>(connection, service->add_object_for_path(op.value()));
+}
+
+void location::dbus::stub::Service::add_provider(const Provider::Ptr& provider)
+{
+    auto path = generate_path_for_provider();
+
+    auto skeleton = location::providers::remote::skeleton::create_with_configuration(
+    {
+        service->add_object_for_path(path),
+        connection,
+        provider
+    });
+
+    auto op = object->transact_method
+    <
+        location::dbus::Service::AddProvider,
+        location::dbus::Service::AddProvider::ResultType
+    >(path);
+
+    if (op.is_error()) throw std::runtime_error{op.error().print()};
+
+    providers.insert(skeleton);
 }
 
 const core::Property<location::Service::State>& location::dbus::stub::Service::state() const

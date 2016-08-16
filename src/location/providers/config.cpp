@@ -19,7 +19,6 @@
 #include <location/provider_factory.h>
 
 #include "dummy/provider.h"
-#include "dummy/delayed_provider.h"
 
 #include <map>
 
@@ -38,12 +37,6 @@ static FactoryInjector dummy_injector
 {
     "dummy::Provider",
     location::providers::dummy::Provider::create_instance
-};
-
-static FactoryInjector dummy_delayed_injector
-{
-    "dummy::DelayedProvider",
-    location::providers::dummy::DelayedProvider::create_instance
 };
 
 #include <location/providers/remote/provider.h>

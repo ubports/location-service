@@ -19,21 +19,48 @@
 
 #include <location/cmds/status.h>
 #include <location/dbus/stub/service.h>
-#include <location/service/runtime.h>
+#include <location/runtime.h>
 #include <location/util/well_known_bus.h>
 
 #include <core/dbus/asio/executor.h>
 
 namespace cli = location::util::cli;
 
-location::cmds::Status::Status()
+location::cmds::Status::PrintingDelegate::PrintingDelegate(std::ostream& out) : out{out}
+{
+}
+
+// From Delegate.
+void location::cmds::Status::PrintingDelegate::on_summary(const Summary& summary)
+{
+    out << "  is online:                   " << std::boolalpha  << summary.is_online                        << std::endl
+        << "  state:                       "                    << summary.state                            << std::endl
+        << "  satellite based positioning: " << std::boolalpha  << summary.does_satellite_based_positioning << std::endl
+        << "  reports cell & wifi ids:     " << std::boolalpha  << summary.does_report_cell_and_wifi_ids    << std::endl;
+
+    if (summary.svs.size() > 0)
+    {
+        out << "  svs:" << std::endl;
+        for (const auto& pair : summary.svs)
+            out << "    " << pair.second << std::endl;
+    }
+    else
+    {
+        out << "  svs:                         " << "none";
+    }
+
+    out << std::endl;
+}
+
+location::cmds::Status::Status(const std::shared_ptr<Delegate>& delegate)
     : CommandWithFlagsAndAction{cli::Name{"status"}, cli::Usage{"status"}, cli::Description{"queries the status of the daemon"}},
+      delegate{delegate},
       bus{core::dbus::WellKnownBus::system}
 {
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
     action([this](const Context& ctxt)
     {
-        auto rt = location::service::Runtime::create();
+        auto rt = location::Runtime::create();
 
         auto conn = std::make_shared<core::dbus::Bus>(bus);
 
@@ -44,23 +71,14 @@ location::cmds::Status::Status()
 
         rt->start();
 
-        ctxt.cout << "  is online:                   " << std::boolalpha << stub->is_online() << std::endl
-                  << "  state:                       " << stub->state() << std::endl
-                  << "  satellite based positioning: " << std::boolalpha << stub->does_satellite_based_positioning() << std::endl
-                  << "  reports cell & wifi ids:     " << std::boolalpha << stub->does_report_cell_and_wifi_ids() << std::endl;
-        auto svs = stub->visible_space_vehicles().get();
-        if (svs.size() > 0)
+        Status::delegate->on_summary(Summary
         {
-            ctxt.cout << "  svs:" << std::endl;
-            for (const auto& pair : svs)
-                ctxt.cout << "    " << pair.second << std::endl;
-        }
-        else
-        {
-            ctxt.cout << "  svs:                         " << "none";
-        }
-
-        ctxt.cout << std::endl;
+            stub->is_online(),
+            stub->state(),
+            stub->does_satellite_based_positioning(),
+            stub->does_report_cell_and_wifi_ids(),
+            stub->visible_space_vehicles()
+        });
 
         conn->stop(); rt->stop();
 

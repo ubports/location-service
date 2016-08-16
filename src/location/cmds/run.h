@@ -40,11 +40,13 @@ public:
     // Run initializes a new instance.
     Run();
 
+    
 private:
     // Ensure that log files dating back to before the fix
     // for lp:1447110 are removed and do not waste space.
     void account_for_lp1447110() const;
 
+    bool testing;                               // Whether we are running in a testing environment.
     core::dbus::WellKnownBus bus;               // The bus we should connect to.
     Optional<boost::filesystem::path> config;   // Optionally load configuration from this config file.
     boost::filesystem::path settings;           // Runtime persistent state settings are loaded from this file.

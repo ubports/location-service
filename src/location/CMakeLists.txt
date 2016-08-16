@@ -2,12 +2,10 @@ if (UBUNTU_PLATFORM_HARDWARE_API_FOUND)
   add_definitions(-DLOCATION_HAVE_UBUNTU_PLATFORM_HARDWARE_API)
 endif()
 
-set(ICHNAEA_REPORTER_SRCS service/ichnaea_reporter.cpp)
-
 add_subdirectory(providers)
 
 configure_file(
-  service/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/service/config.h @ONLY
+  config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h @ONLY
 )
 
 include_directories(${UBUNTU_PLATFORM_HARDWARE_API_INCLUDE_DIRS})
@@ -24,7 +22,6 @@ add_library(
   criteria.cpp
   engine.cpp
   fusion_provider.cpp
-  init_and_shutdown.cpp
   position.cpp
   provider.cpp
   provider_factory.cpp
@@ -61,6 +58,8 @@ add_library(
 
   cmds/list.h
   cmds/list.cpp
+  cmds/monitor.h
+  cmds/monitor.cpp
   cmds/provider.h
   cmds/provider.cpp
   cmds/run.h
@@ -86,33 +85,11 @@ add_library(
   dbus/stub/session.h
   dbus/stub/session.cpp
 
-  service/default_configuration.cpp
-  service/default_permission_manager.cpp
-  service/harvester.cpp
-  service/demultiplexing_reporter.h
-  service/demultiplexing_reporter.cpp
-  service/runtime.cpp
-  service/runtime_tests.h
-  service/runtime_tests.cpp
-  service/state.cpp
-  service/trust_store_permission_manager.cpp
-
-  service/implementation.cpp
-  service/skeleton.cpp
-  service/stub.cpp
-
-  service/session/implementation.cpp
-  service/session/interface.cpp
-  service/session/skeleton.cpp
-  service/session/stub.cpp
-
   providers/config.cpp
 
   providers/remote/provider.cpp
   providers/remote/skeleton.cpp
   providers/remote/stub.cpp
-
-  ${ICHNAEA_REPORTER_SRCS}
 )
 
 add_library(
@@ -195,36 +172,6 @@ install(
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-add_library(
-  ubuntu-location-service-provider-daemon
-
-  service/provider_daemon.cpp
-)
-
-add_library(
-  ubuntu-location-service-daemon
-
-  service/daemon.cpp
-)
-
-add_executable(
-  ubuntu-location-service-providerd
-
-  service/provider_daemon_main.cpp
-)
-
-add_executable(
-  ubuntu-location-serviced
-
-  service/daemon_main.cpp
-)
-
-add_executable(
-  ubuntu-location-serviced-cli
-
-  service/daemon_cli_main.cpp
-)
-
 add_executable(
   locationd
 
@@ -232,86 +179,11 @@ add_executable(
 )
 
 target_link_libraries(
-  ubuntu-location-service-provider-daemon
-
-  ubuntu-location-service
-)
-
-target_link_libraries(
-  ubuntu-location-service-daemon
-
-  ubuntu-location-service
-)
-
-target_link_libraries(
-  ubuntu-location-service-providerd
-
-  ubuntu-location-service-provider-daemon
-
-  ${ENABLED_PROVIDER_TARGETS}
-
-  ${Boost_LIBRARIES}
-  ${DBUS_LIBRARIES}
-  ${DBUS_CPP_LIBRARIES}
-  ${GLog_LIBRARY}
-  ${GFlags_LIBRARY}
-)
-
-target_link_libraries(
-  ubuntu-location-serviced
-
-  ubuntu-location-service-daemon
-
-  ${ENABLED_PROVIDER_TARGETS}
-
-  ${Boost_LIBRARIES}
-  ${DBUS_LIBRARIES}
-  ${DBUS_CPP_LIBRARIES}
-  ${GLog_LIBRARY}
-  ${GFlags_LIBRARY}
-)
-
-target_link_libraries(
-  ubuntu-location-serviced-cli
-
-  ubuntu-location-service-daemon
-
-  ${ENABLED_PROVIDER_TARGETS}
-
-  ${Boost_LIBRARIES}
-  ${DBUS_LIBRARIES}
-  ${DBUS_CPP_LIBRARIES}
-  ${GLog_LIBRARY}
-  ${GFlags_LIBRARY}
-)
-
-target_link_libraries(
   locationd
 
   ubuntu-location-service
 
   ${ENABLED_PROVIDER_TARGETS}
-
-#  ${Boost_LIBRARIES}
-#  ${DBUS_LIBRARIES}
-#  ${DBUS_CPP_LIBRARIES}
-#  ${GLog_LIBRARY}
-#  ${GFlags_LIBRARY}
-)
-
-install(
-  TARGETS ubuntu-location-service-providerd
-  DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
-install(
-  TARGETS ubuntu-location-serviced
-  DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
-install(
-  TARGETS ubuntu-location-serviced-cli
-  DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 install(

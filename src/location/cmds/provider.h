@@ -42,8 +42,6 @@ public:
 
 private:
     core::dbus::WellKnownBus bus;   // The bus we should connect to.
-    Optional<std::string> service;  // The name of the service under which the provider should be exposed.
-    Optional<std::string> path;     // The dbus object path under which the provider is known.
     Optional<std::string> id;       // The id of the actual provider implementation.
 };
 }

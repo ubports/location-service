@@ -46,11 +46,14 @@ class Service : public location::Service
     core::Property<bool>& does_report_cell_and_wifi_ids() override;
     core::Property<bool>& is_online() override;
     core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles() override;
+    void add_provider(const Provider::Ptr &provider) override;
 
   private:
     core::dbus::Bus::Ptr connection;
     core::dbus::Service::Ptr service;
     core::dbus::Object::Ptr object;
+
+    std::set<Provider::Ptr> providers;
 
     std::shared_ptr<core::dbus::Property<location::dbus::Service::Properties::State>> state_;
     std::shared_ptr<core::dbus::Property<location::dbus::Service::Properties::DoesSatelliteBasedPositioning>> does_satellite_based_positioning_;
