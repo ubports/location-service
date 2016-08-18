@@ -28,12 +28,12 @@ location::providers::Proxy::Proxy(const std::set<Provider::Ptr>& providers)
             updates.position(u);
         }));
 
-        connections.emplace_back(provider->heading_updates().connect([this](const location::Update<location::Heading>& u)
+        connections.emplace_back(provider->heading_updates().connect([this](const location::Update<location::units::Degrees>& u)
         {
             updates.heading(u);
         }));
 
-        connections.emplace_back(provider->velocity_updates().connect([this](const location::Update<location::Velocity>& u)
+        connections.emplace_back(provider->velocity_updates().connect([this](const location::Update<location::units::MetersPerSecond>& u)
         {
             updates.velocity(u);
         }));
@@ -84,12 +84,12 @@ const core::Signal<location::Update<location::Position>>& location::providers::P
     return updates.position;
 }
 
-const core::Signal<location::Update<location::Heading>>& location::providers::Proxy::heading_updates() const
+const core::Signal<location::Update<location::units::Degrees>>& location::providers::Proxy::heading_updates() const
 {
     return updates.heading;
 }
 
-const core::Signal<location::Update<location::Velocity>>& location::providers::Proxy::velocity_updates() const
+const core::Signal<location::Update<location::units::MetersPerSecond>>& location::providers::Proxy::velocity_updates() const
 {
     return updates.velocity;
 }

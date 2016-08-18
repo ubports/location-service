@@ -79,13 +79,13 @@ struct SpaceVehicle
         return key < rhs.key;
     }
 
-    Key key; ///< Unique key identifying an instance.
+    Key key;                                        ///< Unique key identifying an instance.
     float snr = -std::numeric_limits<float>::max(); ///< Signal to noise ratio;
-    bool has_almanac_data = false; ///< Almanac data available for this vehicle.
-    bool has_ephimeris_data = false; ///< Ephimeris data is available for this vehicle.
-    bool used_in_fix = false;  ///< This vehicle has been used to obtain a fix.
-    units::Quantity<units::PlaneAngle> azimuth; ///< Azimuth of SV.
-    units::Quantity<units::PlaneAngle> elevation; ///< Elevation of SV.
+    bool has_almanac_data = false;                  ///< Almanac data available for this vehicle.
+    bool has_ephimeris_data = false;                ///< Ephimeris data is available for this vehicle.
+    bool used_in_fix = false;                       ///< This vehicle has been used to obtain a fix.
+    units::Degrees azimuth;                         ///< Azimuth of SV.
+    units::Degrees elevation;                       ///< Elevation of SV.
 };
 
 inline std::ostream& operator<<(std::ostream& out, const SpaceVehicle& sv)

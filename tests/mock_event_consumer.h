@@ -66,8 +66,8 @@ class MockEventConsumer
     }
 
     MOCK_METHOD1(on_new_position, void(const location::Update<location::Position>&));
-    MOCK_METHOD1(on_new_heading, void(const location::Update<location::Heading>&));
-    MOCK_METHOD1(on_new_velocity, void(const location::Update<location::Velocity>&));
+    MOCK_METHOD1(on_new_heading, void(const location::Update<location::units::Degrees>&));
+    MOCK_METHOD1(on_new_velocity, void(const location::Update<location::units::MetersPerSecond>&));
 
 private:
     // Notes down the arrival of a position update

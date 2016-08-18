@@ -20,11 +20,9 @@
 
 #include <location/service.h>
 
-#include <location/heading.h>
 #include <location/position.h>
 #include <location/provider.h>
 #include <location/update.h>
-#include <location/velocity.h>
 
 #include <core/dbus/message.h>
 #include <core/dbus/object.h>
@@ -94,9 +92,9 @@ private:
     // Invoked whenever the actual session impl. for the session reports a position update.
     virtual void on_position_changed(const Update<Position>& position);
     // Invoked whenever the actual session impl. reports a heading update.
-    virtual void on_heading_changed(const Update<Heading>& heading);
+    virtual void on_heading_changed(const Update<units::Degrees>& heading);
     // Invoked whenever the actual session impl. reports a velocity update.
-    virtual void on_velocity_changed(const Update<Velocity>& velocity);
+    virtual void on_velocity_changed(const Update<units::MetersPerSecond>& velocity);
 
     // Stores all attributes passed at creation time.
     Configuration configuration;

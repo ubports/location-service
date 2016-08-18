@@ -20,10 +20,8 @@
 
 #include <memory>
 
-#include <location/heading.h>
 #include <location/position.h>
 #include <location/update.h>
-#include <location/velocity.h>
 
 namespace location
 {
@@ -43,9 +41,9 @@ class UpdatePolicy {
     // Return if the given position update will be verified as the new position in the engine.
     virtual const location::Update<location::Position>& verify_update(const location::Update<location::Position>& update) = 0;
     // Return if the given heading update will be verified as the new heading in the engine.
-    virtual const location::Update<location::Heading>& verify_update(const location::Update<location::Heading>& update) = 0;
+    virtual const location::Update<location::units::Degrees>& verify_update(const location::Update<location::units::Degrees>& update) = 0;
     // Return if the given velocity update will be verified as the new velocity in the engine.
-    virtual const location::Update<location::Velocity>& verify_update(const location::Update<location::Velocity>& update) = 0;
+    virtual const location::Update<location::units::MetersPerSecond>& verify_update(const location::Update<location::units::MetersPerSecond>& update) = 0;
  protected:
     UpdatePolicy() = default;
 

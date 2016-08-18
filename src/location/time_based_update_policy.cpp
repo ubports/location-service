@@ -35,12 +35,15 @@ TimeBasedUpdatePolicy::TimeBasedUpdatePolicy(std::chrono::minutes mins)
 const location::Update<location::Position>& TimeBasedUpdatePolicy::verify_update(const location::Update<location::Position>& update)
 {
     std::lock_guard<std::mutex> guard(position_update_mutex);
+
+    if (not last_position_update) return *(last_position_update = update);
+
     bool use_new_update;
-    if (is_significantly_newer(last_position_update, update, limit))
+    if (is_significantly_newer(*last_position_update, update, limit))
     {
         use_new_update = true;
     }
-    else if (is_significantly_older(last_position_update, update, limit))
+    else if (is_significantly_older(*last_position_update, update, limit))
     {
         use_new_update = false;
     }
@@ -48,9 +51,9 @@ const location::Update<location::Position>& TimeBasedUpdatePolicy::verify_update
     {
         // if the update has happened within a reasonable amount of time we will just use it if it is more accurate
         // that the previous one.
-        use_new_update = !last_position_update.value.accuracy.horizontal ||
-            (update.value.accuracy.horizontal
-             && *last_position_update.value.accuracy.horizontal >= *update.value.accuracy.horizontal);
+        use_new_update = !(*last_position_update).value.accuracy().horizontal() ||
+            (update.value.accuracy().horizontal()
+             && *((*last_position_update).value.accuracy().horizontal()) >= *(update.value.accuracy().horizontal()));
     }
 
     if (use_new_update)
@@ -60,20 +63,23 @@ const location::Update<location::Position>& TimeBasedUpdatePolicy::verify_update
     }
     else
     {
-        return last_position_update;
+        return *last_position_update;
     }
 }
 
 
-const location::Update<location::Heading>& TimeBasedUpdatePolicy::verify_update(const location::Update<location::Heading>& update)
+const location::Update<location::units::Degrees>& TimeBasedUpdatePolicy::verify_update(const location::Update<location::units::Degrees>& update)
 {
     std::lock_guard<std::mutex> guard(heading_update_mutex);
+
+    if (not last_heading_update) return *(last_heading_update = update);
+
     bool use_new_update;
-    if (is_significantly_newer(last_heading_update, update, limit))
+    if (is_significantly_newer(*last_heading_update, update, limit))
     {
         use_new_update = true;
     }
-    else if (is_significantly_older(last_heading_update, update, limit))
+    else if (is_significantly_older(*last_heading_update, update, limit))
     {
         use_new_update = false;
     }
@@ -84,19 +90,22 @@ const location::Update<location::Heading>& TimeBasedUpdatePolicy::verify_update(
     }
     else
     {
-        return last_heading_update;
+        return *last_heading_update;
     }
 }
 
-const location::Update<location::Velocity>& TimeBasedUpdatePolicy::verify_update(const location::Update<location::Velocity>& update)
+const location::Update<location::units::MetersPerSecond>& TimeBasedUpdatePolicy::verify_update(const location::Update<location::units::MetersPerSecond>& update)
 {
     std::lock_guard<std::mutex> guard(velocity_update_mutex);
+
+    if (not last_velocity_update) return *(last_velocity_update = update);
+
     bool use_new_update;
-    if (is_significantly_newer(last_velocity_update, update, limit))
+    if (is_significantly_newer(*last_velocity_update, update, limit))
     {
         use_new_update = true;
     }
-    else if (is_significantly_older(last_velocity_update, update, limit))
+    else if (is_significantly_older(*last_velocity_update, update, limit))
     {
         use_new_update = false;
     }
@@ -108,7 +117,7 @@ const location::Update<location::Velocity>& TimeBasedUpdatePolicy::verify_update
     }
     else
     {
-        return last_velocity_update;
+        return *last_velocity_update;
     }
 }
 

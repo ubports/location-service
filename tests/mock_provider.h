@@ -33,8 +33,8 @@ struct MockProvider : public location::Provider
     MOCK_CONST_METHOD0(requirements, Requirements());
     MOCK_METHOD1(satisfies, bool(const location::Criteria&));
     MOCK_CONST_METHOD0(position_updates, const core::Signal<location::Update<location::Position>>&());
-    MOCK_CONST_METHOD0(heading_updates, const core::Signal<location::Update<location::Heading>>&());
-    MOCK_CONST_METHOD0(velocity_updates, const core::Signal<location::Update<location::Velocity>>&());
+    MOCK_CONST_METHOD0(heading_updates, const core::Signal<location::Update<location::units::Degrees>>&());
+    MOCK_CONST_METHOD0(velocity_updates, const core::Signal<location::Update<location::units::MetersPerSecond>>&());
 
     // Inject a position update from the outside.
     void inject_update(const location::Update<location::Position>& update)
@@ -43,13 +43,13 @@ struct MockProvider : public location::Provider
     }
 
     // Inject a velocity update from the outside.
-    void inject_update(const location::Update<location::Velocity>& update)
+    void inject_update(const location::Update<location::units::MetersPerSecond>& update)
     {
         updates.velocity(update);
     }
 
     // Inject a heading update from the outside.
-    void inject_update(const location::Update<location::Heading>& update)
+    void inject_update(const location::Update<location::units::Degrees>& update)
     {
         updates.heading(update);
     }
@@ -57,8 +57,8 @@ struct MockProvider : public location::Provider
     struct
     {
         core::Signal<location::Update<location::Position>> position;
-        core::Signal<location::Update<location::Heading>> heading;
-        core::Signal<location::Update<location::Velocity>> velocity;
+        core::Signal<location::Update<location::units::Degrees>> heading;
+        core::Signal<location::Update<location::units::MetersPerSecond>> velocity;
     } updates;
 };
 

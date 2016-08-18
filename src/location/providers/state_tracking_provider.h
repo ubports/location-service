@@ -65,8 +65,8 @@ public:
     Requirements requirements() const override;
     bool satisfies(const Criteria& criteria) override;
     const core::Signal<Update<Position>>& position_updates() const override;
-    const core::Signal<Update<Heading>>& heading_updates() const override;
-    const core::Signal<Update<Velocity>>& velocity_updates() const override;
+    const core::Signal<Update<units::Degrees>>& heading_updates() const override;
+    const core::Signal<Update<units::MetersPerSecond>>& velocity_updates() const override;
 
 private:
     class ReferenceCountedOnce

@@ -19,28 +19,24 @@
 
 #include <gtest/gtest.h>
 
-namespace cul = location;
-
 TEST(Position, AllFieldsAreInvalidForDefaultConstructor)
 {
-    cul::Position p;
-    EXPECT_FALSE(p.altitude);
-    EXPECT_FALSE(p.accuracy.vertical);
+    location::Position p;
+    EXPECT_FALSE(p.altitude());
+    EXPECT_FALSE(p.accuracy().horizontal());
+    EXPECT_FALSE(p.accuracy().vertical());
 }
 
 TEST(Position, InitWithLatLonGivesValidFieldsForLatLon)
 {
-    cul::Position p{cul::wgs84::Latitude{}, cul::wgs84::Longitude{}};
-    EXPECT_FALSE(p.altitude);
+    location::Position p{location::units::Degrees{0}, location::units::Degrees{0}};
+    EXPECT_FALSE(p.altitude());
 }
 
 TEST(Position, InitWithLatLonAltGivesValidFieldsForLatLonAlt)
 {
-    cul::Position p{
-        cul::wgs84::Latitude{},
-        cul::wgs84::Longitude{},
-        cul::wgs84::Altitude{}};
-    EXPECT_TRUE(p.altitude ? true : false);
+    location::Position p{}; p.altitude(4 * location::units::meters);
+    EXPECT_TRUE(static_cast<bool>(p.altitude()));
 }
 
 #include <location/dbus/codec.h>
@@ -49,15 +45,13 @@ TEST(Position, InitWithLatLonAltGivesValidFieldsForLatLonAlt)
 
 TEST(Position, EncodingAndDecodingGivesSameResults)
 {
-    cul::Position p
-    {
-        cul::wgs84::Latitude{9. * cul::units::Degrees},
-        cul::wgs84::Longitude{53. * cul::units::Degrees},
-        cul::wgs84::Altitude{-2. * cul::units::Meters}
-    };
-
-    p.accuracy.horizontal =  cul::Position::Accuracy::Horizontal{300*cul::units::Meters};
-    p.accuracy.vertical = cul::Position::Accuracy::Vertical{100*cul::units::Meters};
+    auto p = location::Position{}
+            .latitude(9. * location::units::degrees)
+            .longitude(53. * location::units::degrees)
+            .altitude(-2 * location::units::meters);
+    p.accuracy()
+            .horizontal(300*location::units::meters)
+            .vertical(100*location::units::meters);
 
     auto msg = core::dbus::Message::make_method_call(
         "org.freedesktop.DBus",
@@ -67,7 +61,7 @@ TEST(Position, EncodingAndDecodingGivesSameResults)
 
     msg->writer() << p;
 
-    cul::Position pp;
+    location::Position pp;
     msg->reader() >> pp;
 
     EXPECT_EQ(p, pp);

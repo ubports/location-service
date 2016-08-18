@@ -56,12 +56,12 @@ void location::cmds::Monitor::PrintingDelegate::on_new_position(const Update<Pos
     out << pos << std::endl;
 }
 
-void location::cmds::Monitor::PrintingDelegate::on_new_heading(const Update<Heading>& heading)
+void location::cmds::Monitor::PrintingDelegate::on_new_heading(const Update<units::Degrees>& heading)
 {
     out << heading << std::endl;
 }
 
-void location::cmds::Monitor::PrintingDelegate::on_new_velocity(const Update<Velocity>& velocity)
+void location::cmds::Monitor::PrintingDelegate::on_new_velocity(const Update<units::MetersPerSecond>& velocity)
 {
     out << velocity << std::endl;
 }
@@ -98,12 +98,12 @@ location::cmds::Monitor::Monitor(const std::shared_ptr<Delegate>& delegate)
             Monitor::delegate->on_new_position(pos);
         });
 
-        session->updates().heading.changed().connect([this](const location::Update<location::Heading>& heading)
+        session->updates().heading.changed().connect([this](const location::Update<location::units::Degrees>& heading)
         {
             Monitor::delegate->on_new_heading(heading);
         });
 
-        session->updates().velocity.changed().connect([this](const location::Update<location::Velocity>& velocity)
+        session->updates().velocity.changed().connect([this](const location::Update<location::units::MetersPerSecond>& velocity)
         {
             Monitor::delegate->on_new_velocity(velocity);
         });

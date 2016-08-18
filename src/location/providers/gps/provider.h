@@ -53,8 +53,8 @@ class Provider : public location::Provider
     Requirements requirements() const override;
     bool satisfies(const Criteria& criteria) override;
     const core::Signal<Update<Position>>& position_updates() const override;
-    const core::Signal<Update<Heading>>& heading_updates() const override;
-    const core::Signal<Update<Velocity>>& velocity_updates() const override;
+    const core::Signal<Update<units::Degrees>>& heading_updates() const override;
+    const core::Signal<Update<units::MetersPerSecond>>& velocity_updates() const override;
 
     const core::Signal<Update<std::set<SpaceVehicle>>>& svs_updates() const;
     void on_reference_location_updated(const Update<Position>& position);
@@ -64,8 +64,8 @@ class Provider : public location::Provider
     struct
     {
         core::Signal<Update<Position>> position;
-        core::Signal<Update<Heading>> heading;
-        core::Signal<Update<Velocity>> velocity;
+        core::Signal<Update<units::Degrees>> heading;
+        core::Signal<Update<units::MetersPerSecond>> velocity;
         core::Signal<Update<std::set<SpaceVehicle>>> svs;
     } updates;
 };

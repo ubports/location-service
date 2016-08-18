@@ -28,10 +28,7 @@
 
 #include <location/dbus/codec.h>
 #include <location/update.h>
-
-#include <location/heading.h>
 #include <location/position.h>
-#include <location/velocity.h>
 
 namespace location
 {

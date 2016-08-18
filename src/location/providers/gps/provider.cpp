@@ -45,14 +45,14 @@ location::providers::gps::Provider::Provider(const std::shared_ptr<HardwareAbstr
         updates.position(Update<Position>(pos));
     });
 
-    hal->heading_updates().connect([this](const location::Heading& heading)
+    hal->heading_updates().connect([this](const units::Degrees& heading)
     {
-        updates.heading(Update<Heading>(heading));
+        updates.heading(Update<units::Degrees>(heading));
     });
 
-    hal->velocity_updates().connect([this](const location::Velocity& velocity)
+    hal->velocity_updates().connect([this](const units::MetersPerSecond& velocity)
     {
-        updates.velocity(Update<Velocity>(velocity));
+        updates.velocity(Update<units::MetersPerSecond>(velocity));
     });
 
     hal->space_vehicle_updates().connect([this](const std::set<location::SpaceVehicle>& svs)
@@ -102,12 +102,12 @@ const core::Signal<location::Update<location::Position>>& location::providers::g
     return updates.position;
 }
 
-const core::Signal<location::Update<location::Heading>>& location::providers::gps::Provider::heading_updates() const
+const core::Signal<location::Update<location::units::Degrees>>& location::providers::gps::Provider::heading_updates() const
 {
     return updates.heading;
 }
 
-const core::Signal<location::Update<location::Velocity>>& location::providers::gps::Provider::velocity_updates() const
+const core::Signal<location::Update<location::units::MetersPerSecond>>& location::providers::gps::Provider::velocity_updates() const
 {
     return updates.velocity;
 }

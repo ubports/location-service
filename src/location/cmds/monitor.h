@@ -20,11 +20,9 @@
 #ifndef LOCATION_CMDS_MONITOR_H_
 #define LOCATION_CMDS_MONITOR_H_
 
-#include <location/heading.h>
 #include <location/optional.h>
 #include <location/position.h>
 #include <location/update.h>
-#include <location/velocity.h>
 
 #include <location/util/cli.h>
 
@@ -47,9 +45,9 @@ public:
         // on_new_position is invoked for every incoming position update.
         virtual void on_new_position(const Update<Position>& pos) = 0;
         // on_new_heading is invoked for every incoming heading update.
-        virtual void on_new_heading(const Update<Heading>& heading) = 0;
+        virtual void on_new_heading(const Update<units::Degrees>& heading) = 0;
         // on_new_velocity is invoked for every incoming velocity update.
-        virtual void on_new_velocity(const Update<Velocity>& velocity) = 0;
+        virtual void on_new_velocity(const Update<units::MetersPerSecond>& velocity) = 0;
     };
 
     // PrintingDelegate implements Delegate, printing updates to the given output stream.
@@ -61,8 +59,8 @@ public:
 
         // From Delegate
         void on_new_position(const Update<Position>& pos) override;
-        void on_new_heading(const Update<Heading>& heading) override;
-        void on_new_velocity(const Update<Velocity>& velocity) override;
+        void on_new_heading(const Update<units::Degrees>& heading) override;
+        void on_new_velocity(const Update<units::MetersPerSecond>& velocity) override;
     private:
         std::ostream& out;
     };

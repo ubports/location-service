@@ -72,12 +72,12 @@ const core::Signal<location::Update<location::Position>>& fusion::Provider::posi
     return updates.position;
 }
 
-const core::Signal<location::Update<location::Heading>>& fusion::Provider::heading_updates() const
+const core::Signal<location::Update<location::units::Degrees>>& fusion::Provider::heading_updates() const
 {
     return updates.heading;
 }
 
-const core::Signal<location::Update<location::Velocity>>& fusion::Provider::velocity_updates() const
+const core::Signal<location::Update<location::units::MetersPerSecond>>& fusion::Provider::velocity_updates() const
 {
     return updates.velocity;
 }
@@ -108,13 +108,13 @@ fusion::Provider::Ptr fusion::Provider::finalize(const UpdateSelector::Ptr& upda
                   }
               });
         provider->heading_updates().connect(
-              [wp](const location::Update<location::Heading>& u)
+              [wp](const location::Update<location::units::Degrees>& u)
               {
                   if (auto sp = wp.lock())
                     sp->updates.heading(u);
               });
         provider->velocity_updates().connect(
-              [wp](const location::Update<location::Velocity>& u)
+              [wp](const location::Update<location::units::MetersPerSecond>& u)
               {
                   if (auto sp = wp.lock())
                     sp->updates.velocity(u);

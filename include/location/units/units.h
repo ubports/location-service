@@ -30,25 +30,19 @@ namespace location
 {
 namespace units
 {
-typedef boost::units::degree::plane_angle PlaneAngle;
-static const PlaneAngle Degree;
-static const PlaneAngle Degrees;
-typedef boost::units::gradian::plane_angle Gradians;
-
-typedef boost::units::si::length Length;
-static const Length Meter;
-static const Length Meters;
-
-using boost::units::si::kilo;
-
-typedef boost::units::si::velocity Velocity;
-static const Velocity MeterPerSecond;
-static const Velocity MetersPerSecond;
-
 template<typename Unit>
 using Quantity = boost::units::quantity<Unit, double>;
 
-typedef boost::units::si::dimensionless Dimensionless;
+typedef Quantity<boost::units::degree::plane_angle> Degrees;
+static boost::units::degree::plane_angle degrees;
+
+typedef Quantity<boost::units::si::length> Meters;
+static boost::units::si::length meters;
+
+typedef Quantity<boost::units::si::velocity> MetersPerSecond;
+static boost::units::si::velocity meters_per_second;
+
+using boost::units::si::kilo;
 
 using boost::units::sin;
 using boost::units::cos;
@@ -58,6 +52,12 @@ template<typename Unit>
 inline bool roughly_equals(const Quantity<Unit>& lhs, const Quantity<Unit>& rhs)
 {
     return std::fabs(lhs.value()-rhs.value()) <= std::numeric_limits<double>::epsilon();
+}
+
+template<typename T>
+inline typename Quantity<T>::value_type raw(const Quantity<T>& quantity)
+{
+    return quantity.value();
 }
 }
 }

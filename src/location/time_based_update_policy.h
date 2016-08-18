@@ -38,17 +38,17 @@ class TimeBasedUpdatePolicy : public UpdatePolicy {
     // Return if the given position update will be verified as the new position in the engine.
     const location::Update<location::Position>& verify_update(const location::Update<location::Position>& update) override;
     // Return if the given heading update will be verified as the new heading in the engine.
-    const location::Update<location::Heading>& verify_update(const location::Update<location::Heading>& update) override;
+    const location::Update<location::units::Degrees>& verify_update(const location::Update<location::units::Degrees>& update) override;
     // Return if the given velocity update will be verified as the new velocity in the engine.
-    const location::Update<location::Velocity>& verify_update(const location::Update<location::Velocity>& update) override;
+    const location::Update<location::units::MetersPerSecond>& verify_update(const location::Update<location::units::MetersPerSecond>& update) override;
 
     static std::chrono::minutes default_timeout();
 
  protected:
     // not private to simplify the testing but should be private
-    location::Update<location::Position> last_position_update;
-    location::Update<location::Heading> last_heading_update;
-    location::Update<location::Velocity> last_velocity_update;
+    Optional<Update<Position>> last_position_update;
+    Optional<Update<units::Degrees>> last_heading_update;
+    Optional<Update<units::MetersPerSecond>> last_velocity_update;
 
  private:
     // callbacks can happen in diff threads, make sure multi-threading will work in this class
