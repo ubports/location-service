@@ -19,6 +19,8 @@
 #ifndef LOCATION_FEATURES_H_
 #define LOCATION_FEATURES_H_
 
+#include <location/visibility.h>
+
 #include <iosfwd>
 
 namespace location
@@ -35,15 +37,9 @@ enum class Features : std::size_t
 };
 
 /** @brief operator| returns the bitwise or of lhs and rhs. */
-Features operator|(Features lhs, Features rhs);
+LOCATION_DLL_PUBLIC Features operator|(Features lhs, Features rhs);
 /** @brief operator& returns the bitwise and of lhs and rhs. */
-Features operator&(Features lhs, Features rhs);
-
-/** @brief operator<< inserts features into out. */
-std::ostream& operator<<(std::ostream& out, Features features);
-
-/** @brief operator>> extracts features from in. */
-std::istream& operator>>(std::istream& in, Features& features);
+LOCATION_DLL_PUBLIC Features operator&(Features lhs, Features rhs);
 }
 
 #endif // LOCATION_FEATURES_H_

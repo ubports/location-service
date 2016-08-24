@@ -20,6 +20,7 @@
 #define LOCATION_EVENTS_WIFI_AND_CELL_ID_REPORTING_STATE_CHANGED_H_
 
 #include <location/event.h>
+#include <location/visibility.h>
 
 #include <location/wifi_and_cell_reporting_state.h>
 
@@ -28,15 +29,22 @@ namespace location
 namespace events
 {
 /// @brief WifiAndCellIdReportingStateChanged is sent if the WifiAndCellIdReportingState changed.
-class WifiAndCellIdReportingStateChanged : public Event
+class LOCATION_DLL_PUBLIC WifiAndCellIdReportingStateChanged : public Event
 {
 public:
     /// @brief WifiAndCellIdReportingStateChanged initializes a new instance with new_state.
     WifiAndCellIdReportingStateChanged(WifiAndCellIdReportingState new_state);
     /// @brief WifiAndCellIdReportingStateChanged initializes a new instance from rhs.
     WifiAndCellIdReportingStateChanged(const WifiAndCellIdReportingStateChanged& rhs);
+    /// @brief WifiAndCellIdReportingStateChanged initializes a new instance from rhs.
+    WifiAndCellIdReportingStateChanged(WifiAndCellIdReportingStateChanged&& rhs);
+    /// @cond
+    ~WifiAndCellIdReportingStateChanged() override;
+    /// @endcond
     /// @brief operator= assigns rhs to this instance.
     WifiAndCellIdReportingStateChanged& operator=(const WifiAndCellIdReportingStateChanged& rhs);
+    /// @brief operator= move assigns rhs to this instance.
+    WifiAndCellIdReportingStateChanged& operator=(WifiAndCellIdReportingStateChanged&& rhs);
 
     /// @brief new_state returns the new state.
     WifiAndCellIdReportingState new_state() const;
@@ -45,7 +53,8 @@ public:
     Type type() const override;
 
 private:
-    WifiAndCellIdReportingState new_state_;
+    struct Private;
+    std::unique_ptr<Private> d;
 };
 }
 template<>

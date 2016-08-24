@@ -52,7 +52,7 @@
 namespace dbus = core::dbus;
 
 namespace com { namespace ubuntu { namespace location { namespace connectivity {
-struct OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::Manager
+struct LOCATION_DLL_PUBLIC OfonoNmConnectivityManager : public com::ubuntu::location::connectivity::Manager
 {
     // Creates an instance of the manager, resolving services on the given bus.
     OfonoNmConnectivityManager(const core::dbus::Bus::Ptr& bus);

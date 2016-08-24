@@ -23,6 +23,7 @@
 #include <location/optional.h>
 #include <location/position.h>
 #include <location/update.h>
+#include <location/visibility.h>
 
 #include <location/util/cli.h>
 
@@ -35,7 +36,7 @@ namespace location
 namespace cmds
 {
 // Monitor connects to a running locationd instance, monitoring its activity.
-class Monitor : public util::cli::CommandWithFlagsAndAction
+class LOCATION_DLL_PUBLIC Monitor : public util::cli::CommandWithFlagsAndAction
 {
 public:
     // Delegate abstracts handling of incoming updates.

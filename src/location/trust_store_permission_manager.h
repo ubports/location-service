@@ -19,6 +19,7 @@
 #define LOCATION_SERVICE_TRUST_STORE_PERMISSION_MANAGER_H_
 
 #include <location/permission_manager.h>
+#include <location/visibility.h>
 
 #include <core/trust/agent.h>
 
@@ -35,7 +36,7 @@ namespace location
 // A PermmissionManager implementation leveraging the trust-store
 // infrastructure to cache a user's answer and to dispatch
 // to user-specific trust-store instances.
-class TrustStorePermissionManager : public PermissionManager
+class LOCATION_DLL_PUBLIC TrustStorePermissionManager : public PermissionManager
 {
 public:
     // Just a convenience typedef.

@@ -15,17 +15,10 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_OPTIONAL_H_
-#define LOCATION_OPTIONAL_H_
+#ifndef LOCATION_VISIBILITY_H_
+#define LOCATION_VISIBILITY_H_
 
-#include <boost/optional.hpp>
-#include <boost/optional/optional_io.hpp>
+#define LOCATION_DLL_PUBLIC __attribute__ ((visibility ("default")))
+#define LOCATION_DLL_LOCAL  __attribute__ ((visibility ("hidden")))
 
-namespace location
-{
-/// @brief Optional models an optional value of type T.
-template<typename T>
-using Optional = boost::optional<T>;
-}
-
-#endif // LOCATION_OPTIONAL_H_
+#endif // LOCATION_VISIBILITY_H_

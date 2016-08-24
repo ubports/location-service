@@ -23,25 +23,47 @@ namespace
 const location::Event::Type id = location::Event::register_type<location::events::WifiAndCellIdReportingStateChanged>("location::events::WifiAndCellIdReportingStateChanged");
 }
 
+struct location::events::WifiAndCellIdReportingStateChanged::Private
+{
+    explicit Private(location::WifiAndCellIdReportingState new_state) : new_state{new_state}
+    {
+    }
+
+    location::WifiAndCellIdReportingState new_state;
+};
+
 location::events::WifiAndCellIdReportingStateChanged::WifiAndCellIdReportingStateChanged(WifiAndCellIdReportingState new_state)
-    : new_state_{new_state}
+    : d{new Private{new_state}}
 {
 }
 
 location::events::WifiAndCellIdReportingStateChanged::WifiAndCellIdReportingStateChanged(const WifiAndCellIdReportingStateChanged& rhs)
-    : Event{}, new_state_{rhs.new_state_}
+    : d{new Private{*rhs.d}}
 {
 }
 
+location::events::WifiAndCellIdReportingStateChanged::WifiAndCellIdReportingStateChanged(WifiAndCellIdReportingStateChanged&& rhs)
+    : d{std::move(rhs.d)}
+{
+}
+
+location::events::WifiAndCellIdReportingStateChanged::~WifiAndCellIdReportingStateChanged() = default;
+
 location::events::WifiAndCellIdReportingStateChanged& location::events::WifiAndCellIdReportingStateChanged::operator=(const WifiAndCellIdReportingStateChanged& rhs)
 {
-    new_state_ = rhs.new_state_;
+    *d = *rhs.d;
+    return *this;
+}
+
+location::events::WifiAndCellIdReportingStateChanged& location::events::WifiAndCellIdReportingStateChanged::operator=(WifiAndCellIdReportingStateChanged&& rhs)
+{
+    d = std::move(rhs.d);
     return *this;
 }
 
 location::WifiAndCellIdReportingState location::events::WifiAndCellIdReportingStateChanged::new_state() const
 {
-    return new_state_;
+    return d->new_state;
 }
 
 location::Event::Type location::events::WifiAndCellIdReportingStateChanged::type() const

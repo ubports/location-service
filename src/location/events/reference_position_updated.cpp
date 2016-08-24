@@ -23,25 +23,47 @@ namespace
 const location::Event::Type id = location::Event::register_type<location::events::ReferencePositionUpdated>("location::events::ReferencePositionUpdated");
 }
 
+struct location::events::ReferencePositionUpdated::Private
+{
+    explicit Private(const location::Update<location::Position>& update) : update{update}
+    {
+    }
+
+    location::Update<location::Position> update;
+};
+
 location::events::ReferencePositionUpdated::ReferencePositionUpdated(const Update<Position>& update)
-    : update_{update}
+    : d{new Private{update}}
 {
 }
 
 location::events::ReferencePositionUpdated::ReferencePositionUpdated(const ReferencePositionUpdated& rhs)
-    : Event{}, update_{rhs.update_}
+    : d{new Private{*rhs.d}}
 {
 }
 
+location::events::ReferencePositionUpdated::ReferencePositionUpdated(ReferencePositionUpdated&& rhs)
+    : d{std::move(rhs.d)}
+{
+}
+
+location::events::ReferencePositionUpdated::~ReferencePositionUpdated() = default;
+
 location::events::ReferencePositionUpdated& location::events::ReferencePositionUpdated::operator=(const ReferencePositionUpdated& rhs)
 {
-    update_ = rhs.update_;
+    *d = *rhs.d;
+    return *this;
+}
+
+location::events::ReferencePositionUpdated& location::events::ReferencePositionUpdated::operator=(ReferencePositionUpdated&& rhs)
+{
+    d = std::move(rhs.d);
     return *this;
 }
 
 const location::Update<location::Position>& location::events::ReferencePositionUpdated::update() const
 {
-    return update_;
+    return d->update;
 }
 
 location::Event::Type location::events::ReferencePositionUpdated::type() const

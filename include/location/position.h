@@ -21,6 +21,7 @@
 #include <location/units/units.h>
 
 #include <location/optional.h>
+#include <location/visibility.h>
 
 #include <iosfwd>
 #include <memory>
@@ -32,7 +33,7 @@ namespace location
 /// Position features a named parameter interface that allows to gradually refine
 /// a Position instance as in:
 ///   auto pos = Position{51. * units::degrees, 7. * units::degrees}.altitude{5. * units::meters};
-class Position
+class LOCATION_DLL_PUBLIC Position
 {
 public:
     /// @brief Accuracy bundles up optional horizontal and vertical
@@ -131,15 +132,15 @@ private:
 };
 
 /// @brief operator<< inserts position into out.
-std::ostream& operator<<(std::ostream& out, const Position& position);
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, const Position& position);
 /// @brief operator>> extracts position from in.
-std::istream& operator>>(std::istream& in, Position& position);
+LOCATION_DLL_PUBLIC std::istream& operator>>(std::istream& in, Position& position);
 
 /// @brief haversine_distance returns the distance between p1 and p2 according
 /// to the haversine distance.
 ///
 /// See https://en.wikipedia.org/wiki/Haversine_formula for background.
-units::Meters haversine_distance(const Position& p1, const Position& p2);
+LOCATION_DLL_PUBLIC units::Meters haversine_distance(const Position& p1, const Position& p2);
 }
 
 #endif // LOCATION_POSITION_H_

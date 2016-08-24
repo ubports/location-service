@@ -18,6 +18,8 @@
 #ifndef LOCATION_SETTINGS_H_
 #define LOCATION_SETTINGS_H_
 
+#include <location/visibility.h>
+
 #include <cstdint>
 
 #include <memory>
@@ -27,7 +29,7 @@
 namespace location
 {
 // A simple interface for reading/writing values given a string key.
-struct Settings
+struct LOCATION_DLL_PUBLIC Settings
 {
     // To safe us some typing
     typedef std::shared_ptr<Settings> Ptr;

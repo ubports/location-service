@@ -18,6 +18,8 @@
 #ifndef LOCATION_WIFI_AND_CELL_REPORTING_STATE_H_
 #define LOCATION_WIFI_AND_CELL_REPORTING_STATE_H_
 
+#include <location/visibility.h>
+
 #include <iosfwd>
 
 namespace location
@@ -29,9 +31,9 @@ enum class WifiAndCellIdReportingState
 };
 
 /** @brief Pretty prints the given state to the given stream. */
-std::ostream& operator<<(std::ostream&, WifiAndCellIdReportingState);
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream&, WifiAndCellIdReportingState);
 /** @brief Parses the state from the given stream. */
-std::istream& operator>>(std::istream&, WifiAndCellIdReportingState&);
+LOCATION_DLL_PUBLIC std::istream& operator>>(std::istream&, WifiAndCellIdReportingState&);
 }
 
 #endif // LOCATION_WIFI_AND_CELL_REPORTING_STATE_H_

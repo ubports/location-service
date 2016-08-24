@@ -22,6 +22,7 @@
 #include <location/position.h>
 #include <location/provider.h>
 #include <location/update.h>
+#include <location/visibility.h>
 
 #include <core/property.h>
 
@@ -35,7 +36,7 @@ struct Criteria;
 /**
  * @brief The Interface class models the primary interface to the location service.
  */
-class Service
+class LOCATION_DLL_PUBLIC Service
 {
 public:
     // Safe us some typing.
@@ -154,14 +155,14 @@ protected:
 };
 
 /// @brief operator== returns true if lhs == rhs.
-bool operator==(Service::State lhs, Service::State rhs);
+LOCATION_DLL_PUBLIC bool operator==(Service::State lhs, Service::State rhs);
 /// @brief operator != returns true if !(lhs == rhs).
-bool operator!=(Service::State lhs, Service::State rhs);
+LOCATION_DLL_PUBLIC bool operator!=(Service::State lhs, Service::State rhs);
 
 /// @brief operator<< inserts state into the out.
-std::ostream& operator<<(std::ostream& out, Service::State state);
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, Service::State state);
 /// @brief operator>> extracts state from in.
-std::istream& operator>>(std::istream& in, Service::State& state);
+LOCATION_DLL_PUBLIC std::istream& operator>>(std::istream& in, Service::State& state);
 
 }
 

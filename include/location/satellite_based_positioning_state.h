@@ -18,6 +18,8 @@
 #ifndef LOCATION_SATELLITE_BASED_POSITIONING_STATE_H_
 #define LOCATION_SATELLITE_BASED_POSITIONING_STATE_H_
 
+#include <location/visibility.h>
+
 #include <iosfwd>
 
 namespace location
@@ -33,9 +35,9 @@ enum class SatelliteBasedPositioningState
 };
 
 /** @brief Pretty prints the given state to the given stream. */
-std::ostream& operator<<(std::ostream&, SatelliteBasedPositioningState);
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream&, SatelliteBasedPositioningState);
 /** @brief Parses the state from the given stream. */
-std::istream& operator>>(std::istream&, SatelliteBasedPositioningState&);
+LOCATION_DLL_PUBLIC std::istream& operator>>(std::istream&, SatelliteBasedPositioningState&);
 }
 
 #endif // LOCATION_SATELLITE_BASED_POSITIONING_STATE_H_

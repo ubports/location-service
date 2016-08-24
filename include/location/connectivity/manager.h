@@ -60,7 +60,7 @@ enum class State
 };
 
 /** @brief Pretty prints the given state to the given output stream */
-std::ostream& operator<<(std::ostream& out, State state);
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, State state);
 
 /** @brief Summarizes characteristics of network connections. */
 enum class Characteristics : std::uint32_t
@@ -82,18 +82,18 @@ enum class Characteristics : std::uint32_t
 };
 
 /** @brief Bitwise or operator for Characteristics flags. */
-Characteristics operator|(Characteristics l, Characteristics r);
+LOCATION_DLL_PUBLIC Characteristics operator|(Characteristics l, Characteristics r);
 
 /** @brief Bitwise and operator for Characteristics flags. */
-Characteristics operator&(Characteristics l, Characteristics r);
+LOCATION_DLL_PUBLIC Characteristics operator&(Characteristics l, Characteristics r);
 
 /** @brief Pretty prints the given charateristics to the given output stream */
-std::ostream& operator<<(std::ostream& out, Characteristics characteristics);
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, Characteristics characteristics);
 
 /**
  * @brief The Manager class encapsulates access to network/radio information
  */
-class Manager
+class LOCATION_DLL_PUBLIC Manager
 {
 public:
     struct Errors
@@ -224,7 +224,7 @@ protected:
  * @throw Manager::Errors::ConnectivityManagementNotSupported.
  * @return An instance of a connectivity manager.
  */
-const std::shared_ptr<Manager>& platform_default_manager();
+LOCATION_DLL_PUBLIC const std::shared_ptr<Manager>& platform_default_manager();
 }
 }
 }

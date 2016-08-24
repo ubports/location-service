@@ -135,7 +135,7 @@ int snr_and_ttff(std::ostream& cout, std::ostream& cerr)
         cout << std::scientific;
         cout << "key snr has_almanac_data has_ephimeris_data used_in_fix azimuth elevation" << std::endl;
         for (const auto& sv : svs)
-            cout << sv.key.id << " " << sv.snr << " " << sv.has_almanac_data << " " << sv.has_ephimeris_data << " " << sv.used_in_fix << " " << sv.azimuth.value() << " " << sv.elevation.value() << std::endl;
+            cout << sv.key().id() << " " << sv.snr() << " " << sv.has_almanac_data() << " " << sv.has_ephimeris_data() << " " << sv.used_in_fix() << " " << sv.azimuth().value() << " " << sv.elevation().value() << std::endl;
     });
 
     for (unsigned int i = 0; i < trials; i++)

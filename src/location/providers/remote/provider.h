@@ -20,6 +20,7 @@
 
 #include <location/provider.h>
 #include <location/provider_factory.h>
+#include <location/visibility.h>
 
 #include <location/providers/remote/skeleton.h>
 #include <location/providers/remote/stub.h>
@@ -33,7 +34,7 @@ namespace providers
 {
 namespace remote
 {
-struct Provider
+struct LOCATION_DLL_PUBLIC  Provider
 {
     class Observer
     {

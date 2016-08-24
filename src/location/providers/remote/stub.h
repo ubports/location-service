@@ -19,6 +19,7 @@
 #define LOCATION_SERVICE_PROVIDERS_REMOTE_STUB_H_
 
 #include <location/provider.h>
+#include <location/visibility.h>
 
 #include <functional>
 
@@ -48,7 +49,7 @@ struct Configuration
 };
 
 /// @brief Asynchronously creates a stub instance referring to a remote provider instance.
-void create_with_configuration(const Configuration& configuration, const std::function<void(const Provider::Ptr&)>& cb);
+LOCATION_DLL_PUBLIC void create_with_configuration(const Configuration& configuration, const std::function<void(const Provider::Ptr&)>& cb);
 }
 }
 }

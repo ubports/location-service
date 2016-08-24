@@ -24,6 +24,7 @@
 #include <location/position.h>
 #include <location/space_vehicle.h>
 #include <location/update.h>
+#include <location/visibility.h>
 #include <location/wifi_and_cell_reporting_state.h>
 
 #include <core/property.h>
@@ -36,7 +37,7 @@
 namespace location
 {
 /// @brief The Provider class is the abstract base of all positioning providers.
-class Provider : public Event::Receiver
+class LOCATION_DLL_PUBLIC Provider : public Event::Receiver
 {
 public:
     typedef std::shared_ptr<Provider> Ptr;    
@@ -94,9 +95,9 @@ protected:
 };
 
 /// @brief operator| returns the bitwise or of lhs and rhs.
-Provider::Requirements operator|(Provider::Requirements lhs, Provider::Requirements rhs);
+LOCATION_DLL_PUBLIC Provider::Requirements operator|(Provider::Requirements lhs, Provider::Requirements rhs);
 /// @brief operator& returns the bitwise and of lhs and rhs.
-Provider::Requirements operator&(Provider::Requirements lhs, Provider::Requirements rhs);
+LOCATION_DLL_PUBLIC Provider::Requirements operator&(Provider::Requirements lhs, Provider::Requirements rhs);
 }
 
 #endif // LOCATION_PROVIDER_H_

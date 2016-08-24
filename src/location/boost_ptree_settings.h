@@ -19,6 +19,7 @@
 #define LOCATION_BOOST_PTREE_SETTINGS_H_
 
 #include <location/settings.h>
+#include <location/visibility.h>
 
 #include <boost/property_tree/ptree.hpp>
 
@@ -27,7 +28,7 @@ namespace location
 // Implements the settings interface relying on boost::property_tree.
 // We rely on the INI file format for serializing data. While certainly
 // dated and somewhat inefficient, it is human readable and easy to understand.
-class BoostPtreeSettings : public Settings
+class LOCATION_DLL_PUBLIC BoostPtreeSettings : public Settings
 {
 public:
     // Creates a new instance, reading values from the given filename.

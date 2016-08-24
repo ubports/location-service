@@ -21,6 +21,7 @@
 #define LOCATION_CMDS_TEST_H_
 
 #include <location/util/cli.h>
+#include <location/visibility.h>
 
 #include <iosfwd>
 
@@ -29,7 +30,7 @@ namespace location
 namespace cmds
 {
 // Test executes runtime tests against the gps provider.
-class Test : public util::cli::CommandWithFlagsAndAction
+class LOCATION_DLL_PUBLIC Test : public util::cli::CommandWithFlagsAndAction
 {
 public:
     // List initializes a new instance.

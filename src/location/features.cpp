@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2013 Canonical Ltd.
+ * Copyright © 2016 Canonical Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License version 3,
@@ -15,17 +15,19 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_OPTIONAL_H_
-#define LOCATION_OPTIONAL_H_
 
-#include <boost/optional.hpp>
-#include <boost/optional/optional_io.hpp>
+#include <location/features.h>
 
-namespace location
+#include <type_traits>
+
+location::Features location::operator|(location::Features lhs, location::Features rhs)
 {
-/// @brief Optional models an optional value of type T.
-template<typename T>
-using Optional = boost::optional<T>;
+    using NT = typename std::underlying_type<location::Features>::type;
+    return static_cast<location::Features>(static_cast<NT>(lhs) | static_cast<NT>(rhs));
 }
 
-#endif // LOCATION_OPTIONAL_H_
+location::Features location::operator&(location::Features lhs, location::Features rhs)
+{
+    using NT = typename std::underlying_type<location::Features>::type;
+    return static_cast<location::Features>(static_cast<NT>(lhs) & static_cast<NT>(rhs));
+}

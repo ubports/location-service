@@ -33,7 +33,7 @@ namespace location
 {
 namespace connectivity
 {
-struct WirelessNetwork
+struct LOCATION_DLL_PUBLIC WirelessNetwork
 {
     typedef std::shared_ptr<WirelessNetwork> Ptr;
 
@@ -105,10 +105,10 @@ struct WirelessNetwork
 };
 
 /** @brief Pretty-prints the given mode to the given output stream. */
-std::ostream& operator<<(std::ostream& out, WirelessNetwork::Mode mode);
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, WirelessNetwork::Mode mode);
 
 /** @brief Pretty-prints the given wireless network to the given output stream. */
-std::ostream& operator<<(std::ostream& out, const WirelessNetwork& wifi);
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, const WirelessNetwork& wifi);
 }
 }
 }

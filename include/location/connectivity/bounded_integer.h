@@ -18,6 +18,8 @@
 #ifndef LOCATION_CONNECTIVITY_BOUNDED_INTEGER_H_
 #define LOCATION_CONNECTIVITY_BOUNDED_INTEGER_H_
 
+#include <location/visibility.h>
+
 #include <iostream>
 #include <stdexcept>
 
@@ -34,7 +36,7 @@ namespace connectivity
  * for tagging domain-specific types.
  */
 template<typename Tag, int min, int max, int inv = min-1>
-class BoundedInteger
+class LOCATION_DLL_PUBLIC BoundedInteger
 {
 public:
     static_assert(min < max, "min >= max");

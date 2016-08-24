@@ -22,6 +22,7 @@
 
 #include <location/util/cli.h>
 #include <location/util/do_not_copy_or_move.h>
+#include <location/visibility.h>
 
 #include <memory>
 #include <set>
@@ -32,7 +33,7 @@
 namespace location
 {
 /// @brief Daemon implements biometryd.
-class Daemon : private util::DoNotCopyOrMove
+class LOCATION_DLL_PUBLIC Daemon : private util::DoNotCopyOrMove
 {
 public:
     /// @brief Daemon creates a new instance, populating the map of known commands.

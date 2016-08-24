@@ -223,9 +223,7 @@ void android::HardwareAbstractionLayer::on_sv_status_update(UHardwareGpsSvStatus
     std::set<location::SpaceVehicle> svs;
 
     for (int i = 0; i < sv_info->num_svs; i++)
-    {
-        location::SpaceVehicle sv;
-
+    {        
         // PRN is in the range of [1, 32], adjusting it to make sure we
         // can use it for bitfield flag testing operations.
         int prn = sv_info->sv_list[i].prn - 1;
@@ -234,16 +232,13 @@ void android::HardwareAbstractionLayer::on_sv_status_update(UHardwareGpsSvStatus
 
         auto shift = (1 << prn);
 
-        sv.key.type = location::SpaceVehicle::Type::gps;
-        sv.key.id = sv_info->sv_list[i].prn;
-        sv.snr = sv_info->sv_list[i].snr;
-        sv.has_almanac_data = sv_info->almanac_mask & shift;
-        sv.has_ephimeris_data = sv_info->ephemeris_mask & shift;
-        sv.used_in_fix = sv_info->used_in_fix_mask & shift;
-        sv.azimuth = sv_info->sv_list[i].elevation * location::units::degrees;
-        sv.elevation = sv_info->sv_list[i].azimuth * location::units::degrees;
-
-        svs.insert(sv);
+        svs.insert(location::SpaceVehicle{location::SpaceVehicle::Key{location::SpaceVehicle::Type::gps, sv_info->sv_list[i].prn}}
+                   .snr(sv_info->sv_list[i].snr)
+                   .has_almanac_data(sv_info->almanac_mask & shift)
+                   .has_ephimeris_data(sv_info->ephemeris_mask & shift)
+                   .used_in_fix(sv_info->used_in_fix_mask & shift)
+                   .azimuth(sv_info->sv_list[i].azimuth * location::units::degrees)
+                   .elevation(sv_info->sv_list[i].elevation * location::units::degrees));
     }
 
     thiz->space_vehicle_updates()(svs);

@@ -18,13 +18,15 @@
 #ifndef LOCATION_EVENT_H_
 #define LOCATION_EVENT_H_
 
+#include <location/visibility.h>
+
 #include <memory>
 
 namespace location
 {
 /// @brief Event models the base of an event hierarchy used to pass
 /// system- and session-wide events to providers and sessions.
-class Event
+class LOCATION_DLL_PUBLIC Event
 {
 public:
     // Safe us some typing
@@ -45,7 +47,7 @@ public:
         Receiver& operator=(Receiver&&) = delete;
         /// @endcond
 
-        /// on_new_event is invoked for every new event.
+        /// @brief on_new_event is invoked for every new event.
         virtual void on_new_event(const Event& event) = 0;
 
     protected:
@@ -86,7 +88,7 @@ public:
 
 /// @brief TypeOf enables calling code to check for a specific event type.
 template<typename T>
-struct TypeOf
+struct LOCATION_DLL_PUBLIC TypeOf
 {
     /// @brief Query returns the Event::Type registered for T.
     ///
