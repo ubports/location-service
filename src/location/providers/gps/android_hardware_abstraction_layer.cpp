@@ -180,17 +180,13 @@ void android::HardwareAbstractionLayer::on_location_update(UHardwareGpsLocation*
 
     if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_LAT_LONG)
     {
-        location::Position pos
-        {
-            location::wgs84::Latitude{location->latitude * location::units::Degrees},
-            location::wgs84::Longitude{location->longitude * location::units::Degrees}
-        };
+        location::Position pos{location->latitude * location::units::degrees, location->longitude * location::units::degrees};
 
         if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_ACCURACY)
-            pos.accuracy.horizontal = location->accuracy * location::units::Meters;
+            pos.accuracy().horizontal(location->accuracy * location::units::meters);
 
         if(location->flags & U_HARDWARE_GPS_LOCATION_HAS_ALTITUDE)
-            pos.altitude = location::wgs84::Altitude{location->altitude * location::units::Meters};
+            pos.altitude(location->altitude * location::units::meters);
 
         // The Android HAL does not provide us with accuracy information for
         // altitude measurements. We just leave out that field.
@@ -201,18 +197,10 @@ void android::HardwareAbstractionLayer::on_location_update(UHardwareGpsLocation*
     }
 
     if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_SPEED)
-    {
-        location::Velocity v{location->speed * location::units::MetersPerSecond};
-        thiz->velocity_updates()(v);
-        VLOG(1) << v;
-    }
+        thiz->velocity_updates()(location->speed * location::units::meters_per_second);
 
     if (location->flags & U_HARDWARE_GPS_LOCATION_HAS_BEARING)
-    {
-        location::Heading h{location->bearing * location::units::Degrees};
-        thiz->heading_updates()(h);
-        VLOG(1) << h;
-    }
+        thiz->heading_updates()(location->bearing * location::units::degrees);
 }
 
 void android::HardwareAbstractionLayer::on_status_update(uint16_t status, void* context)
@@ -252,8 +240,8 @@ void android::HardwareAbstractionLayer::on_sv_status_update(UHardwareGpsSvStatus
         sv.has_almanac_data = sv_info->almanac_mask & shift;
         sv.has_ephimeris_data = sv_info->ephemeris_mask & shift;
         sv.used_in_fix = sv_info->used_in_fix_mask & shift;
-        sv.azimuth = sv_info->sv_list[i].elevation * location::units::Degrees;
-        sv.elevation = sv_info->sv_list[i].azimuth * location::units::Degrees;
+        sv.azimuth = sv_info->sv_list[i].elevation * location::units::degrees;
+        sv.elevation = sv_info->sv_list[i].azimuth * location::units::degrees;
 
         svs.insert(sv);
     }
@@ -360,22 +348,22 @@ core::Signal<location::Position>& android::HardwareAbstractionLayer::position_up
     return impl.position_updates;
 }
 
-const core::Signal<location::Heading>& android::HardwareAbstractionLayer::heading_updates() const
+const core::Signal<location::units::Degrees>& android::HardwareAbstractionLayer::heading_updates() const
 {
     return impl.heading_updates;
 }
 
-core::Signal<location::Heading>& android::HardwareAbstractionLayer::heading_updates()
+core::Signal<location::units::Degrees>& android::HardwareAbstractionLayer::heading_updates()
 {
     return impl.heading_updates;
 }
 
-const core::Signal<location::Velocity>& android::HardwareAbstractionLayer::velocity_updates() const
+const core::Signal<location::units::MetersPerSecond>& android::HardwareAbstractionLayer::velocity_updates() const
 {
     return impl.velocity_updates;
 }
 
-core::Signal<location::Velocity>& android::HardwareAbstractionLayer::velocity_updates()
+core::Signal<location::units::MetersPerSecond>& android::HardwareAbstractionLayer::velocity_updates()
 {
     return impl.velocity_updates;
 }
@@ -506,13 +494,13 @@ bool android::HardwareAbstractionLayer::inject_reference_position(const location
     UHardwareGpsLocation loc;
     loc.size = sizeof(loc);
     loc.flags = U_HARDWARE_GPS_LOCATION_HAS_LAT_LONG;
-    loc.latitude = position.latitude.value.value();
-    loc.longitude = position.longitude.value.value();
+    loc.latitude = location::units::raw(position.latitude());
+    loc.longitude = location::units::raw(position.longitude());
 
-    if (position.accuracy.horizontal)
+    if (position.accuracy().horizontal())
     {
         loc.flags |= U_HARDWARE_GPS_LOCATION_HAS_ACCURACY;
-        loc.accuracy = (*position.accuracy.horizontal).value();
+        loc.accuracy = location::units::raw((*position.accuracy().horizontal()));
     }
 
     u_hardware_gps_inject_location(impl.gps_handle, loc);

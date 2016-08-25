@@ -222,11 +222,11 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
     const core::Signal<location::Position>& position_updates() const override;
     core::Signal<location::Position>& position_updates();
 
-    const core::Signal<location::Heading>& heading_updates() const override;
-    core::Signal<location::Heading>& heading_updates();
+    const core::Signal<location::units::Degrees>& heading_updates() const override;
+    core::Signal<location::units::Degrees>& heading_updates();
 
-    const core::Signal<location::Velocity>& velocity_updates() const override;
-    core::Signal<location::Velocity>& velocity_updates();
+    const core::Signal<location::units::MetersPerSecond>& velocity_updates() const override;
+    core::Signal<location::units::MetersPerSecond>& velocity_updates();
 
     const core::Signal<std::set<location::SpaceVehicle> >& space_vehicle_updates() const override;
     core::Signal<std::set<location::SpaceVehicle> >& space_vehicle_updates();
@@ -280,9 +280,9 @@ struct HardwareAbstractionLayer : public gps::HardwareAbstractionLayer
         // Emitted whenever the position as reported by the GPS chipset changes.
         core::Signal<location::Position> position_updates;
         // Emitted whenever the heading as reported by the GPS chipset changes.
-        core::Signal<location::Heading> heading_updates;
+        core::Signal<location::units::Degrees> heading_updates;
         // Emitted whenever the velocity as reported by the GPS chipset changes.
-        core::Signal<location::Velocity> velocity_updates;
+        core::Signal<location::units::MetersPerSecond> velocity_updates;
         // Emitted whenever the chipset status changes.
         core::Property<gps::ChipsetStatus> chipset_status;
 

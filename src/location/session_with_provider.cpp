@@ -28,12 +28,12 @@ location::SessionWithProvider::SessionWithProvider(const Provider::Ptr& provider
                   updates().position = update;
               }),
           provider_->heading_updates().connect(
-              [this](const Update<Heading>& update)
+              [this](const Update<units::Degrees>& update)
               {
                   updates().heading = update;
               }),
           provider_->velocity_updates().connect(
-              [this](const Update<Velocity>& update)
+              [this](const Update<units::MetersPerSecond>& update)
               {
                   updates().velocity = update;
               }),

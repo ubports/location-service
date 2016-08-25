@@ -34,10 +34,10 @@ struct Criteria
 
     struct Accuracy
     {
-        Optional<units::Quantity<units::Length>> horizontal;    ///< The client requires measurements of at least this horizontal accuracy.
-        Optional<units::Quantity<units::Length>> vertical;      ///< The client requires measurements of at least this vertical accuracy.
-        Optional<units::Quantity<units::Velocity>> velocity;    ///< The client requires measurements of at least this velocity accuracy.
-        Optional<units::Quantity<units::PlaneAngle>> heading;   ///< The client requires measurements of at least this heading accuracy.
+        Optional<units::Meters> horizontal;         ///< The client requires measurements of at least this horizontal accuracy.
+        Optional<units::Meters> vertical;           ///< The client requires measurements of at least this vertical accuracy.
+        Optional<units::MetersPerSecond> velocity;  ///< The client requires measurements of at least this velocity accuracy.
+        Optional<units::Degrees> heading;           ///< The client requires measurements of at least this heading accuracy.
     } accuracy = Accuracy{};
 };
 }

@@ -128,12 +128,12 @@ const core::Signal<location::Update<location::Position>>& location::providers::S
     return impl_->position_updates();
 }
 
-const core::Signal<location::Update<location::Heading>>& location::providers::StateTrackingProvider::heading_updates() const
+const core::Signal<location::Update<location::units::Degrees>>& location::providers::StateTrackingProvider::heading_updates() const
 {
     return impl_->heading_updates();
 }
 
-const core::Signal<location::Update<location::Velocity>>& location::providers::StateTrackingProvider::velocity_updates() const
+const core::Signal<location::Update<location::units::MetersPerSecond>>& location::providers::StateTrackingProvider::velocity_updates() const
 {
     return impl_->velocity_updates();
 }

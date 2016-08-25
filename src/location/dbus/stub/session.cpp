@@ -75,7 +75,7 @@ location::dbus::stub::Session::Session(const core::dbus::Bus::Ptr& connection,
 
         try
         {
-            Update<Heading> update; incoming->reader() >> update;
+            Update<units::Degrees> update; incoming->reader() >> update;
             updates_.heading = update;
             connection_->send(core::dbus::Message::make_method_return(incoming));
         } catch(const std::runtime_error& e)
@@ -93,7 +93,7 @@ location::dbus::stub::Session::Session(const core::dbus::Bus::Ptr& connection,
 
         try
         {
-            Update<Velocity> update; incoming->reader() >> update;
+            Update<units::MetersPerSecond> update; incoming->reader() >> update;
             updates_.velocity = update;
             connection_->send(core::dbus::Message::make_method_return(incoming));
         } catch(const std::runtime_error& e)

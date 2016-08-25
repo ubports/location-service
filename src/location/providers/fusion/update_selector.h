@@ -27,6 +27,12 @@ namespace location
 template<typename T>
 struct WithSource { std::weak_ptr<Provider> source; T value; };
 
+template<typename T>
+inline const T& unwrap(const WithSource<T>& ws)
+{
+    return ws.value;
+}
+
 class UpdateSelector
 {
 public:

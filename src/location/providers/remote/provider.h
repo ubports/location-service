@@ -41,8 +41,8 @@ struct Provider
         virtual ~Observer() = default;
 
         virtual void on_new_position(const Update<Position>&) = 0;
-        virtual void on_new_heading(const Update<Heading>&) = 0;
-        virtual void on_new_velocity(const Update<Velocity>&) = 0;
+        virtual void on_new_heading(const Update<units::Degrees>&) = 0;
+        virtual void on_new_velocity(const Update<units::MetersPerSecond>&) = 0;
 
         class Stub;
         class Skeleton;
@@ -55,8 +55,8 @@ struct Provider
 
         // From Observer
         void on_new_position(const Update<Position>&) override;
-        void on_new_heading(const Update<Heading>&) override;
-        void on_new_velocity(const Update<Velocity>&) override;
+        void on_new_heading(const Update<units::Degrees>&) override;
+        void on_new_velocity(const Update<units::MetersPerSecond>&) override;
 
     private:
         core::dbus::Object::Ptr object;
@@ -69,8 +69,8 @@ struct Provider
 
         // From Observer
         void on_new_position(const Update<Position>&) override;
-        void on_new_heading(const Update<Heading>&) override;
-        void on_new_velocity(const Update<Velocity>&) override;
+        void on_new_heading(const Update<units::Degrees>&) override;
+        void on_new_velocity(const Update<units::MetersPerSecond>&) override;
 
     private:
         core::dbus::Bus::Ptr bus;
@@ -90,8 +90,8 @@ struct Provider
 
         // From Observer
         void on_new_position(const Update<Position>&) override;
-        void on_new_heading(const Update<Heading>&) override;
-        void on_new_velocity(const Update<Velocity>&) override;
+        void on_new_heading(const Update<units::Degrees>&) override;
+        void on_new_velocity(const Update<units::MetersPerSecond>&) override;
 
         // From location::Provider
         void on_new_event(const Event& event) override;
@@ -103,8 +103,8 @@ struct Provider
         Requirements requirements() const override;
         bool satisfies(const Criteria& criteria) override;
         const core::Signal<Update<Position>>& position_updates() const override;
-        const core::Signal<Update<Heading>>& heading_updates() const override;
-        const core::Signal<Update<Velocity>>& velocity_updates() const override;
+        const core::Signal<Update<units::Degrees>>& heading_updates() const override;
+        const core::Signal<Update<units::MetersPerSecond>>& velocity_updates() const override;
 
     private:
         Stub(const stub::Configuration& config, Requirements requirements);
@@ -134,8 +134,8 @@ struct Provider
         Requirements requirements() const override;
         bool satisfies(const Criteria& criteria) override;
         const core::Signal<Update<Position>>& position_updates() const override;
-        const core::Signal<Update<Heading>>& heading_updates() const override;
-        const core::Signal<Update<Velocity>>& velocity_updates() const override;
+        const core::Signal<Update<units::Degrees>>& heading_updates() const override;
+        const core::Signal<Update<units::MetersPerSecond>>& velocity_updates() const override;
 
     private:
         struct Private;

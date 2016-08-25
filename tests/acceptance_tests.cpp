@@ -19,22 +19,16 @@
 #include <location/criteria.h>
 #include <location/clock.h>
 #include <location/engine.h>
-#include <location/heading.h>
 #include <location/logging.h>
 #include <location/permission_manager.h>
 #include <location/position.h>
 #include <location/provider.h>
 #include <location/update.h>
-#include <location/velocity.h>
 
 #include <location/cmds/monitor.h>
 #include <location/cmds/provider.h>
 #include <location/cmds/run.h>
 #include <location/cmds/status.h>
-
-#include <location/wgs84/altitude.h>
-#include <location/wgs84/latitude.h>
-#include <location/wgs84/longitude.h>
 
 #include <location/providers/dummy/provider.h>
 
@@ -85,12 +79,12 @@ struct LocationServiceStandalone : public core::dbus::testing::Fixture
             position_ = pos; signal_if_updates_complete();
         }
 
-        void on_new_heading(const location::Update<location::Heading>& heading)
+        void on_new_heading(const location::Update<location::units::Degrees>& heading)
         {
             heading_ = heading; signal_if_updates_complete();
         }
 
-        void on_new_velocity(const location::Update<location::Velocity>& velocity)
+        void on_new_velocity(const location::Update<location::units::MetersPerSecond>& velocity)
         {
             velocity_ = velocity; signal_if_updates_complete();
         }
@@ -102,8 +96,8 @@ struct LocationServiceStandalone : public core::dbus::testing::Fixture
         }
 
         location::Optional<location::Update<location::Position>> position_;
-        location::Optional<location::Update<location::Heading>> heading_;
-        location::Optional<location::Update<location::Velocity>> velocity_;
+        location::Optional<location::Update<location::units::Degrees>> heading_;
+        location::Optional<location::Update<location::units::MetersPerSecond>> velocity_;
     };
 
     struct StatefulStatusDelegate : public location::cmds::Status::Delegate

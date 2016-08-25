@@ -22,21 +22,10 @@
 
 namespace
 {
-location::Position reference_position
-{
-    location::wgs84::Latitude
-    {
-        9. * location::units::Degrees
-    },
-    location::wgs84::Longitude
-    {
-        53. * location::units::Degrees
-    },
-    location::wgs84::Altitude
-    {
-        -2. * location::units::Meters
-    }
-};
+location::Position reference_position = location::Position{}
+        .latitude(9. * location::units::degrees)
+        .longitude(53. * location::units::degrees)
+        .altitude(-2. * location::units::meters);
 
 location::Update<location::Position> reference_update{reference_position};
 }

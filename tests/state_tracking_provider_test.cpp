@@ -22,9 +22,6 @@
 #include <location/update.h>
 #include <location/position.h>
 #include <location/units/units.h>
-#include <location/wgs84/latitude.h>
-#include <location/wgs84/longitude.h>
-#include <location/wgs84/altitude.h>
 
 #include "mock_provider.h"
 
@@ -39,28 +36,27 @@ struct MockEvent : public location::Event
     MOCK_CONST_METHOD0(type, Type());
 };
 
-auto timestamp = cul::Clock::now();
+auto timestamp = location::Clock::now();
 
 // Create reference objects for injecting and validating updates.
-cul::Update<cul::Position> reference_position_update
+location::Update<location::Position> reference_position_update
 {
-    {
-        cul::wgs84::Latitude{9. * cul::units::Degrees},
-        cul::wgs84::Longitude{53. * cul::units::Degrees},
-        cul::wgs84::Altitude{-2. * cul::units::Meters}
-    },
+    location::Position{}
+        .latitude(9. * location::units::degrees)
+        .longitude(53 * location::units::degrees)
+        .altitude(-2 * location::units::meters),
     timestamp
 };
 
-cul::Update<cul::Velocity> reference_velocity_update
+location::Update<location::units::MetersPerSecond> reference_velocity_update
 {
-    {5. * cul::units::MetersPerSecond},
+    {5. * location::units::meters_per_second},
     timestamp
 };
 
-cul::Update<cul::Heading> reference_heading_update
+location::Update<location::units::Degrees> reference_heading_update
 {
-    {120. * cul::units::Degrees},
+    {120. * location::units::degrees},
     timestamp
 };
 }

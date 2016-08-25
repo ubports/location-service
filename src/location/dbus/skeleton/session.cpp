@@ -42,12 +42,12 @@ location::dbus::skeleton::Session::Session(const location::dbus::skeleton::Sessi
                       on_position_changed(position);
                   }),
               configuration.local.impl->updates().heading.changed().connect(
-                  [this](const location::Update<location::Heading>& heading)
+                  [this](const location::Update<location::units::Degrees>& heading)
                   {
                       on_heading_changed(heading);
                   }),
               configuration.local.impl->updates().velocity.changed().connect(
-                  [this](const location::Update<location::Velocity>& velocity)
+                  [this](const location::Update<location::units::MetersPerSecond>& velocity)
                   {
                       on_velocity_changed(velocity);
                   })
@@ -290,7 +290,7 @@ void location::dbus::skeleton::Session::on_position_changed(const location::Upda
 }
 
 // Invoked whenever the actual session impl. reports a heading update.
-void location::dbus::skeleton::Session::on_heading_changed(const location::Update<location::Heading>& heading)
+void location::dbus::skeleton::Session::on_heading_changed(const location::Update<location::units::Degrees>& heading)
 {
     try
     {
@@ -313,7 +313,7 @@ void location::dbus::skeleton::Session::on_heading_changed(const location::Updat
 }
 
 // Invoked whenever the actual session impl. reports a velocity update.
-void location::dbus::skeleton::Session::on_velocity_changed(const location::Update<location::Velocity>& velocity)
+void location::dbus::skeleton::Session::on_velocity_changed(const location::Update<location::units::MetersPerSecond>& velocity)
 {
     try
     {

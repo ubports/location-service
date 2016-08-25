@@ -21,11 +21,9 @@
 
 #include <location/service.h>
 
-#include <location/heading.h>
 #include <location/position.h>
 #include <location/provider.h>
 #include <location/update.h>
-#include <location/velocity.h>
 
 #include <core/dbus/stub.h>
 

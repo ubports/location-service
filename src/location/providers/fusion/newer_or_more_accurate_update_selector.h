@@ -48,11 +48,11 @@ public:
         }
 
         // Choose the position with the smaller accuracy circle if both have them
-        if (!older.value.value.accuracy.horizontal)
+        if (!unwrap(older).value.accuracy().horizontal())
             return newer;
-        if (!newer.value.value.accuracy.horizontal)
+        if (!unwrap(newer).value.accuracy().horizontal())
             return older;
-        if (newer.value.value.accuracy.horizontal < older.value.value.accuracy.horizontal)
+        if (unwrap(newer).value.accuracy().horizontal() < unwrap(older).value.accuracy().horizontal())
             return newer;
         else
             return older;

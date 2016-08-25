@@ -73,32 +73,18 @@ struct Configuration
     std::chrono::milliseconds update_period{10};
 
     // The reference position that is delivered in every upate cycle.
-    Position reference_position
-    {
-        wgs84::Latitude
-        {
-            9. * units::Degrees
-        },
-        wgs84::Longitude
-        {
-            53. * units::Degrees
-        },
-        wgs84::Altitude
-        {
-            -2. * units::Meters
-        }
-    };
+    Position reference_position{Position{9. * units::degrees, 53. * units::degrees}.altitude(-2 * units::meters)};
 
     // The reference velocity that is delivered in every update cycle.
-    Velocity reference_velocity
+    units::MetersPerSecond reference_velocity
     {
-        9 * units::MetersPerSecond
+        9 * units::meters_per_second
     };
 
     // The reference heading that is delivered in every update cycle.
-    Heading reference_heading
+    units::Degrees reference_heading
     {
-        127 * units::Degrees
+        127 * units::degrees
     };
 };
 
@@ -127,12 +113,12 @@ class Provider : public location::Provider
     Requirements requirements() const override;
     bool satisfies(const Criteria& criteria) override;
     const core::Signal<Update<Position>>& position_updates() const override;
-    const core::Signal<Update<Heading>>& heading_updates() const override;
-    const core::Signal<Update<Velocity>>& velocity_updates() const override;
+    const core::Signal<Update<units::Degrees>>& heading_updates() const override;
+    const core::Signal<Update<units::MetersPerSecond>>& velocity_updates() const override;
     void on_wifi_and_cell_reporting_state_changed(WifiAndCellIdReportingState state);
     void on_reference_location_updated(const Update<Position>& position);
-    void on_reference_velocity_updated(const Update<Velocity>& velocity);
-    void on_reference_heading_updated(const Update<Heading>& heading);
+    void on_reference_velocity_updated(const Update<units::MetersPerSecond>& velocity);
+    void on_reference_heading_updated(const Update<units::Degrees>& heading);
 
   private:
     dummy::Configuration configuration;
@@ -142,8 +128,8 @@ class Provider : public location::Provider
     struct
     {
         core::Signal<Update<Position>> position;
-        core::Signal<Update<Heading>> heading;
-        core::Signal<Update<Velocity>> velocity;
+        core::Signal<Update<units::Degrees>> heading;
+        core::Signal<Update<units::MetersPerSecond>> velocity;
     } updates;
 };
 }

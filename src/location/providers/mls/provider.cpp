@@ -79,15 +79,12 @@ mls::Provider::Provider(const mls::Configuration& config)
             {
                 if (not response.is_error())
                 {
-                    Update<Position> update;
-                    update.when = Clock::now();
-                    update.value = Position
+                    Update<Position> update
                     {
-                        wgs84::Latitude{response.result().location.lat * units::Degrees},
-                        wgs84::Longitude{response.result().location.lon * units::Degrees}
+                        Position{response.result().location.lat * units::degrees, response.result().location.lon * units::degrees},
+                        Clock::now()
                     };
-                    Position::Accuracy accuracy; accuracy.horizontal = response.result().accuracy * units::Meters;
-                    update.value.accuracy = accuracy;
+                    update.value.accuracy().horizontal(response.result().accuracy * units::meters);
                     updates.position(update);
                 }
                 else
@@ -148,12 +145,12 @@ const core::Signal<location::Update<location::Position>>& mls::Provider::positio
     return updates.position;
 }
 
-const core::Signal<location::Update<location::Heading>>& mls::Provider::heading_updates() const
+const core::Signal<location::Update<location::units::Degrees>>& mls::Provider::heading_updates() const
 {
     return updates.heading;
 }
 
-const core::Signal<location::Update<location::Velocity>>& mls::Provider::velocity_updates() const
+const core::Signal<location::Update<location::units::MetersPerSecond>>& mls::Provider::velocity_updates() const
 {
     return updates.velocity;
 }

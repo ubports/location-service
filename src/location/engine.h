@@ -128,9 +128,9 @@ public:
         /** The current best known reference location */
         core::Property<Optional<Update<Position>>> last_known_location{};
         /** The current best known velocity estimate. */
-        core::Property<Optional<Update<Velocity>>> last_known_velocity{};
+        core::Property<Optional<Update<location::units::MetersPerSecond>>> last_known_velocity{};
         /** The current best known heading estimate. */
-        core::Property<Optional<Update<Heading>>> last_known_heading{};
+        core::Property<Optional<Update<location::units::Degrees>>> last_known_heading{};
         /** The current set of visible SpaceVehicles. */
         core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>> visible_space_vehicles{};
     };

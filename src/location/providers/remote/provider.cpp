@@ -86,7 +86,7 @@ void remote::Provider::Observer::Stub::on_new_position(const Update<Position>& u
     }
 }
 
-void remote::Provider::Observer::Stub::on_new_heading(const Update<Heading>& update)
+void remote::Provider::Observer::Stub::on_new_heading(const Update<units::Degrees>& update)
 {
     try
     {
@@ -104,7 +104,7 @@ void remote::Provider::Observer::Stub::on_new_heading(const Update<Heading>& upd
     }
 }
 
-void remote::Provider::Observer::Stub::on_new_velocity(const Update<Velocity>& update)
+void remote::Provider::Observer::Stub::on_new_velocity(const Update<units::MetersPerSecond>& update)
 {
     try
     {
@@ -136,7 +136,7 @@ remote::Provider::Observer::Skeleton::Skeleton(const core::dbus::Bus::Ptr& bus, 
     object->install_method_handler<remote::Interface::Observer::UpdateHeading>([this](const core::dbus::Message::Ptr& msg)
     {
         VLOG(50) << "remote::Interface::Observer::UpdateHeading";
-        location::Update<location::Heading> update; msg->reader() >> update;
+        location::Update<location::units::Degrees> update; msg->reader() >> update;
         on_new_heading(update);
         Skeleton::bus->send(dbus::Message::make_method_return(msg));
     });
@@ -144,7 +144,7 @@ remote::Provider::Observer::Skeleton::Skeleton(const core::dbus::Bus::Ptr& bus, 
     object->install_method_handler<remote::Interface::Observer::UpdateVelocity>([this](const core::dbus::Message::Ptr& msg)
     {
         VLOG(50) << "remote::Interface::Observer::UpdateVelocity";
-        location::Update<location::Velocity> update; msg->reader() >> update;
+        location::Update<location::units::MetersPerSecond> update; msg->reader() >> update;
         on_new_velocity(update);
         Skeleton::bus->send(dbus::Message::make_method_return(msg));
     });
@@ -155,12 +155,12 @@ void remote::Provider::Observer::Skeleton::on_new_position(const Update<Position
     impl->on_new_position(update);
 }
 
-void remote::Provider::Observer::Skeleton::on_new_heading(const Update<Heading>& update)
+void remote::Provider::Observer::Skeleton::on_new_heading(const Update<units::Degrees>& update)
 {
     impl->on_new_heading(update);
 }
 
-void remote::Provider::Observer::Skeleton::on_new_velocity(const Update<Velocity>& update)
+void remote::Provider::Observer::Skeleton::on_new_velocity(const Update<units::MetersPerSecond>& update)
 {
     impl->on_new_velocity(update);
 }
@@ -189,8 +189,8 @@ struct remote::Provider::Stub::Private
     struct
     {
         core::Signal<location::Update<location::Position>> position;
-        core::Signal<location::Update<location::Heading>> heading;
-        core::Signal<location::Update<location::Velocity>> velocity;
+        core::Signal<location::Update<location::units::Degrees>> heading;
+        core::Signal<location::Update<location::units::MetersPerSecond>> velocity;
     } updates;
 };
 
@@ -250,12 +250,12 @@ void remote::Provider::Stub::on_new_position(const Update<Position>& update)
     d->updates.position(update);
 }
 
-void remote::Provider::Stub::on_new_heading(const Update<Heading>& update)
+void remote::Provider::Stub::on_new_heading(const Update<units::Degrees>& update)
 {
     d->updates.heading(update);
 }
 
-void remote::Provider::Stub::on_new_velocity(const Update<Velocity>& update)
+void remote::Provider::Stub::on_new_velocity(const Update<units::MetersPerSecond>& update)
 {
     d->updates.velocity(update);
 }
@@ -328,12 +328,12 @@ const core::Signal<location::Update<location::Position>>& remote::Provider::Stub
     return d->updates.position;
 }
 
-const core::Signal<location::Update<location::Heading>>& remote::Provider::Stub::heading_updates() const
+const core::Signal<location::Update<location::units::Degrees>>& remote::Provider::Stub::heading_updates() const
 {
     return d->updates.heading;
 }
 
-const core::Signal<location::Update<location::Velocity>>& remote::Provider::Stub::velocity_updates() const
+const core::Signal<location::Update<location::units::MetersPerSecond>>& remote::Provider::Stub::velocity_updates() const
 {
     return d->updates.velocity;
 }
@@ -352,13 +352,13 @@ struct remote::Provider::Skeleton::Private
                       for (const auto& observer : observers)
                           observer->on_new_position(position);
                   }),
-                  impl->heading_updates().connect([this](const cul::Update<cul::Heading>& heading)
+                  impl->heading_updates().connect([this](const location::Update<location::units::Degrees>& heading)
                   {
                       VLOG(100) << "Heading changed reported by impl: " << heading;
                       for (const auto& observer : observers)
                           observer->on_new_heading(heading);
                   }),
-                  impl->velocity_updates().connect([this](const cul::Update<cul::Velocity>& velocity)
+                  impl->velocity_updates().connect([this](const location::Update<location::units::MetersPerSecond>& velocity)
                   {
                       VLOG(100) << "Velocity changed reported by impl: " << velocity;
                       for (const auto& observer : observers)
@@ -515,12 +515,12 @@ const core::Signal<location::Update<location::Position>>& remote::Provider::Skel
     return d->impl->position_updates();
 }
 
-const core::Signal<location::Update<location::Heading>>& remote::Provider::Skeleton::heading_updates() const
+const core::Signal<location::Update<location::units::Degrees>>& remote::Provider::Skeleton::heading_updates() const
 {
     return d->impl->heading_updates();
 }
 
-const core::Signal<location::Update<location::Velocity>>& remote::Provider::Skeleton::velocity_updates() const
+const core::Signal<location::Update<location::units::MetersPerSecond>>& remote::Provider::Skeleton::velocity_updates() const
 {
     return d->impl->velocity_updates();
 }

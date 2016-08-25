@@ -96,24 +96,13 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
 {
     using namespace ::testing;
 
-    static const cul::Position position
-    {
-        cul::wgs84::Latitude{2* cul::units::Degrees},
-        cul::wgs84::Longitude{3* cul::units::Degrees},
-        cul::wgs84::Altitude{4* cul::units::Meters},
-        cul::Position::Accuracy::Horizontal(5* cul::units::Meters),
-        cul::Position::Accuracy::Vertical(6* cul::units::Meters)
-    };
+    static const location::Position position = location::Position{}
+            .latitude(2* location::units::degrees)
+            .longitude(3 * location::units::degrees)
+            .altitude(4 * location::units::meters);
 
-    static const cul::Heading heading
-    {
-        120. * cul::units::Degrees
-    };
-
-    static const cul::Velocity velocity
-    {
-        5. * cul::units::MetersPerSecond
-    };
+    static const location::units::Degrees heading{120. * location::units::degrees};
+    static const location::units::MetersPerSecond velocity{5. * location::units::meters_per_second};
 
     auto skeleton = core::posix::fork([this]()
     {
@@ -162,7 +151,7 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
         {
             while (running)
             {
-                mock_provider->inject_update(cul::Update<cul::Position>{position});
+                mock_provider->inject_update(location::Update<location::Position>{position});
                 std::this_thread::sleep_for(std::chrono::milliseconds{10});
             }
         }};
@@ -171,7 +160,7 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
         {
             while (running)
             {
-                mock_provider->inject_update(cul::Update<cul::Heading>{heading});
+                mock_provider->inject_update(location::Update<location::units::Degrees>{heading});
                 std::this_thread::sleep_for(std::chrono::milliseconds{10});
             }
         }};
@@ -180,7 +169,7 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
         {
             while (running)
             {
-                mock_provider->inject_update(cul::Update<cul::Velocity>{velocity});
+                mock_provider->inject_update(location::Update<location::units::MetersPerSecond>{velocity});
                 std::this_thread::sleep_for(std::chrono::milliseconds{10});
             }
         }};
@@ -231,7 +220,7 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
 
         wait_condition.wait_for(ul, std::chrono::seconds{5}, [&provider]() { return provider != nullptr; });
 
-        EXPECT_FALSE(provider->satisfies(cul::Criteria{}));
+        EXPECT_FALSE(provider->satisfies(location::Criteria{}));
         EXPECT_EQ(location::Provider::Requirements::none, provider->requirements());
 
         provider->enable();
@@ -244,7 +233,7 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
 
         core::ScopedConnection sc1
         {
-            provider->position_updates().connect([&mec](const cul::Update<cul::Position>& p)
+            provider->position_updates().connect([&mec](const location::Update<location::Position>& p)
             {
                 mec.on_new_position(p);
             })
@@ -252,7 +241,7 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
 
         core::ScopedConnection sc2
         {
-            provider->heading_updates().connect([&mec](const cul::Update<cul::Heading>& h)
+            provider->heading_updates().connect([&mec](const location::Update<location::units::Degrees>& h)
             {
                 mec.on_new_heading(h);
             })
@@ -260,7 +249,7 @@ TEST_F(RemoteProvider, DISABLED_updates_are_fwd)
 
         core::ScopedConnection sc3
         {
-            provider->velocity_updates().connect([&mec](const cul::Update<cul::Velocity>& v)
+            provider->velocity_updates().connect([&mec](const location::Update<location::units::MetersPerSecond>& v)
             {
                 mec.on_new_velocity(v);
             })

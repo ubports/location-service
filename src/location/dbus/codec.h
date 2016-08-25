@@ -20,21 +20,16 @@
 
 #include <location/criteria.h>
 #include <location/features.h>
-#include <location/heading.h>
 #include <location/position.h>
 #include <location/provider.h>
 #include <location/space_vehicle.h>
 #include <location/update.h>
-#include <location/velocity.h>
 #include <location/service.h>
 #include <location/events/all.h>
 #include <location/events/registry.h>
 #include <location/events/reference_position_updated.h>
 #include <location/events/wifi_and_cell_id_reporting_state_changed.h>
 #include <location/units/units.h>
-#include <location/wgs84/altitude.h>
-#include <location/wgs84/latitude.h>
-#include <location/wgs84/longitude.h>
 
 #include <core/dbus/codec.h>
 
@@ -203,47 +198,6 @@ struct Codec<location::units::Quantity<T>>
 
 namespace helper
 {
-template<typename T, typename U>
-struct TypeMapper<location::wgs84::Coordinate<T, U>>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return TypeMapper<location::units::Quantity<U>>::type_value();
-    }
-
-    constexpr static bool is_basic_type()
-    {
-        return true;
-    }
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s = TypeMapper<location::units::Quantity<U>>::signature();
-        return s;
-    }
-};
-}
-
-template<typename T, typename U>
-struct Codec<location::wgs84::Coordinate<T,U>>
-{
-    static void encode_argument(Message::Writer& writer, const location::wgs84::Coordinate<T, U>& in)
-    {
-        Codec<location::units::Quantity<U>>::encode_argument(writer, in.value);
-    }
-
-    static void decode_argument(Message::Reader& reader, location::wgs84::Coordinate<T, U>& in)
-    {
-        Codec<location::units::Quantity<U>>::decode_argument(reader, in.value);
-    }
-};
-
-namespace helper
-{
 template<>
 struct TypeMapper<location::Position>
 {
@@ -265,11 +219,11 @@ struct TypeMapper<location::Position>
     {
         static const std::string s =
                 DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
-                TypeMapper<location::wgs84::Latitude>::signature() +
-                TypeMapper<location::wgs84::Longitude>::signature() +
-                TypeMapper<location::Optional<location::wgs84::Altitude>>::signature() +
-                TypeMapper<location::Optional<location::Position::Accuracy::Horizontal>>::signature() +
-                TypeMapper<location::Optional<location::Position::Accuracy::Vertical>>::signature() +
+                TypeMapper<location::units::Degrees>::signature() +
+                TypeMapper<location::units::Degrees>::signature() +
+                TypeMapper<location::Optional<location::units::Meters>>::signature() +
+                TypeMapper<location::Optional<location::units::Meters>>::signature() +
+                TypeMapper<location::Optional<location::units::Meters>>::signature() +
                 DBUS_STRUCT_END_CHAR_AS_STRING;
         return s;
     }
@@ -279,19 +233,16 @@ struct TypeMapper<location::Position>
 template<>
 struct Codec<location::Position>
 {
-    typedef location::Position::Accuracy::Horizontal HorizontalAccuracy;
-    typedef location::Position::Accuracy::Vertical VerticalAccuracy;
-
     static void encode_argument(Message::Writer& writer, const location::Position& in)
     {
         auto vw = writer.open_structure();
         {
-            Codec<location::wgs84::Latitude>::encode_argument(vw, in.latitude);
-            Codec<location::wgs84::Longitude>::encode_argument(vw, in.longitude);
-            Codec<location::Optional<location::wgs84::Altitude>>::encode_argument(vw, in.altitude);
+            Codec<location::units::Degrees>::encode_argument(vw, in.latitude());
+            Codec<location::units::Degrees>::encode_argument(vw, in.longitude());
+            Codec<location::Optional<location::units::Meters>>::encode_argument(vw, in.altitude());
 
-            Codec<location::Optional<HorizontalAccuracy>>::encode_argument(vw, in.accuracy.horizontal);
-            Codec<location::Optional<VerticalAccuracy>>::encode_argument(vw, in.accuracy.vertical);
+            Codec<location::Optional<location::units::Meters>>::encode_argument(vw, in.accuracy().horizontal());
+            Codec<location::Optional<location::units::Meters>>::encode_argument(vw, in.accuracy().vertical());
         }
         writer.close_structure(std::move(vw));
     }
@@ -300,12 +251,12 @@ struct Codec<location::Position>
     {
         auto vr = reader.pop_structure();
         {
-            Codec<location::wgs84::Latitude>::decode_argument(vr, in.latitude);
-            Codec<location::wgs84::Longitude>::decode_argument(vr, in.longitude);
-            Codec<location::Optional<location::wgs84::Altitude>>::decode_argument(vr, in.altitude);
+            Codec<location::units::Degrees>::decode_argument(vr, in.latitude());
+            Codec<location::units::Degrees>::decode_argument(vr, in.longitude());
+            Codec<location::Optional<location::units::Meters>>::decode_argument(vr, in.altitude());
 
-            Codec<location::Optional<HorizontalAccuracy>>::decode_argument(vr, in.accuracy.horizontal);
-            Codec<location::Optional<VerticalAccuracy>>::decode_argument(vr, in.accuracy.vertical);
+            Codec<location::Optional<location::units::Meters>>::decode_argument(vr, in.accuracy().horizontal());
+            Codec<location::Optional<location::units::Meters>>::decode_argument(vr, in.accuracy().vertical());
         }
     }
 };
@@ -362,8 +313,8 @@ struct TypeMapper<location::SpaceVehicle>
                 helper::TypeMapper<bool>::signature() +
                 helper::TypeMapper<bool>::signature() +
                 helper::TypeMapper<bool>::signature() +
-                helper::TypeMapper<location::units::Quantity<location::units::PlaneAngle>>::signature() +
-                helper::TypeMapper<location::units::Quantity<location::units::PlaneAngle>>::signature() +
+                helper::TypeMapper<location::units::Quantity<location::units::Degrees>>::signature() +
+                helper::TypeMapper<location::units::Quantity<location::units::Degrees>>::signature() +
             DBUS_STRUCT_END_CHAR_AS_STRING;
         return s;
     }
@@ -398,8 +349,8 @@ struct Codec<location::SpaceVehicle>
         sub.push_boolean(in.has_almanac_data);
         sub.push_boolean(in.has_ephimeris_data);
         sub.push_boolean(in.used_in_fix);
-        Codec<location::units::Quantity<location::units::PlaneAngle>>::encode_argument(sub, in.azimuth);
-        Codec<location::units::Quantity<location::units::PlaneAngle>>::encode_argument(sub, in.elevation);
+        Codec<location::units::Degrees>::encode_argument(sub, in.azimuth);
+        Codec<location::units::Degrees>::encode_argument(sub, in.elevation);
 
         writer.close_structure(std::move(sub));
     }
@@ -413,8 +364,8 @@ struct Codec<location::SpaceVehicle>
         in.has_almanac_data = sub.pop_boolean();
         in.has_ephimeris_data = sub.pop_boolean();
         in.used_in_fix = sub.pop_boolean();
-        Codec<location::units::Quantity<location::units::PlaneAngle>>::decode_argument(sub, in.azimuth);
-        Codec<location::units::Quantity<location::units::PlaneAngle>>::decode_argument(sub, in.elevation);
+        Codec<location::units::Degrees>::decode_argument(sub, in.azimuth);
+        Codec<location::units::Degrees>::decode_argument(sub, in.elevation);
     }
 };
 
@@ -508,10 +459,10 @@ struct TypeMapper<location::Criteria>
         std::string s =
             DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
                 TypeMapper<std::int32_t>::signature() +
-                TypeMapper<location::Optional<location::Position::Accuracy::Horizontal>>::signature() +
-                TypeMapper<location::Optional<location::Position::Accuracy::Vertical>>::signature() +
-                TypeMapper<location::Optional<location::units::Quantity<location::units::Velocity>>>::signature() +
-                TypeMapper<location::Optional<location::units::Quantity<location::units::PlaneAngle>>>::signature() +
+                TypeMapper<location::Optional<location::units::Meters>>::signature() +
+                TypeMapper<location::Optional<location::units::Meters>>::signature() +
+                TypeMapper<location::Optional<location::units::MetersPerSecond>>::signature() +
+                TypeMapper<location::Optional<location::units::Degrees>>::signature() +
             DBUS_STRUCT_END_CHAR_AS_STRING;
         return s;
     }
@@ -521,29 +472,24 @@ struct TypeMapper<location::Criteria>
 template<>
 struct Codec<location::Criteria>
 {
-    typedef location::units::Quantity<location::units::Length> HorizontalAccuracy;
-    typedef location::units::Quantity<location::units::Length> VerticalAccuracy;
-    typedef location::units::Quantity<location::units::Velocity> VelocityAccuracy;
-    typedef location::units::Quantity<location::units::PlaneAngle> HeadingAccuracy;
-
     static void encode_argument(Message::Writer& writer, const location::Criteria& in)
     {
         Codec<location::Features>::encode_argument(writer, in.requirements);
 
-        Codec<location::Optional<HorizontalAccuracy>>::encode_argument(writer, in.accuracy.horizontal);
-        Codec<location::Optional<VerticalAccuracy>>::encode_argument(writer, in.accuracy.vertical);
-        Codec<location::Optional<VelocityAccuracy>>::encode_argument(writer, in.accuracy.velocity);
-        Codec<location::Optional<HeadingAccuracy>>::encode_argument(writer, in.accuracy.heading);
+        Codec<location::Optional<location::units::Meters>>::encode_argument(writer, in.accuracy.horizontal);
+        Codec<location::Optional<location::units::Meters>>::encode_argument(writer, in.accuracy.vertical);
+        Codec<location::Optional<location::units::MetersPerSecond>>::encode_argument(writer, in.accuracy.velocity);
+        Codec<location::Optional<location::units::Degrees>>::encode_argument(writer, in.accuracy.heading);
     }
 
     static void decode_argument(Message::Reader& reader, location::Criteria& in)
     {
         Codec<location::Features>::decode_argument(reader, in.requirements);
 
-        Codec<location::Optional<HorizontalAccuracy>>::decode_argument(reader, in.accuracy.horizontal);
-        Codec<location::Optional<VerticalAccuracy>>::decode_argument(reader, in.accuracy.vertical);
-        Codec<location::Optional<VelocityAccuracy>>::decode_argument(reader, in.accuracy.velocity);
-        Codec<location::Optional<HeadingAccuracy>>::decode_argument(reader, in.accuracy.heading);
+        Codec<location::Optional<location::units::Meters>>::decode_argument(reader, in.accuracy.horizontal);
+        Codec<location::Optional<location::units::Meters>>::decode_argument(reader, in.accuracy.vertical);
+        Codec<location::Optional<location::units::MetersPerSecond>>::decode_argument(reader, in.accuracy.velocity);
+        Codec<location::Optional<location::units::Degrees>>::decode_argument(reader, in.accuracy.heading);
     }
 };
 

@@ -21,11 +21,9 @@
 #include <location/configuration.h>
 #include <location/criteria.h>
 #include <location/event.h>
-#include <location/heading.h>
 #include <location/position.h>
 #include <location/space_vehicle.h>
 #include <location/update.h>
-#include <location/velocity.h>
 #include <location/wifi_and_cell_reporting_state.h>
 
 #include <core/property.h>
@@ -86,10 +84,10 @@ public:
     virtual const core::Signal<Update<Position>>& position_updates() const = 0;
 
     /// @brief heading_updates returns a signal delivering heading updates.
-    virtual const core::Signal<Update<Heading>>& heading_updates() const = 0;
+    virtual const core::Signal<Update<units::Degrees>>& heading_updates() const = 0;
 
     /// @brief velocity_updates returns a signal delivering velocity updates.
-    virtual const core::Signal<Update<Velocity>>& velocity_updates() const = 0;
+    virtual const core::Signal<Update<units::MetersPerSecond>>& velocity_updates() const = 0;
 
 protected:
     Provider() = default;

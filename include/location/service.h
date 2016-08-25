@@ -19,10 +19,8 @@
 #define LOCATION_SERVICE_H_
 
 #include <location/space_vehicle.h>
-#include <location/heading.h>
 #include <location/position.h>
 #include <location/provider.h>
-#include <location/velocity.h>
 #include <location/update.h>
 
 #include <core/property.h>
@@ -65,9 +63,9 @@ public:
 
             core::Property<Update<Position>> position{};                ///< @brief Updates for position measurements.
             core::Property<Status> position_status{Status::disabled};   ///< @brief Status of position updates, mutable.
-            core::Property<Update<Heading>> heading{};                  ///< @brief Updates for the heading measurements.
+            core::Property<Update<units::Degrees>> heading{};           ///< @brief Updates for the heading measurements.
             core::Property<Status> heading_status{Status::disabled};    ///< @brief Status of position updates, mutable.
-            core::Property<Update<Velocity>> velocity{};                ///< @brief Updates for velocity measurements.
+            core::Property<Update<units::MetersPerSecond>> velocity{};  ///< @brief Updates for velocity measurements.
             core::Property<Status> velocity_status{Status::disabled};   ///< @brief Status of velocity updates, mutable.
         };
 

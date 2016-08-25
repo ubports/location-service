@@ -19,10 +19,8 @@
 #define LOCATION_PROVIDERS_GPS_HARDWARE_ABSTRACTION_LAYER_H_
 
 #include <location/clock.h>
-#include <location/heading.h>
 #include <location/position.h>
 #include <location/space_vehicle.h>
-#include <location/velocity.h>
 
 #include <core/property.h>
 
@@ -227,12 +225,12 @@ public:
     /**
      * @brief Signal for delivery of heading updates.
      */
-    virtual const core::Signal<Heading>& heading_updates() const = 0;
+    virtual const core::Signal<units::Degrees>& heading_updates() const = 0;
 
     /**
      * @brief Signal for delivery of velocity updates.
      */
-    virtual const core::Signal<Velocity>& velocity_updates() const = 0;
+    virtual const core::Signal<units::MetersPerSecond>& velocity_updates() const = 0;
 
     /**
      * @brief Signal for delivery of satellite visibility updates.
