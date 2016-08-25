@@ -15,12 +15,16 @@
  *
  * Authored by: Scott Sweeny <scott.sweeny@canonical.com
  */
-#ifndef LOCATION_NEWER_OR_MORE_ACCURATE_UPDATE_SELECTOR_H
-#define LOCATION_NEWER_OR_MORE_ACCURATE_UPDATE_SELECTOR_H
+#ifndef LOCATION_PROVIDERS_FUSION_NEWER_OR_MORE_ACCURATE_UPDATE_SELECTOR_H
+#define LOCATION_PROVIDERS_FUSION_NEWER_OR_MORE_ACCURATE_UPDATE_SELECTOR_H
 
-#include <location/update_selector.h>
+#include <location/providers/fusion/update_selector.h>
 
 namespace location
+{
+namespace providers
+{
+namespace fusion
 {
 class NewerOrMoreAccurateUpdateSelector : public UpdateSelector
 {
@@ -34,7 +38,7 @@ public:
         static const std::chrono::seconds cutoff(11);
 
         // If the new position is from the same source as the old one then just use it
-        if (newer.source == older.source) {
+        if (newer.source.lock() == older.source.lock()) {
             return newer;
         }
 
@@ -55,6 +59,8 @@ public:
     }
 };
 }
+}
+}
 
-#endif // LOCATION_NEWER_OR_MORE_ACCURATE_UPDATE_SELECTOR_H
+#endif // LOCATION_PROVIDERS_FUSION_NEWER_OR_MORE_ACCURATE_UPDATE_SELECTOR_H
 

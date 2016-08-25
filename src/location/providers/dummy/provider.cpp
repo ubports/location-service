@@ -24,27 +24,6 @@
 
 namespace dummy = location::providers::dummy;
 
-struct dummy::Provider::Private
-{
-    enum class State
-    {
-        started,
-        stopping,
-        stopped
-    };
-
-    Private(const dummy::Configuration& configuration)
-        : configuration(configuration),
-          state(State::stopped)
-    {
-    }
-
-    dummy::Configuration configuration;
-    std::atomic<State> state;
-    bool stop_requested;
-    std::thread worker{};
-};
-
 std::string dummy::Provider::class_name()
 {
     return "dummy::Provider";
@@ -93,87 +72,104 @@ location::Provider::Ptr dummy::Provider::create_instance(const location::Provide
     return location::Provider::Ptr{new dummy::Provider{provider_config}};
 }
 
-dummy::Provider::Provider(const dummy::Configuration& config)
-    : location::Provider(
-          location::Provider::Features::position | location::Provider::Features::velocity | location::Provider::Features::heading,
-          location::Provider::Requirements::none),
-      d(new Private{config})
+dummy::Provider::Provider(const dummy::Configuration&)
 {
 }
 
 dummy::Provider::~Provider() noexcept
 {
-    stop_position_updates();
+    deactivate();
 
-    if (d->worker.joinable())
-        d->worker.join();
+    if (worker.joinable())
+        worker.join();
 }
 
-bool dummy::Provider::matches_criteria(const location::Criteria&)
+void dummy::Provider::on_new_event(const Event&)
+{
+}
+
+location::Provider::Requirements dummy::Provider::requirements() const
+{
+    return Requirements::none;
+}
+
+bool dummy::Provider::satisfies(const location::Criteria&)
 {
     return true;
 }
 
-void dummy::Provider::start_position_updates()
+void dummy::Provider::enable()
 {
-    if (d->state.load() != Private::State::stopped)
-        return;
+}
 
-    d->stop_requested = false;
+void dummy::Provider::disable()
+{
+}
 
-    d->worker = std::move(std::thread([this]()
+void dummy::Provider::activate()
+{
+    stop_requested = false;
+
+    worker = std::move(std::thread([this]()
     {
-        d->state.store(Private::State::started);
         VLOG(1) << __PRETTY_FUNCTION__ << ": started";
 
         location::Update<location::Position> position_update
         {
-            d->configuration.reference_position,
+            configuration.reference_position,
             location::Clock::now()
         };
 
         location::Update<location::Heading> heading_update
         {
-            d->configuration.reference_heading,
+            configuration.reference_heading,
             location::Clock::now()
         };
 
         location::Update<location::Velocity> velocity_update
         {
-            d->configuration.reference_velocity,
+            configuration.reference_velocity,
             location::Clock::now()
         };
 
-        while (!d->stop_requested)
+        while (!stop_requested)
         {
-            VLOG(10) << position_update;
-
             position_update.when = location::Clock::now();
             heading_update.when = location::Clock::now();
             velocity_update.when = location::Clock::now();
 
-            mutable_updates().position(position_update);
-            mutable_updates().heading(heading_update);
-            mutable_updates().velocity(velocity_update);           
+            updates.position(position_update);
+            updates.heading(heading_update);
+            updates.velocity(velocity_update);
 
-            std::this_thread::sleep_for(d->configuration.update_period);
+            std::this_thread::sleep_for(configuration.update_period);
         }
-
-        d->state.store(Private::State::stopped);
     }));
 }
 
-void dummy::Provider::stop_position_updates()
+void dummy::Provider::deactivate()
 {
-    if (d->state.load() != Private::State::started)
-        return;
-
-    d->state.store(Private::State::stopping);
     VLOG(1) << __PRETTY_FUNCTION__ << ": stopping";
 
-    d->stop_requested = true;
+    stop_requested = true;
 
-    if (d->worker.joinable())
-        d->worker.join();
+    if (worker.joinable())
+        worker.join();
+
+    VLOG(1) << __PRETTY_FUNCTION__ << ": stopping";
 }
 
+const core::Signal<location::Update<location::Position>>& dummy::Provider::position_updates() const
+{
+    return updates.position;
+}
+
+const core::Signal<location::Update<location::Heading>>& dummy::Provider::heading_updates() const
+{
+    return updates.heading;
+}
+
+const core::Signal<location::Update<location::Velocity>>& dummy::Provider::velocity_updates() const
+{
+    return updates.velocity;
+}

@@ -47,111 +47,39 @@ struct Interface
         return s;
     }
 
-    // Checks if a provider satisfies a set of accuracy criteria.
-    DBUS_CPP_METHOD_DEF(MatchesCriteria, remote::Interface)
-    // Checks if the provider has got a specific requirement.
-    DBUS_CPP_METHOD_DEF(Requires, remote::Interface)
-    // Checks if the provider supports a specific feature.
-    DBUS_CPP_METHOD_DEF(Supports, remote::Interface)
-    // Called by the engine whenever the wifi and cell ID reporting state changes.
-    DBUS_CPP_METHOD_DEF(OnWifiAndCellIdReportingStateChanged, remote::Interface)
-    // Called by the engine whenever the reference location changed.
-    DBUS_CPP_METHOD_DEF(OnReferenceLocationChanged, remote::Interface)
-    // Called by the engine whenever the reference heading changed.
-    DBUS_CPP_METHOD_DEF(OnReferenceHeadingChanged, remote::Interface)
-    // Called by the engine whenever the reference velocity changed.
-    DBUS_CPP_METHOD_DEF(OnReferenceVelocityChanged, remote::Interface)
-
-    DBUS_CPP_METHOD_DEF(StartPositionUpdates, remote::Interface)
-    DBUS_CPP_METHOD_DEF(StopPositionUpdates, remote::Interface)
-    DBUS_CPP_METHOD_DEF(StartHeadingUpdates, remote::Interface)
-    DBUS_CPP_METHOD_DEF(StopHeadingUpdates, remote::Interface)
-    DBUS_CPP_METHOD_DEF(StartVelocityUpdates, remote::Interface)
-    DBUS_CPP_METHOD_DEF(StopVelocityUpdates, remote::Interface)
-
-    struct Signals
+    struct Observer
     {
-        DBUS_CPP_SIGNAL_DEF(PositionChanged, remote::Interface, location::Position)
-        DBUS_CPP_SIGNAL_DEF(HeadingChanged, remote::Interface, location::Heading)
-        DBUS_CPP_SIGNAL_DEF(VelocityChanged, remote::Interface, location::Velocity)
+        static const std::string& name()
+        {
+            static const std::string s{"com.ubuntu.remote.Service.Provider.Observer"};
+            return s;
+        }
+
+        DBUS_CPP_METHOD_DEF(UpdatePosition, remote::Interface::Observer)
+        DBUS_CPP_METHOD_DEF(UpdateHeading, remote::Interface::Observer)
+        DBUS_CPP_METHOD_DEF(UpdateVelocity, remote::Interface::Observer)
     };
 
-    struct Properties
-    {
-        DBUS_CPP_READABLE_PROPERTY_DEF(HasPosition, remote::Interface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(HasVelocity, remote::Interface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(HasHeading, remote::Interface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresSatellites, remote::Interface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresCellNetwork, remote::Interface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresDataNetwork, remote::Interface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(RequiresMonetarySpending, remote::Interface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(ArePositionUpdatesRunning, remote::Interface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(AreHeadingUpdatesRunning, remote::Interface, bool)
-        DBUS_CPP_READABLE_PROPERTY_DEF(AreVelocityUpdatesRunning, remote::Interface, bool)
-    };
+    DBUS_CPP_METHOD_DEF(OnNewEvent, remote::Interface)
+    DBUS_CPP_METHOD_DEF(AddObserver, remote::Interface)
+    DBUS_CPP_METHOD_DEF(Satisfies, remote::Interface)
+    DBUS_CPP_METHOD_DEF(Requirements, remote::Interface)
+    DBUS_CPP_METHOD_DEF(Enable, remote::Interface)
+    DBUS_CPP_METHOD_DEF(Disable, remote::Interface)
+    DBUS_CPP_METHOD_DEF(Activate, remote::Interface)
+    DBUS_CPP_METHOD_DEF(Deactivate, remote::Interface)
 
     struct Skeleton
     {
         // Creates a new skeleton instance and installs the interface
         // remote::Interface on it.
         Skeleton(const core::dbus::Object::Ptr& object)
-            : object{object},
-              properties
-              {
-                  object->get_property<Properties::HasPosition>(),
-                  object->get_property<Properties::HasVelocity>(),
-                  object->get_property<Properties::HasHeading>(),
-                  object->get_property<Properties::RequiresSatellites>(),
-                  object->get_property<Properties::RequiresCellNetwork>(),
-                  object->get_property<Properties::RequiresDataNetwork>(),
-                  object->get_property<Properties::RequiresMonetarySpending>(),
-                  object->get_property<Properties::ArePositionUpdatesRunning>(),
-                  object->get_property<Properties::AreHeadingUpdatesRunning>(),
-                  object->get_property<Properties::AreVelocityUpdatesRunning>()
-              },
-              signals
-              {
-                  object->get_signal<Signals::PositionChanged>(),
-                  object->get_signal<Signals::HeadingChanged>(),
-                  object->get_signal<Signals::VelocityChanged>()
-              }
+            : object{object}
         {
         }
 
         // The object that the interface is installed on.
         core::dbus::Object::Ptr object;
-        // All known properties.
-        struct
-        {
-            std::shared_ptr<core::dbus::Property<Properties::HasPosition>> has_position;
-            std::shared_ptr<core::dbus::Property<Properties::HasVelocity>> has_velocity;
-            std::shared_ptr<core::dbus::Property<Properties::HasHeading>> has_heading;
-            std::shared_ptr<core::dbus::Property<Properties::RequiresSatellites>> requires_satellites;
-            std::shared_ptr<core::dbus::Property<Properties::RequiresCellNetwork>> requires_cell_network;
-            std::shared_ptr<core::dbus::Property<Properties::RequiresDataNetwork>> requires_data_network;
-            std::shared_ptr<core::dbus::Property<Properties::RequiresMonetarySpending>> requires_monetary_spending;
-            std::shared_ptr<core::dbus::Property<Properties::ArePositionUpdatesRunning>> are_position_updates_running;
-            std::shared_ptr<core::dbus::Property<Properties::AreHeadingUpdatesRunning>> are_heading_updates_running;
-            std::shared_ptr<core::dbus::Property<Properties::AreVelocityUpdatesRunning>> are_velocity_updates_running;
-        } properties;
-        // All known signals.
-        struct
-        {
-            std::shared_ptr<core::dbus::Signal<
-                Signals::PositionChanged,
-                Signals::PositionChanged::ArgumentType
-            >> position_changed;
-
-            std::shared_ptr<core::dbus::Signal<
-                Signals::HeadingChanged,
-                Signals::HeadingChanged::ArgumentType
-            >> heading_changed;
-
-            std::shared_ptr<core::dbus::Signal<
-                Signals::VelocityChanged,
-                Signals::VelocityChanged::ArgumentType
-            >> velocity_changed;
-        } signals;
     };
 
     struct Stub
@@ -159,63 +87,12 @@ struct Interface
         // Creates a new skeleton instance and installs the interface
         // remote::Interface on it.
         Stub(const core::dbus::Object::Ptr& object)
-            : object{object},
-              properties
-              {
-                  object->get_property<Properties::HasPosition>(),
-                  object->get_property<Properties::HasVelocity>(),
-                  object->get_property<Properties::HasHeading>(),
-                  object->get_property<Properties::RequiresSatellites>(),
-                  object->get_property<Properties::RequiresCellNetwork>(),
-                  object->get_property<Properties::RequiresDataNetwork>(),
-                  object->get_property<Properties::RequiresMonetarySpending>(),
-                  object->get_property<Properties::ArePositionUpdatesRunning>(),
-                  object->get_property<Properties::AreHeadingUpdatesRunning>(),
-                  object->get_property<Properties::AreVelocityUpdatesRunning>()
-              },
-              signals
-              {
-                  object->get_signal<Signals::PositionChanged>(),
-                  object->get_signal<Signals::HeadingChanged>(),
-                  object->get_signal<Signals::VelocityChanged>()
-              }
+            : object{object}
         {
         }
 
         // The object that the interface is installed on.
-        core::dbus::Object::Ptr object;
-        // All known properties.
-        struct
-        {
-            std::shared_ptr<core::dbus::Property<Properties::HasPosition>> has_position;
-            std::shared_ptr<core::dbus::Property<Properties::HasVelocity>> has_velocity;
-            std::shared_ptr<core::dbus::Property<Properties::HasHeading>> has_heading;
-            std::shared_ptr<core::dbus::Property<Properties::RequiresSatellites>> requires_satellites;
-            std::shared_ptr<core::dbus::Property<Properties::RequiresCellNetwork>> requires_cell_network;
-            std::shared_ptr<core::dbus::Property<Properties::RequiresDataNetwork>> requires_data_network;
-            std::shared_ptr<core::dbus::Property<Properties::RequiresMonetarySpending>> requires_monetary_spending;
-            std::shared_ptr<core::dbus::Property<Properties::ArePositionUpdatesRunning>> are_position_updates_running;
-            std::shared_ptr<core::dbus::Property<Properties::AreHeadingUpdatesRunning>> are_heading_updates_running;
-            std::shared_ptr<core::dbus::Property<Properties::AreVelocityUpdatesRunning>> are_velocity_updates_running;
-        } properties;
-        // All known signals.
-        struct
-        {
-            std::shared_ptr<core::dbus::Signal<
-                Signals::PositionChanged,
-                Signals::PositionChanged::ArgumentType
-            >> position_changed;
-
-            std::shared_ptr<core::dbus::Signal<
-                Signals::HeadingChanged,
-                Signals::HeadingChanged::ArgumentType
-            >> heading_changed;
-
-            std::shared_ptr<core::dbus::Signal<
-                Signals::VelocityChanged,
-                Signals::VelocityChanged::ArgumentType
-            >> velocity_changed;
-        } signals;
+        core::dbus::Object::Ptr object;   
     };
 
 };

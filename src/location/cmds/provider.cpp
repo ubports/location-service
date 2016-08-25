@@ -51,7 +51,7 @@ location::cmds::Provider::Provider()
         die_if(not id, ctxt.cout, "name of actual provider implementation is missing");
 
         // We exit cleanly for SIGINT and SIGTERM.
-        auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_int, core::posix::Signal::sig_term});
+        auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_term});
         trap->signal_raised().connect([trap](core::posix::Signal)
         {
             trap->stop();

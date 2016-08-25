@@ -22,6 +22,7 @@
 #include <location/boost_ptree_settings.h>
 #include <location/fusion_provider_selection_policy.h>
 #include <location/runtime.h>
+#include <location/serializing_bus.h>
 #include <location/service_with_engine.h>
 #include <location/settings.h>
 #include <location/trust_store_permission_manager.h>
@@ -51,17 +52,21 @@ location::cmds::Run::Run()
         account_for_lp1447110();
 
         // We exit cleanly for SIGINT and SIGTERM.
-        auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_int, core::posix::Signal::sig_term});
+        auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_term});
         trap->signal_raised().connect([trap](core::posix::Signal)
         {
             trap->stop();
         });        
+
+        auto rt = location::Runtime::create();
 
         // The engine instance is the core piece of functionality.
         auto engine = std::make_shared<location::Engine>(
             // We default to a fusion provider selection policy, providing
             // fusioned and filtered updates to sessions.
             std::make_shared<location::FusionProviderSelectionPolicy>(),
+            // We serialize all messages passed through our internal bus via a specific strand on the runtime.
+            location::SerializingBus::create(rt),
             // We default to a location::Settings implementation that reads state from
             // an ini file, immediately syncing back changes to the underlying file whenever
             // parameters change.
@@ -72,9 +77,7 @@ location::cmds::Run::Run()
         {
             ctxt.cout << "Running under testing..." << std::endl;
             engine->add_provider(std::make_shared<location::providers::dummy::Provider>());
-        }
-
-        auto rt = location::Runtime::create();
+        }        
 
         auto incoming = std::make_shared<core::dbus::Bus>(bus);
         auto outgoing = std::make_shared<core::dbus::Bus>(bus);

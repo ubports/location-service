@@ -43,21 +43,31 @@ class Provider : public location::Provider
     Provider& operator=(const Provider&) = delete;
     ~Provider() noexcept;
 
-    bool matches_criteria(const Criteria&);
+    void on_new_event(const Event& event) override;
 
-    void start_position_updates();
-    void stop_position_updates();
+    void enable() override;
+    void disable() override;
+    void activate() override;
+    void deactivate() override;
 
-    void start_velocity_updates();
-    void stop_velocity_updates();
+    Requirements requirements() const override;
+    bool satisfies(const Criteria& criteria) override;
+    const core::Signal<Update<Position>>& position_updates() const override;
+    const core::Signal<Update<Heading>>& heading_updates() const override;
+    const core::Signal<Update<Velocity>>& velocity_updates() const override;
 
-    void start_heading_updates();
-    void stop_heading_updates();
-
+    const core::Signal<Update<std::set<SpaceVehicle>>>& svs_updates() const;
     void on_reference_location_updated(const Update<Position>& position);
 
   private:
     std::shared_ptr<HardwareAbstractionLayer> hal;
+    struct
+    {
+        core::Signal<Update<Position>> position;
+        core::Signal<Update<Heading>> heading;
+        core::Signal<Update<Velocity>> velocity;
+        core::Signal<Update<std::set<SpaceVehicle>>> svs;
+    } updates;
 };
 }
 }

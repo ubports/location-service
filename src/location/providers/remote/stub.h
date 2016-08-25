@@ -20,9 +20,12 @@
 
 #include <location/provider.h>
 
+#include <functional>
+
 namespace core { namespace dbus {
 class Bus;
 class Object;
+class Service;
 }}
 
 namespace location
@@ -36,12 +39,16 @@ namespace stub
 /** @brief All creation time arguments go here. */
 struct Configuration
 {
+    /** @brief Bus connection to answer incoming calls. */
+    std::shared_ptr<core::dbus::Bus> bus;
+    /** @brief Remote service instance. */
+    std::shared_ptr<core::dbus::Service> service;
     /** @brief Remote object implementing remote::Interface. */
     std::shared_ptr<core::dbus::Object> object;
 };
 
-/** @brief Create a stub instance referring to a remote provider instance. */
-Provider::Ptr create_with_configuration(const Configuration& configuration);
+/// @brief Asynchronously creates a stub instance referring to a remote provider instance.
+void create_with_configuration(const Configuration& configuration, const std::function<void(const Provider::Ptr&)>& cb);
 }
 }
 }

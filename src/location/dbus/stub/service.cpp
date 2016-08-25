@@ -22,6 +22,7 @@
 #include <location/dbus/codec.h>
 #include <location/dbus/service.h>
 
+#include <location/providers/remote/interface.h>
 #include <location/providers/remote/skeleton.h>
 
 #include <location/logging.h>

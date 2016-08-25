@@ -28,6 +28,7 @@
 #include <location/velocity.h>
 
 #include <location/cmds/monitor.h>
+#include <location/cmds/provider.h>
 #include <location/cmds/run.h>
 #include <location/cmds/status.h>
 
@@ -200,7 +201,7 @@ namespace
 struct LocationServiceStandaloneLoad : public LocationServiceStandalone
 {
     unsigned int client_count{100};     // We start up this many client processes in parallel.
-    std::chrono::seconds duration{30};  // We keep the test running for this long.
+    std::chrono::seconds duration{15};  // We keep the test running for this long.
 };
 }
 
@@ -212,20 +213,28 @@ TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingW
 
     auto server = core::posix::fork([this]()
     {
-        SCOPED_TRACE("Server");
         location::cmds::Run run;
-        return static_cast<core::posix::exit::Status>(run.run(location::util::cli::Command::Context{std::cin, std::cout, {"--testing", "1"}}));
+        return static_cast<core::posix::exit::Status>(run.run(location::util::cli::Command::Context{std::cin, std::cout, {}}));
     }, core::posix::StandardStream::empty);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds{500});
+    std::this_thread::sleep_for(std::chrono::seconds{1});
 
-    auto client = [this]()
+    auto provider = [this]()
+    {
+        location::cmds::Provider provider;
+        return static_cast<core::posix::exit::Status>(provider.run(location::util::cli::Command::Context{std::cin, std::cout, {"--id=dummy::Provider"}}));
+    };
+
+    auto p1 = core::posix::fork(provider, core::posix::StandardStream::empty);
+    auto p2 = core::posix::fork(provider, core::posix::StandardStream::empty);    
+
+    auto client = []()
     {
         SCOPED_TRACE("Client");
 
         location::providers::dummy::Configuration config;
 
-        auto delegate = std::make_shared<SignalingStatefulMonitorDelegate>();
+        auto delegate = std::make_shared<LocationServiceStandalone::SignalingStatefulMonitorDelegate>();
         location::cmds::Monitor monitor{delegate};
 
         monitor.run(location::util::cli::Command::Context{std::cin, std::cout, {}});
@@ -265,14 +274,11 @@ TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingW
                 c.send_signal_or_throw(core::posix::Signal::sig_kill);
                 // Wait for the child to avoid zombies
                 c.wait_for(core::posix::wait::Flags::untraced);
-                // And remove it from the list
-                if (dice(generator) <= 3)
-                    clients.erase(clients.begin() + idx);
-                else
-                    clients.at(idx) = core::posix::fork(client, core::posix::StandardStream::empty);
+
+                clients.erase(clients.begin() + idx);
 
                 // And we pause for 500ms
-                std::this_thread::sleep_for(std::chrono::milliseconds{500});
+                std::this_thread::sleep_for(std::chrono::milliseconds{50});
             }
         }
     };
@@ -285,12 +291,16 @@ TEST_F(LocationServiceStandaloneLoad, MultipleClientsConnectingAndDisconnectingW
     if (chaos.joinable())
         chaos.join();
 
+    VLOG(1) << "Stopping clients: " << clients.size();
     for (auto& client : clients)
     {
-        VLOG(1) << "Stopping client...: " << client.pid();
-        client.send_signal_or_throw(core::posix::Signal::sig_term);
+        VLOG(1) << "  Stopping client: " << client.pid();
         EXPECT_TRUE(did_finish_successfully(client.wait_for(core::posix::wait::Flags::untraced)));
     }
+
+    VLOG(1) << "Stopping providers: ";
+    VLOG(1) << "  " << p1.pid(); p1.send_signal_or_throw(core::posix::Signal::sig_term); EXPECT_TRUE(did_finish_successfully(p1.wait_for(core::posix::wait::Flags::untraced)));
+    VLOG(1) << "  " << p2.pid(); p2.send_signal_or_throw(core::posix::Signal::sig_term); EXPECT_TRUE(did_finish_successfully(p2.wait_for(core::posix::wait::Flags::untraced)));
 
     VLOG(1) << "Cleaned up clients, shutting down the service...";
 

@@ -18,14 +18,16 @@
 #ifndef LOCATION_ENGINE_H_
 #define LOCATION_ENGINE_H_
 
+#include <location/bus.h>
 #include <location/provider.h>
 #include <location/provider_enumerator.h>
 #include <location/provider_selection.h>
 #include <location/provider_selection_policy.h>
 #include <location/satellite_based_positioning_state.h>
 #include <location/space_vehicle.h>
-#include <location/state_tracking_provider.h>
 #include <location/wifi_and_cell_reporting_state.h>
+
+#include <location/providers/state_tracking_provider.h>
 
 #include <location/settings.h>
 
@@ -134,6 +136,7 @@ public:
     };
 
     Engine(const ProviderSelectionPolicy::Ptr& provider_selection_policy,
+           const Bus::Ptr& bus,
            const Settings::Ptr& settings);
 
     Engine(const Engine&) = delete;
@@ -168,18 +171,14 @@ public:
 private:
     struct ProviderConnections
     {
-        core::ScopedConnection reference_location_updates;
-        core::ScopedConnection reference_velocity_updates;
-        core::ScopedConnection reference_heading_updates;
-        core::ScopedConnection wifi_and_cell_id_reporting_state_updates;
-        core::ScopedConnection space_vehicle_visibility_updates;
         core::ScopedConnection provider_position_updates;
         core::ScopedConnection provider_state_updates;
     };
 
     mutable std::recursive_mutex guard;
-    std::map<StateTrackingProvider::Ptr, ProviderConnections> providers;
+    std::map<providers::StateTrackingProvider::Ptr, ProviderConnections> providers;
     ProviderSelectionPolicy::Ptr provider_selection_policy;
+    Bus::Ptr bus;
     Settings::Ptr settings;
     UpdatePolicy::Ptr update_policy;
 };

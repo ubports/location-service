@@ -269,10 +269,10 @@ void location::dbus::skeleton::Session::on_stop_velocity_updates(const core::dbu
 // Invoked whenever the actual session impl. for the session reports a position update.
 void location::dbus::skeleton::Session::on_position_changed(const location::Update<location::Position>& position)
 {
-    VLOG(10) << __PRETTY_FUNCTION__;
     try
     {
-        configuration.remote.object->invoke_method_asynchronously_with_callback<location::dbus::Session::UpdatePosition, void>([](const core::dbus::Result<void>& result)
+        auto sp = configuration.remote.object;
+        configuration.remote.object->invoke_method_asynchronously_with_callback<location::dbus::Session::UpdatePosition, void>([sp](const core::dbus::Result<void>& result)
         {
             if (result.is_error())
             {
@@ -292,10 +292,10 @@ void location::dbus::skeleton::Session::on_position_changed(const location::Upda
 // Invoked whenever the actual session impl. reports a heading update.
 void location::dbus::skeleton::Session::on_heading_changed(const location::Update<location::Heading>& heading)
 {
-    VLOG(10) << __PRETTY_FUNCTION__;
     try
     {
-        configuration.remote.object->invoke_method_asynchronously_with_callback<location::dbus::Session::UpdateHeading, void>([](const core::dbus::Result<void>& result)
+        auto sp = configuration.remote.object;
+        configuration.remote.object->invoke_method_asynchronously_with_callback<location::dbus::Session::UpdateHeading, void>([sp](const core::dbus::Result<void>& result)
         {
             if (result.is_error())
             {
@@ -315,10 +315,10 @@ void location::dbus::skeleton::Session::on_heading_changed(const location::Updat
 // Invoked whenever the actual session impl. reports a velocity update.
 void location::dbus::skeleton::Session::on_velocity_changed(const location::Update<location::Velocity>& velocity)
 {
-    VLOG(10) << __PRETTY_FUNCTION__;
     try
     {
-        configuration.remote.object->invoke_method_asynchronously_with_callback<location::dbus::Session::UpdateVelocity, void>([](const core::dbus::Result<void>& result)
+        auto sp = configuration.remote.object;
+        sp->invoke_method_asynchronously_with_callback<location::dbus::Session::UpdateVelocity, void>([sp](const core::dbus::Result<void>& result)
         {
             if (result.is_error())
             {

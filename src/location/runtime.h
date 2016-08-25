@@ -36,7 +36,7 @@ class Runtime : public std::enable_shared_from_this<Runtime>
 {
 public:
     // Our default concurrency setup.
-    static constexpr const std::uint32_t worker_threads = 4;
+    static constexpr const std::uint32_t worker_threads = 8;
 
     // create returns a Runtime instance with pool_size worker threads
     // executing the underlying service.

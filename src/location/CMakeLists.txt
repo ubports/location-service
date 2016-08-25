@@ -15,20 +15,16 @@ add_library(
 
   ${UBUNTU_LOCATION_SERVICE_PUBLIC_HEADERS}
 
-  default_provider_selection_policy.cpp
   fusion_provider_selection_policy.cpp
   non_selecting_provider_selection_policy.cpp
 
-  criteria.cpp
   engine.cpp
-  fusion_provider.cpp
+  event.cpp
   position.cpp
   provider.cpp
   provider_factory.cpp
-  proxy_provider.cpp
   satellite_based_positioning_state.cpp
   settings.cpp
-  state_tracking_provider.h
   time_based_update_policy.cpp
   set_name_for_thread.cpp
   time_since_boot.cpp
@@ -40,14 +36,13 @@ add_library(
   daemon.cpp
   service.cpp
 
-  dummy_service.h
-  dummy_service.cpp
-
   permission_manager.h
   runtime.h
   runtime.cpp
   runtime_tests.h
   runtime_tests.cpp
+  serializing_bus.h
+  serializing_bus.cpp
   service_with_engine.h
   service_with_engine.cpp
   session_with_provider.h
@@ -85,11 +80,23 @@ add_library(
   dbus/stub/session.h
   dbus/stub/session.cpp
 
+  events/all.h
+  events/registry.h
+  events/registry.cpp
+  events/reference_position_updated.cpp
+  events/wifi_and_cell_id_reporting_state_changed.cpp
+
   providers/config.cpp
 
+  providers/fusion/provider.h
+  providers/fusion/provider.cpp
   providers/remote/provider.cpp
   providers/remote/skeleton.cpp
   providers/remote/stub.cpp
+  providers/proxy.h
+  providers/proxy.cpp
+  providers/state_tracking_provider.h
+  providers/state_tracking_provider.cpp
 )
 
 add_library(

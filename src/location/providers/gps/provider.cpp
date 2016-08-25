@@ -37,30 +37,27 @@ location::Provider::Ptr location::providers::gps::Provider::create_instance(cons
 }
 
 location::providers::gps::Provider::Provider(const std::shared_ptr<HardwareAbstractionLayer>& hal)
-    : location::Provider(
-          location::Provider::Features::position | location::Provider::Features::velocity | location::Provider::Features::heading,
-          location::Provider::Requirements::satellites),
-          hal(hal)
+    : hal(hal)
 {
 
     hal->position_updates().connect([this](const location::Position& pos)
     {
-        mutable_updates().position(Update<Position>(pos));
+        updates.position(Update<Position>(pos));
     });
 
     hal->heading_updates().connect([this](const location::Heading& heading)
     {
-        mutable_updates().heading(Update<Heading>(heading));
+        updates.heading(Update<Heading>(heading));
     });
 
     hal->velocity_updates().connect([this](const location::Velocity& velocity)
     {
-        mutable_updates().velocity(Update<Velocity>(velocity));
+        updates.velocity(Update<Velocity>(velocity));
     });
 
     hal->space_vehicle_updates().connect([this](const std::set<location::SpaceVehicle>& svs)
     {
-        mutable_updates().svs(Update<std::set<location::SpaceVehicle>>(svs));
+        updates.svs(Update<std::set<location::SpaceVehicle>>(svs));
     });
 }
 
@@ -68,39 +65,59 @@ location::providers::gps::Provider::~Provider() noexcept
 {
 }
 
-bool location::providers::gps::Provider::matches_criteria(const location::Criteria&)
+void location::providers::gps::Provider::on_new_event(const Event&)
+{
+}
+
+location::Provider::Requirements location::providers::gps::Provider::requirements() const
+{
+    return Requirements::satellites;
+}
+
+bool location::providers::gps::Provider::satisfies(const location::Criteria&)
 {
     return true;
 }
 
-void location::providers::gps::Provider::start_position_updates()
+void location::providers::gps::Provider::enable()
+{
+}
+
+void location::providers::gps::Provider::disable()
+{
+}
+
+void location::providers::gps::Provider::activate()
 {
     hal->start_positioning();
 }
 
-void location::providers::gps::Provider::stop_position_updates()
+void location::providers::gps::Provider::deactivate()
 {
     hal->stop_positioning();
 }
 
-void location::providers::gps::Provider::start_velocity_updates()
-{   
+const core::Signal<location::Update<location::Position>>& location::providers::gps::Provider::position_updates() const
+{
+    return updates.position;
 }
 
-void location::providers::gps::Provider::stop_velocity_updates()
+const core::Signal<location::Update<location::Heading>>& location::providers::gps::Provider::heading_updates() const
 {
-}    
-
-void location::providers::gps::Provider::start_heading_updates()
-{
+    return updates.heading;
 }
 
-void location::providers::gps::Provider::stop_heading_updates()
+const core::Signal<location::Update<location::Velocity>>& location::providers::gps::Provider::velocity_updates() const
 {
+    return updates.velocity;
+}
+
+const core::Signal<location::Update<std::set<location::SpaceVehicle>>>& location::providers::gps::Provider::svs_updates() const
+{
+    return updates.svs;
 }
 
 void location::providers::gps::Provider::on_reference_location_updated(const location::Update<location::Position>& position)
 {
     hal->inject_reference_position(position.value);
 }
-

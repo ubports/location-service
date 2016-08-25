@@ -16,9 +16,15 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <location/proxy_provider.h>
+#include <location/providers/fusion/provider.h>
+#include <location/providers/fusion/newer_or_more_accurate_update_selector.h>
+
 #include <location/service_with_engine.h>
 #include <location/session_with_provider.h>
+
+#include <location/providers/proxy.h>
+
+namespace fusion = location::providers::fusion;
 
 location::ServiceWithEngine::ServiceWithEngine(const Engine::Ptr& engine)
     : engine{engine},
@@ -129,23 +135,11 @@ core::Property<std::map<location::SpaceVehicle::Key, location::SpaceVehicle>>& l
 
 location::Service::Session::Ptr location::ServiceWithEngine::create_session_for_criteria(const Criteria& criteria)
 {
-    auto proxy_provider = std::make_shared<ProxyProvider>(engine->determine_provider_selection_for_criteria(criteria));
-    auto session = std::make_shared<SessionWithProvider>(proxy_provider);
-    std::weak_ptr<Session> wp{session};
-
-    session->updates().position_status.changed().connect([this, wp](const Session::Updates::Status& status)
-    {
-        location::Optional<location::Update<location::Position>> last_known_position = engine->updates.last_known_location.get();
-        bool has_last_known_position = last_known_position ? true : false;
-        bool is_session_enabled = status == Session::Updates::Status::enabled;
-        bool is_session_on_or_active = engine->configuration.engine_state != Engine::Status::off;
-
-        if (has_last_known_position && is_session_enabled && is_session_on_or_active)
-            if (auto sp = wp.lock()) // Immediately send the last known position to the client
-                sp->updates().position = last_known_position.get();
-    });
-
-    return session;
+    auto selection = engine->determine_provider_selection_for_criteria(criteria);
+    return std::make_shared<SessionWithProvider>(
+                fusion::Provider::create(
+                    std::set<Provider::Ptr>{selection.position_updates_provider, selection.heading_updates_provider, selection.velocity_updates_provider},
+                    std::make_shared<fusion::NewerOrMoreAccurateUpdateSelector>()));
 }
 
 void location::ServiceWithEngine::add_provider(const Provider::Ptr &provider)

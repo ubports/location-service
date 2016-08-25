@@ -26,20 +26,6 @@ namespace location
 {
 struct ProviderSelection
 {
-    inline Provider::Features to_feature_flags() const
-    {
-        Provider::Features flags = Provider::Features::none;
-
-        if (position_updates_provider)
-            flags = flags | Provider::Features::position;
-        if (heading_updates_provider)
-            flags = flags | Provider::Features::heading;
-        if(velocity_updates_provider)
-            flags = flags | Provider::Features::velocity;
-
-        return flags;
-    }
-
     std::shared_ptr<Provider> position_updates_provider;
     std::shared_ptr<Provider> heading_updates_provider;
     std::shared_ptr<Provider> velocity_updates_provider;
