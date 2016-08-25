@@ -96,6 +96,7 @@ endif()
 
 include_directories(
   3rd-party/
+  3rd-party/ichnaea/include
 
   ${Boost_INCLUDE_DIRS}
   ${DBUS_INCLUDE_DIRS}
@@ -115,6 +116,8 @@ include_directories(
 )
 
 file(GLOB_RECURSE UBUNTU_LOCATION_SERVICE_PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR} *.h)
+
+add_subdirectory(3rd-party/ichnaea)
 
 add_subdirectory(data)
 add_subdirectory(doc)
