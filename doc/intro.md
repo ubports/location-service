@@ -1,4 +1,4 @@
-# Introduction               {#mainpage}
+# Introduction
 
 Ubuntu's location service is a central hub for multiplexing access to
 positioning subsystems available via hard- and software. It provides a
