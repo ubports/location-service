@@ -25,6 +25,7 @@
 #include <location/serializing_bus.h>
 #include <location/service_with_engine.h>
 #include <location/settings.h>
+#include <location/system_configuration.h>
 #include <location/trust_store_permission_manager.h>
 
 #include <location/dbus/skeleton/service.h>
@@ -40,7 +41,7 @@ location::cmds::Run::Run()
     : CommandWithFlagsAndAction{cli::Name{"run"}, cli::Usage{"run"}, cli::Description{"runs the daemon"}},
       testing{false},
       bus{core::dbus::WellKnownBus::system},
-      settings{"/var/lib/ubuntu-location-service/config.ini"}
+      settings{SystemConfiguration::instance().runtime_persistent_data_dir()}
 {
     flag(cli::make_flag(cli::Name{"testing"}, cli::Description{"whether we are running under testing, defaults to false"}, testing));
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
@@ -98,7 +99,7 @@ location::cmds::Run::Run()
             std::make_shared<location::dbus::skeleton::Service::DBusDaemonCredentialsResolver>(outgoing),
             std::make_shared<location::dbus::skeleton::Service::ObjectPathGenerator>(),
             // Incoming requests are verified by talking to a trust-store instance.
-            location::TrustStorePermissionManager::create_default_instance_with_bus(outgoing)
+            SystemConfiguration::instance().create_permission_manager(outgoing)
         };
 
         rt->start();
