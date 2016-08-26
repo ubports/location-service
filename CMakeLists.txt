@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 
 project(ubuntu-location-service)
 
+if (DEFINED SNAPPY_UBUNTU_CORE)
+  add_definitions(-DSNAPPY_UBUNTU_CORE)
+endif()
+
 # We haven't received version information via the packaging setup.
 # For that, we try to determine sensible values on our own, ensuring
 # plain old invocations to cmake still work as expected.

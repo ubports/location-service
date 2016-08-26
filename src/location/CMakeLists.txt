@@ -30,6 +30,7 @@ add_library(
   space_vehicle.cpp
   time_based_update_policy.cpp
   set_name_for_thread.cpp
+  system_configuration.cpp
   time_since_boot.cpp
   wifi_and_cell_reporting_state.cpp
 
