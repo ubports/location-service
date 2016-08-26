@@ -11,14 +11,12 @@ find_package(Boost)
 find_package(Threads)
 
 pkg_check_modules(NET_CPP net-cpp REQUIRED)
-pkg_check_modules(UBUNTU_LOCATION_SERVICE_CONNECTIVITY ubuntu-location-service-connectivity REQUIRED)
 
 include_directories(
   include
   src
 
-  ${NET_CPP_INCLUDE_DIRS}
-  ${UBUNTU_LOCATION_SERVICE_CONNECTIVITY_INCLUDE_DIRS})
+  ${NET_CPP_INCLUDE_DIRS})
 
 add_library(
   ichnaea
@@ -50,19 +48,8 @@ add_library(
 
 target_link_libraries(
   ichnaea
-
+  
   ${CMAKE_THREAD_LIBS_INIT}
-  ${NET_CPP_LDFLAGS}
-  ${UBUNTU_LOCATION_SERVICE_CONNECTIVITY_LDFLAGS})
-
-add_executable(
-  ichnaea-client
-
-  examples/client.cpp)
-
-target_link_libraries(
-  ichnaea-client
-
-  ichnaea)
+  ${NET_CPP_LDFLAGS})
 
 add_subdirectory(tests)
