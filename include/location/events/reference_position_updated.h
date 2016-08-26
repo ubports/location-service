@@ -23,21 +23,29 @@
 
 #include <location/position.h>
 #include <location/update.h>
+#include <location/visibility.h>
 
 namespace location
 {
 namespace events
 {
 /// @brief ReferencePositionUpdated is sent if the reference position has been updated.
-class ReferencePositionUpdated : public Event
+class LOCATION_DLL_PUBLIC ReferencePositionUpdated : public Event
 {
 public:
     /// @brief ReferencePositionUpdated initializes a new instance with update.
     ReferencePositionUpdated(const Update<Position>& update);
     /// @brief ReferencePositionUpdated initializes a new instance from rhs.
     ReferencePositionUpdated(const ReferencePositionUpdated& rhs);
+    /// @brief ReferencePositionUpdated moves rhs.
+    ReferencePositionUpdated(ReferencePositionUpdated&& rhs);
+    /// @cond
+    ~ReferencePositionUpdated() override;
+    /// @endcond
     /// @brief operator= assigns rhs to this instance.
     ReferencePositionUpdated& operator=(const ReferencePositionUpdated& rhs);
+    /// @brief operator= assigns rhs to this instance.
+    ReferencePositionUpdated& operator=(ReferencePositionUpdated&& rhs);
 
     /// @brief update returns the contained update.
     const Update<Position>& update() const;
@@ -46,7 +54,8 @@ public:
     Type type() const override;
 
 private:
-    Update<Position> update_;
+    struct Private;
+    std::unique_ptr<Private> d;
 };
 }
 template<>

@@ -326,14 +326,13 @@ struct Codec<location::SpaceVehicle::Key>
 {
     static void encode_argument(Message::Writer& writer, const location::SpaceVehicle::Key& in)
     {
-        writer.push_uint32(static_cast<std::uint32_t>(in.type));
-        writer.push_uint32(in.id);
+        writer.push_uint32(static_cast<std::uint32_t>(in.type()));
+        writer.push_uint32(in.id());
     }
 
     static void decode_argument(Message::Reader& reader, location::SpaceVehicle::Key& in)
     {
-        in.type = static_cast<location::SpaceVehicle::Type>(reader.pop_uint32());
-        in.id = reader.pop_uint32();
+        in = location::SpaceVehicle::Key{static_cast<location::SpaceVehicle::Type>(reader.pop_uint32()), reader.pop_uint32()};
     }
 };
 
@@ -344,13 +343,13 @@ struct Codec<location::SpaceVehicle>
     {
         auto sub = writer.open_structure();
 
-        Codec<location::SpaceVehicle::Key>::encode_argument(sub, in.key);
-        sub.push_floating_point(in.snr);
-        sub.push_boolean(in.has_almanac_data);
-        sub.push_boolean(in.has_ephimeris_data);
-        sub.push_boolean(in.used_in_fix);
-        Codec<location::units::Degrees>::encode_argument(sub, in.azimuth);
-        Codec<location::units::Degrees>::encode_argument(sub, in.elevation);
+        Codec<location::SpaceVehicle::Key>::encode_argument(sub, in.key());
+        Codec<location::Optional<float>>::encode_argument(sub, in.snr());
+        Codec<location::Optional<bool>>::encode_argument(sub, in.has_almanac_data());
+        Codec<location::Optional<bool>>::encode_argument(sub, in.has_ephimeris_data());
+        Codec<location::Optional<bool>>::encode_argument(sub, in.used_in_fix());
+        Codec<location::Optional<location::units::Degrees>>::encode_argument(sub, in.azimuth());
+        Codec<location::Optional<location::units::Degrees>>::encode_argument(sub, in.elevation());
 
         writer.close_structure(std::move(sub));
     }
@@ -359,13 +358,13 @@ struct Codec<location::SpaceVehicle>
     {
         auto sub = reader.pop_structure();
 
-        Codec<location::SpaceVehicle::Key>::decode_argument(sub, in.key);
-        in.snr = sub.pop_floating_point();
-        in.has_almanac_data = sub.pop_boolean();
-        in.has_ephimeris_data = sub.pop_boolean();
-        in.used_in_fix = sub.pop_boolean();
-        Codec<location::units::Degrees>::decode_argument(sub, in.azimuth);
-        Codec<location::units::Degrees>::decode_argument(sub, in.elevation);
+        Codec<location::SpaceVehicle::Key>::decode_argument(sub, in.key());
+        Codec<location::Optional<float>>::decode_argument(sub, in.snr());
+        Codec<location::Optional<bool>>::decode_argument(sub, in.has_almanac_data());
+        Codec<location::Optional<bool>>::decode_argument(sub, in.has_ephimeris_data());
+        Codec<location::Optional<bool>>::decode_argument(sub, in.used_in_fix());
+        Codec<location::Optional<location::units::Degrees>>::decode_argument(sub, in.azimuth());
+        Codec<location::Optional<location::units::Degrees>>::decode_argument(sub, in.elevation());
     }
 };
 
@@ -417,7 +416,7 @@ struct Codec<std::map<location::SpaceVehicle::Key, location::SpaceVehicle>>
         {
             location::SpaceVehicle sv;
             Codec<location::SpaceVehicle>::decode_argument(sub, sv);
-            out.insert(std::make_pair(sv.key, sv));
+            out.insert(std::make_pair(sv.key(), sv));
         }
     }
 };
@@ -474,22 +473,22 @@ struct Codec<location::Criteria>
 {
     static void encode_argument(Message::Writer& writer, const location::Criteria& in)
     {
-        Codec<location::Features>::encode_argument(writer, in.requirements);
+        Codec<location::Features>::encode_argument(writer, in.requirements());
 
-        Codec<location::Optional<location::units::Meters>>::encode_argument(writer, in.accuracy.horizontal);
-        Codec<location::Optional<location::units::Meters>>::encode_argument(writer, in.accuracy.vertical);
-        Codec<location::Optional<location::units::MetersPerSecond>>::encode_argument(writer, in.accuracy.velocity);
-        Codec<location::Optional<location::units::Degrees>>::encode_argument(writer, in.accuracy.heading);
+        Codec<location::Optional<location::units::Meters>>::encode_argument(writer, in.accuracy().horizontal());
+        Codec<location::Optional<location::units::Meters>>::encode_argument(writer, in.accuracy().vertical());
+        Codec<location::Optional<location::units::MetersPerSecond>>::encode_argument(writer, in.accuracy().velocity());
+        Codec<location::Optional<location::units::Degrees>>::encode_argument(writer, in.accuracy().heading());
     }
 
     static void decode_argument(Message::Reader& reader, location::Criteria& in)
     {
-        Codec<location::Features>::decode_argument(reader, in.requirements);
+        Codec<location::Features>::decode_argument(reader, in.requirements());
 
-        Codec<location::Optional<location::units::Meters>>::decode_argument(reader, in.accuracy.horizontal);
-        Codec<location::Optional<location::units::Meters>>::decode_argument(reader, in.accuracy.vertical);
-        Codec<location::Optional<location::units::MetersPerSecond>>::decode_argument(reader, in.accuracy.velocity);
-        Codec<location::Optional<location::units::Degrees>>::decode_argument(reader, in.accuracy.heading);
+        Codec<location::Optional<location::units::Meters>>::decode_argument(reader, in.accuracy().horizontal());
+        Codec<location::Optional<location::units::Meters>>::decode_argument(reader, in.accuracy().vertical());
+        Codec<location::Optional<location::units::MetersPerSecond>>::decode_argument(reader, in.accuracy().velocity());
+        Codec<location::Optional<location::units::Degrees>>::decode_argument(reader, in.accuracy().heading());
     }
 };
 

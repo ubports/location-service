@@ -21,14 +21,15 @@
 #include <chrono>
 #include <mutex>
 
-#include "update_policy.h"
+#include <location/update_policy.h>
+#include <location/visibility.h>
 
 namespace location
 {
 
 // An interface that can be implemented to add heuristics on how heading, position or velocity updates will be chosen.
 // This class ensures that the best update possible is chosen within a reasonable time bracket.
-class TimeBasedUpdatePolicy : public UpdatePolicy {
+class LOCATION_DLL_PUBLIC TimeBasedUpdatePolicy : public UpdatePolicy {
 
  public:
     TimeBasedUpdatePolicy(std::chrono::minutes mins=default_timeout());

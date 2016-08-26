@@ -34,7 +34,7 @@ namespace location
 namespace connectivity
 {
 /** @brief Models a radio cell that one of the modems in the system is connected to. */
-struct RadioCell
+struct LOCATION_DLL_PUBLIC RadioCell
 {
     /** @cond */
     typedef std::shared_ptr<RadioCell> Ptr;
@@ -252,28 +252,28 @@ struct RadioCell
 };
 
 /** @brief Returns true iff lhs equals rhs. */
-bool operator==(const RadioCell::Gsm& lhs, const RadioCell::Gsm& rhs);
+LOCATION_DLL_PUBLIC bool operator==(const RadioCell::Gsm& lhs, const RadioCell::Gsm& rhs);
 
 /** @brief Pretty-prints the given gsm details to the given output stream. */
-std::ostream& operator<<(std::ostream& out, const RadioCell::Gsm& gsm);
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, const RadioCell::Gsm& gsm);
 
 /** @brief Returns true iff lhs equals rhs. */
-bool operator==(const RadioCell::Umts& lhs, const RadioCell::Umts& rhs);
+LOCATION_DLL_PUBLIC bool operator==(const RadioCell::Umts& lhs, const RadioCell::Umts& rhs);
 
 /** @brief Pretty-prints the given umts details to the given output stream. */
-std::ostream& operator<<(std::ostream& out, const RadioCell::Umts& umts);
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, const RadioCell::Umts& umts);
 
 /** @brief Returns true iff lhs equals rhs. */
-bool operator==(const RadioCell::Lte& lhs, const RadioCell::Lte& rhs);
+LOCATION_DLL_PUBLIC bool operator==(const RadioCell::Lte& lhs, const RadioCell::Lte& rhs);
 
 /** @brief Pretty-prints the given gsm details to the given output stream. */
-std::ostream& operator<<(std::ostream& out, const RadioCell::Lte& lte);
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, const RadioCell::Lte& lte);
 
 /** @brief Returns true iff lhs equals rhs. */
-bool operator==(const RadioCell& lhs, const RadioCell& rhs);
+LOCATION_DLL_PUBLIC bool operator==(const RadioCell& lhs, const RadioCell& rhs);
 
 /** @brief Pretty-prints the given cell to the given output stream. */
-std::ostream& operator<<(std::ostream& out, const RadioCell& cell);
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, const RadioCell& cell);
 }
 }
 }

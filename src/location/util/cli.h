@@ -21,10 +21,7 @@
 
 #include <location/util/do_not_copy_or_move.h>
 #include <location/optional.h>
-
-// TODO(tvoss): Reenable once we introduce visibility of symbols
-// #include <biometry/visibility.h>
-#define LOCATION_DLL_PUBLIC
+#include <location/visibility.h>
 
 #include <iomanip>
 #include <iostream>

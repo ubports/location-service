@@ -18,6 +18,8 @@
 #ifndef LOCATION_SPACE_VEHICLE_H_
 #define LOCATION_SPACE_VEHICLE_H_
 
+#include <location/optional.h>
+#include <location/visibility.h>
 #include <location/units/units.h>
 
 #include <iostream>
@@ -25,93 +27,123 @@
 
 namespace location
 {
-/** @brief A space-vehicle as visible to providers. */
-struct SpaceVehicle
+/// @brief A space-vehicle as visible to providers relying on satellite-assisted positioning.
+///
+/// Features a named-parameter interface such that instances can be assembled in place as in:
+///   SpaceVehicle({SpaceVehicle::Type::gps, 42}).snr(-23).azimuth(34. * units::degrees).elevation(12 * units::degrees);
+class LOCATION_DLL_PUBLIC SpaceVehicle
 {
-    /** @brief Numeric Id of an individual SpaceVehicle. */
+public:
+    /// @brief Numeric Id of an individual SpaceVehicle.
     typedef std::uint32_t Id;
 
-    /** @brief Enumerates all known space-vehicle types. */
+    /// @brief Enumerates all known space-vehicle types.
     enum class Type
     {
-        unknown, ///< Unknown (and thus invalid) type.
-        beidou, ///< People's Republic of China's regional system, currently limited to Asia and the West Pacific
-        galileo, ///< A global system being developed by the European Union and other partner countries, planned to be operational by 2014 (and fully deployed by 2019).
-        glonass, ///< Russia's global navigation system. Fully operational worldwide.
-        gps, ///< Fully operational worldwide.
-        compass, ///< People's Republic of China's global system, planned to be operational by 2020.
-        irnss, ///< India's regional navigation system, planned to be operational by 2014, covering India and Northern Indian Ocean.
-        qzss ///< Japanese regional system covering Asia and Oceania.
-    };    
-
-    /** @brief Uniquely identifies a space vehicle, given its type and its id. */
-    struct Key
-    {
-        Type type = Type::unknown; ///< The positioning system this vehicle belongs to.
-        Id id = 0; ///< Unique id of the space vehicle.
-
-        inline bool operator==(const SpaceVehicle::Key& rhs) const
-        {
-            return type == rhs.type && id == rhs.id;
-        }
-
-        inline bool operator<(const SpaceVehicle::Key& rhs) const
-        {
-            if (type != rhs.type)
-                return type < rhs.type;
-
-            return id < rhs.id;
-        }
+        unknown,    ///< Unknown (and thus invalid) type.
+        beidou,     ///< People's Republic of China's regional system, currently limited to Asia and the West Pacific
+        galileo,    ///< A global system being developed by the European Union and other partner countries, planned to be operational by 2014 (and fully deployed by 2019).
+        glonass,    ///< Russia's global navigation system. Fully operational worldwide.
+        gps,        ///< Fully operational worldwide.
+        compass,    ///< People's Republic of China's global system, planned to be operational by 2020.
+        irnss,      ///< India's regional navigation system, planned to be operational by 2014, covering India and Northern Indian Ocean.
+        qzss        ///< Japanese regional system covering Asia and Oceania.
     };
 
-    inline bool operator==(const SpaceVehicle& rhs) const
+    /// @brief Uniquely identifies a space vehicle, given its type and its id.
+    class Key
     {
-        return key == rhs.key &&
-                has_almanac_data == rhs.has_almanac_data &&
-                has_ephimeris_data == rhs.has_ephimeris_data &&
-                used_in_fix == rhs.used_in_fix &&
-                units::roughly_equals(azimuth, rhs.azimuth) &&
-                units::roughly_equals(elevation, rhs.elevation);
-    }
+    public:
+        /// @brief Key initializes a new instance with type and id.
+        explicit Key(Type type = Type::unknown, Id id = Id{0});
+        /// @cond
+        Key(const Key& other);
+        Key(Key&& other);
+        ~Key();
+        Key& operator=(const Key& other);
+        Key& operator=(Key&& other);
+        /// @endcond
 
-    inline bool operator<(const SpaceVehicle& rhs) const
-    {
-        return key < rhs.key;
-    }
+        /// @brief type returns the Type of a SpaceVehicle.
+        const Type& type() const;
+        /// @brief id returns the numeric id of a SpaceVehicle.
+        const Id& id() const;
 
-    Key key;                                        ///< Unique key identifying an instance.
-    float snr = -std::numeric_limits<float>::max(); ///< Signal to noise ratio;
-    bool has_almanac_data = false;                  ///< Almanac data available for this vehicle.
-    bool has_ephimeris_data = false;                ///< Ephimeris data is available for this vehicle.
-    bool used_in_fix = false;                       ///< This vehicle has been used to obtain a fix.
-    units::Degrees azimuth;                         ///< Azimuth of SV.
-    units::Degrees elevation;                       ///< Elevation of SV.
+    private:
+        /// @cond
+        struct Private;
+        std::unique_ptr<Private> d;
+        /// @endcond
+    };
+
+    /// @brief SpaceVehicle initializes a new instance with key.
+    explicit SpaceVehicle(const Key& key = Key{});
+    /// @cond
+    SpaceVehicle(const SpaceVehicle& other);
+    SpaceVehicle(SpaceVehicle&& other);
+    ~SpaceVehicle();
+    SpaceVehicle& operator=(const SpaceVehicle& other);
+    SpaceVehicle& operator=(SpaceVehicle&& other);
+    /// @endcond
+
+    /// @brief Unique key identifying an instance.
+    const Key& key() const;
+    Key& key();
+    SpaceVehicle& key(const Key& value);
+    SpaceVehicle key(const Key& value) const;
+    /// @brief Signal to noise ratio.
+    const Optional<float>& snr() const;
+    Optional<float>& snr();
+    SpaceVehicle& snr(float value);
+    SpaceVehicle snr(float value) const;
+    /// @brief Returns true if almanac data is available for this vehicle.
+    const Optional<bool>& has_almanac_data() const;
+    Optional<bool>& has_almanac_data();
+    SpaceVehicle& has_almanac_data(bool value);
+    SpaceVehicle has_almanac_data(bool value) const;
+    /// @brief Returns true if ephemeris data is available for this vehicle.
+    const Optional<bool>& has_ephimeris_data() const;
+    Optional<bool>& has_ephimeris_data();
+    SpaceVehicle& has_ephimeris_data(bool value);
+    SpaceVehicle has_ephimeris_data(bool value) const;
+    /// @brief Returns true if this vehicle has been used to obtain a fix.
+    const Optional<bool>& used_in_fix() const;
+    Optional<bool>& used_in_fix();
+    SpaceVehicle& used_in_fix(bool value);
+    SpaceVehicle used_in_fix(bool value) const;
+    /// @brief Returns the azimuth of the vehicle.
+    const Optional<units::Degrees>& azimuth() const;
+    Optional<units::Degrees>& azimuth();
+    SpaceVehicle& azimuth(const units::Degrees& value);
+    SpaceVehicle azimuth(const units::Degrees& value) const;
+    /// @brief Returns the elevation of the vehicle.
+    const Optional<units::Degrees>& elevation() const;
+    Optional<units::Degrees>& elevation();
+    SpaceVehicle& elevation(const units::Degrees& value);
+    SpaceVehicle elevation(const units::Degrees& value) const;
+
+private:
+    /// @cond
+    struct Private;
+    std::unique_ptr<Private> d;
+    /// @endcond
 };
 
-inline std::ostream& operator<<(std::ostream& out, const SpaceVehicle& sv)
-{
-    static const std::map<SpaceVehicle::Type, std::string> lut =
-    {
-        {SpaceVehicle::Type::unknown, "unknown"},
-        {SpaceVehicle::Type::beidou, "beidou"},
-        {SpaceVehicle::Type::galileo, "galileo"},
-        {SpaceVehicle::Type::glonass, "glonass"},
-        {SpaceVehicle::Type::gps, "gps"},
-        {SpaceVehicle::Type::compass, "compass"},
-        {SpaceVehicle::Type::irnss, "irnss"},
-        {SpaceVehicle::Type::qzss, "qzss" }
-    };
-    return out << "("
-               << "type: " << lut.at(sv.key.type) << ", "
-               << "prn: " << sv.key.id << ", "
-               << "snr: " << sv.snr << ", "
-               << "has_almanac_data: " << sv.has_almanac_data << ", "
-               << "has_ephimeris_data: " << sv.has_ephimeris_data << ", "
-               << "used_in_fix: " << sv.used_in_fix << ", "
-               << "azimuth: " << sv.azimuth << ", "
-               << "elevation: " << sv.elevation
-               << ")";
-}
+/// @brief operator== returns true iff lhs and rhs are equal.
+LOCATION_DLL_PUBLIC bool operator==(const SpaceVehicle& lhs, const SpaceVehicle& rhs);
+/// @brief operator< returns true iff lhs and rhs are equal.
+LOCATION_DLL_PUBLIC bool operator<(const SpaceVehicle& lhs, const SpaceVehicle& rhs);
+/// @brief operator== returns true iff lhs and rhs are equal.
+LOCATION_DLL_PUBLIC bool operator==(const SpaceVehicle::Key& lhs, const SpaceVehicle::Key& rhs);
+/// @brief operator< returns true if lhs compares less than rhs.
+LOCATION_DLL_PUBLIC bool operator<(const SpaceVehicle::Key& lhs, const SpaceVehicle::Key& rhs);
+
+/// @brief operator<< inserts type into out.
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, const SpaceVehicle::Type& type);
+/// @brief operator<< inserts key into out.
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, const SpaceVehicle::Key& key);
+/// @brief operator<< inserts sv into out.
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, const SpaceVehicle& sv);
 }
 
 #endif // LOCATION_SPACE_VEHICLE_H_

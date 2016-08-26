@@ -19,6 +19,7 @@
 #define LOCATION_PROVIDERS_STATE_TRACKING_PROVIDER_H_
 
 #include <location/provider.h>
+#include <location/visibility.h>
 
 #include <functional>
 #include <mutex>
@@ -30,7 +31,7 @@ namespace providers
 /// @brief StateTrackingProvider implements a simple state-machine making sure
 /// that only supported and valid state transitions are triggered. In addition,
 /// an activation count is tracked that ensures that providers are only ever started/stopped once.
-class StateTrackingProvider : public Provider
+class LOCATION_DLL_PUBLIC StateTrackingProvider : public Provider
 {
 public:
     typedef std::shared_ptr<StateTrackingProvider> Ptr;

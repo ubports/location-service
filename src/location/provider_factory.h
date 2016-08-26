@@ -20,6 +20,7 @@
 
 #include <location/configuration.h>
 #include <location/provider.h>
+#include <location/visibility.h>
 
 #include <functional>
 #include <map>
@@ -31,7 +32,7 @@ namespace location
 {
 class Provider;
 
-class ProviderFactory
+class LOCATION_DLL_PUBLIC ProviderFactory
 {
   public:
     typedef location::Configuration Configuration;

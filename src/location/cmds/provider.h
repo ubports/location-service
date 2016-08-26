@@ -22,8 +22,8 @@
 
 #include <location/optional.h>
 #include <location/util/cli.h>
-
 #include <location/util/well_known_bus.h>
+#include <location/visibility.h>
 
 #include <boost/filesystem.hpp>
 
@@ -34,7 +34,7 @@ namespace location
 namespace cmds
 {
 // Provider executes an in-tree provider out-of-process.
-class Provider : public util::cli::CommandWithFlagsAndAction
+class LOCATION_DLL_PUBLIC Provider : public util::cli::CommandWithFlagsAndAction
 {
 public:
     // Run initializes a new instance.

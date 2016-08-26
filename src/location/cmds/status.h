@@ -23,6 +23,7 @@
 #include <location/optional.h>
 #include <location/service.h>
 #include <location/util/cli.h>
+#include <location/visibility.h>
 
 #include <core/dbus/well_known_bus.h>
 
@@ -35,7 +36,7 @@ namespace location
 namespace cmds
 {
 // Status queries the status of the daemon
-class Status : public util::cli::CommandWithFlagsAndAction
+class LOCATION_DLL_PUBLIC Status : public util::cli::CommandWithFlagsAndAction
 {
 public:
     // Summary bundles the state summary of a location::Service instance.

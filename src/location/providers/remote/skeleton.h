@@ -19,6 +19,7 @@
 #define LOCATION_SERVICE_PROVIDERS_REMOTE_SKELETON_H_
 
 #include <location/provider.h>
+#include <location/visibility.h>
 
 namespace core { namespace dbus {
 class Bus;
@@ -45,7 +46,7 @@ struct Configuration
 };
 
 /** @brief Create a stub instance referring to a remote provider instance. */
-Provider::Ptr create_with_configuration(const Configuration& configuration);
+LOCATION_DLL_PUBLIC Provider::Ptr create_with_configuration(const Configuration& configuration);
 }
 }
 }

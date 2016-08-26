@@ -19,6 +19,7 @@
 #define LOCATION_UPDATE_H_
 
 #include <location/clock.h>
+#include <location/visibility.h>
 
 #include <ostream>
 
@@ -29,7 +30,7 @@ namespace location
  * @tparam T The contained value.
  */
 template<typename T>
-struct Update
+struct LOCATION_DLL_PUBLIC Update
 {
     /**
       * @brief Constructs a valid update with the given value and timestamp.
@@ -75,7 +76,7 @@ struct Update
  * @param update The value to be printed.
  */
 template<typename T>
-inline std::ostream& operator<<(std::ostream& out, const Update<T>& update)
+LOCATION_DLL_PUBLIC inline std::ostream& operator<<(std::ostream& out, const Update<T>& update)
 {
     out << "Update(" << update.value << ", " << update.when.time_since_epoch().count() << ")";
     return out;

@@ -21,6 +21,7 @@
 #define LOCATION_CMDS_LIST_H_
 
 #include <location/util/cli.h>
+#include <location/visibility.h>
 
 #include <iosfwd>
 
@@ -29,7 +30,7 @@ namespace location
 namespace cmds
 {
 // List lists all known provider implementations
-class List : public util::cli::CommandWithFlagsAndAction
+class LOCATION_DLL_PUBLIC List : public util::cli::CommandWithFlagsAndAction
 {
 public:
     // List initializes a new instance.

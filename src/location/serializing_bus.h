@@ -20,6 +20,7 @@
 
 #include <location/bus.h>
 #include <location/runtime.h>
+#include <location/visibility.h>
 
 #include <boost/asio.hpp>
 
@@ -28,7 +29,7 @@
 namespace location
 {
 /// @brief SerializingBus implements Bus, dispatching messages via a boost::asio::io_service strand.
-class SerializingBus : public std::enable_shared_from_this<SerializingBus>, public Bus
+class LOCATION_DLL_PUBLIC SerializingBus : public std::enable_shared_from_this<SerializingBus>, public Bus
 {
 public:
     /// @brief SerializingBus initializes a new instance with rt.

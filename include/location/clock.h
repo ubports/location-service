@@ -18,6 +18,8 @@
 #ifndef LOCATION_CLOCK_H_
 #define LOCATION_CLOCK_H_
 
+#include <location/visibility.h>
+
 #include <chrono>
 
 namespace location
@@ -25,7 +27,7 @@ namespace location
 /**
  * @brief Defines the timebase of the location service.
  */
-struct Clock
+struct LOCATION_DLL_PUBLIC Clock
 {
     /** @brief The underlying clock we are assuming for all time-stamping purposes. */
     typedef std::chrono::high_resolution_clock Type;

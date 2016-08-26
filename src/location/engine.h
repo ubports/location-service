@@ -25,6 +25,7 @@
 #include <location/provider_selection_policy.h>
 #include <location/satellite_based_positioning_state.h>
 #include <location/space_vehicle.h>
+#include <location/visibility.h>
 #include <location/wifi_and_cell_reporting_state.h>
 
 #include <location/providers/state_tracking_provider.h>
@@ -46,7 +47,7 @@ class ProviderSelectionPolicy;
  * @brief The Engine class encapsulates a positioning engine, relying on a set
  * of providers and reporters to acquire and publish location information.
  */
-class Engine : public ProviderEnumerator
+class LOCATION_DLL_PUBLIC Engine : public ProviderEnumerator
 {
 public:
     typedef std::shared_ptr<Engine> Ptr;
@@ -184,9 +185,9 @@ private:
 };
 
 /** @brief Pretty prints the given status to the given stream. */
-std::ostream& operator<<(std::ostream&, Engine::Status);
+LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream&, Engine::Status);
 /** @brief Parses the status from the given stream. */
-std::istream& operator>>(std::istream&, Engine::Status&);
+LOCATION_DLL_PUBLIC std::istream& operator>>(std::istream&, Engine::Status&);
 }
 
 #endif // LOCATION_ENGINE_H_

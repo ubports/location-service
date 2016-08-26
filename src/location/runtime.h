@@ -18,6 +18,8 @@
 #ifndef LOCATION_RUNTIME_H_
 #define LOCATION_RUNTIME_H_
 
+#include <location/visibility.h>
+
 #include <boost/asio.hpp>
 
 #include <functional>
@@ -32,7 +34,7 @@ namespace location
 // We bundle our "global" runtime dependencies here, specifically
 // a dispatcher to decouple multiple in-process providers from one
 // another , forcing execution to a well known set of threads.
-class Runtime : public std::enable_shared_from_this<Runtime>
+class LOCATION_DLL_PUBLIC Runtime : public std::enable_shared_from_this<Runtime>
 {
 public:
     // Our default concurrency setup.
