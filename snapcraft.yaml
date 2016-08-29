@@ -13,14 +13,14 @@ description: |
 apps:
   run:
     daemon: simple
-    command: bin/locationd run --bus system
+    command: bin/locationd run --bus=system
     slots: [service, cli]
     plugs: [network-manager]
-  cli:
-    command: bin/locationd status --bus system
+  status:
+    command: bin/locationd status --bus=system
     plugs: [cli]
   monitor:
-    command: bin/locationd monitor --bus system
+    command: bin/locationd monitor --bus=system
     plugs: [client]
 
 slots:
