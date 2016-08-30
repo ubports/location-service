@@ -32,7 +32,7 @@ struct Service
 {
     inline static const std::string& path()
     {
-        static const std::string s{"/location/Service"};
+        static const std::string s{"/com/ubuntu/location/Service"};
         return s;
     }
 
