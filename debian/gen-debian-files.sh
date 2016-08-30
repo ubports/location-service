@@ -105,6 +105,7 @@ warning_msg "$infile"
 cat $warning $infile | sed -e "s/@UBUNTU_LOCATION_SERVICE_SOVERSION@/${soversion}/" > "$outfile"
 
 ln -s "${dir}"/libubuntu-location-service${soversion}.install.with-gps "${dir}"/libubuntu-location-service${soversion}.install.amd64
+ln -s "${dir}"/libubuntu-location-service${soversion}.install.with-gps "${dir}"/libubuntu-location-service${soversion}.install.arm64
 ln -s "${dir}"/libubuntu-location-service${soversion}.install.with-gps "${dir}"/libubuntu-location-service${soversion}.install.armhf
 ln -s "${dir}"/libubuntu-location-service${soversion}.install.with-gps "${dir}"/libubuntu-location-service${soversion}.install.i386
 
