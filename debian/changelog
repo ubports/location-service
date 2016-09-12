@@ -1,3 +1,10 @@
+location-service (3.0.0+16.10.20160912-0ubuntu1) yakkety; urgency=medium
+
+  [ Scott Sweeny, You-Sheng Yang ]
+  * Enable gps provider on arm64.
+
+ -- Scott Sweeny <scott.sweeny@canonical.com>  Mon, 12 Sep 2016 20:54:10 +0000
+
 location-service (3.0.0+16.10.20160811-0ubuntu1) yakkety; urgency=medium
 
   [ Alberto Mardegan ]
