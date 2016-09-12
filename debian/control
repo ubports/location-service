@@ -41,7 +41,7 @@ Homepage: http://launchpad.net/location-service
 Vcs-Bzr: https://code.launchpad.net/~phablet-team/location-service/trunk
 Vcs-Browser: http://bazaar.launchpad.net/~phablet-team/location-service/trunk/files
 
-Package: libubuntu-location-service2
+Package: libubuntu-location-service3
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -58,7 +58,7 @@ Section: libdevel
 Architecture: any
 Multi-Arch: foreign
 Recommends: ubuntu-location-service-doc,
-Depends: libubuntu-location-service2 (= ${binary:Version}),
+Depends: libubuntu-location-service3 (= ${binary:Version}),
          libdbus-1-dev,
          libdbus-cpp-dev,
          libboost-dev,
@@ -74,7 +74,7 @@ Package: libubuntu-location-service-dbg
 Section: debug
 Architecture: any
 Multi-Arch: foreign
-Depends: libubuntu-location-service2 (= ${binary:Version}),
+Depends: libubuntu-location-service3 (= ${binary:Version}),
          ${misc:Depends},
 Description: location service aggregating position/velocity/heading
  updates and exporting them over dbus.
@@ -92,7 +92,7 @@ Description: location service aggregating position/velocity/heading
 
 Package: ubuntu-location-service-bin
 Architecture: any
-Depends: libubuntu-location-service2 (= ${binary:Version}),
+Depends: libubuntu-location-service3 (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends},
          trust-store-bin,
@@ -106,7 +106,7 @@ Description: location service aggregating position/velocity/heading
 Package: ubuntu-location-service-examples
 Architecture: any
 Multi-Arch: same
-Depends: libubuntu-location-service2 (= ${binary:Version}),
+Depends: libubuntu-location-service3 (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends},
          ubuntu-location-service-doc,

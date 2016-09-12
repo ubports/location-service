@@ -46,9 +46,5 @@ override_dh_auto_configure:
 	dh_auto_configure -- -DCMAKE_INSTALL_LIBEXECDIR=/usr/lib/$(DEB_HOST_MULTIARCH)/ubuntu-location-service -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX) -DLOCATION_SERVICE_ENABLE_GPS_PROVIDER=$(LOCATION_SERVICE_ENABLE_GPS_PROVIDER) -DUBUNTU_LOCATION_SERVICE_VERSION_MAJOR=$(major) -DUBUNTU_LOCATION_SERVICE_VERSION_MINOR=$(minor) -DUBUNTU_LOCATION_SERVICE_VERSION_PATCH=$(patch)
 
 override_dh_auto_clean:
-	rm -f $(CURDIR)/debian/libubuntu-location-service$(major).install.amd64
-	rm -f $(CURDIR)/debian/libubuntu-location-service$(major).install.arm64
-	rm -f $(CURDIR)/debian/libubuntu-location-service$(major).install.armhf
-	rm -f $(CURDIR)/debian/libubuntu-location-service$(major).install.i386
-	/bin/sh $(CURDIR)/debian/gen-debian-files.sh $(CURDIR)/debian
+	/bin/sh $(CURDIR)/debian/bileto_pre_release_hook
 	dh_auto_clean
