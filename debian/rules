@@ -27,7 +27,7 @@ major=$(shell echo $(full_version) | cut -d'.' -f1)
 minor=$(shell echo $(full_version) | cut -d'.' -f2)
 patch=$(shell echo $(full_version) | cut -d'.' -f3)
 
-ifneq (,$(filter $(DEB_HOST_ARCH),ppc64el powerpc arm64))
+ifneq (,$(filter $(DEB_HOST_ARCH),ppc64el powerpc))
         LOCATION_SERVICE_ENABLE_GPS_PROVIDER = OFF
 else
         LOCATION_SERVICE_ENABLE_GPS_PROVIDER = ON
