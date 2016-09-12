@@ -36,9 +36,9 @@ output_dir=`pwd`
 [ $# -eq 2 ] && output_dir=$2
 
 # Write the various version numbers into a bunch of files. This allows
-# us to easily pick them up from both gen-debian-files.sh and CMakeLists.txt.
+# us to easily pick them up from both bileto_pre_release_hook and CMakeLists.txt.
 
-distro=$(lsb_release -c -s)
+[ -n "$SERIES" ] || SERIES="$(lsb_release -c -s)"
 
 full_version=$(cat "${dir}"/VERSION)
 
@@ -51,13 +51,13 @@ vivid_full_version=$(cat "${dir}"/VERSION.vivid)
 vivid_major=$(echo $vivid_full_version | cut -d'.' -f1)
 vivid_soversion=$vivid_major
 
-if [ "$distro" = "vivid" ]
+if [ "$SERIES" = "vivid" ]
 then
     soversion=${vivid_soversion}
 else
     soversion="${major}"
 fi
-[ -n $soversion ]
+[ -n "$soversion" ]
 
 echo ${full_version} >${output_dir}/libubuntu-location-service.full-version
 echo ${major} >${output_dir}/libubuntu-location-service.major-version
