@@ -12,12 +12,9 @@ Contents:
    :maxdepth: 2
 
    intro
+   cli
+   api
    hacking
-   debugging
-   daemon_and_cli
-   manual_testing
-   tips_n_tricks
-
 
 Indices and tables
 ==================
