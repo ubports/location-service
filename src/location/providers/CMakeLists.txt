@@ -3,6 +3,7 @@ add_subdirectory(fusion)
 add_subdirectory(mls)
 add_subdirectory(remote)
 add_subdirectory(gps)
+add_subdirectory(ubx)
 
 set(
   ENABLED_PROVIDER_TARGETS
