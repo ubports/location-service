@@ -16,11 +16,16 @@ apps:
     command: bin/locationd run --bus=system
     slots: [service-control, service-observe]
     plugs: [network-manager]
+  list-providers:
+    command: bin/locationd list    
   status:
     command: bin/locationd status --bus=system
     plugs: [client-observe]
   monitor:
     command: bin/locationd monitor --bus=system
+    plugs: [client-control]
+  provide:
+    command: bin/locationd provide --bus=system
     plugs: [client-control]
 
 slots:
