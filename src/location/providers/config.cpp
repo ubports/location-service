@@ -20,6 +20,7 @@
 
 #include "dummy/provider.h"
 #include "mls/provider.h"
+#include "ubx/provider.h"
 
 #include <map>
 
@@ -44,6 +45,12 @@ static FactoryInjector mls_injector
 {
     "mls::Provider",
     location::providers::mls::Provider::create_instance
+};
+
+static FactoryInjector ubx_injector
+{
+    "ubx::Provider",
+    location::providers::ubx::Provider::create_instance
 };
 
 #if defined(LOCATION_PROVIDERS_GPS)

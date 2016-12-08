@@ -132,9 +132,4 @@ add_subdirectory(po)
 add_subdirectory(src)
 add_subdirectory(tests)
 
-# There's no nice way to format this. Thanks CMake.
-add_test(LGPL-required
-  /bin/sh -c "! grep -rl 'GNU General' ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/include"
-)
-
 enable_coverage_report(service)

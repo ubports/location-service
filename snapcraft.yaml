@@ -14,24 +14,29 @@ apps:
   run:
     daemon: simple
     command: bin/locationd run --bus=system
-    slots: [control, observe]
+    slots: [service-control, service-observe]
     plugs: [network-manager]
+  list-providers:
+    command: bin/locationd list    
   status:
     command: bin/locationd status --bus=system
-    plugs: [control]
+    plugs: [client-observe]
   monitor:
     command: bin/locationd monitor --bus=system
-    plugs: [observe]
+    plugs: [client-control]
+  provide:
+    command: bin/locationd provider --bus=system
+    plugs: [client-control]
 
 slots:
-    observe:
+    service-observe:
         interface: location-observe
-    control:
+    service-control:
         interface: location-control
 plugs:
-    observe:
+    client-observe:
         interface: location-observe
-    control:
+    client-control:
         interface: location-control
 
 parts:
