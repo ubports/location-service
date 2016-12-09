@@ -97,7 +97,7 @@ void ubx::Provider::Monitor::operator()(const _8::nmea::Vtg&) const
 
 location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderFactory::Configuration& config)
 {
-    return location::Provider::Ptr{new ubx::Provider{config.get<std::string>("device", "/dev/ttyUSB1")}};
+    return location::Provider::Ptr{new ubx::Provider{config.get<std::string>("device", "/dev/ttyS5")}};
 }
 
 ubx::Provider::Provider(const boost::filesystem::path& device)

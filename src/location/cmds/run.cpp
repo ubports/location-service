@@ -30,6 +30,7 @@
 
 #include <location/dbus/skeleton/service.h>
 #include <location/providers/dummy/provider.h>
+#include <location/providers/ubx/provider.h>
 #include <location/util/well_known_bus.h>
 
 #include <core/dbus/asio/executor.h>
@@ -78,7 +79,14 @@ location::cmds::Run::Run()
         {
             ctxt.cout << "Running under testing..." << std::endl;
             engine->add_provider(std::make_shared<location::providers::dummy::Provider>());
-        }        
+        }
+
+        // TODO(tvoss): Make this dynamic and handled by an outer layer of infrastructure.
+        try {
+            engine->add_provider(location::providers::ubx::Provider::create_instance({}));
+        } catch (const std::exception& e) {
+            ctxt.cout << "Failed to instantiate ubx::Provider.";
+        }
 
         auto incoming = std::make_shared<core::dbus::Bus>(bus);
         auto outgoing = std::make_shared<core::dbus::Bus>(bus);

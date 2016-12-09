@@ -15,7 +15,7 @@ apps:
     daemon: simple
     command: bin/locationd run --bus=system
     slots: [service-control, service-observe]
-    plugs: [network-manager]
+    plugs: [ubx, network-manager]
   list-providers:
     command: bin/locationd list    
   status:
@@ -38,6 +38,9 @@ plugs:
         interface: location-observe
     client-control:
         interface: location-control
+    ubx:
+        interface: serial-port
+        path: /dev/ttyS5
 
 parts:
   location-service:
