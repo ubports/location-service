@@ -41,6 +41,10 @@ void ubx::Provider::Monitor::on_new_chunk(_8::Receiver::Buffer::iterator, _8::Re
 
 void ubx::Provider::Monitor::on_new_nmea_sentence(const _8::nmea::Sentence& sentence)
 {
+    // TODO(tvoss): This is a little verbose and we should remove it
+    // for production scenarios.
+    std::cout << sentence << std::endl;
+
     boost::apply_visitor(*this, sentence);
 }
 
