@@ -23,7 +23,7 @@ apps:
     plugs: [client-observe]
   monitor:
     command: bin/locationd monitor --bus=system
-    plugs: [client-control]
+    plugs: [client-control client-observe]
   provide:
     command: bin/locationd provider --bus=system
     plugs: [client-control]
