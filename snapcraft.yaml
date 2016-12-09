@@ -40,7 +40,6 @@ plugs:
         interface: location-control
     ubx:
         interface: serial-port
-        path: /dev/ttyS5
 
 parts:
   location-service:
