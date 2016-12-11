@@ -101,7 +101,7 @@ void ubx::Provider::Monitor::operator()(const _8::nmea::Vtg&) const
 
 location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderFactory::Configuration& config)
 {
-    return location::Provider::Ptr{new ubx::Provider{config.get<std::string>("device", "/dev/ttyS5")}};
+    return location::Provider::Ptr{new ubx::Provider{config.get<std::string>("device", "/dev/ttyS4")}};
 }
 
 ubx::Provider::Provider(const boost::filesystem::path& device)
@@ -109,11 +109,13 @@ ubx::Provider::Provider(const boost::filesystem::path& device)
       monitor{std::make_shared<Monitor>(this)},
       receiver{_8::SerialPortReceiver::create(runtime->service(), device, monitor)}
 {
+    runtime->start();
 }
 
 ubx::Provider::~Provider() noexcept
 {
     deactivate();
+    runtime->stop();
 }
 
 void ubx::Provider::on_new_event(const Event&)
