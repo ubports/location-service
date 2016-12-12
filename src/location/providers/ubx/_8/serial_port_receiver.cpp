@@ -40,13 +40,8 @@ void ubx::_8::SerialPortReceiver::start_read()
                             [thiz, this](const boost::system::error_code& ec, std::size_t transferred) {
                                 if (ec == boost::asio::error::operation_aborted)
                                     return;
-
-                                std::cerr << "Received chunk: " << std::endl;
-                                std::cerr << std::string(buffer.begin(), buffer.begin() + transferred) << std::endl;
-
                                 if (not ec)
                                     process_chunk(buffer.begin(), buffer.begin() + transferred);
-
                                 start_read();
                             });
 }

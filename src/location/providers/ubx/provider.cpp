@@ -43,8 +43,7 @@ void ubx::Provider::Monitor::on_new_nmea_sentence(const _8::nmea::Sentence& sent
 {
     // TODO(tvoss): This is a little verbose and we should remove it
     // for production scenarios.
-    std::cout << sentence << std::endl;
-
+    LOG(INFO) << sentence;
     boost::apply_visitor(*this, sentence);
 }
 
@@ -134,23 +133,19 @@ bool ubx::Provider::satisfies(const location::Criteria&)
 
 void ubx::Provider::enable()
 {
-    LOG(INFO) << __PRETTY_FUNCTION__;
 }
 
 void ubx::Provider::disable()
 {
-    LOG(INFO) << __PRETTY_FUNCTION__;
 }
 
 void ubx::Provider::activate()
 {
-    LOG(INFO) << __PRETTY_FUNCTION__;
     receiver->start();
 }
 
 void ubx::Provider::deactivate()
 {
-    LOG(INFO) << __PRETTY_FUNCTION__;
     receiver->stop();
 }
 
