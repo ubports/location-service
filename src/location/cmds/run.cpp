@@ -85,7 +85,7 @@ location::cmds::Run::Run()
         try {
             engine->add_provider(location::providers::ubx::Provider::create_instance({}));
         } catch (const std::exception& e) {
-            ctxt.cout << "Failed to instantiate ubx::Provider.";
+            ctxt.cout << "Failed to instantiate ubx::Provider: " << e.what();
         }
 
         auto incoming = std::make_shared<core::dbus::Bus>(bus);

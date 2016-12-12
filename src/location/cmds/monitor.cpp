@@ -72,7 +72,7 @@ location::cmds::Monitor::Monitor(const std::shared_ptr<Delegate>& delegate)
       bus{core::dbus::WellKnownBus::system}
 {
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
-    action([this](const Context&)
+    action([this](const Context& ctxt)
     {
         // We exit cleanly for SIGINT and SIGTERM.
         auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_int, core::posix::Signal::sig_term});
@@ -111,6 +111,8 @@ location::cmds::Monitor::Monitor(const std::shared_ptr<Delegate>& delegate)
         session->updates().position_status = location::Service::Session::Updates::Status::enabled;
         session->updates().heading_status = location::Service::Session::Updates::Status::enabled;
         session->updates().velocity_status = location::Service::Session::Updates::Status::enabled;
+
+        ctxt.cout << "Enabled position/heading/velocity updates..." << std::endl;
 
         trap->run();
 

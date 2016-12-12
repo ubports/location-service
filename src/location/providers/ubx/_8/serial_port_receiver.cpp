@@ -20,10 +20,9 @@ ubx::_8::SerialPortReceiver::SerialPortReceiver(boost::asio::io_service& ios, co
 
 void ubx::_8::SerialPortReceiver::start()
 {
-    if (-1 == ::tcflush(sp.lowest_layer().native_handle(), TCIOFLUSH))
-        throw std::system_error(errno, std::system_category());
-
+    auto flush_rc = ::tcflush(sp.lowest_layer().native_handle(), TCIOFLUSH);
     start_read();
+    if (flush_rc) throw std::system_error(errno, std::system_category());
 }
 
 void ubx::_8::SerialPortReceiver::stop() { sp.cancel(); }
@@ -35,6 +34,9 @@ void ubx::_8::SerialPortReceiver::start_read()
                             [thiz, this](const boost::system::error_code& ec, std::size_t transferred) {
                                 if (ec == boost::asio::error::operation_aborted)
                                     return;
+
+                                std::cerr << "Received chunk: " << std::endl;
+                                std::cerr << std::string(buffer.begin(), buffer.begin() + transferred) << std::endl;
 
                                 if (not ec)
                                     process_chunk(buffer.begin(), buffer.begin() + transferred);
