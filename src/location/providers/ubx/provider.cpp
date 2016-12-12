@@ -134,20 +134,24 @@ bool ubx::Provider::satisfies(const location::Criteria&)
 
 void ubx::Provider::enable()
 {
-    receiver->start();
+    LOG(INFO) << __PRETTY_FUNCTION__;
 }
 
 void ubx::Provider::disable()
 {
-    receiver->stop();
+    LOG(INFO) << __PRETTY_FUNCTION__;
 }
 
 void ubx::Provider::activate()
 {
+    LOG(INFO) << __PRETTY_FUNCTION__;
+    receiver->start();
 }
 
 void ubx::Provider::deactivate()
 {
+    LOG(INFO) << __PRETTY_FUNCTION__;
+    receiver->stop();
 }
 
 const core::Signal<location::Update<location::Position>>& ubx::Provider::position_updates() const
