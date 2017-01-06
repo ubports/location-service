@@ -21,8 +21,12 @@
 #include <location/logging.h>
 #include <location/runtime.h>
 
+#include <core/posix/this_process.h>
+
+#include <fstream>
 #include <thread>
 
+namespace env = core::posix::this_process::env;
 namespace ubx = location::providers::ubx;
 
 std::string ubx::Provider::class_name()
@@ -100,7 +104,12 @@ void ubx::Provider::Monitor::operator()(const _8::nmea::Vtg&) const
 
 location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderFactory::Configuration& config)
 {
-    return location::Provider::Ptr{new ubx::Provider{config.get<std::string>("device", "/dev/ttyS4")}};
+    std::string device_path;
+    std::ifstream in(env::get("SNAP_DATA") + "/ubx/provider/path");
+
+    in >> device_path;
+
+    return location::Provider::Ptr{new ubx::Provider{config.get<std::string>("device", device_path.empty() ? "/dev/ttyS4" : device_path)}};
 }
 
 ubx::Provider::Provider(const boost::filesystem::path& device)

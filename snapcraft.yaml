@@ -42,6 +42,9 @@ plugs:
         interface: serial-port
 
 parts:
+  hooks:
+    plugin: dump
+    source: prebuilt          
   location-service:
     plugin: cmake
     configflags:
