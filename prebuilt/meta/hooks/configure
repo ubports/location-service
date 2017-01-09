@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if path=$(snapctl get ubx::provider::path); then
+if path=$(snapctl get ubx.provider.path); then
     mkdir -p $SNAP_DATA/ubx/provider
     echo "$path" > $SNAP_DATA/ubx/provider/path
 fi
