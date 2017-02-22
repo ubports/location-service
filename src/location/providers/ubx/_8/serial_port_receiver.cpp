@@ -41,7 +41,21 @@ void ubx::_8::SerialPortReceiver::start_read()
                                 if (ec == boost::asio::error::operation_aborted)
                                     return;
                                 if (not ec)
-                                    process_chunk(buffer.begin(), buffer.begin() + transferred);
-                                start_read();
+                                {
+                                    try
+                                    {
+                                        process_chunk(buffer.begin(), buffer.begin() + transferred);
+                                    }
+                                    catch(const std::exception& e)
+                                    {
+                                        LOG(WARNING) << "Error processing NMEA chunk: " << e.what();
+                                    }
+                                    catch(...)
+                                    {
+                                        LOG(WARNING) << "Error processing NMEA chunk";
+                                    }
+
+                                    start_read();
+                                }
                             });
 }
