@@ -43,17 +43,16 @@ void ubx::_8::SerialPortReceiver::start_read()
                                     {
                                         process_chunk(buffer.begin(), buffer.begin() + transferred);
                                     }
-                                    catch (const std::exception& e)
+                                    catch(const std::exception& e)
                                     {
                                         LOG(WARNING) << "Error processing NMEA chunk: " << e.what();
                                     }
-                                    catch (...)
+                                    catch(...)
                                     {
                                         LOG(WARNING) << "Error processing NMEA chunk.";
                                     }
 
                                     start_read();
                                 }
-
                             });
 }
