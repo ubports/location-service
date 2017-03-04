@@ -40,7 +40,7 @@ ubx::Provider::Monitor::Monitor(Provider* provider) : provider{provider}
 
 void ubx::Provider::Monitor::on_new_chunk(_8::Receiver::Buffer::iterator, _8::Receiver::Buffer::iterator)
 {
-    // We are dropping raw chunks on purpose here.
+    // We drop the chunk on purpose.
 }
 
 void ubx::Provider::Monitor::on_new_nmea_sentence(const _8::nmea::Sentence& sentence)
@@ -51,9 +51,29 @@ void ubx::Provider::Monitor::on_new_nmea_sentence(const _8::nmea::Sentence& sent
     boost::apply_visitor(*this, sentence);
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Gga&) const
-{
-    // Empty on purpose
+void ubx::Provider::Monitor::operator()(const _8::nmea::Gga& gga) const
+{   
+    if (gga.latitude && gga.longitude)
+    {
+        auto lat = gga.latitude.get();
+        auto lon = gga.longitude.get();
+
+        Position position
+        {
+            (lat.degrees + lat.minutes / 60.f) * units::degrees,
+            (lon.degrees + lon.minutes / 60.f) * units::degrees
+        };
+
+        if (gga.altitude)
+            position.altitude(units::Meters::from_value(*gga.altitude));
+
+        // TODO(tvoss): Maximum accuracy should be reported by the receiver
+        // implementation rather than hardcoding 3 [m] here.
+        if (gga.hdop)
+            position.accuracy().horizontal(gga.hdop.get() * 3. * units::meters);
+
+        provider->updates.position(location::Update<location::Position>{position});
+    }
 }
 
 void ubx::Provider::Monitor::operator()(const _8::nmea::Gsa&) const
@@ -71,25 +91,9 @@ void ubx::Provider::Monitor::operator()(const _8::nmea::Gsv&) const
     // Empty on purpose
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Rmc& rmc) const
+void ubx::Provider::Monitor::operator()(const _8::nmea::Rmc&) const
 {
-    if (rmc.latitude && rmc.longitude)
-    {
-        auto lat = rmc.latitude.get();
-        auto lon = rmc.longitude.get();
-
-        auto pos = location::Position{
-            (lat.degrees + lat.minutes) * units::degrees,
-            (lon.degrees + lon.minutes) * units::degrees};
-
-        provider->updates.position(location::Update<location::Position>{pos});
-    }
-
-    if (rmc.course_over_ground)
-        provider->updates.heading(location::Update<units::Degrees>{rmc.course_over_ground.get() * units::degrees});
-
-    if (rmc.speed_over_ground)
-        provider->updates.velocity(location::Update<units::MetersPerSecond>{rmc.speed_over_ground.get() * units::meters_per_second});
+    // Empty on purpose
 }
 
 void ubx::Provider::Monitor::operator()(const _8::nmea::Txt&) const
@@ -97,9 +101,16 @@ void ubx::Provider::Monitor::operator()(const _8::nmea::Txt&) const
     // Empty on purpose
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Vtg&) const
+void ubx::Provider::Monitor::operator()(const _8::nmea::Vtg& vtg) const
 {
-    // Empty on purpose
+    if (vtg.cog_true)
+        provider->updates.heading(
+                    Update<units::Degrees>(
+                        vtg.cog_true.get() * units::degrees));
+    if (vtg.sog_kmh)
+        provider->updates.velocity(
+                    Update<units::MetersPerSecond>(
+                        vtg.sog_kmh.get() * 1000./3600. * units::meters_per_second));
 }
 
 location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderFactory::Configuration& config)
@@ -109,7 +120,7 @@ location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderF
 
     in >> device_path;
 
-    return location::Provider::Ptr{new ubx::Provider{config.get<std::string>("device", device_path.empty() ? "/dev/ttyS4" : device_path)}};
+    return location::Provider::Ptr{new ubx::Provider{config.get<std::string>("device", device_path.empty() ? "/dev/ttyACM0" : device_path)}};
 }
 
 ubx::Provider::Provider(const boost::filesystem::path& device)

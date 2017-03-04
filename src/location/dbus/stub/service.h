@@ -20,12 +20,12 @@
 
 #include <location/service.h>
 
+#include <location/result.h>
 #include <location/dbus/service.h>
+#include <location/dbus/service_gen.h>
+#include <location/glib/shared_object.h>
 
-#include <core/dbus/bus.h>
-#include <core/dbus/object.h>
-#include <core/dbus/property.h>
-#include <core/dbus/service.h>
+#include <gio/gio.h>
 
 namespace location
 {
@@ -33,33 +33,73 @@ namespace dbus
 {
 namespace stub
 {
-class Service : public location::Service
+class Service : public location::Service, public std::enable_shared_from_this<Service>
 {
   public:
-    Service(const core::dbus::Bus::Ptr& connection,
-            const core::dbus::Service::Ptr& service,
-            const core::dbus::Object::Ptr& object);
+    using Ptr = std::shared_ptr<Service>;
 
-    Session::Ptr create_session_for_criteria(const Criteria& criteria) override;
+    static void create(std::function<void(const Result<Service::Ptr>&)> callback);
+
+    ~Service();
+
+    // From location::Service
+    void create_session_for_criteria(const Criteria& criteria, const std::function<void(const Session::Ptr&)>& cb) override;
+    void add_provider(const Provider::Ptr &provider) override;
     const core::Property<State>& state() const override;
     core::Property<bool>& does_satellite_based_positioning() override;
     core::Property<bool>& does_report_cell_and_wifi_ids() override;
     core::Property<bool>& is_online() override;
     core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles() override;
-    void add_provider(const Provider::Ptr &provider) override;
 
   private:
-    core::dbus::Bus::Ptr connection;
-    core::dbus::Service::Ptr service;
-    core::dbus::Object::Ptr object;
+    struct BusAcquisitionContext
+    {
+        std::function<void(const Result<Service::Ptr>&)> cb;
+    };
+    static void on_bus_acquired(GObject* source, GAsyncResult* res, gpointer user_data);
 
+    struct ProxyCreationContext
+    {
+        glib::SharedObject<GDBusConnection> connection;
+        std::function<void(const Result<Service::Ptr>&)> cb;
+    };
+    static void on_proxy_ready(GObject* source, GAsyncResult* res, gpointer user_data);
+
+    struct SessionCreationContext
+    {
+        std::function<void(const Session::Ptr&)> cb;
+        std::weak_ptr<Service> wp;
+    };
+    static void on_session_ready(GObject *source, GAsyncResult *res, gpointer user_data);
+
+    struct ProviderAdditionContext
+    {
+        Provider::Ptr provider;
+        std::weak_ptr<Service> wp;
+    };
+    static void on_provider_added(GObject* source, GAsyncResult* res, gpointer user_data);
+
+    static void on_does_satellite_based_positioning_changed(GObject* object, GParamSpec* spec, gpointer user_data);
+    static void on_does_report_cell_and_wifi_ids_changed(GObject* object, GParamSpec* spec, gpointer user_data);
+    static void on_is_online_changed(GObject* object, GParamSpec* spec, gpointer user_data);
+
+    Service(const glib::SharedObject<GDBusConnection>& connection,
+            const glib::SharedObject<ComUbuntuLocationService>& service);
+
+    std::shared_ptr<Service> finalize_construction();
+
+    glib::SharedObject<GDBusConnection> connection;
+    glib::SharedObject<ComUbuntuLocationService> proxy;
+    std::set<ulong> signal_handler_ids;
+
+    std::uint64_t provider_counter{0};
     std::set<Provider::Ptr> providers;
 
-    std::shared_ptr<core::dbus::Property<location::dbus::Service::Properties::State>> state_;
-    std::shared_ptr<core::dbus::Property<location::dbus::Service::Properties::DoesSatelliteBasedPositioning>> does_satellite_based_positioning_;
-    std::shared_ptr<core::dbus::Property<location::dbus::Service::Properties::DoesReportCellAndWifiIds>> does_report_cell_and_wifi_ids_;
-    std::shared_ptr<core::dbus::Property<location::dbus::Service::Properties::IsOnline>> is_online_;
-    std::shared_ptr<core::dbus::Property<location::dbus::Service::Properties::VisibleSpaceVehicles>> visible_space_vehicles_;
+    core::Property<Service::State> state_;
+    core::Property<bool> does_satellite_based_positioning_;
+    core::Property<bool> does_report_cell_and_wifi_ids_;
+    core::Property<bool> is_online_;
+    core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>> visible_space_vehicles_;
 };
 }
 }

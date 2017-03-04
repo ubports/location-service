@@ -21,6 +21,7 @@
 #define LOCATION_CMDS_PROVIDER_H_
 
 #include <location/optional.h>
+#include <location/service.h>
 #include <location/util/cli.h>
 #include <location/util/well_known_bus.h>
 #include <location/visibility.h>
@@ -43,6 +44,7 @@ public:
 private:
     core::dbus::WellKnownBus bus;   // The bus we should connect to.
     Optional<std::string> id;       // The id of the actual provider implementation.
+    Service::Ptr service;           // The service instance.
 };
 }
 }

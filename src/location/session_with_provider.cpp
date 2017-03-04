@@ -74,6 +74,13 @@ location::SessionWithProvider::SessionWithProvider(const Provider::Ptr& provider
 {
 }
 
+location::SessionWithProvider::~SessionWithProvider()
+{
+    stop_position_updates();
+    stop_heading_updates();
+    stop_velocity_updates();
+}
+
 location::Service::Session::Updates& location::SessionWithProvider::updates()
 {
     return updates_;

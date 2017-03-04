@@ -19,6 +19,8 @@
 
 #include <location/criteria.h>
 
+#include <iostream>
+
 struct location::Criteria::Accuracy::Private
 {
     location::Optional<location::units::Meters> horizontal_;

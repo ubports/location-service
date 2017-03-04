@@ -133,13 +133,13 @@ core::Property<std::map<location::SpaceVehicle::Key, location::SpaceVehicle>>& l
     return visible_space_vehicles_;
 }
 
-location::Service::Session::Ptr location::ServiceWithEngine::create_session_for_criteria(const Criteria& criteria)
+void location::ServiceWithEngine::create_session_for_criteria(const Criteria& criteria, const std::function<void(const Session::Ptr&)>& cb)
 {
     auto selection = engine->determine_provider_selection_for_criteria(criteria);
-    return std::make_shared<SessionWithProvider>(
+    cb(std::make_shared<SessionWithProvider>(
                 fusion::Provider::create(
                     std::set<Provider::Ptr>{selection.position_updates_provider, selection.heading_updates_provider, selection.velocity_updates_provider},
-                    std::make_shared<fusion::NewerOrMoreAccurateUpdateSelector>()));
+                    std::make_shared<fusion::NewerOrMoreAccurateUpdateSelector>())));
 }
 
 void location::ServiceWithEngine::add_provider(const Provider::Ptr &provider)

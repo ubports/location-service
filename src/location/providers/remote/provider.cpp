@@ -17,510 +17,484 @@
  */
 
 #include <location/providers/remote/provider.h>
-#include <location/providers/remote/interface.h>
 
 #include <location/dbus/codec.h>
+#include <location/dbus/util.h>
+#include <location/glib/holder.h>
+#include <location/glib/runtime.h>
+#include <location/glib/util.h>
+
 #include <location/events/registry.h>
 #include <location/events/reference_position_updated.h>
 #include <location/events/wifi_and_cell_id_reporting_state_changed.h>
 #include <location/logging.h>
 
-#include <core/dbus/object.h>
-#include <core/dbus/service_watcher.h>
-#include <core/dbus/signal.h>
-#include <core/dbus/asio/executor.h>
-
 #include <core/posix/this_process.h>
-
-#include <boost/asio.hpp>
 
 #include <thread>
 
 namespace cul = location;
 namespace remote = location::providers::remote;
 
-namespace dbus = core::dbus;
-
 namespace
 {
-template<typename T>
-T throw_if_error_or_return(const dbus::Result<T>& result)
+
+using SkeletonHolder = location::glib::Holder<std::weak_ptr<remote::Provider::Skeleton>>;
+using Holder = location::glib::Holder<std::weak_ptr<remote::Provider::Stub>>;
+
+}  // namespace
+
+void remote::Provider::Stub::create(
+        const glib::SharedObject<GDBusConnection>& connection,
+        const std::string& name,
+        const std::string& path,
+        std::function<void(const Result<Provider::Ptr>&)> cb)
 {
-    if (result.is_error()) throw std::runtime_error
+    com_ubuntu_location_service_provider_proxy_new(
+                connection.get(), G_DBUS_PROXY_FLAGS_NONE, name.c_str(), path.c_str(),
+                nullptr, on_proxy_ready, new OnProxyReadyContext{std::move(cb)});
+}
+
+void remote::Provider::Stub::on_proxy_ready(
+        GObject* source, GAsyncResult* res, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(source);
+
+    if (auto context = static_cast<OnProxyReadyContext*>(user_data))
     {
-        result.error().print()
-    };
-    return result.value();
-}
+        GError* error{nullptr};
+        auto proxy = com_ubuntu_location_service_provider_proxy_new_finish(res, &error);
 
-core::dbus::types::ObjectPath generate_path_for_observer()
-{
-    static constexpr const char* pattern{"/com/ubuntu/location/provider/observer/%1%"};
-    static std::size_t counter{0};
-
-    return core::dbus::types::ObjectPath{(boost::format{pattern} % ++counter).str()};
-}
-}
-
-remote::Provider::Observer::Stub::Stub(const core::dbus::Object::Ptr& object)
-    : object{object}
-{
-
-}
-
-void remote::Provider::Observer::Stub::on_new_position(const Update<Position>& update)
-{
-    try
-    {
-        object->invoke_method_asynchronously_with_callback<remote::Interface::Observer::UpdatePosition, void>([](const core::dbus::Result<void>&)
+        if (error)
         {
-
-        }, update);
-    }
-    catch(const std::exception& e)
-    {
-        LOG(WARNING) << e.what();
-    }
-    catch(...)
-    {
-    }
-}
-
-void remote::Provider::Observer::Stub::on_new_heading(const Update<units::Degrees>& update)
-{
-    try
-    {
-        object->invoke_method_asynchronously_with_callback<remote::Interface::Observer::UpdateHeading, void>([](const core::dbus::Result<void>&)
-        {
-
-        }, update);
-    }
-    catch(const std::exception& e)
-    {
-        LOG(WARNING) << e.what();
-    }
-    catch(...)
-    {
-    }
-}
-
-void remote::Provider::Observer::Stub::on_new_velocity(const Update<units::MetersPerSecond>& update)
-{
-    try
-    {
-        object->invoke_method_asynchronously_with_callback<remote::Interface::Observer::UpdateVelocity, void>([](const core::dbus::Result<void>&)
-        {
-
-        }, update);
-    }
-    catch(const std::exception& e)
-    {
-        LOG(WARNING) << e.what();
-    }
-    catch(...)
-    {
-    }
-}
-
-remote::Provider::Observer::Skeleton::Skeleton(const core::dbus::Bus::Ptr& bus, const core::dbus::Object::Ptr& object, const std::shared_ptr<Observer>& impl)
-    : bus{bus}, object{object}, impl{impl}
-{
-    object->install_method_handler<remote::Interface::Observer::UpdatePosition>([this](const core::dbus::Message::Ptr& msg)
-    {
-        VLOG(50) << "remote::Interface::Observer::UpdatePosition";
-        location::Update<location::Position> update; msg->reader() >> update;
-        on_new_position(update);
-        Skeleton::bus->send(dbus::Message::make_method_return(msg));
-    });
-
-    object->install_method_handler<remote::Interface::Observer::UpdateHeading>([this](const core::dbus::Message::Ptr& msg)
-    {
-        VLOG(50) << "remote::Interface::Observer::UpdateHeading";
-        location::Update<location::units::Degrees> update; msg->reader() >> update;
-        on_new_heading(update);
-        Skeleton::bus->send(dbus::Message::make_method_return(msg));
-    });
-
-    object->install_method_handler<remote::Interface::Observer::UpdateVelocity>([this](const core::dbus::Message::Ptr& msg)
-    {
-        VLOG(50) << "remote::Interface::Observer::UpdateVelocity";
-        location::Update<location::units::MetersPerSecond> update; msg->reader() >> update;
-        on_new_velocity(update);
-        Skeleton::bus->send(dbus::Message::make_method_return(msg));
-    });
-}
-
-void remote::Provider::Observer::Skeleton::on_new_position(const Update<Position>& update)
-{
-    impl->on_new_position(update);
-}
-
-void remote::Provider::Observer::Skeleton::on_new_heading(const Update<units::Degrees>& update)
-{
-    impl->on_new_heading(update);
-}
-
-void remote::Provider::Observer::Skeleton::on_new_velocity(const Update<units::MetersPerSecond>& update)
-{
-    impl->on_new_velocity(update);
-}
-
-struct remote::Provider::Stub::Private
-{
-    Private(const remote::stub::Configuration& config, location::Provider::Requirements requirements)
-            : bus{config.bus},
-              service{config.service},
-              object{config.object},
-              requirements{requirements},
-              stub{object}
-    {
-    }
-
-    ~Private()
-    {
-    }
-
-    dbus::Bus::Ptr bus;
-    dbus::Service::Ptr service;
-    dbus::Object::Ptr object;
-    location::Provider::Requirements requirements;
-    remote::Interface::Stub stub;
-    std::set<std::shared_ptr<remote::Provider::Observer>> observers;
-    struct
-    {
-        core::Signal<location::Update<location::Position>> position;
-        core::Signal<location::Update<location::units::Degrees>> heading;
-        core::Signal<location::Update<location::units::MetersPerSecond>> velocity;
-    } updates;
-};
-
-void remote::Provider::Stub::create_instance_with_config(const remote::stub::Configuration& config, const std::function<void(const Provider::Ptr&)>& cb)
-{
-    config.object->invoke_method_asynchronously_with_callback<remote::Interface::Requirements, Provider::Requirements>([config, cb](const core::dbus::Result<Provider::Requirements>& result)
-    {
-        VLOG(50) << "Finished querying results from remote provider: " << std::boolalpha << result.is_error();
-        if (not result.is_error())
-        {
-            std::shared_ptr<remote::Provider::Stub> provider{new remote::Provider::Stub{config, result.value()}};
-            cb(provider->finalize());
+            context->cb(location::make_error_result<location::Provider::Ptr>(
+                glib::wrap_error_as_exception(error)));
         }
         else
         {
-            LOG(WARNING) << result.error().print();
+            std::shared_ptr<remote::Provider::Stub> sp{new remote::Provider::Stub{
+                        location::glib::make_shared_object(proxy)
+                }};
+            context->cb(location::make_result<location::Provider::Ptr>(sp->finalize_construction()));
         }
-    });
+
+        delete context;
+    }
 }
 
-remote::Provider::Stub::Stub(const remote::stub::Configuration& config, Provider::Requirements requirements)
-        : d(new Private(config, requirements))
+remote::Provider::Stub::Stub(const glib::SharedObject<ComUbuntuLocationServiceProvider>& stub)
+    : stub_{stub},
+      requirements_{*dbus::decode<Requirements>(
+                        com_ubuntu_location_service_provider_get_requirements(stub_.get()))}
 {
 }
 
-std::shared_ptr<remote::Provider::Stub> remote::Provider::Stub::finalize()
+std::shared_ptr<remote::Provider::Stub> remote::Provider::Stub::finalize_construction()
 {
-    auto thiz = shared_from_this();
-    add_observer(thiz);
-    return thiz;
+    auto sp = shared_from_this();
+    std::weak_ptr<Stub> wp{sp};
+
+    g_signal_connect_data(stub_.get(), "notify::requirements",
+                          G_CALLBACK(on_requirements_changed),
+                          new Holder{wp}, Holder::closure_notify, GConnectFlags(0));
+
+    g_signal_connect_data(stub_.get(), "notify::position",
+                          G_CALLBACK(on_position_updated),
+                          new Holder{wp}, Holder::closure_notify, GConnectFlags(0));
+
+    g_signal_connect_data(stub_.get(), "notify::heading",
+                          G_CALLBACK(on_heading_updated),
+                          new Holder{wp}, Holder::closure_notify, GConnectFlags(0));
+
+    g_signal_connect_data(stub_.get(), "notify::velocity",
+                          G_CALLBACK(on_velocity_updated),
+                          new Holder{wp}, Holder::closure_notify, GConnectFlags(0));
+
+    return sp;
 }
 
 remote::Provider::Stub::~Stub() noexcept
 {
-    VLOG(10) << __PRETTY_FUNCTION__;
-}
-
-void remote::Provider::Stub::add_observer(const std::shared_ptr<Observer>& observer)
-{
-    auto thiz = shared_from_this();
-
-    auto path = generate_path_for_observer();
-    auto skeleton = std::make_shared<remote::Provider::Observer::Skeleton>(
-                d->bus, d->service->add_object_for_path(path), observer);
-
-    d->stub.object->invoke_method_asynchronously_with_callback<remote::Interface::AddObserver, void>([thiz, skeleton](const dbus::Result<void>& result)
-    {
-        if (not result.is_error())
-            thiz->d->observers.insert(skeleton);
-        else
-            LOG(WARNING) << result.error().print();
-    }, path);
-}
-
-void remote::Provider::Stub::on_new_position(const Update<Position>& update)
-{
-    d->updates.position(update);
-}
-
-void remote::Provider::Stub::on_new_heading(const Update<units::Degrees>& update)
-{
-    d->updates.heading(update);
-}
-
-void remote::Provider::Stub::on_new_velocity(const Update<units::MetersPerSecond>& update)
-{
-    d->updates.velocity(update);
 }
 
 void remote::Provider::Stub::on_new_event(const Event& event)
 {
-    VLOG(50) << __PRETTY_FUNCTION__;
-    events::All all;
-
-    if (event.type() == TypeOf<events::ReferencePositionUpdated>::query())
-        all = dynamic_cast<const events::ReferencePositionUpdated&>(event);
-    else if (event.type() == TypeOf<events::WifiAndCellIdReportingStateChanged>::query())
-        all = dynamic_cast<const events::WifiAndCellIdReportingStateChanged&>(event);
-
-    d->stub.object->invoke_method_asynchronously_with_callback<remote::Interface::OnNewEvent, void>([](const dbus::Result<void>& result)
-    {
-        if (result.is_error())
-            LOG(WARNING) << result.error().print();
-    }, all);
+    com_ubuntu_location_service_provider_call_on_new_event(stub_.get(), dbus::encode(event), nullptr, nullptr, nullptr);
 }
 
 void remote::Provider::Stub::enable()
 {
-    VLOG(50) << __PRETTY_FUNCTION__;
-    d->stub.object->invoke_method_asynchronously_with_callback<remote::Interface::Enable, void>([](const dbus::Result<void>& result)
-    {
-        if (result.is_error()) LOG(WARNING) << result.error().print();
-    });
+    com_ubuntu_location_service_provider_call_enable(stub_.get(), nullptr, nullptr, nullptr);
 }
 
 void remote::Provider::Stub::disable()
 {
-    VLOG(50) << __PRETTY_FUNCTION__;
-    d->stub.object->invoke_method_asynchronously_with_callback<remote::Interface::Disable, void>([](const dbus::Result<void>& result)
-    {
-        if (result.is_error()) LOG(WARNING) << result.error().print();
-    });
+    com_ubuntu_location_service_provider_call_disable(stub_.get(), nullptr, nullptr, nullptr);
 }
 
 void remote::Provider::Stub::activate()
 {
-    VLOG(50) << __PRETTY_FUNCTION__;
-    d->stub.object->invoke_method_asynchronously_with_callback<remote::Interface::Activate, void>([](const dbus::Result<void>& result)
-    {
-        if (result.is_error()) LOG(WARNING) << result.error().print();
-    });
+    com_ubuntu_location_service_provider_call_activate(stub_.get(), nullptr, nullptr, nullptr);
 }
 
 void remote::Provider::Stub::deactivate()
 {
-    VLOG(50) << __PRETTY_FUNCTION__;
-    d->stub.object->invoke_method_asynchronously_with_callback<remote::Interface::Deactivate, void>([](const dbus::Result<void>& result)
-    {
-        if (result.is_error()) LOG(WARNING) << result.error().print();
-    });
+    com_ubuntu_location_service_provider_call_deactivate(stub_.get(), nullptr, nullptr, nullptr);
 }
 
 location::Provider::Requirements remote::Provider::Stub::requirements() const
 {
-    return d->requirements;
+    return requirements_;
 }
 
 bool remote::Provider::Stub::satisfies(const Criteria& criteria)
 {
-    return throw_if_error_or_return(d->stub.object->transact_method<remote::Interface::Satisfies, bool>(criteria));
+    gboolean result{false};
+    if (!com_ubuntu_location_service_provider_call_satisfies_sync(stub_.get(), dbus::encode(criteria), &result, nullptr, nullptr))
+        return false;
+    return result;
 }
 
 const core::Signal<location::Update<location::Position>>& remote::Provider::Stub::position_updates() const
 {
-    return d->updates.position;
+    return position_updates_;
 }
 
 const core::Signal<location::Update<location::units::Degrees>>& remote::Provider::Stub::heading_updates() const
 {
-    return d->updates.heading;
+    return heading_updates_;
 }
 
 const core::Signal<location::Update<location::units::MetersPerSecond>>& remote::Provider::Stub::velocity_updates() const
 {
-    return d->updates.velocity;
+    return velocity_updates_;
 }
 
-struct remote::Provider::Skeleton::Private
+void remote::Provider::Stub::on_requirements_changed(GObject* object, GParamSpec* spec, gpointer user_data)
 {
-    Private(const remote::skeleton::Configuration& config)
-            : bus(config.bus),
-              skeleton(config.object),
-              impl(config.provider),
-              connections
-              {
-                  impl->position_updates().connect([this](const cul::Update<cul::Position>& position)
-                  {
-                      VLOG(100) << "Position changed reported by impl: " << position;                      
-                      for (const auto& observer : observers)
-                          observer->on_new_position(position);
-                  }),
-                  impl->heading_updates().connect([this](const location::Update<location::units::Degrees>& heading)
-                  {
-                      VLOG(100) << "Heading changed reported by impl: " << heading;
-                      for (const auto& observer : observers)
-                          observer->on_new_heading(heading);
-                  }),
-                  impl->velocity_updates().connect([this](const location::Update<location::units::MetersPerSecond>& velocity)
-                  {
-                      VLOG(100) << "Velocity changed reported by impl: " << velocity;
-                      for (const auto& observer : observers)
-                          observer->on_new_velocity(velocity);
-                  })
-              }
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(object, spec);
+
+    if (auto holder = static_cast<Holder*>(user_data))
     {
-    }
-
-    core::dbus::Bus::Ptr bus;
-    remote::Interface::Skeleton skeleton;
-    cul::Provider::Ptr impl;
-    std::set<std::shared_ptr<remote::Provider::Observer>> observers;
-    // All connections to signals go here.
-    struct
-    {
-        core::ScopedConnection position_changed;
-        core::ScopedConnection heading_changed;
-        core::ScopedConnection velocity_changed;
-    } connections;
-};
-
-remote::Provider::Skeleton::Skeleton(const remote::skeleton::Configuration& config)
-    : cul::Provider(),
-      d(new Private(config))
-{
-    // And install method handlers.
-    d->skeleton.object->install_method_handler<remote::Interface::Satisfies>([this](const dbus::Message::Ptr & msg)
-    {
-        VLOG(1) << "Satisfies";
-
-        cul::Criteria criteria; msg->reader() >> criteria;
-        auto reply = dbus::Message::make_method_return(msg);
-        reply->writer() << satisfies(criteria);
-
-        d->bus->send(reply);
-    });
-
-    d->skeleton.object->install_method_handler<remote::Interface::Requirements>([this](const dbus::Message::Ptr & msg)
-    {
-        VLOG(1) << "Requirements";
-
-        auto reply = dbus::Message::make_method_return(msg);
-        reply->writer() << requirements();
-
-        d->bus->send(reply);
-    });
-
-    d->skeleton.object->install_method_handler<remote::Interface::Enable>([this](const dbus::Message::Ptr & msg)
-    {
-        VLOG(1) << "Enable";
-        enable();
-        d->bus->send(dbus::Message::make_method_return(msg));
-    });
-
-    d->skeleton.object->install_method_handler<remote::Interface::Disable>([this](const dbus::Message::Ptr & msg)
-    {
-        VLOG(1) << "Disable";
-        disable();
-        d->bus->send(dbus::Message::make_method_return(msg));
-    });
-
-    d->skeleton.object->install_method_handler<remote::Interface::Activate>([this](const dbus::Message::Ptr & msg)
-    {
-        VLOG(1) << "Activate";
-        activate();
-        d->bus->send(dbus::Message::make_method_return(msg));
-    });
-
-    d->skeleton.object->install_method_handler<remote::Interface::Deactivate>([this](const dbus::Message::Ptr & msg)
-    {
-        VLOG(1) << "Deactivate";
-        deactivate();
-        d->bus->send(dbus::Message::make_method_return(msg));
-    });
-
-    d->skeleton.object->install_method_handler<remote::Interface::AddObserver>([this](const dbus::Message::Ptr& msg)
-    {
-        VLOG(1) << "AddObserver";
-        core::dbus::types::ObjectPath path; msg->reader() >> path;
-        auto object = dbus::Service::use_service(d->bus, msg->sender())->object_for_path(path);
-        add_observer(std::make_shared<remote::Provider::Observer::Stub>(object));
-        d->bus->send(dbus::Message::make_method_return(msg));
-    });
-
-    d->skeleton.object->install_method_handler<remote::Interface::OnNewEvent>([this](const dbus::Message::Ptr& msg)
-    {
-        VLOG(1) << "OnNewEvent";
-        events::All all; msg->reader() >> all;
-        switch (all.which())
+        if (auto sp = holder->value.lock())
         {
-        case 1: on_new_event(boost::get<events::ReferencePositionUpdated>(all));            break;
-        case 2: on_new_event(boost::get<events::WifiAndCellIdReportingStateChanged>(all));  break;
+            auto requirements =
+                    dbus::decode<Requirements>(
+                        com_ubuntu_location_service_provider_get_requirements(
+                            sp->stub_.get()));
+            if (requirements)
+                sp->requirements_ = *requirements;
         }
-        d->bus->send(dbus::Message::make_method_return(msg));
+    }
+}
+
+void remote::Provider::Stub::on_position_updated(GObject* object, GParamSpec* spec, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(object, spec);
+
+    if (auto thiz = static_cast<Holder*>(user_data))
+    {
+        if (auto sp = thiz->value.lock())
+        {
+            auto update =
+                    dbus::decode<location::Update<location::Position>>(com_ubuntu_location_service_provider_get_position(
+                                                                           sp->stub_.get()));
+            if (update)
+                sp->position_updates_(*update);
+        }
+    }
+}
+
+void remote::Provider::Stub::on_heading_updated(GObject* object, GParamSpec* spec, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(object, spec);
+
+    if (auto thiz = static_cast<Holder*>(user_data))
+    {
+        if (auto sp = thiz->value.lock())
+        {
+            auto update =
+                    dbus::decode<location::Update<units::Degrees>>(com_ubuntu_location_service_provider_get_heading(
+                                                                       sp->stub_.get()));
+            if (update)
+                sp->heading_updates_(*update);
+        }
+    }
+}
+
+void remote::Provider::Stub::on_velocity_updated(GObject* object, GParamSpec* spec, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(object, spec);
+
+    if (auto thiz = static_cast<Holder*>(user_data))
+    {
+        if (auto sp = thiz->value.lock())
+        {
+            auto update =
+                    dbus::decode<location::Update<location::units::MetersPerSecond>>(com_ubuntu_location_service_provider_get_velocity(
+                                                                                         sp->stub_.get()));
+            if (update)
+                sp->velocity_updates_(*update);
+        }
+    }
+}
+
+location::Provider::Ptr remote::Provider::Skeleton::create(const glib::SharedObject<GDBusConnection>& connection,
+                                        const std::string& path,
+                                        const Provider::Ptr& impl)
+{
+    auto skeleton = glib::make_shared_object(com_ubuntu_location_service_provider_skeleton_new());
+
+    GError* error{nullptr};
+    if (!g_dbus_interface_skeleton_export(G_DBUS_INTERFACE_SKELETON(skeleton.get()), connection.get(), path.c_str(), &error))
+        std::rethrow_exception(glib::wrap_error_as_exception(error));
+
+    std::shared_ptr<remote::Provider::Skeleton> sp{new remote::Provider::Skeleton{skeleton, impl}};
+    return sp->finalize_construction();
+}
+
+remote::Provider::Skeleton::Skeleton(const glib::SharedObject<ComUbuntuLocationServiceProvider>& skeleton,
+                                     const Provider::Ptr& impl)
+    : skeleton_{skeleton},
+      impl_{impl}
+{    
+}
+
+std::shared_ptr<remote::Provider::Skeleton> remote::Provider::Skeleton::finalize_construction()
+{
+    auto sp = shared_from_this();
+    std::weak_ptr<Skeleton> wp{sp};
+
+    g_signal_connect_data(skeleton_.get(), "handle-on-new-event",
+                          G_CALLBACK(Skeleton::handle_on_new_event),
+                          new SkeletonHolder{wp}, SkeletonHolder::closure_notify, GConnectFlags(0));
+
+    g_signal_connect_data(skeleton_.get(), "handle-satisfies",
+                          G_CALLBACK(Skeleton::handle_satisfies),
+                          new SkeletonHolder{wp}, SkeletonHolder::closure_notify, GConnectFlags(0));
+
+    g_signal_connect_data(skeleton_.get(), "handle-enable",
+                          G_CALLBACK(Skeleton::handle_enable),
+                          new SkeletonHolder{wp}, SkeletonHolder::closure_notify, GConnectFlags(0));
+
+    g_signal_connect_data(skeleton_.get(), "handle-disable",
+                          G_CALLBACK(Skeleton::handle_disable),
+                          new SkeletonHolder{wp}, SkeletonHolder::closure_notify, GConnectFlags(0));
+
+    g_signal_connect_data(skeleton_.get(), "handle-activate",
+                          G_CALLBACK(Skeleton::handle_activate),
+                          new SkeletonHolder{wp}, SkeletonHolder::closure_notify, GConnectFlags(0));
+
+    g_signal_connect_data(skeleton_.get(), "handle-deactivate",
+                          G_CALLBACK(Skeleton::handle_deactivate),
+                          new SkeletonHolder{wp}, SkeletonHolder::closure_notify, GConnectFlags(0));
+
+    impl_->position_updates().connect([this, wp](const Update<Position>& value)
+    {
+        glib::Runtime::instance()->dispatch([this, wp, value]()
+        {
+            if (auto sp = wp.lock())
+                com_ubuntu_location_service_provider_set_position(skeleton_.get(), dbus::encode(value));
+        });
     });
+
+    impl_->heading_updates().connect([this, wp](const Update<units::Degrees>& value)
+    {
+        glib::Runtime::instance()->dispatch([this, wp, value]()
+        {
+            if (auto sp = wp.lock())
+                com_ubuntu_location_service_provider_set_heading(skeleton_.get(), dbus::encode(value));
+        });
+    });
+
+    impl_->velocity_updates().connect([this, wp](const Update<units::MetersPerSecond>& value)
+    {
+        glib::Runtime::instance()->dispatch([this, wp, value]()
+        {
+            if (auto sp = wp.lock())
+                com_ubuntu_location_service_provider_set_velocity(skeleton_.get(), dbus::encode(value));
+        });
+    });
+
+    return sp;
 }
 
 remote::Provider::Skeleton::~Skeleton() noexcept
 {
-    d->skeleton.object->uninstall_method_handler<remote::Interface::Satisfies>();
-
-    d->skeleton.object->uninstall_method_handler<remote::Interface::Requirements>();
-    d->skeleton.object->uninstall_method_handler<remote::Interface::Enable>();
-    d->skeleton.object->uninstall_method_handler<remote::Interface::Disable>();
-    d->skeleton.object->uninstall_method_handler<remote::Interface::Activate>();
-    d->skeleton.object->uninstall_method_handler<remote::Interface::Deactivate>();
-    d->skeleton.object->uninstall_method_handler<remote::Interface::AddObserver>();
-}
-
-void remote::Provider::Skeleton::add_observer(const std::shared_ptr<Observer>& observer)
-{
-    d->observers.insert(observer);
 }
 
 // We just forward calls to the actual implementation
 bool remote::Provider::Skeleton::satisfies(const cul::Criteria& criteria)
 {
-    return d->impl->satisfies(criteria);
+    return impl_->satisfies(criteria);
 }
 
 location::Provider::Requirements remote::Provider::Skeleton::requirements() const
 {
-    return d->impl->requirements();
+    return impl_->requirements();
 }
 
 void remote::Provider::Skeleton::on_new_event(const Event& e)
 {
-    d->impl->on_new_event(e);
+    impl_->on_new_event(e);
 }
 
 void remote::Provider::Skeleton::enable()
 {
-    d->impl->enable();
+    impl_->enable();
 }
 
 void remote::Provider::Skeleton::disable()
 {
-    d->impl->disable();
+    impl_->disable();
 }
 
 void remote::Provider::Skeleton::activate()
 {
-    d->impl->activate();
+    impl_->activate();
 }
 
 void remote::Provider::Skeleton::deactivate()
 {
-    d->impl->deactivate();
+    impl_->deactivate();
 }
 
 const core::Signal<location::Update<location::Position>>& remote::Provider::Skeleton::position_updates() const
 {
-    return d->impl->position_updates();
+    return impl_->position_updates();
 }
 
 const core::Signal<location::Update<location::units::Degrees>>& remote::Provider::Skeleton::heading_updates() const
 {
-    return d->impl->heading_updates();
+    return impl_->heading_updates();
 }
 
 const core::Signal<location::Update<location::units::MetersPerSecond>>& remote::Provider::Skeleton::velocity_updates() const
 {
-    return d->impl->velocity_updates();
+    return impl_->velocity_updates();
+}
+
+bool remote::Provider::Skeleton::handle_on_new_event(
+        ComUbuntuLocationServiceProvider* provider, GDBusMethodInvocation* invocation, GVariant* event, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(provider);
+
+    if (auto holder = static_cast<SkeletonHolder*>(user_data))
+    {
+        if (auto sp = holder->value.lock())
+        {
+            if (auto decoded_event = dbus::decode<Event::Ptr>(event))
+            {
+                sp->on_new_event(*(decoded_event.get()));
+                com_ubuntu_location_service_provider_complete_on_new_event(provider, invocation);
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool remote::Provider::Skeleton::handle_satisfies(
+        ComUbuntuLocationServiceProvider* provider, GDBusMethodInvocation* invocation, GVariant* criteria, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(provider);
+
+    if (auto holder = static_cast<SkeletonHolder*>(user_data))
+    {
+        if (auto sp = holder->value.lock())
+        {
+            if (auto decoded_criteria = dbus::decode<Criteria>(criteria))
+            {
+                bool satisfies = sp->satisfies(*decoded_criteria);
+                com_ubuntu_location_service_provider_complete_satisfies(provider, invocation, satisfies);
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool remote::Provider::Skeleton::handle_enable(
+        ComUbuntuLocationServiceProvider* provider, GDBusMethodInvocation* invocation, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(provider);
+
+    if (auto holder = static_cast<SkeletonHolder*>(user_data))
+    {
+        if (auto sp = holder->value.lock())
+        {
+            sp->enable();
+            com_ubuntu_location_service_provider_complete_enable(provider, invocation);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool remote::Provider::Skeleton::handle_disable(
+        ComUbuntuLocationServiceProvider* provider, GDBusMethodInvocation* invocation, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(provider);
+
+    if (auto holder = static_cast<SkeletonHolder*>(user_data))
+    {
+        if (auto sp = holder->value.lock())
+        {
+            sp->disable();
+            com_ubuntu_location_service_provider_complete_disable(provider, invocation);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool remote::Provider::Skeleton::handle_activate(
+        ComUbuntuLocationServiceProvider* provider, GDBusMethodInvocation* invocation, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(provider);
+
+    if (auto holder = static_cast<SkeletonHolder*>(user_data))
+    {
+        if (auto sp = holder->value.lock())
+        {
+            sp->activate();
+            com_ubuntu_location_service_provider_complete_activate(provider, invocation);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool remote::Provider::Skeleton::handle_deactivate(
+        ComUbuntuLocationServiceProvider* provider, GDBusMethodInvocation* invocation, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(provider);
+
+    if (auto holder = static_cast<SkeletonHolder*>(user_data))
+    {
+        if (auto sp = holder->value.lock())
+        {
+            sp->deactivate();
+            com_ubuntu_location_service_provider_complete_deactivate(provider, invocation);
+            return true;
+        }
+    }
+
+    return false;
 }

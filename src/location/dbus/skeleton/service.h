@@ -21,16 +21,16 @@
 
 #include <location/service.h>
 #include <location/permission_manager.h>
+#include <location/result.h>
 
 #include <location/dbus/service.h>
+#include <location/dbus/service_gen.h>
+#include <location/dbus/skeleton/session.h>
+#include <location/glib/shared_object.h>
 
-#include <core/dbus/dbus.h>
-#include <core/dbus/object.h>
-#include <core/dbus/property.h>
-#include <core/dbus/service_watcher.h>
-#include <core/dbus/skeleton.h>
+#include <unordered_map>
 
-#include <core/dbus/interfaces/properties.h>
+#include <gio/gio.h>
 
 namespace location
 {
@@ -38,41 +38,33 @@ namespace dbus
 {
 namespace skeleton
 {
-class Service
-        : public location::Service,
-          public std::enable_shared_from_this<Service>
+class Service : public location::Service,
+                public std::enable_shared_from_this<Service>
 {
 public:
-    typedef std::shared_ptr<Service> Ptr;
+    typedef std::shared_ptr<Service> Ptr;    
 
-    // Models resolution of an incoming dbus message to the credentials of the message sender.
-    struct CredentialsResolver
+    struct Configuration
     {
-        typedef std::shared_ptr<CredentialsResolver> Ptr;
-
-        CredentialsResolver() = default;
-        virtual ~CredentialsResolver() = default;
-
-        // Resolves the sender of msg to the respective credentials.
-        virtual Credentials resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg) = 0;
+        location::Service::Ptr impl;                    // The actual service implementation.
+        PermissionManager::Ptr permission_manager;      // A permission manager implementation.
     };
 
-    // Implements CredentialsResolver by reaching out to the dbus daemon and
-    // invoking:
-    //   * GetConnectionUnixProcessID
-    //   * GetConnectionUnixUser
-    struct DBusDaemonCredentialsResolver : public CredentialsResolver
-    {
-        // Sets up a new instance for the given bus connection.
-        DBusDaemonCredentialsResolver(const core::dbus::Bus::Ptr& bus);
+    static Ptr create(const Configuration& configuration);
 
-        // Resolves the sender of msg to pid, uid by calling out to the dbus daemon.
-        Credentials resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg);
+    Service(const Configuration& configuration);
+    ~Service() noexcept;
 
-        // Stub for accessing the dbus daemon.
-        core::dbus::DBus daemon;
-    };
+    // From location::service::Interface
+    const core::Property<State>& state() const override;
+    core::Property<bool>& does_satellite_based_positioning() override;
+    core::Property<bool>& does_report_cell_and_wifi_ids() override;
+    core::Property<bool>& is_online() override;
+    core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles() override;
+    void create_session_for_criteria(const Criteria& criteria, const std::function<void(const Session::Ptr&)>& cb) override;
+    void add_provider(const Provider::Ptr& provider) override;
 
+private:
     // Models the generation of stable and unique object paths for client-specific sessions.
     // The requirements for the resulting object path are:
     //   * Unique for the entire system over its complete lifetime
@@ -89,117 +81,107 @@ public:
         //    [1.] Query the AppArmor profile name for pid in credentials.
         //    [1.1] If the process is running unconfined, rely on a counter to assemble the session name.
         //    [1.2] If the process is confined, use the AppArmor profile name to generate the path.
-        virtual core::dbus::types::ObjectPath object_path_for_caller_credentials(const Credentials& credentials);
+        virtual std::string object_path_for_caller_credentials(const Credentials& credentials);
     };
 
-    struct Configuration
+    // Resolves the credentials of a caller:
+    //   * GetConnectionUnixProcessID
+    //   * GetConnectionUnixUser
+    class DBusDaemonCredentialsResolver
     {
-        location::Service::Ptr impl;                        // The actual service implementation.
-        core::dbus::Bus::Ptr incoming;                      // DBus connection set up for handling requests to the service.
-        core::dbus::Bus::Ptr outgoing;                      // DBus connection for reaching out to other services in a non-blocking way.
-        core::dbus::Service::Ptr service;                   // Service instance that the skeleton should be exposed upon.
-        CredentialsResolver::Ptr credentials_resolver;      // An implementation of CredentialsResolver.
-        ObjectPathGenerator::Ptr object_path_generator;     // An implementation of ObjectPathGenerator.
-        PermissionManager::Ptr permission_manager; // A permission manager implementation.
+    public:
+        // Sets up a new instance for the given bus connection.
+        DBusDaemonCredentialsResolver(const glib::SharedObject<GDBusConnection>& connection);
+
+        // Resolves the caller to pid, uid by calling out to the dbus daemon.
+        void resolve_credentials_for_sender(const std::string& sender, std::function<void(const Result<Credentials>&)> cb);
+
+    private:
+        struct CredentialsQueryContext
+        {
+            glib::SharedObject<GDBusProxy> daemon;
+            std::function<void(const Result<Credentials>&)> callback;
+        };
+
+        struct ProcessIdQueryContext
+        {
+            glib::SharedObject<GDBusProxy> daemon;
+            std::string sender;
+            std::function<void(const Result<Credentials>&)> cb;
+        };
+
+        struct UserIdQueryContext
+        {
+            glib::SharedObject<GDBusProxy> daemon;
+            std::string sender;
+            std::uint32_t process_id;
+            std::function<void(const Result<Credentials>&)> cb;
+        };
+
+        static void handle_daemon_proxy_ready(
+                GObject* source, GAsyncResult* result, gpointer user_data);
+        static void handle_unix_process_id_ready(
+                GObject* source, GAsyncResult* result, gpointer user_data);
+        static void handle_unix_user_id_ready(
+                GObject* source, GAsyncResult* result, gpointer user_data);
+        static void handle_credentials_query_finished(
+                GObject* source, GAsyncResult* result, gpointer user_data);
+
+        glib::SharedObject<GDBusProxy> daemon{nullptr};
     };
 
-    Service(const Configuration& configuration);
-    ~Service() noexcept;
+    static void on_bus_acquired(
+            GDBusConnection* connection, const gchar* name, gpointer user_data);
+    static void on_name_acquired(
+            GDBusConnection* connection, const gchar* name, gpointer user_data);
+    static void on_name_lost(
+            GDBusConnection* connection, const gchar* name, gpointer user_data);
+    static void on_name_vanished(
+            GDBusConnection* connection, const gchar* name, gpointer user_data);
 
-    // From location::service::Interface
-    const core::Property<State>& state() const override;
-    core::Property<bool>& does_satellite_based_positioning() override;
-    core::Property<bool>& does_report_cell_and_wifi_ids() override;
-    core::Property<bool>& is_online() override;
-    core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles() override;
-    Session::Ptr create_session_for_criteria(const Criteria& criteria) override;
-    void add_provider(const Provider::Ptr& provider) override;
+    static gboolean handle_create_session_for_criteria(
+            ComUbuntuLocationService* service, GDBusMethodInvocation* invocation, GVariant* criteria, gpointer user_data);
+    static gboolean handle_add_provider(
+            ComUbuntuLocationService* service, GDBusMethodInvocation* invocation, const gchar* path, gpointer user_data);
+    static gboolean handle_remove_provider(
+            ComUbuntuLocationService* service, GDBusMethodInvocation* invocation, const gchar* path, gpointer user_data);
 
-protected:
-    // Enable subclasses to alter the state.
-    core::Property<State>& mutable_state();
-private:
-    // Handles incoming message calls for add_provider.
-    // Dispatches to the actual implementation and manages object lifetimes.
-    void handle_add_provider(const core::dbus::Message::Ptr& msg);
+    static void on_does_satellite_based_positioning_changed(
+            GObject* object, GParamSpec* spec, gpointer user_data);
+    static void on_does_report_cell_and_wifi_ids_changed(
+            GObject* object, GParamSpec* spec, gpointer user_data);
+    static void on_is_online_changed(
+            GObject* object, GParamSpec* spec, gpointer user_data);
 
-    // Handles incoming message calls for create_session_for_criteria.
-    // Dispatches to the actual implementation, and manages object lifetimes.
-    void handle_create_session_for_criteria(const core::dbus::Message::Ptr& msg);
+    std::shared_ptr<Service> finalize_construction();
 
-    // Tries to register the given session under the given path in the session store.
-    // Returns true iff the session has been added to the store.
-    bool add_to_session_store_for_path(
-            const core::dbus::types::ObjectPath& path,
-            std::unique_ptr<core::dbus::ServiceWatcher> watcher,
-            const Session::Ptr& session);
+    void on_bus_acquired(GDBusConnection* connection, const std::string& name);
+    void on_name_acquired(GDBusConnection* connection, const std::string& name);
+    void on_name_lost(GDBusConnection* connection, const std::string& name);
+    void on_name_vanished(GDBusConnection* connection, const std::string& name);
 
-    // Removes the session with the given path from the session store.
-    void remove_from_session_store_for_path(const core::dbus::types::ObjectPath& path);
-
-    // Called whenever the overall state of the service changes.
-    void on_state_changed(State state);
-    // Called whenever the value of the respective property changes.
-    void on_does_satellite_based_positioning_changed(bool value);
-    // Called whenever the value of the respective property changes.
-    void on_does_report_cell_and_wifi_ids_changed(bool value);
-    // Called whenever the value of the respective property changes.
-    void on_is_online_changed(bool value);
+    void create_session(const glib::SharedObject<GDBusMethodInvocation>& invocation, const Criteria& criteria);
+    void create_session(const glib::SharedObject<GDBusMethodInvocation>& invocation, const Criteria& criteria, const Credentials& credentials);
 
     // Stores the configuration passed in at creation time.
     Configuration configuration;
-    // We observe sessions if they have died and resigned from the bus.
-    core::dbus::DBus daemon;
-    // The skeleton object representing com.ubuntu.location.service.Interface on the bus.
-    core::dbus::Object::Ptr object;
-    // We emit property changes manually.
-    core::dbus::Signal
-    <
-        core::dbus::interfaces::Properties::Signals::PropertiesChanged,
-        core::dbus::interfaces::Properties::Signals::PropertiesChanged::ArgumentType
-    >::Ptr properties_changed;
 
-    // DBus properties as exposed on the bus for com.ubuntu.location.service.Interface
-    struct
-    {
-        std::shared_ptr< core::dbus::Property<location::dbus::Service::Properties::State> > state;
-        std::shared_ptr< core::dbus::Property<location::dbus::Service::Properties::DoesSatelliteBasedPositioning> > does_satellite_based_positioning;
-        std::shared_ptr< core::dbus::Property<location::dbus::Service::Properties::DoesReportCellAndWifiIds> > does_report_cell_and_wifi_ids;
-        std::shared_ptr< core::dbus::Property<location::dbus::Service::Properties::IsOnline> > is_online;
-        std::shared_ptr< core::dbus::Property<location::dbus::Service::Properties::VisibleSpaceVehicles> > visible_space_vehicles;
-    } properties;
-    // We sign up to property changes here, to be able to report them to the bus
-    struct
-    {
-        struct
-        {
-            core::ScopedConnection state;
-            core::ScopedConnection does_satellite_based_positioning;
-            core::ScopedConnection does_report_cell_and_wifi_ids;
-            core::ScopedConnection is_online;
-        } dbus;
-
-        struct
-        {
-            core::ScopedConnection state;
-            core::ScopedConnection does_satellite_based_positioning;
-            core::ScopedConnection does_report_cell_and_wifi_ids;
-            core::ScopedConnection is_online;
-        } impl;
-    } connections;
-    // Guards the session store.
-    std::mutex guard;
-    // We track sessions and their respective watchers.
-    struct Element
-    {
-        std::unique_ptr<core::dbus::ServiceWatcher> watcher;
-        std::shared_ptr<location::Service::Session> session;
-    };
     // Keeps track of running sessions, keying them by their unique object path.
-    std::map<core::dbus::types::ObjectPath, Element> session_store;
+    std::unordered_map<std::string, skeleton::Session::Ptr> session_store;
+    std::unordered_map<std::string, std::string> bus_name_to_session_path_map;
+    // Keeps track of providers
+    std::unordered_map<std::string, location::Provider::Ptr> provider_store;
+
+    ObjectPathGenerator object_path_generator;
+
+    glib::SharedObject<GDBusConnection> connection;
+    glib::SharedObject<ComUbuntuLocationService> skeleton;
+    glib::SharedObject<GDBusObjectManagerServer> object_manager_server;
+    std::shared_ptr<DBusDaemonCredentialsResolver> credentials_resolver;
 };
-}
-}
-}
+
+}  // namespace skeleton
+}  // namespace dbus
+}  // namespace location
 
 #endif // LOCATION_DBUS_SKELETON_SERVICE_H_

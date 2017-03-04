@@ -40,29 +40,3 @@ TEST(Position, InitWithLatLonAltGivesValidFieldsForLatLonAlt)
 }
 
 #include <location/dbus/codec.h>
-
-#include <core/dbus/message_streaming_operators.h>
-
-TEST(Position, EncodingAndDecodingGivesSameResults)
-{
-    auto p = location::Position{}
-            .latitude(9. * location::units::degrees)
-            .longitude(53. * location::units::degrees)
-            .altitude(-2 * location::units::meters);
-    p.accuracy()
-            .horizontal(300*location::units::meters)
-            .vertical(100*location::units::meters);
-
-    auto msg = core::dbus::Message::make_method_call(
-        "org.freedesktop.DBus",
-        core::dbus::types::ObjectPath("/org/freedesktop/DBus"),
-        "org.freedesktop.DBus",
-        "ListNames");
-
-    msg->writer() << p;
-
-    location::Position pp;
-    msg->reader() >> pp;
-
-    EXPECT_EQ(p, pp);
-}

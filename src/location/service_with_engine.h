@@ -34,7 +34,7 @@ public:
     core::Property<bool>& is_online() override;
     core::Property<bool>& does_report_cell_and_wifi_ids() override;
     core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles() override;
-    Session::Ptr create_session_for_criteria(const Criteria& criteria) override;
+    void create_session_for_criteria(const Criteria& criteria, const std::function<void(const Session::Ptr&)>& cb) override;
     void add_provider(const Provider::Ptr &provider) override;
 
 private:

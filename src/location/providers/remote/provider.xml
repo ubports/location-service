@@ -1,0 +1,40 @@
+<node>
+        <interface name='com.ubuntu.location.Service.Provider'>
+                <method name='Satisfies'>
+                    <!--
+                    The following keys are optional:
+                      * position: boolean
+                      * heading: boolean
+                      * velocity: boolean
+                    -->
+                    <arg name="requirements" type="a{sv}" direction='in'/>
+                    <arg name="result" type="b" direction='out'/>
+                </method>
+                <method name='Enable'/>
+                <method name='Disable'/>
+                <method name='Activate'/>
+                <method name='Deactivate'/>
+                <method name='OnNewEvent'>
+                    <arg name="event" type="a{sv}" direction="in"/>
+                </method>
+                <!--
+                The following keys are optional:
+                  * position: boolean
+                  * heading: boolean
+                  * velocity: boolean
+                -->
+                <property name='Requirements' type='a{sv}' access='read'/>
+                <!--
+                The following keys are always available in the dictionary:
+                  * latitude: double
+                  * longitude: double
+                The following keys are optional:
+                  * horizontal-accuracy: double
+                  * altitude: double
+                  * vertical-accuracy: double
+                -->
+                <property name='Position' type='(ta{sv})' access='read'/>
+                <property name='Velocity' type='(t(d))' access='read' />
+                <property name='Heading' type='(t(d))' access='read' />
+        </interface>
+</node>

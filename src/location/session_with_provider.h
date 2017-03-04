@@ -27,6 +27,7 @@ class SessionWithProvider : public Service::Session
 {
 public:
     SessionWithProvider(const Provider::Ptr& provider);
+    virtual ~SessionWithProvider();
 
     // From Session::Service.
     Updates& updates() override;

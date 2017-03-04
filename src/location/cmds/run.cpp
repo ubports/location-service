@@ -21,13 +21,14 @@
 
 #include <location/boost_ptree_settings.h>
 #include <location/fusion_provider_selection_policy.h>
-#include <location/runtime.h>
 #include <location/serializing_bus.h>
 #include <location/service_with_engine.h>
 #include <location/settings.h>
 #include <location/system_configuration.h>
 #include <location/trust_store_permission_manager.h>
 
+#include <location/glib/runtime.h>
+#include <location/glib/serializing_bus.h>
 #include <location/dbus/skeleton/service.h>
 #include <location/providers/dummy/provider.h>
 #include <location/providers/ubx/provider.h>
@@ -53,14 +54,7 @@ location::cmds::Run::Run()
     {
         account_for_lp1447110();
 
-        // We exit cleanly for SIGINT and SIGTERM.
-        auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_term});
-        trap->signal_raised().connect([trap](core::posix::Signal)
-        {
-            trap->stop();
-        });        
-
-        auto rt = location::Runtime::create();
+        glib::Runtime runtime;
 
         // The engine instance is the core piece of functionality.
         auto engine = std::make_shared<location::Engine>(
@@ -68,7 +62,7 @@ location::cmds::Run::Run()
             // fusioned and filtered updates to sessions.
             std::make_shared<location::FusionProviderSelectionPolicy>(),
             // We serialize all messages passed through our internal bus via a specific strand on the runtime.
-            location::SerializingBus::create(rt),
+            location::glib::SerializingBus::create(),
             // We default to a location::Settings implementation that reads state from
             // an ini file, immediately syncing back changes to the underlying file whenever
             // parameters change.
@@ -81,44 +75,15 @@ location::cmds::Run::Run()
             engine->add_provider(std::make_shared<location::providers::dummy::Provider>());
         }
 
-        // TODO(tvoss): Make this dynamic and handled by an outer layer of infrastructure.
-        try {
-            engine->add_provider(location::providers::ubx::Provider::create_instance({}));
-        } catch (const std::exception& e) {
-            ctxt.cout << "Failed to instantiate ubx::Provider: " << e.what();
-        }
-
-        auto incoming = std::make_shared<core::dbus::Bus>(bus);
-        auto outgoing = std::make_shared<core::dbus::Bus>(bus);
-
-        incoming->install_executor(core::dbus::asio::make_executor(incoming, rt->service()));
-        outgoing->install_executor(core::dbus::asio::make_executor(outgoing, rt->service()));
-
-        auto service = core::dbus::Service::add_service<location::dbus::Service>(incoming);
-
         location::dbus::skeleton::Service::Configuration config
         {
             std::make_shared<location::ServiceWithEngine>(engine),
-            incoming,
-            outgoing,
-            service,
-            // We resolve credentials of incoming calls by talking back to the dbus daemon and subsequently
-            // querying apparmor for the confinement profile.
-            std::make_shared<location::dbus::skeleton::Service::DBusDaemonCredentialsResolver>(outgoing),
-            std::make_shared<location::dbus::skeleton::Service::ObjectPathGenerator>(),
-            // Incoming requests are verified by talking to a trust-store instance.
-            SystemConfiguration::instance().create_permission_manager(outgoing)
+            SystemConfiguration::instance().create_permission_manager()
         };
 
-        rt->start();
+        auto skeleton = location::dbus::skeleton::Service::create(config);
 
-        auto skeleton = std::make_shared<location::dbus::skeleton::Service>(config);
-
-        trap->run();
-
-        incoming->stop(); outgoing->stop(); rt->stop();
-
-        return EXIT_SUCCESS;
+        return runtime.run();
     });
 }
 

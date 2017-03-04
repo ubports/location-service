@@ -1,5 +1,5 @@
 /*
- * Copyright © 2016 Canonical Ltd.
+ * Copyright © 2017 Canonical Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License version 3,
@@ -15,18 +15,20 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_SERIALIZING_BUS_H_
-#define LOCATION_SERIALIZING_BUS_H_
+#ifndef LOCATION_GLIB_SERIALIZING_BUS_H_
+#define LOCATION_GLIB_SERIALIZING_BUS_H_
 
 #include <location/bus.h>
-#include <location/runtime.h>
 #include <location/visibility.h>
 
 #include <unordered_set>
 
 namespace location
 {
-/// @brief SerializingBus implements Bus, dispatching messages via a boost::asio::io_service strand.
+namespace glib
+{
+
+/// @brief SerializingBus implements Bus, dispatching messages via the global glib::Runtime instance.
 class LOCATION_DLL_PUBLIC SerializingBus : public std::enable_shared_from_this<SerializingBus>, public Bus
 {
 public:
@@ -44,6 +46,8 @@ private:
 
     std::unordered_set<Event::Receiver::Ptr> receivers;
 };
-}
 
-#endif // LOCATION_SERIALIZING_BUS_H_
+}  // namespace glib
+}  // namespace location
+
+#endif  // LOCATION_GLIB_SERIALIZING_BUS_H_

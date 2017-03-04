@@ -225,6 +225,13 @@ protected:
  * @return An instance of a connectivity manager.
  */
 LOCATION_DLL_PUBLIC const std::shared_ptr<Manager>& platform_default_manager();
+
+/**
+ * @brief Provides access to a platform-specific implementation/instance of a connectivity manager.
+ * @throw Manager::Errors::ConnectivityManagementNotSupported.
+ */
+LOCATION_DLL_PUBLIC void platform_default_manager(const std::function<void(const std::shared_ptr<Manager>&)>& cb);
+
 }
 }
 }

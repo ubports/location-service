@@ -70,7 +70,6 @@ include_directories (
 
 LOCATION_SERVICE_ADD_TEST(acceptance_tests acceptance_tests.cpp)
 LOCATION_SERVICE_ADD_TEST(boost_ptree_settings_test boost_ptree_settings_test.cpp)
-LOCATION_SERVICE_ADD_TEST(connectivity_manager_test connectivity_manager_test.cpp)
 LOCATION_SERVICE_ADD_TEST(daemon_and_cli_tests daemon_and_cli_tests.cpp)
 LOCATION_SERVICE_ADD_TEST(engine_test engine_test.cpp)
 LOCATION_SERVICE_ADD_TEST(event_test event_test.cpp)
@@ -120,6 +119,6 @@ endif (LOCATION_SERVICE_ENABLE_GEOCLUE_PROVIDERS)
 
 LOCATION_SERVICE_ADD_TEST(serializing_bus_test serializing_bus_test.cpp)
 
-LOCATION_SERVICE_ADD_TEST(remote_provider_test remote_provider_test.cpp)
-LOCATION_SERVICE_ADD_TEST(espoo_provider_test espoo_provider_test.cpp)
+# LOCATION_SERVICE_ADD_TEST(remote_provider_test remote_provider_test.cpp)
+# LOCATION_SERVICE_ADD_TEST(espoo_provider_test espoo_provider_test.cpp)
 LOCATION_SERVICE_ADD_TEST(bug_1447110 bug_1447110.cpp)
