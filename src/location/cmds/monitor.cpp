@@ -23,7 +23,6 @@
 #include <location/dbus/stub/service.h>
 #include <location/glib/runtime.h>
 #include <location/runtime.h>
-#include <location/util/well_known_bus.h>
 
 #include <type_traits>
 
@@ -51,14 +50,14 @@ void location::cmds::Monitor::PrintingDelegate::on_new_velocity(const Update<uni
 location::cmds::Monitor::Monitor(const std::shared_ptr<Delegate>& delegate)
     : CommandWithFlagsAndAction{cli::Name{"monitor"}, cli::Usage{"monitor"}, cli::Description{"monitors the daemon"}},
       delegate{delegate},
-      bus{core::dbus::WellKnownBus::system}
+      bus{dbus::Bus::system}
 {
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
     action([this](const Context& ctxt)
     {
         glib::Runtime runtime;
 
-        location::dbus::stub::Service::create([this, &ctxt](const Result<location::dbus::stub::Service::Ptr>& result) mutable
+        location::dbus::stub::Service::create(bus, [this, &ctxt](const Result<location::dbus::stub::Service::Ptr>& result) mutable
         {
             if (!result)
             {

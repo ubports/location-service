@@ -76,9 +76,6 @@ add_library(
   session_with_provider.h
   session_with_provider.cpp
 
-  trust_store_permission_manager.h
-  trust_store_permission_manager.cpp
-
   cmds/list.h
   cmds/list.cpp
   cmds/monitor.h
@@ -95,8 +92,6 @@ add_library(
   util/cli.h
   util/cli.cpp
   util/do_not_copy_or_move.h
-  util/well_known_bus.h
-  util/well_known_bus.cpp
 
   "${CMAKE_CURRENT_BINARY_DIR}/dbus/service_gen.h"
   "${CMAKE_CURRENT_BINARY_DIR}/dbus/service_gen.c"
@@ -104,6 +99,8 @@ add_library(
   "${CMAKE_CURRENT_BINARY_DIR}/dbus/session_gen.h"
   "${CMAKE_CURRENT_BINARY_DIR}/dbus/session_gen.c"
 
+  dbus/bus.h
+  dbus/bus.cpp
   dbus/codec.h
   dbus/codec.cpp
   dbus/util.h

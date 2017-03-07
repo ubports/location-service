@@ -20,9 +20,9 @@
 #ifndef LOCATION_CMDS_RUN_H_
 #define LOCATION_CMDS_RUN_H_
 
+#include <location/dbus/bus.h>
 #include <location/optional.h>
 #include <location/util/cli.h>
-#include <location/util/well_known_bus.h>
 #include <location/visibility.h>
 
 #include <boost/filesystem.hpp>
@@ -47,7 +47,7 @@ private:
     void account_for_lp1447110() const;
 
     bool testing;                               // Whether we are running in a testing environment.
-    core::dbus::WellKnownBus bus;               // The bus we should connect to.
+    dbus::Bus bus;                              // The bus we should connect to.
     Optional<boost::filesystem::path> config;   // Optionally load configuration from this config file.
     boost::filesystem::path settings;           // Runtime persistent state settings are loaded from this file.
 };

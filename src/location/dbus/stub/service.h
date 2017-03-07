@@ -21,6 +21,7 @@
 #include <location/service.h>
 
 #include <location/result.h>
+#include <location/dbus/bus.h>
 #include <location/dbus/service.h>
 #include <location/dbus/service_gen.h>
 #include <location/glib/shared_object.h>
@@ -38,7 +39,7 @@ class Service : public location::Service, public std::enable_shared_from_this<Se
   public:
     using Ptr = std::shared_ptr<Service>;
 
-    static void create(std::function<void(const Result<Service::Ptr>&)> callback);
+    static void create(Bus bus, std::function<void(const Result<Service::Ptr>&)> callback);
 
     ~Service();
 

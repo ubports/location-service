@@ -21,9 +21,6 @@
 #include <location/dbus/stub/service.h>
 #include <location/glib/runtime.h>
 #include <location/glib/runtime.h>
-#include <location/util/well_known_bus.h>
-
-#include <core/dbus/asio/executor.h>
 
 namespace cli = location::util::cli;
 
@@ -56,14 +53,14 @@ void location::cmds::Status::PrintingDelegate::on_summary(const Summary& summary
 location::cmds::Status::Status(const std::shared_ptr<Delegate>& delegate)
     : CommandWithFlagsAndAction{cli::Name{"status"}, cli::Usage{"status"}, cli::Description{"queries the status of the daemon"}},
       delegate{delegate},
-      bus{core::dbus::WellKnownBus::system}
+      bus{dbus::Bus::system}
 {
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
     action([this](const Context& ctxt)
     {
         location::glib::Runtime runtime;
 
-        location::dbus::stub::Service::create([this, &ctxt](const location::Result<location::dbus::stub::Service::Ptr>& result)
+        location::dbus::stub::Service::create(bus, [this, &ctxt](const location::Result<location::dbus::stub::Service::Ptr>& result)
         {
             if (result)
             {

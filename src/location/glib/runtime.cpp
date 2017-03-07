@@ -20,7 +20,10 @@
 
 #include <location/logging.h>
 
+#include <boost/core/ignore_unused.hpp>
+
 #include <gio/gunixinputstream.h>
+#include <glib.h>
 
 #include <system_error>
 
@@ -37,16 +40,44 @@ int signal_fd_or_throw()
     sigaddset(&sigset, SIGINT);
     sigaddset(&sigset, SIGTERM);
 
+    if (sigprocmask(SIG_BLOCK, &sigset, NULL) < 0)
+        throw std::system_error(errno, std::system_category());
+
     int result = ::signalfd(-1, &sigset, SFD_CLOEXEC | SFD_NONBLOCK);
-    if (result == -1) throw std::system_error(errno, std::system_category());
+    if (result == -1)
+        throw std::system_error(errno, std::system_category());
+
     return result;
 }
 
 int event_fd_or_throw()
 {
     int result = ::eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
-    if (result == -1) throw std::system_error(errno, std::system_category());
+    if (result == -1)
+        throw std::system_error(errno, std::system_category());
+
     return result;
+}
+
+void handle_log_message(const gchar* log_domain,
+                        GLogLevelFlags log_level,
+                        const gchar* message,
+                        gpointer user_data)
+{
+    boost::ignore_unused(log_domain, user_data);
+
+    if (log_level & G_LOG_LEVEL_ERROR)
+        LOG(ERROR) << message;
+    else if (log_level & G_LOG_LEVEL_CRITICAL)
+        LOG(ERROR) << message;
+    else if (log_level & G_LOG_LEVEL_WARNING)
+        LOG(WARNING) << message;
+    else if (log_level & G_LOG_LEVEL_MESSAGE)
+        LOG(INFO) << message;
+    else if (log_level & G_LOG_LEVEL_INFO)
+        LOG(INFO) << message;
+    else if (log_level & G_LOG_LEVEL_DEBUG)
+        VLOG(1) << message;
 }
 
 }  // namespace
@@ -63,16 +94,18 @@ location::glib::Runtime::Runtime()
       event_fd_input_stream{make_shared_object(g_unix_input_stream_new(event_fd_, true))},
       signal_fd_input_stream{make_shared_object(g_unix_input_stream_new(signal_fd_, true))}
 {
+    g_log_set_default_handler(handle_log_message, nullptr);
+
     g_input_stream_read_async(signal_fd_input_stream.get(), &signal_fd_buffer, sizeof(signal_fd_buffer), G_PRIORITY_LOW,
                               nullptr, Runtime::on_signal_fd_read_finished, this);
     g_input_stream_read_async(event_fd_input_stream.get(), &event_fd_buffer, sizeof(event_fd_buffer), G_PRIORITY_LOW,
                               nullptr, Runtime::on_event_fd_read_finished, this);
+
     runtime = this;
 }
 
 location::glib::Runtime::~Runtime()
 {
-
     g_main_loop_unref(main_loop_);
     runtime = nullptr;
 }
@@ -102,15 +135,29 @@ void location::glib::Runtime::dispatch(const std::function<void()>& f)
 void location::glib::Runtime::on_signal_fd_read_finished(
         GObject* source, GAsyncResult* result, gpointer user_data)
 {
+    boost::ignore_unused(source);
+
     if (auto thiz = static_cast<Runtime*>(user_data))
-        thiz->on_signal_fd_read_finished();
+    {
+        if (sizeof(thiz->signal_fd_buffer) == g_input_stream_read_finish(thiz->signal_fd_input_stream.get(), result, nullptr))
+        {
+            thiz->on_signal_fd_read_finished();
+        }
+    }
 }
 
 void location::glib::Runtime::on_event_fd_read_finished(
         GObject* source, GAsyncResult* result, gpointer user_data)
 {
+    boost::ignore_unused(source);
+
     if (auto thiz = static_cast<Runtime*>(user_data))
-        thiz->on_event_fd_read_finished();
+    {
+        if (sizeof(thiz->event_fd_buffer) == g_input_stream_read_finish(thiz->event_fd_input_stream.get(), result, nullptr))
+        {
+            thiz->on_event_fd_read_finished();
+        }
+    }
 }
 
 void location::glib::Runtime::on_event_fd_read_finished()

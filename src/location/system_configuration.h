@@ -23,8 +23,6 @@
 
 #include <boost/filesystem.hpp>
 
-#include <core/dbus/bus.h>
-
 namespace fs = boost::filesystem;
 
 namespace location

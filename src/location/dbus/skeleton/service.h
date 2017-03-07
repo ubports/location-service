@@ -23,6 +23,7 @@
 #include <location/permission_manager.h>
 #include <location/result.h>
 
+#include <location/dbus/bus.h>
 #include <location/dbus/service.h>
 #include <location/dbus/service_gen.h>
 #include <location/dbus/skeleton/session.h>
@@ -46,6 +47,7 @@ public:
 
     struct Configuration
     {
+        Bus bus;                                        // Connect to this bus instance.
         location::Service::Ptr impl;                    // The actual service implementation.
         PermissionManager::Ptr permission_manager;      // A permission manager implementation.
     };

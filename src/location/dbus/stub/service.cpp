@@ -40,9 +40,9 @@ using Holder = location::glib::Holder<std::weak_ptr<location::dbus::stub::Servic
 
 }  // namespace
 
-void location::dbus::stub::Service::create(std::function<void(const location::Result<location::dbus::stub::Service::Ptr>&)> callback)
+void location::dbus::stub::Service::create(Bus bus, std::function<void(const location::Result<location::dbus::stub::Service::Ptr>&)> callback)
 {
-    g_bus_get(G_BUS_TYPE_SESSION, nullptr, on_bus_acquired, new BusAcquisitionContext{std::move(callback)});
+    g_bus_get(static_cast<GBusType>(bus), nullptr, on_bus_acquired, new BusAcquisitionContext{std::move(callback)});
 }
 
 location::dbus::stub::Service::Service(const glib::SharedObject<GDBusConnection>& connection,

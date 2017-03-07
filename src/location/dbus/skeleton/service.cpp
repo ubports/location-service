@@ -279,7 +279,7 @@ std::shared_ptr<location::dbus::skeleton::Service> location::dbus::skeleton::Ser
     });
 
     g_bus_own_name(
-                G_BUS_TYPE_SESSION, location::dbus::Service::name(), G_BUS_NAME_OWNER_FLAGS_NONE,
+                static_cast<GBusType>(configuration.bus), location::dbus::Service::name(), G_BUS_NAME_OWNER_FLAGS_NONE,
                 Service::on_bus_acquired, Service::on_name_acquired, Service::on_name_lost,
                 new Holder{wp}, Holder::destroy_notify);
 

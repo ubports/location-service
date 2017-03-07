@@ -24,8 +24,6 @@
 #include <location/dbus/stub/service.h>
 #include <location/glib/runtime.h>
 
-#include <core/dbus/service.h>
-#include <core/dbus/asio/executor.h>
 #include <core/posix/signal.h>
 
 namespace cli = location::util::cli;
@@ -40,7 +38,7 @@ void die_if(bool b, std::ostream& out, const std::string& message)
 
 location::cmds::Provider::Provider()
     : CommandWithFlagsAndAction{cli::Name{"provider"}, cli::Usage{"provider"}, cli::Description{"executes a built-in provider"}},
-      bus{core::dbus::WellKnownBus::system}
+      bus{dbus::Bus::system}
 {
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
     flag(cli::make_flag(cli::Name{"id"}, cli::Description{"id of the actual provider implementation."}, id));
@@ -51,7 +49,7 @@ location::cmds::Provider::Provider()
 
         glib::Runtime runtime;
 
-        location::dbus::stub::Service::create([this](const location::Result<location::dbus::stub::Service::Ptr>& result)
+        location::dbus::stub::Service::create(bus, [this](const location::Result<location::dbus::stub::Service::Ptr>& result)
         {
             if (!result)
             {

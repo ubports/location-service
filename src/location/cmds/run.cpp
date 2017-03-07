@@ -25,24 +25,19 @@
 #include <location/service_with_engine.h>
 #include <location/settings.h>
 #include <location/system_configuration.h>
-#include <location/trust_store_permission_manager.h>
 
 #include <location/glib/runtime.h>
 #include <location/glib/serializing_bus.h>
 #include <location/dbus/skeleton/service.h>
 #include <location/providers/dummy/provider.h>
 #include <location/providers/ubx/provider.h>
-#include <location/util/well_known_bus.h>
-
-#include <core/dbus/asio/executor.h>
-#include <core/posix/signal.h>
 
 namespace cli = location::util::cli;
 
 location::cmds::Run::Run()
     : CommandWithFlagsAndAction{cli::Name{"run"}, cli::Usage{"run"}, cli::Description{"runs the daemon"}},
       testing{false},
-      bus{core::dbus::WellKnownBus::system},
+      bus{location::dbus::Bus::system},
       settings{SystemConfiguration::instance().runtime_persistent_data_dir()}
 {
     flag(cli::make_flag(cli::Name{"testing"}, cli::Description{"whether we are running under testing, defaults to false"}, testing));
@@ -77,6 +72,7 @@ location::cmds::Run::Run()
 
         location::dbus::skeleton::Service::Configuration config
         {
+            bus,
             std::make_shared<location::ServiceWithEngine>(engine),
             SystemConfiguration::instance().create_permission_manager()
         };

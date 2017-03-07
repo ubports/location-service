@@ -19,7 +19,6 @@
 #include <location/system_configuration.h>
 
 #include <location/always_granting_permission_manager.h>
-#include <location/trust_store_permission_manager.h>
 
 #include <location/logging.h>
 
