@@ -8,12 +8,12 @@
 		<method name='StopHeadingUpdates'/>
                 <!--
                 The following keys are always available in the dictionary:
-                  * latitude: double
-                  * longitude: double
+                  * latitude: double, in degrees
+                  * longitude: double, in degrees
                 The following keys are optional:
-                  * horizontal-accuracy: double
-                  * altitude: double
-                  * vertical-accuracy: double
+                  * horizontal-accuracy: double, in meters
+                  * altitude: double, in meters
+                  * vertical-accuracy: double, in meteres
                 -->
                 <property name='Position' type='(ta{sv})' access='read'/>
 		<property name='Velocity' type='(t(d))' access='read' />

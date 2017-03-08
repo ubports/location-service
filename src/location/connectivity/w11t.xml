@@ -3,21 +3,6 @@
 "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
 <node>
   <interface name="fi.w1.wpa_supplicant1">
-    <method name="CreateInterface">
-      <arg name="args" type="a{sv}" direction="in"/>
-      <arg name="path" type="o" direction="out"/>
-    </method>
-    <method name="SetInterfaceFirmware">
-      <arg name="path" type="o" direction="in"/>
-      <arg name="firmware" type="s" direction="in"/>
-    </method>
-    <method name="RemoveInterface">
-      <arg name="path" type="o" direction="in"/>
-    </method>
-    <method name="GetInterface">
-      <arg name="ifname" type="s" direction="in"/>
-      <arg name="path" type="o" direction="out"/>
-    </method>
     <signal name="InterfaceAdded">
       <arg name="path" type="o"/>
       <arg name="properties" type="a{sv}"/>
@@ -28,13 +13,7 @@
     <signal name="PropertiesChanged">
       <arg name="properties" type="a{sv}"/>
     </signal>
-    <property name="DebugLevel" type="s" access="readwrite"/>
-    <property name="DebugTimestamp" type="b" access="readwrite"/>
-    <property name="DebugShowKeys" type="b" access="readwrite"/>
     <property name="Interfaces" type="ao" access="read"/>
-    <property name="EapMethods" type="as" access="read"/>
-    <property name="Capabilities" type="as" access="read"/>
-    <property name="WFDIEs" type="ay" access="readwrite"/>
   </interface>
 
   <interface name="fi.w1.wpa_supplicant1.Interface">
