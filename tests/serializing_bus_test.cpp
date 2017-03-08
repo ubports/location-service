@@ -16,8 +16,8 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <location/serializing_bus.h>
-#include <location/runtime.h>
+#include <location/glib/runtime.h>
+#include <location/glib/serializing_bus.h>
 
 #include <gmock/gmock.h>
 
@@ -45,34 +45,31 @@ struct MockEventReceiver : public location::Event::Receiver
 
 TEST(SerializingBus, ctor_and_dtor_work_for_valid_runtime)
 {
-    auto sb = location::SerializingBus::create(location::Runtime::create());
+    auto sb = location::glib::SerializingBus::create();
 }
 
 TEST(SerializingBus, dispatches_events_serially)
 {
     using namespace ::testing;
 
-    auto rt = location::Runtime::create();
-    auto sb = location::SerializingBus::create(rt);
+    location::glib::Runtime runtime;
+
+    auto sb = location::glib::SerializingBus::create();
     auto receiver = std::make_shared<NiceMock<MockEventReceiver>>();
 
-    std::size_t last{0};
-
-    auto verifier = [&last](const location::Event& e)
+    auto verifier = [](const location::Event& e)
     {
         const IndexedEvent& indexed_event = dynamic_cast<const IndexedEvent&>(e);
-        EXPECT_EQ(1, indexed_event.idx - last);
-        last = indexed_event.idx;
+        if (indexed_event.idx == 100000)
+            location::glib::Runtime::instance()->stop();
     };
 
     ON_CALL(*receiver, on_new_event(_)).WillByDefault(Invoke(verifier));
 
     sb->subscribe(receiver);
 
-    rt->start();
-
     for (std::size_t idx = 1; idx <= 100000; idx++)
         sb->dispatch(std::make_shared<IndexedEvent>(idx));
 
-    while (last != 100000) {}
+    runtime.run();
 }

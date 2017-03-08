@@ -16,370 +16,563 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
+#include <location/dbus/codec.h>
+#include <location/dbus/util.h>
 #include <location/dbus/skeleton/service.h>
 #include <location/dbus/skeleton/session.h>
 
-#include <location/dbus/codec.h>
-
-#include <location/providers/remote/stub.h>
+#include <location/glib/holder.h>
+#include <location/glib/util.h>
+#include <location/providers/remote/provider.h>
 
 #include <location/criteria.h>
 #include <location/logging.h>
 
+#include <boost/core/ignore_unused.hpp>
+#include <boost/lexical_cast.hpp>
+
 namespace
 {
-const std::vector<std::string>& the_empty_array_of_invalidated_properties()
+
+using Holder = location::glib::Holder<std::weak_ptr<location::dbus::skeleton::Service>>;
+
+}  // namespace
+
+location::dbus::skeleton::Service::DBusDaemonCredentialsResolver::DBusDaemonCredentialsResolver(const location::glib::SharedObject<GDBusConnection>& connection)
 {
-    static const std::vector<std::string> v; return v;
+    g_dbus_proxy_new(
+                connection.get(), G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES, nullptr,
+                "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
+                nullptr, DBusDaemonCredentialsResolver::handle_daemon_proxy_ready, this);
 }
 
-core::dbus::Message::Ptr the_empty_reply()
+void location::dbus::skeleton::Service::DBusDaemonCredentialsResolver::resolve_credentials_for_sender(
+        const std::string& sender, std::function<void(const Result<Credentials>&)> cb)
 {
-    return core::dbus::Message::Ptr{};
-}
+    if (!daemon) throw std::runtime_error{"Cannot access dbus daemon"};
+
+    g_dbus_proxy_call(
+                daemon.get(), "GetConnectionUnixProcessID", g_variant_new("(s)", sender.c_str()),
+                G_DBUS_CALL_FLAGS_NONE, -1, nullptr, DBusDaemonCredentialsResolver::handle_unix_process_id_ready,
+                new ProcessIdQueryContext{daemon, sender, std::move(cb)});
 }
 
-location::dbus::skeleton::Service::DBusDaemonCredentialsResolver::DBusDaemonCredentialsResolver(const core::dbus::Bus::Ptr& bus)
-    : daemon(bus)
+void location::dbus::skeleton::Service::DBusDaemonCredentialsResolver::handle_unix_process_id_ready(
+        GObject* source, GAsyncResult* result, gpointer user_data)
 {
-}
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(source);
 
-location::Credentials
-location::dbus::skeleton::Service::DBusDaemonCredentialsResolver::resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg)
-{
-    return location::Credentials
+    if (auto context = static_cast<ProcessIdQueryContext*>(user_data))
     {
-        static_cast<pid_t>(daemon.get_connection_unix_process_id(msg->sender())),
-        static_cast<uid_t>(daemon.get_connection_unix_user(msg->sender()))
-    };
+        GError* error{nullptr};
+        std::shared_ptr<GVariant> variant(
+                    g_dbus_proxy_call_finish(context->daemon.get(), result, &error),
+                    [](GVariant* variant) { if (variant) g_variant_unref(variant); });
+
+        if (!error)
+        {
+            std::uint32_t pid{0}; g_variant_get(variant.get(), "(u)", &pid);
+            if (pid != 0)
+            {
+                g_dbus_proxy_call(
+                            context->daemon.get(), "GetConnectionUnixUser", g_variant_new("(s)", context->sender.c_str()),
+                            G_DBUS_CALL_FLAGS_NONE, -1, nullptr, DBusDaemonCredentialsResolver::handle_unix_user_id_ready,
+                            new UserIdQueryContext{context->daemon, context->sender, pid, std::move(context->cb)});
+            }
+            else
+            {
+                auto exception = std::make_exception_ptr(std::runtime_error{"Failed to decode result value."});
+                context->cb(make_error_result<Credentials>(exception));
+            }
+        }
+        else
+        {
+            context->cb(make_error_result<Credentials>(glib::wrap_error_as_exception(error)));
+        }
+
+        delete context;
+    }
 }
 
-core::dbus::types::ObjectPath location::dbus::skeleton::Service::ObjectPathGenerator::object_path_for_caller_credentials(const location::Credentials&)
+void location::dbus::skeleton::Service::DBusDaemonCredentialsResolver::handle_unix_user_id_ready(
+        GObject* source, GAsyncResult* result, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(source);
+
+    if (auto context = static_cast<UserIdQueryContext*>(user_data))
+    {
+        GError* error{nullptr};
+        std::shared_ptr<GVariant> variant(
+                    g_dbus_proxy_call_finish(context->daemon.get(), result, &error),
+                    [](GVariant* variant) { if (variant) g_variant_unref(variant); });
+
+        if (!error)
+        {
+            std::uint32_t uid{std::numeric_limits<std::uint32_t>::max()}; g_variant_get(variant.get(), "(u)", &uid);
+            if (uid != std::numeric_limits<std::uint32_t>::max())
+            {
+                context->cb(make_result(Credentials{context->process_id, uid}));
+            }
+            else
+            {
+                context->cb(make_error_result<Credentials>(
+                                std::make_exception_ptr(
+                                    std::runtime_error("Failed to query user id."))));
+            }
+        }
+        else
+        {
+            context->cb(make_error_result<Credentials>(glib::wrap_error_as_exception(error)));
+        }
+
+        delete context;
+    }
+}
+
+void location::dbus::skeleton::Service::DBusDaemonCredentialsResolver::handle_daemon_proxy_ready(
+        GObject* source, GAsyncResult* result, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(source);
+
+    if (auto thiz = static_cast<DBusDaemonCredentialsResolver*>(user_data))
+    {
+        GError* error = nullptr;
+        auto proxy = g_dbus_proxy_new_finish(result, &error);
+
+        if (error)
+        {
+            thiz->daemon.reset();
+
+            try
+            {
+                std::rethrow_exception(glib::wrap_error_as_exception(error));
+            }
+            catch(const std::exception& e)
+            {
+                LOG(WARNING) << e.what();
+            }
+        }
+        else
+        {
+            thiz->daemon = glib::make_shared_object(proxy);
+        }
+    }
+}
+
+void location::dbus::skeleton::Service::DBusDaemonCredentialsResolver::handle_credentials_query_finished(
+        GObject* source, GAsyncResult* result, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(source);
+
+    if (auto p = static_cast<CredentialsQueryContext*>(user_data)) {
+        std::unique_ptr<CredentialsQueryContext> context{p};
+
+        GError* error{nullptr};
+
+        std::shared_ptr<GVariant> variant(
+                    g_dbus_proxy_call_finish(context->daemon.get(), result, &error),
+                    [](GVariant* variant) { if (variant) g_variant_unref(variant); });
+        if (error)
+            context->callback(Result<Credentials>{glib::wrap_error_as_exception(error)});
+        else if (auto credentials = dbus::decode<Credentials>(variant.get()))
+            context->callback(Result<Credentials>{*credentials});
+    }
+}
+
+std::string location::dbus::skeleton::Service::ObjectPathGenerator::object_path_for_caller_credentials(const location::Credentials&)
 {
     static std::uint32_t index{0};
-    std::stringstream ss; ss << "/sessions/" << index++;
+    std::stringstream ss;
+    ss << location::dbus::Service::path() << "/sessions/" << index++;
 
-    return core::dbus::types::ObjectPath{ss.str()};
+    return ss.str();
 }
 
+void location::dbus::skeleton::Service::on_bus_acquired(GDBusConnection* connection, const std::string& name) 
+{
+    boost::ignore_unused(name);
+
+    this->connection = glib::make_shared_object<GDBusConnection>(glib::ref_object(connection));
+    this->credentials_resolver.reset(new DBusDaemonCredentialsResolver(this->connection));
+}
+
+void location::dbus::skeleton::Service::on_name_acquired(GDBusConnection*, const std::string& name)
+{
+    boost::ignore_unused(name);
+
+    g_dbus_object_manager_server_set_connection(object_manager_server.get(), connection.get());
+    g_dbus_interface_skeleton_export(G_DBUS_INTERFACE_SKELETON(skeleton.get()), connection.get(), location::dbus::Service::path(), nullptr);
+}
+
+void location::dbus::skeleton::Service::on_name_lost(GDBusConnection* connection, const std::string& name) 
+{
+    boost::ignore_unused(connection, name);
+}
+
+void location::dbus::skeleton::Service::on_name_vanished(
+        GDBusConnection* connection, const std::string& name)
+{
+    auto it = bus_name_to_session_path_map.find(name);
+    if (it != bus_name_to_session_path_map.end())
+    {
+        session_store.erase(it->second);
+        bus_name_to_session_path_map.erase(it);
+    }
+}
+
+location::dbus::skeleton::Service::Ptr location::dbus::skeleton::Service::create(const Configuration& configuration)
+{
+    Ptr service{new Service(configuration)};
+    return service->finalize_construction();
+}
 
 location::dbus::skeleton::Service::Service(const location::dbus::skeleton::Service::Configuration& configuration)
     : configuration(configuration),
-      daemon(configuration.incoming),
-      object(configuration.service->add_object_for_path(location::dbus::Service::path())),
-      properties_changed(object->get_signal<core::dbus::interfaces::Properties::Signals::PropertiesChanged>()),
-      properties
-      {
-          object->get_property<location::dbus::Service::Properties::State>(),
-          object->get_property<location::dbus::Service::Properties::DoesSatelliteBasedPositioning>(),
-          object->get_property<location::dbus::Service::Properties::DoesReportCellAndWifiIds>(),
-          object->get_property<location::dbus::Service::Properties::IsOnline>(),
-          object->get_property<location::dbus::Service::Properties::VisibleSpaceVehicles>()
-      },
-      connections
-      {
-          {
-              properties.state->changed().connect([this](State state)
-              {
-                  on_state_changed(state);
-              }),
-              properties.does_satellite_based_positioning->changed().connect([this](bool value) mutable
-              {
-                  on_does_satellite_based_positioning_changed(value); Service::configuration.impl->does_satellite_based_positioning() = value;
-              }),
-              properties.does_report_cell_and_wifi_ids->changed().connect([this](bool value) mutable
-              {
-                  on_does_report_cell_and_wifi_ids_changed(value); Service::configuration.impl->does_report_cell_and_wifi_ids() = value;
-              }),
-              properties.is_online->changed().connect([this](bool value) mutable
-              {
-                  on_is_online_changed(value); Service::configuration.impl->is_online() = value;
-              })
-          },
-          {
-              Service::configuration.impl->state().changed().connect([this](State state) mutable
-              {
-                  properties.state->set(state);
-              }),
-              Service::configuration.impl->does_satellite_based_positioning().changed().connect([this](bool value) mutable
-              {
-                  properties.does_satellite_based_positioning->set(value);
-              }),
-              Service::configuration.impl->does_report_cell_and_wifi_ids().changed().connect([this](bool value) mutable
-              {
-                  properties.does_report_cell_and_wifi_ids->set(value);
-              }),
-              Service::configuration.impl->is_online().changed().connect([this](bool value) mutable
-              {
-                  properties.is_online->set(value);
-              })
-          }
-      }
+      skeleton{glib::make_shared_object(com_ubuntu_location_service_skeleton_new())},
+      object_manager_server(glib::make_shared_object<GDBusObjectManagerServer>(g_dbus_object_manager_server_new(location::dbus::Service::path())))
 {
-    object->install_method_handler<location::dbus::Service::AddProvider>([this](const core::dbus::Message::Ptr& msg)
-    {
-        handle_add_provider(msg);
+    com_ubuntu_location_service_set_state(skeleton.get(), boost::lexical_cast<std::string>(Service::configuration.impl->state().get()).c_str());
+    com_ubuntu_location_service_set_does_satellite_based_positioning(skeleton.get(), Service::configuration.impl->does_satellite_based_positioning().get());
+    com_ubuntu_location_service_set_does_report_cell_and_wifi_ids(skeleton.get(), Service::configuration.impl->does_report_cell_and_wifi_ids().get());
+    com_ubuntu_location_service_set_is_online(skeleton.get(), Service::configuration.impl->is_online().get());
+}
+
+std::shared_ptr<location::dbus::skeleton::Service> location::dbus::skeleton::Service::finalize_construction()
+{
+    auto sp = shared_from_this();
+    std::weak_ptr<Service> wp{sp};
+
+    configuration.impl->state().changed().connect([wp](State state) mutable {
+        if (auto sp = wp.lock())
+        {
+            std::ostringstream ss; ss << state;
+            com_ubuntu_location_service_set_state(COM_UBUNTU_LOCATION_SERVICE(sp->skeleton.get()), ss.str().c_str());
+        }
     });
 
-    object->install_method_handler<location::dbus::Service::CreateSessionForCriteria>([this](const core::dbus::Message::Ptr& msg)
-    {
-        handle_create_session_for_criteria(msg);
+    configuration.impl->does_satellite_based_positioning().changed().connect([wp](bool value) mutable {
+        if (auto sp = wp.lock())
+        {
+            com_ubuntu_location_service_set_does_satellite_based_positioning(
+                        COM_UBUNTU_LOCATION_SERVICE(sp->skeleton.get()), value);
+        }
     });
 
-    properties.state->set(configuration.impl->state());
-    properties.is_online->set(configuration.impl->is_online());
-    properties.does_report_cell_and_wifi_ids->set(configuration.impl->does_report_cell_and_wifi_ids());
-    properties.does_satellite_based_positioning->set(configuration.impl->does_satellite_based_positioning());
-    properties.visible_space_vehicles->set(configuration.impl->visible_space_vehicles());
+    configuration.impl->does_report_cell_and_wifi_ids().changed().connect([wp](bool value) mutable {
+        if (auto sp = wp.lock())
+        {
+            com_ubuntu_location_service_set_does_report_cell_and_wifi_ids(
+                        COM_UBUNTU_LOCATION_SERVICE(sp->skeleton.get()), value);
+        }
+    });
+
+    configuration.impl->is_online().changed().connect([wp](bool value) mutable {
+        if (auto sp = wp.lock())
+        {
+            com_ubuntu_location_service_set_is_online(
+                        COM_UBUNTU_LOCATION_SERVICE(sp->skeleton.get()), value);
+        }
+    });
+
+    g_bus_own_name(
+                static_cast<GBusType>(configuration.bus), location::dbus::Service::name(), G_BUS_NAME_OWNER_FLAGS_NONE,
+                Service::on_bus_acquired, Service::on_name_acquired, Service::on_name_lost,
+                new Holder{wp}, Holder::destroy_notify);
+
+    g_signal_connect_data(G_OBJECT(skeleton.get()), "handle-create-session-for-criteria",
+                          G_CALLBACK(Service::handle_create_session_for_criteria),
+                          new Holder{wp}, Holder::closure_notify, GConnectFlags(0));
+
+    g_signal_connect_data(G_OBJECT(skeleton.get()), "handle-add-provider",
+                          G_CALLBACK(Service::handle_add_provider),
+                          new Holder{wp}, Holder::closure_notify, GConnectFlags(0));
+
+    g_signal_connect_data(G_OBJECT(skeleton.get()), "handle-remove-provider",
+                          G_CALLBACK(Service::handle_remove_provider),
+                          new Holder{wp}, Holder::closure_notify, GConnectFlags(0));
+
+    g_signal_connect_data(G_OBJECT(skeleton.get()), "notify::does-satellite-based-positioning",
+                          G_CALLBACK(Service::on_does_satellite_based_positioning_changed),
+                          new Holder{wp}, Holder::closure_notify, GConnectFlags(0));
+
+    g_signal_connect_data(G_OBJECT(skeleton.get()), "notify::does-report-cell-and-wifi-ids",
+                          G_CALLBACK(Service::on_does_report_cell_and_wifi_ids_changed),
+                          new Holder{wp}, Holder::closure_notify, GConnectFlags(0));
+
+    g_signal_connect_data(G_OBJECT(skeleton.get()), "notify::is-online",
+                          G_CALLBACK(Service::on_is_online_changed),
+                          new Holder{wp}, Holder::closure_notify, GConnectFlags(0));
+
+    return sp;
 }
 
 location::dbus::skeleton::Service::~Service() noexcept
 {
-    object->uninstall_method_handler<location::dbus::Service::AddProvider>();
-    object->uninstall_method_handler<location::dbus::Service::CreateSessionForCriteria>();
 }
 
-core::Property<location::Service::State>& location::dbus::skeleton::Service::mutable_state()
+void location::dbus::skeleton::Service::on_bus_acquired(
+        GDBusConnection* connection, const gchar* name, gpointer user_data)
 {
-    return *properties.state;
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+
+    if (auto holder = reinterpret_cast<Holder*>(user_data))
+        if (auto thiz = holder->value.lock())
+            thiz->on_bus_acquired(connection, name);
 }
 
-void location::dbus::skeleton::Service::handle_add_provider(const core::dbus::Message::Ptr& msg)
+void location::dbus::skeleton::Service::on_name_acquired(
+        GDBusConnection* connection, const gchar* name, gpointer user_data)
 {
-    VLOG(1) << __PRETTY_FUNCTION__;
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
 
-    try
+    if (auto holder = reinterpret_cast<Holder*>(user_data))
+        if (auto thiz = holder->value.lock())
+            thiz->on_name_acquired(connection, name);
+}
+
+void location::dbus::skeleton::Service::on_name_lost(
+        GDBusConnection* connection, const gchar* name, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+
+    if (auto holder = reinterpret_cast<Holder*>(user_data))
+        if (auto thiz = holder->value.lock())
+            thiz->on_name_lost(connection, name);
+}
+
+void location::dbus::skeleton::Service::on_name_vanished(
+        GDBusConnection* connection, const gchar* name, gpointer user_data)
+{
+    if (auto holder = static_cast<glib::Holder<std::weak_ptr<Service>>*>(user_data))
+        if (auto sp = holder->value.lock())
+            sp->on_name_vanished(connection, name);
+}
+
+gboolean location::dbus::skeleton::Service::handle_create_session_for_criteria(ComUbuntuLocationService* service,
+                                                                               GDBusMethodInvocation* invocation,
+                                                                               GVariant* parameters,
+                                                                               gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(service);
+
+    auto criteria = dbus::decode<Criteria>(parameters);
+
+    if (not criteria)
+        return false;
+
+    if (auto holder = reinterpret_cast<Holder*>(user_data))
+        if (auto thiz = holder->value.lock())
+            thiz->create_session(glib::make_shared_object(glib::ref_object(invocation)), *criteria);
+
+    return true;
+}
+
+gboolean location::dbus::skeleton::Service::handle_add_provider(ComUbuntuLocationService* service,
+                                                                GDBusMethodInvocation* invocation,
+                                                                const gchar* path,
+                                                                gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(service);
+
+    if (auto holder = reinterpret_cast<Holder*>(user_data))
     {
-        auto thiz = shared_from_this(); std::weak_ptr<Service> wp{thiz};
-
-        std::string sender = msg->sender();
-        core::dbus::types::ObjectPath path; msg->reader() >> path;
-        auto service = core::dbus::Service::use_service(configuration.incoming, sender);
-        auto object = service->object_for_path(path);
-
-        location::providers::remote::stub::create_with_configuration({configuration.outgoing, service, object}, [wp, msg](const Provider::Ptr& provider)
+        if (auto thiz = holder->value.lock())
         {
-            if (auto sp = wp.lock())
+            location::providers::remote::Provider::Stub::create(
+                        thiz->connection, g_dbus_method_invocation_get_sender(invocation),
+                        path, [thiz, invocation](const Result<Provider::Ptr>& result)
             {
-                sp->add_provider(provider);
-                sp->configuration.outgoing->send(core::dbus::Message::make_method_return(msg));
-            }
-        });
+                if (!result)
+                {
+                    g_dbus_method_invocation_return_error_literal(
+                                invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED, "Could not create provider stub.");
+                }
+                else
+                {
+                    thiz->add_provider(result.value());
+                    com_ubuntu_location_service_complete_add_provider(
+                                thiz->skeleton.get(), invocation);
+                }
+            });
 
-    }
-    catch(...)
-    {
-        // We failed to add the provider and let the requesting party know about the issue
-        // without exposing any detailed information.
-        configuration.outgoing->send(core::dbus::Message::make_error(msg, location::dbus::Service::Errors::AddingProvider::name(), ""));
-
-    }
-}
-
-void location::dbus::skeleton::Service::handle_create_session_for_criteria(const core::dbus::Message::Ptr& in)
-{
-    VLOG(1) << __PRETTY_FUNCTION__;
-
-    auto sender = in->sender();
-    auto reply = the_empty_reply();
-    auto thiz = shared_from_this();
-
-    try
-    {
-        Criteria criteria;
-        in->reader() >> criteria;
-
-        auto credentials =
-            configuration.credentials_resolver->resolve_credentials_for_incoming_message(in);
-
-        auto result =
-            configuration.permission_manager->check_permission_for_credentials(criteria, credentials);
-
-        if (PermissionManager::Result::rejected == result) throw std::runtime_error
-        {
-            "Client lacks permissions to access the service with the given criteria"
-        };
-
-        auto path =
-            configuration.object_path_generator->object_path_for_caller_credentials(credentials);
-
-        auto stub =
-            core::dbus::Service::use_service(configuration.outgoing, sender);
-
-        location::dbus::skeleton::Session::Configuration config
-        {
-            path,
-            location::dbus::skeleton::Session::Local
-            {
-                create_session_for_criteria(criteria),
-                configuration.incoming,
-                configuration.service->add_object_for_path(path)
-            },
-            location::dbus::skeleton::Session::Remote
-            {
-                stub->object_for_path(path)
-            }
-        };
-
-        auto watcher = daemon.make_service_watcher(sender);
-        watcher->owner_changed().connect([thiz, path](const std::string&, const std::string&)
-        {
-            LOG(INFO) << "Purging session for path: " << path.as_string();
-            thiz->remove_from_session_store_for_path(path);
-        });
-
-        if (not add_to_session_store_for_path(path, std::move(watcher), std::make_shared<location::dbus::skeleton::Session>(config)))
-        {
-            reply = core::dbus::Message::make_error(
-                        in,
-                        location::dbus::Service::Errors::CreatingSession::name(),
-                        "Refused to create second session for same process");
-        } else
-        {
-            reply = core::dbus::Message::make_method_return(in);
-            reply->writer() << path;
+            return true;
         }
-
-    } catch(const std::exception& e)
-    {
-        // We only send a very generic error message to the client to avoid
-        // leaking any sort of internal error handling details to untrusted
-        // apps.
-        reply = core::dbus::Message::make_error(
-                    in,
-                    location::dbus::Service::Errors::CreatingSession::name(),
-                    "Error creating session");
-        // We log the error for debugging purposes.
-        SYSLOG(ERROR) << "Error creating session: " << e.what();
     }
 
-    // We are done processing the request and try to send out the result to the client.
-    try
-    {
-        configuration.incoming->send(reply);
-    } catch(const std::exception& e)
-    {
-        // We log the error for debugging purposes.
-        SYSLOG(ERROR) << "Error sending reply to session creation request: " << e.what();
-    }
+    return false;
 }
 
-bool location::dbus::skeleton::Service::add_to_session_store_for_path(
-        const core::dbus::types::ObjectPath& path,
-        std::unique_ptr<core::dbus::ServiceWatcher> watcher,
-        const Session::Ptr& session)
+gboolean location::dbus::skeleton::Service::handle_remove_provider(ComUbuntuLocationService* service,
+                                                                   GDBusMethodInvocation* invocation,
+                                                                   const gchar* path,
+                                                                   gpointer user_data)
 {
-    std::lock_guard<std::mutex> lg(guard);
-    bool inserted = false;
-    std::tie(std::ignore, inserted) = session_store.insert(std::make_pair(path, Element{std::move(watcher), session}));
-    return inserted;
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(service, invocation, path, user_data);
+    return false;
 }
 
-void location::dbus::skeleton::Service::remove_from_session_store_for_path(const core::dbus::types::ObjectPath& path)
+void location::dbus::skeleton::Service::on_does_satellite_based_positioning_changed(
+        GObject* object, GParamSpec* spec, gpointer user_data)
 {
-    std::lock_guard<std::mutex> lg(guard);
-    session_store.erase(path);
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(object, spec);
+
+    if (auto holder = static_cast<Holder*>(user_data))
+        if (auto sp = holder->value.lock())
+            sp->does_satellite_based_positioning() =
+                    com_ubuntu_location_service_get_does_satellite_based_positioning(
+                        sp->skeleton.get());
 }
 
-void location::dbus::skeleton::Service::on_state_changed(location::Service::State state)
+void location::dbus::skeleton::Service::on_does_report_cell_and_wifi_ids_changed(
+        GObject* object, GParamSpec* spec, gpointer user_data)
 {
-    std::map<std::string, core::dbus::types::Variant> dict
-    {
-        {
-            location::dbus::Service::Properties::State::name(),
-            core::dbus::types::Variant::encode(state)
-        }
-    };
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(object, spec);
 
-    properties_changed->emit(
-                std::tie(
-                    core::dbus::traits::Service<location::dbus::Service>::interface_name(),
-                    dict,
-                    the_empty_array_of_invalidated_properties()));
+    if (auto holder = static_cast<Holder*>(user_data))
+        if (auto sp = holder->value.lock())
+            sp->does_report_cell_and_wifi_ids() =
+                    com_ubuntu_location_service_get_does_report_cell_and_wifi_ids(
+                        sp->skeleton.get());
 }
 
-
-void location::dbus::skeleton::Service::on_does_satellite_based_positioning_changed(bool value)
+void location::dbus::skeleton::Service::on_is_online_changed(
+        GObject* object, GParamSpec* spec, gpointer user_data)
 {
-    std::map<std::string, core::dbus::types::Variant> dict
-    {
-        {
-            location::dbus::Service::Properties::DoesSatelliteBasedPositioning::name(),
-            core::dbus::types::Variant::encode(value)
-        }
-    };
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(object, spec);
 
-    properties_changed->emit(
-                std::tie(
-                    core::dbus::traits::Service<location::dbus::Service>::interface_name(),
-                    dict,
-                    the_empty_array_of_invalidated_properties()));
-}
-
-void location::dbus::skeleton::Service::on_does_report_cell_and_wifi_ids_changed(bool value)
-{
-    std::map<std::string, core::dbus::types::Variant> dict
-    {
-        {
-            location::dbus::Service::Properties::DoesReportCellAndWifiIds::name(),
-            core::dbus::types::Variant::encode(value)
-        }
-    };
-
-    properties_changed->emit(
-            std::tie(
-                core::dbus::traits::Service<location::dbus::Service>::interface_name(),
-                dict,
-                the_empty_array_of_invalidated_properties()));
-}
-
-void location::dbus::skeleton::Service::on_is_online_changed(bool value)
-{
-    std::map<std::string, core::dbus::types::Variant> dict
-    {
-        {
-            location::dbus::Service::Properties::IsOnline::name(),
-            core::dbus::types::Variant::encode(value)
-        }
-    };
-    properties_changed->emit(
-            std::tie(
-                core::dbus::traits::Service<location::dbus::Service>::interface_name(),
-                dict,
-                the_empty_array_of_invalidated_properties()));
+    if (auto holder = static_cast<Holder*>(user_data))
+        if (auto sp = holder->value.lock())
+            sp->is_online() =
+                    com_ubuntu_location_service_get_is_online(
+                        sp->skeleton.get());
 }
 
 const core::Property<location::Service::State>& location::dbus::skeleton::Service::state() const
 {
-    return *properties.state;
+    return configuration.impl->state();
 }
 
 core::Property<bool>& location::dbus::skeleton::Service::does_satellite_based_positioning()
 {
-    return *properties.does_satellite_based_positioning;
+    return configuration.impl->does_satellite_based_positioning();
 }
 
 core::Property<bool>& location::dbus::skeleton::Service::does_report_cell_and_wifi_ids()
 {
-    return *properties.does_report_cell_and_wifi_ids;
+    return configuration.impl->does_report_cell_and_wifi_ids();
 }
 
 core::Property<bool>& location::dbus::skeleton::Service::is_online()
 {
-    return *properties.is_online;
+    return configuration.impl->is_online();
 }
 
 core::Property<std::map<location::SpaceVehicle::Key, location::SpaceVehicle>>& location::dbus::skeleton::Service::visible_space_vehicles()
 {
-    return *properties.visible_space_vehicles;
+    return configuration.impl->visible_space_vehicles();
 }
 
-location::Service::Session::Ptr location::dbus::skeleton::Service::create_session_for_criteria(const Criteria& criteria)
+void location::dbus::skeleton::Service::create_session_for_criteria(const Criteria& criteria, const std::function<void(const Session::Ptr&)>& cb)
 {
-    return configuration.impl->create_session_for_criteria(criteria);
+    configuration.impl->create_session_for_criteria(criteria, cb);
 }
 
 void location::dbus::skeleton::Service::add_provider(const Provider::Ptr& provider)
 {
     configuration.impl->add_provider(provider);
+}
+
+void location::dbus::skeleton::Service::create_session(
+        const glib::SharedObject<GDBusMethodInvocation>& invocation, const Criteria& criteria)
+{
+    if (!credentials_resolver) {
+        g_dbus_method_invocation_return_error_literal(
+                    invocation.get(), G_DBUS_ERROR, G_DBUS_ERROR_NOT_SUPPORTED, "Dependencies not yet available, try again later.");
+        return;
+    }
+
+    credentials_resolver->resolve_credentials_for_sender(
+                g_dbus_method_invocation_get_sender(invocation.get()),
+                [this, criteria, invocation](const Result<Credentials>& credentials)
+    {
+        if (!credentials)
+        {
+            try
+            {
+                credentials.rethrow();
+            }
+            catch (const std::exception& e)
+            {
+                g_dbus_method_invocation_return_error_literal(
+                            invocation.get(), G_DBUS_ERROR, G_DBUS_ERROR_FAILED, e.what());
+            }
+            catch (...)
+            {
+                g_dbus_method_invocation_return_error_literal(
+                            invocation.get(), G_DBUS_ERROR, G_DBUS_ERROR_FAILED, "Could not resolve credentials.");
+            }
+
+            return;
+        }
+
+        auto response = configuration.permission_manager->check_permission_for_credentials(
+                    criteria, credentials.value());
+
+        if (response != PermissionManager::Result::granted)
+        {
+            g_dbus_method_invocation_return_error_literal(
+                        invocation.get(), G_DBUS_ERROR, G_DBUS_ERROR_AUTH_FAILED, "");
+            return;
+        }
+
+        create_session(invocation, criteria, credentials.value());
+    });
+    return;
+}
+
+void location::dbus::skeleton::Service::create_session(
+        const glib::SharedObject<GDBusMethodInvocation>& invocation, const Criteria& criteria, const Credentials& credentials)
+{
+    auto sp = shared_from_this();
+    std::weak_ptr<Service> wp{sp};
+
+    create_session_for_criteria(criteria, [this, wp, invocation, credentials](const Session::Ptr& impl)
+    {
+        if (auto sp = wp.lock())
+        {
+            auto path = object_path_generator.object_path_for_caller_credentials(credentials);
+            auto session = glib::make_shared_object(com_ubuntu_location_service_session_skeleton_new());
+            auto skeleton = location::dbus::skeleton::Session::create(
+                        location::dbus::skeleton::Session::Configuration{session, impl});
+            auto skeleton_object = glib::make_shared_object(object_skeleton_new(path.c_str()));
+
+            session_store[path] = skeleton;
+            bus_name_to_session_path_map[g_dbus_method_invocation_get_sender(invocation.get())] = path;
+
+            g_bus_watch_name_on_connection(
+                        g_dbus_method_invocation_get_connection(invocation.get()),
+                        g_dbus_method_invocation_get_sender(invocation.get()),
+                        G_BUS_NAME_WATCHER_FLAGS_NONE,
+                        nullptr, Service::on_name_vanished,
+                        new glib::Holder<std::weak_ptr<Service>>{wp},
+                        glib::Holder<std::weak_ptr<Service>>::destroy_notify);
+
+            g_dbus_interface_skeleton_export(
+                        G_DBUS_INTERFACE_SKELETON(session.get()), connection.get(),
+                        path.c_str(), nullptr);
+
+            g_dbus_method_invocation_return_value(
+                        invocation.get(), g_variant_new("(o)", path.c_str()));
+        }
+    });
 }

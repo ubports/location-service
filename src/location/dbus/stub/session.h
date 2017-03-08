@@ -23,9 +23,11 @@
 
 #include <location/position.h>
 #include <location/provider.h>
+#include <location/result.h>
 #include <location/update.h>
 
-#include <core/dbus/stub.h>
+#include <location/dbus/session_gen.h>
+#include <location/glib/shared_object.h>
 
 #include <memory>
 
@@ -35,11 +37,17 @@ namespace dbus
 {
 namespace stub
 {
-class Session : public location::Service::Session
+class Session : public location::Service::Session,
+                public std::enable_shared_from_this<Session>
 {
   public:
-    Session(const core::dbus::Bus::Ptr& connection,
-            const core::dbus::Object::Ptr& object);
+    using Ptr = std::shared_ptr<Session>;
+
+    static void create(
+            const glib::SharedObject<GDBusConnection>& connection,
+            const std::string& path,
+            std::function<void(const Result<Session::Ptr>&)> cb);
+
     ~Session();
 
     void start_position_updates();
@@ -54,14 +62,24 @@ class Session : public location::Service::Session
     Updates& updates() override;
 
   private:
-    core::dbus::Bus::Ptr connection_;
-    core::dbus::Object::Ptr object_;
+    struct ProxyCreationContext
+    {
+        std::function<void(const location::Result<Ptr>&)> cb;
+    };
+    static void on_proxy_ready(GObject* source, GAsyncResult* res, gpointer user_data);
+
+    static void on_position_changed(GObject* object, GParamSpec* spec, gpointer user_data);
+    static void on_heading_changed(GObject* object, GParamSpec* spec, gpointer user_data);
+    static void on_velocity_changed(GObject* object, GParamSpec* spec, gpointer user_data);
+
+    Session(const glib::SharedObject<ComUbuntuLocationServiceSession>& session);
+
+    Ptr finalize_construction();
+
+    glib::SharedObject<ComUbuntuLocationServiceSession> session_;
 
     Updates updates_;
-
-    core::ScopedConnection position_;
-    core::ScopedConnection velocity_;
-    core::ScopedConnection heading_;
+    std::set<ulong> signal_handler_ids_;
 };
 }
 }

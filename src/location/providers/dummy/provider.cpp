@@ -19,6 +19,7 @@
 #include "provider.h"
 
 #include <location/logging.h>
+#include <location/glib/runtime.h>
 
 #include <thread>
 
@@ -122,9 +123,12 @@ void dummy::Provider::activate()
             heading_update.when = location::Clock::now();
             velocity_update.when = location::Clock::now();
 
-            updates.position(position_update);
-            updates.heading(heading_update);
-            updates.velocity(velocity_update);
+            glib::Runtime::instance()->dispatch([this, pu = position_update, hu = heading_update, vu = velocity_update]()
+            {
+                updates.position(pu);
+                updates.heading(hu);
+                updates.velocity(vu);
+            });
 
             std::this_thread::sleep_for(configuration.update_period);
         }

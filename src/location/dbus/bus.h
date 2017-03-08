@@ -1,5 +1,5 @@
 /*
- * Copyright © 2016 Canonical Ltd.
+ * Copyright © 2017 Canonical Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License version 3,
@@ -16,26 +16,28 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <location/serializing_bus.h>
+#ifndef LOCATION_DBUS_BUS_H_
+#define LOCATION_DBUS_BUS_H_
 
-std::shared_ptr<location::SerializingBus> location::SerializingBus::create()
+#include <gio/gio.h>
+
+#include <iosfwd>
+
+namespace location
 {
-    return std::shared_ptr<location::SerializingBus>{new location::SerializingBus{}};
-}
-
-location::SerializingBus::SerializingBus()
-{
-}
-
-void location::SerializingBus::subscribe(const Event::Receiver::Ptr& receiver)
+namespace dbus
 {
 
-}
-
-void location::SerializingBus::unsubscribe(const Event::Receiver::Ptr& receiver)
+enum class Bus
 {
-}
+    session = G_BUS_TYPE_SESSION,
+    system = G_BUS_TYPE_SYSTEM
+};
 
-void location::SerializingBus::dispatch(const Event::Ptr& event)
-{
-}
+std::ostream& operator<<(std::ostream& out, Bus bus);
+std::istream& operator>>(std::istream& in, Bus& bus);
+
+}  // namespace dbus
+}  // namespace location
+
+#endif  // LOCATION_DBUS_BUS_H_

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2014 Canonical Ltd.
+ * Copyright © 2017 Canonical Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License version 3,
@@ -16,13 +16,12 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <location/providers/remote/skeleton.h>
+#ifndef LOCATION_DBUS_UTIL_H_
+#define LOCATION_DBUS_UTIL_H_
 
-#include "provider.h"
+#include <location/logging.h>
 
-namespace remote = location::providers::remote;
+#define LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN \
+    VLOG(1) << __PRETTY_FUNCTION__
 
-location::Provider::Ptr remote::skeleton::create_with_configuration(const remote::skeleton::Configuration& configuration)
-{
-    return std::make_shared<remote::Provider::Skeleton>(configuration);
-}
+#endif  // LOCATION_DBUS_UTIL_H_

@@ -19,7 +19,6 @@
 #include <location/system_configuration.h>
 
 #include <location/always_granting_permission_manager.h>
-#include <location/trust_store_permission_manager.h>
 
 #include <location/logging.h>
 
@@ -46,7 +45,7 @@ struct SnappySystemConfiguration : public location::SystemConfiguration
         }
     }
     
-    location::PermissionManager::Ptr create_permission_manager(const std::shared_ptr<core::dbus::Bus>&) const
+    location::PermissionManager::Ptr create_permission_manager() const
     {
         return std::make_shared<location::AlwaysGrantingPermissionManager>();
     }
@@ -68,9 +67,9 @@ struct UbuntuSystemConfiguration : public location::SystemConfiguration
         return "/var/lib/ubuntu-location-service";
     }
     
-    location::PermissionManager::Ptr create_permission_manager(const std::shared_ptr<core::dbus::Bus>& bus) const
+    location::PermissionManager::Ptr create_permission_manager() const
     {
-        return location::TrustStorePermissionManager::create_default_instance_with_bus(bus);
+        return std::make_shared<location::AlwaysGrantingPermissionManager>();
     }    
 };
 }

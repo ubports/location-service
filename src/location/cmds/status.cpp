@@ -19,10 +19,8 @@
 
 #include <location/cmds/status.h>
 #include <location/dbus/stub/service.h>
-#include <location/runtime.h>
-#include <location/util/well_known_bus.h>
-
-#include <core/dbus/asio/executor.h>
+#include <location/glib/runtime.h>
+#include <location/glib/runtime.h>
 
 namespace cli = location::util::cli;
 
@@ -55,33 +53,47 @@ void location::cmds::Status::PrintingDelegate::on_summary(const Summary& summary
 location::cmds::Status::Status(const std::shared_ptr<Delegate>& delegate)
     : CommandWithFlagsAndAction{cli::Name{"status"}, cli::Usage{"status"}, cli::Description{"queries the status of the daemon"}},
       delegate{delegate},
-      bus{core::dbus::WellKnownBus::system}
+      bus{dbus::Bus::system}
 {
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
     action([this](const Context& ctxt)
     {
-        auto rt = location::Runtime::create();
+        location::glib::Runtime runtime;
 
-        auto conn = std::make_shared<core::dbus::Bus>(bus);
-
-        conn->install_executor(core::dbus::asio::make_executor(conn, rt->service()));
-
-        auto service = core::dbus::Service::use_service<location::dbus::Service>(conn);
-        auto stub = std::make_shared<location::dbus::stub::Service>(conn, service, service->object_for_path(core::dbus::types::ObjectPath{location::dbus::Service::path()}));
-
-        rt->start();
-
-        Status::delegate->on_summary(Summary
+        location::dbus::stub::Service::create(bus, [this, &ctxt](const location::Result<location::dbus::stub::Service::Ptr>& result)
         {
-            stub->is_online(),
-            stub->state(),
-            stub->does_satellite_based_positioning(),
-            stub->does_report_cell_and_wifi_ids(),
-            stub->visible_space_vehicles()
+            if (result)
+            {
+                auto service = result.value();
+
+                Status::delegate->on_summary(Summary
+                {
+                    service->is_online(),
+                    service->state(),
+                    service->does_satellite_based_positioning(),
+                    service->does_report_cell_and_wifi_ids(),
+                    service->visible_space_vehicles()
+                });
+            }
+            else
+            {
+                try
+                {
+                    result.rethrow();
+                }
+                catch(const std::exception& e)
+                {
+                    ctxt.cout << "Error querying status: " << e.what() << std::endl;
+                }
+                catch(...)
+                {
+                    ctxt.cout << "Error querying status.";
+                }
+            }
+
+            location::glib::Runtime::instance()->stop();
         });
 
-        conn->stop(); rt->stop();
-
-        return EXIT_SUCCESS;
+        return runtime.run();
     });
 }

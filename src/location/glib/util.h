@@ -1,5 +1,5 @@
 /*
- * Copyright © 2016 Canonical Ltd.
+ * Copyright © 2017 Canonical Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License version 3,
@@ -16,26 +16,21 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <location/serializing_bus.h>
+#ifndef LOCATION_GLIB_ERROR_H_
+#define LOCATION_GLIB_ERROR_H_
 
-std::shared_ptr<location::SerializingBus> location::SerializingBus::create()
+#include <glib.h>
+
+#include <exception>
+
+namespace location
 {
-    return std::shared_ptr<location::SerializingBus>{new location::SerializingBus{}};
-}
-
-location::SerializingBus::SerializingBus()
-{
-}
-
-void location::SerializingBus::subscribe(const Event::Receiver::Ptr& receiver)
+namespace glib
 {
 
-}
+std::exception_ptr wrap_error_as_exception(GError* error);
 
-void location::SerializingBus::unsubscribe(const Event::Receiver::Ptr& receiver)
-{
-}
+}  // namespace glib
+}  // namespace location
 
-void location::SerializingBus::dispatch(const Event::Ptr& event)
-{
-}
+#endif  // LOCATION_GLIB_ERROR_H_

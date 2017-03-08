@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2013 Canonical Ltd.
+ * Copyright © 2017 Canonical Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License version 3,
@@ -15,678 +15,114 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_CODEC_H_
-#define LOCATION_CODEC_H_
+
+#ifndef LOCATION_DBUS_CODEC_H_
+#define LOCATION_DBUS_CODEC_H_
 
 #include <location/criteria.h>
-#include <location/features.h>
+#include <location/optional.h>
+#include <location/permission_manager.h>
 #include <location/position.h>
 #include <location/provider.h>
-#include <location/space_vehicle.h>
 #include <location/update.h>
-#include <location/service.h>
-#include <location/events/all.h>
-#include <location/events/registry.h>
-#include <location/events/reference_position_updated.h>
-#include <location/events/wifi_and_cell_id_reporting_state_changed.h>
 #include <location/units/units.h>
 
-#include <core/dbus/codec.h>
+#include <glib.h>
 
-#include <sstream>
-
-namespace core
+namespace location
 {
 namespace dbus
 {
-namespace helper
-{
-template<>
-struct TypeMapper<location::Service::State>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::string;
-    }
 
-    constexpr static bool is_basic_type()
-    {
-        return true;
-    }
-    constexpr static bool requires_signature()
-    {
-        return false;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s = TypeMapper<std::string>::signature();
-        return s;
-    }
+template<typename T>
+struct Codec
+{
+    static GVariant* encode(const T& value);
+    static Optional<T> decode(GVariant* variant);
 };
-}
 
 template<>
-struct Codec<location::Service::State>
+struct Codec<Credentials>
 {
-    static void encode_argument(Message::Writer& writer, const location::Service::State& in)
-    {
-        std::stringstream ss; ss << in; auto s = ss.str();
-        writer.push_stringn(s.c_str(), s.size());
-    }
-
-    static void decode_argument(Message::Reader& reader, location::Service::State& in)
-    {
-        auto s = reader.pop_string();
-        std::stringstream ss{s}; ss >> in;
-    }
+    static GVariant* encode(const Credentials& value);
+    static Optional<Credentials> decode(GVariant* variant);
 };
 
-namespace helper
+template<>
+struct Codec<Criteria>
 {
-template<typename T>
-struct TypeMapper<location::units::Quantity<T>>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::floating_point;
-    }
-
-    constexpr static bool is_basic_type()
-    {
-        return true;
-    }
-    constexpr static bool requires_signature()
-    {
-        return false;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s = TypeMapper<double>::signature();
-        return s;
-    }
+    static GVariant* encode(const Criteria& value);
+    static Optional<Criteria> decode(GVariant* variant);
 };
 
-template<typename T>
-struct TypeMapper<location::Optional<T>>
+template<>
+struct Codec<Features>
 {
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::structure;
-    }
-
-    constexpr static bool is_basic_type()
-    {
-        return false;
-    }
-
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s = DBUS_STRUCT_BEGIN_CHAR_AS_STRING + TypeMapper<bool>::signature() + DBUS_TYPE_VARIANT_AS_STRING + DBUS_STRUCT_END_CHAR_AS_STRING;
-        return s;
-    }
+    static GVariant* encode(const Features& value);
+    static Optional<Features> decode(GVariant* variant);
 };
-}
 
-template<typename T>
-struct Codec<location::Optional<T>>
+template<>
+struct Codec<Provider::Requirements>
 {
-    static void encode_argument(Message::Writer& writer, const location::Optional<T>& in)
-    {
-        auto sw = writer.open_structure();
-        {
-            bool has_value{in};
-            Codec<bool>::encode_argument(sw, has_value);
+    static GVariant* encode(const Provider::Requirements& value);
+    static Optional<Provider::Requirements> decode(GVariant* variant);
+};
 
-            if (has_value)
-            {
-                auto vw = sw.open_variant(types::Signature{helper::TypeMapper<T>::signature()});
-                Codec<T>::encode_argument(vw, *in);
-                sw.close_variant(std::move(vw));
-            }
-            else
-            {
-                auto vw = sw.open_variant(types::Signature{helper::TypeMapper<bool>::signature()});
-                Codec<bool>::encode_argument(vw, false);
-                sw.close_variant(std::move(vw));
-            }
-        }
-        writer.close_structure(std::move(sw));
-    }
+template<>
+struct Codec<location::Update<location::Position>>
+{
+    static GVariant* encode(const location::Update<location::Position>& value);
+    static Optional<location::Update<location::Position>> decode(GVariant* variant);
+};
 
-    static void decode_argument(Message::Reader& reader, location::Optional<T>& in)
-    {
-        auto sr = reader.pop_structure();
-        {
-            bool has_value{false};
-            Codec<bool>::decode_argument(sr, has_value);
-            auto vr = sr.pop_variant();
-            if (has_value)
-            {
-                T value;
-                Codec<T>::decode_argument(vr, value);
-                in = value;
-            } else
-            {
-                in.reset();
-            }
-        }
-    }
+template<>
+struct Codec<location::Update<units::Degrees>>
+{
+    static GVariant* encode(const location::Update<units::Degrees>& value);
+    static Optional<location::Update<units::Degrees>> decode(GVariant* variant);
+};
+
+template<>
+struct Codec<location::Update<units::Meters>>
+{
+    static GVariant* encode(const location::Update<units::Meters>& value);
+    static Optional<location::Update<units::Meters>> decode(GVariant* variant);
+};
+
+template<>
+struct Codec<location::Update<units::MetersPerSecond>>
+{
+    static GVariant* encode(const location::Update<units::MetersPerSecond>& value);
+    static Optional<location::Update<units::MetersPerSecond>> decode(GVariant* variant);
+};
+
+template<>
+struct Codec<location::Event>
+{
+    static GVariant* encode(const location::Event& value);
+};
+
+template<>
+struct Codec<location::Event::Ptr>
+{
+    static GVariant* encode(const location::Event::Ptr& value);
+    static Optional<location::Event::Ptr> decode(GVariant* variant);
 };
 
 template<typename T>
-struct Codec<location::units::Quantity<T>>
+GVariant* encode(const T& value)
 {
-    static void encode_argument(Message::Writer& writer, const location::units::Quantity<T>& in)
-    {
-        Codec<typename location::units::Quantity<T>::value_type>::encode_argument(writer, in.value());
-    }
-
-    static void decode_argument(Message::Reader& reader, location::units::Quantity<T>& in)
-    {
-        typename location::units::Quantity<T>::value_type value;
-        Codec<typename location::units::Quantity<T>::value_type>::decode_argument(reader, value);
-        in = location::units::Quantity<T>::from_value(value);
-    }
-};
-
-namespace helper
-{
-template<>
-struct TypeMapper<location::Position>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::structure;
-    }
-
-    constexpr static bool is_basic_type()
-    {
-        return false;
-    }
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s =
-                DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
-                TypeMapper<location::units::Degrees>::signature() +
-                TypeMapper<location::units::Degrees>::signature() +
-                TypeMapper<location::Optional<location::units::Meters>>::signature() +
-                TypeMapper<location::Optional<location::units::Meters>>::signature() +
-                TypeMapper<location::Optional<location::units::Meters>>::signature() +
-                DBUS_STRUCT_END_CHAR_AS_STRING;
-        return s;
-    }
-};
-}
-
-template<>
-struct Codec<location::Position>
-{
-    static void encode_argument(Message::Writer& writer, const location::Position& in)
-    {
-        auto vw = writer.open_structure();
-        {
-            Codec<location::units::Degrees>::encode_argument(vw, in.latitude());
-            Codec<location::units::Degrees>::encode_argument(vw, in.longitude());
-            Codec<location::Optional<location::units::Meters>>::encode_argument(vw, in.altitude());
-
-            Codec<location::Optional<location::units::Meters>>::encode_argument(vw, in.accuracy().horizontal());
-            Codec<location::Optional<location::units::Meters>>::encode_argument(vw, in.accuracy().vertical());
-        }
-        writer.close_structure(std::move(vw));
-    }
-
-    static void decode_argument(Message::Reader& reader, location::Position& in)
-    {
-        auto vr = reader.pop_structure();
-        {
-            Codec<location::units::Degrees>::decode_argument(vr, in.latitude());
-            Codec<location::units::Degrees>::decode_argument(vr, in.longitude());
-            Codec<location::Optional<location::units::Meters>>::decode_argument(vr, in.altitude());
-
-            Codec<location::Optional<location::units::Meters>>::decode_argument(vr, in.accuracy().horizontal());
-            Codec<location::Optional<location::units::Meters>>::decode_argument(vr, in.accuracy().vertical());
-        }
-    }
-};
-
-
-namespace helper
-{
-template<>
-struct TypeMapper<location::SpaceVehicle::Key>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::structure;
-    }
-    constexpr static bool is_basic_type()
-    {
-        return false;
-    }
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s =
-                helper::TypeMapper<std::uint32_t>::signature() +
-                helper::TypeMapper<std::uint32_t>::signature();
-        return s;
-    }
-};
-template<>
-struct TypeMapper<location::SpaceVehicle>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::structure;
-    }
-    constexpr static bool is_basic_type()
-    {
-        return false;
-    }
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    inline static std::string signature()
-    {
-        std::string s =
-            DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
-                helper::TypeMapper<location::SpaceVehicle::Key>::signature() +
-                helper::TypeMapper<float>::signature() +
-                helper::TypeMapper<bool>::signature() +
-                helper::TypeMapper<bool>::signature() +
-                helper::TypeMapper<bool>::signature() +
-                helper::TypeMapper<location::units::Quantity<location::units::Degrees>>::signature() +
-                helper::TypeMapper<location::units::Quantity<location::units::Degrees>>::signature() +
-            DBUS_STRUCT_END_CHAR_AS_STRING;
-        return s;
-    }
-};
-}
-
-template<>
-struct Codec<location::SpaceVehicle::Key>
-{
-    static void encode_argument(Message::Writer& writer, const location::SpaceVehicle::Key& in)
-    {
-        writer.push_uint32(static_cast<std::uint32_t>(in.type()));
-        writer.push_uint32(in.id());
-    }
-
-    static void decode_argument(Message::Reader& reader, location::SpaceVehicle::Key& in)
-    {
-        in = location::SpaceVehicle::Key{static_cast<location::SpaceVehicle::Type>(reader.pop_uint32()), reader.pop_uint32()};
-    }
-};
-
-template<>
-struct Codec<location::SpaceVehicle>
-{
-    inline static void encode_argument(Message::Writer& writer, const location::SpaceVehicle& in)
-    {
-        auto sub = writer.open_structure();
-
-        Codec<location::SpaceVehicle::Key>::encode_argument(sub, in.key());
-        Codec<location::Optional<float>>::encode_argument(sub, in.snr());
-        Codec<location::Optional<bool>>::encode_argument(sub, in.has_almanac_data());
-        Codec<location::Optional<bool>>::encode_argument(sub, in.has_ephimeris_data());
-        Codec<location::Optional<bool>>::encode_argument(sub, in.used_in_fix());
-        Codec<location::Optional<location::units::Degrees>>::encode_argument(sub, in.azimuth());
-        Codec<location::Optional<location::units::Degrees>>::encode_argument(sub, in.elevation());
-
-        writer.close_structure(std::move(sub));
-    }
-
-    inline static void decode_argument(Message::Reader& reader, location::SpaceVehicle& in)
-    {
-        auto sub = reader.pop_structure();
-
-        Codec<location::SpaceVehicle::Key>::decode_argument(sub, in.key());
-        Codec<location::Optional<float>>::decode_argument(sub, in.snr());
-        Codec<location::Optional<bool>>::decode_argument(sub, in.has_almanac_data());
-        Codec<location::Optional<bool>>::decode_argument(sub, in.has_ephimeris_data());
-        Codec<location::Optional<bool>>::decode_argument(sub, in.used_in_fix());
-        Codec<location::Optional<location::units::Degrees>>::decode_argument(sub, in.azimuth());
-        Codec<location::Optional<location::units::Degrees>>::decode_argument(sub, in.elevation());
-    }
-};
-
-namespace helper
-{
-template<>
-struct TypeMapper<std::map<location::SpaceVehicle::Key, location::SpaceVehicle>>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::array;
-    }
-    constexpr static bool is_basic_type()
-    {
-        return false;
-    }
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s = DBUS_TYPE_ARRAY_AS_STRING + TypeMapper<location::SpaceVehicle>::signature();
-        return s;
-    }
-};
-}
-template<>
-struct Codec<std::map<location::SpaceVehicle::Key, location::SpaceVehicle>>
-{
-    inline static void encode_argument(Message::Writer& writer, const std::map<location::SpaceVehicle::Key, location::SpaceVehicle>& arg)
-    {
-        types::Signature signature(helper::TypeMapper<location::SpaceVehicle>::signature());
-        auto sub = writer.open_array(signature);
-
-        for(const auto& element : arg)
-        {
-            Codec<location::SpaceVehicle>::encode_argument(sub, element.second);
-        }
-
-        writer.close_array(std::move(sub));
-    }
-
-    inline static void decode_argument(Message::Reader& reader, std::map<location::SpaceVehicle::Key, location::SpaceVehicle>& out)
-    {
-        auto sub = reader.pop_array();
-        while (sub.type() != ArgumentType::invalid)
-        {
-            location::SpaceVehicle sv;
-            Codec<location::SpaceVehicle>::decode_argument(sub, sv);
-            out.insert(std::make_pair(sv.key(), sv));
-        }
-    }
-};
-
-template<>
-struct Codec<location::Features>
-{
-    static void encode_argument(Message::Writer& writer, const location::Features& in)
-    {
-        writer.push_int32(static_cast<std::int32_t>(in));
-    }
-
-    static void decode_argument(Message::Reader& reader, location::Features& in)
-    {
-        in = static_cast<location::Features>(reader.pop_int32());
-    }
-};
-
-namespace helper
-{
-template<>
-struct TypeMapper<location::Criteria>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::structure;
-    }
-    constexpr static bool is_basic_type()
-    {
-        return false;
-    }
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    inline static std::string signature()
-    {
-        std::string s =
-            DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
-                TypeMapper<std::int32_t>::signature() +
-                TypeMapper<location::Optional<location::units::Meters>>::signature() +
-                TypeMapper<location::Optional<location::units::Meters>>::signature() +
-                TypeMapper<location::Optional<location::units::MetersPerSecond>>::signature() +
-                TypeMapper<location::Optional<location::units::Degrees>>::signature() +
-            DBUS_STRUCT_END_CHAR_AS_STRING;
-        return s;
-    }
-};
-}
-
-template<>
-struct Codec<location::Criteria>
-{
-    static void encode_argument(Message::Writer& writer, const location::Criteria& in)
-    {
-        Codec<location::Features>::encode_argument(writer, in.requirements());
-
-        Codec<location::Optional<location::units::Meters>>::encode_argument(writer, in.accuracy().horizontal());
-        Codec<location::Optional<location::units::Meters>>::encode_argument(writer, in.accuracy().vertical());
-        Codec<location::Optional<location::units::MetersPerSecond>>::encode_argument(writer, in.accuracy().velocity());
-        Codec<location::Optional<location::units::Degrees>>::encode_argument(writer, in.accuracy().heading());
-    }
-
-    static void decode_argument(Message::Reader& reader, location::Criteria& in)
-    {
-        Codec<location::Features>::decode_argument(reader, in.requirements());
-
-        Codec<location::Optional<location::units::Meters>>::decode_argument(reader, in.accuracy().horizontal());
-        Codec<location::Optional<location::units::Meters>>::decode_argument(reader, in.accuracy().vertical());
-        Codec<location::Optional<location::units::MetersPerSecond>>::decode_argument(reader, in.accuracy().velocity());
-        Codec<location::Optional<location::units::Degrees>>::decode_argument(reader, in.accuracy().heading());
-    }
-};
-
-template<>
-struct Codec<location::Provider::Requirements>
-{
-    static void encode_argument(Message::Writer& writer, const location::Provider::Requirements& in)
-    {
-        writer.push_int32(static_cast<std::int32_t>(in));
-    }
-
-    static void decode_argument(Message::Reader& reader, location::Provider::Requirements& in)
-    {
-        in = static_cast<location::Provider::Requirements>(reader.pop_int32());
-    }
-};
-
-namespace helper
-{
-template<>
-struct TypeMapper<location::WifiAndCellIdReportingState>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::int32;
-    }
-    constexpr static bool is_basic_type()
-    {
-        return true;
-    }
-
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s = helper::TypeMapper<std::int32_t>::signature();
-        return s;
-    }
-};
-}
-
-template<>
-struct Codec<location::WifiAndCellIdReportingState>
-{
-    static void encode_argument(Message::Writer& writer, const location::WifiAndCellIdReportingState& in)
-    {
-        writer.push_int32(static_cast<std::int32_t>(in));
-    }
-
-    static void decode_argument(Message::Reader& reader, location::WifiAndCellIdReportingState& in)
-    {
-        in = static_cast<location::WifiAndCellIdReportingState>(reader.pop_int32());
-    }
-};
-
-namespace helper
-{
-template<typename T>
-struct TypeMapper<location::Update<T>>
-{
-    constexpr static ArgumentType type_value()
-    {
-        return ArgumentType::structure;
-    }
-    constexpr static bool is_basic_type()
-    {
-        return false;
-    }
-    constexpr static bool requires_signature()
-    {
-        return true;
-    }
-
-    static std::string signature()
-    {
-        static const std::string s =
-                DBUS_STRUCT_BEGIN_CHAR_AS_STRING +
-                helper::TypeMapper<T>::signature() +
-                helper::TypeMapper<int64_t>::signature() +
-                DBUS_STRUCT_END_CHAR_AS_STRING;
-        return s;
-    }
-};
+    return Codec<T>::encode(value);
 }
 
 template<typename T>
-struct Codec<location::Update<T>>
+Optional<T> decode(GVariant* variant)
 {
-    static void encode_argument(Message::Writer& writer, const location::Update<T>& in)
-    {
-        auto sw = writer.open_structure();
-        {
-            Codec<T>::encode_argument(sw, in.value);
-            Codec<int64_t>::encode_argument(sw, in.when.time_since_epoch().count());
-        }
-        writer.close_structure(std::move(sw));
-    }
-
-    static void decode_argument(Message::Reader& reader, location::Update<T>& in)
-    {
-        auto sr = reader.pop_structure();
-        Codec<T>::decode_argument(sr, in.value);
-        in.when = location::Clock::Timestamp(location::Clock::Duration(sr.pop_int64()));
-    }    
-};
-
-template<>
-struct Codec<location::events::ReferencePositionUpdated>
-{
-    static void encode_argument(Message::Writer& out, const location::events::ReferencePositionUpdated& event)
-    {
-        Codec<location::Update<location::Position>>::encode_argument(out, event.update());
-    }
-
-    static void decode_argument(Message::Reader& in, location::events::ReferencePositionUpdated& event)
-    {
-        location::Update<location::Position> update;
-        Codec<location::Update<location::Position>>::decode_argument(in, update);
-        event = location::events::ReferencePositionUpdated{update};
-    }
-};
-
-template<>
-struct Codec<location::events::WifiAndCellIdReportingStateChanged>
-{
-    static void encode_argument(Message::Writer& out, const location::events::WifiAndCellIdReportingStateChanged& event)
-    {
-        Codec<location::WifiAndCellIdReportingState>::encode_argument(out, event.new_state());
-    }
-
-    static void decode_argument(Message::Reader& in, location::events::WifiAndCellIdReportingStateChanged& event)
-    {
-        location::WifiAndCellIdReportingState new_state;
-        Codec<location::WifiAndCellIdReportingState>::decode_argument(in, new_state);
-        event = location::events::WifiAndCellIdReportingStateChanged{new_state};
-    }
-};
-
-template<>
-struct Codec<location::events::All>
-{
-    static void encode_argument(Message::Writer& out, const location::events::All& event)
-    {
-        switch (event.which())
-        {
-        case 1:
-        {
-            const auto& ev = boost::get<location::events::ReferencePositionUpdated>(event);
-            auto name = location::events::Registry::instance().find(ev.type());
-            out.push_stringn(name.c_str(), name.size());
-            auto vw = out.open_variant(types::Signature{helper::TypeMapper<location::Update<location::Position>>::signature()});
-            {
-                Codec<location::events::ReferencePositionUpdated>::encode_argument(vw, ev);
-            }
-            out.close_variant(std::move(vw));
-            break;
-        }
-        case 2:
-        {
-            const auto& ev = boost::get<location::events::WifiAndCellIdReportingStateChanged>(event);
-            auto name = location::events::Registry::instance().find(ev.type());
-            out.push_stringn(name.c_str(), name.size());
-            auto vw = out.open_variant(types::Signature{helper::TypeMapper<location::WifiAndCellIdReportingState>::signature()});
-            {
-                Codec<location::events::WifiAndCellIdReportingStateChanged>::encode_argument(vw, ev);
-            }
-            out.close_variant(std::move(vw));
-            break;
-        }
-        }
-    }
-
-    static void decode_argument(Message::Reader& in, location::events::All& event)
-    {
-        std::string name{in.pop_string()};
-
-        auto type = location::events::Registry::instance().find(name);
-
-        if (type == location::TypeOf<location::events::ReferencePositionUpdated>::query())
-        {
-            location::events::ReferencePositionUpdated ev{location::Update<location::Position>{}};
-            auto vr = in.pop_variant();
-            Codec<location::events::ReferencePositionUpdated>::decode_argument(vr, ev);
-            event = ev;
-        }
-        else if (type == location::TypeOf<location::events::WifiAndCellIdReportingStateChanged>::query())
-        {
-            location::events::WifiAndCellIdReportingStateChanged ev{location::WifiAndCellIdReportingState::off};
-            auto vr = in.pop_variant();
-            Codec<location::events::WifiAndCellIdReportingStateChanged>::decode_argument(vr, ev);
-            event = ev;
-        }
-    }
-};
-}
+    return Codec<T>::decode(variant);
 }
 
-#endif // LOCATION_CODEC_H_
+}  // namespace dbus
+}  // namespace location
+
+#endif  // LOCATION_DBUS_CODEC_H_

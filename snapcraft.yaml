@@ -1,12 +1,9 @@
 name: locationd
-version: 3.0.0+16.10.20160616-0ubuntu1
+version: 4.0.0
 confinement: strict
 summary: Location service mediates access to positioning providers.
 description: |
   Location service mediates access to positioning providers.
-  
-  **Note** Currently only the dummy provider is supported in this snap. Additional
-  providers will be made available in the near future.
 
   Please find the source for this snap at https://code.launchpad.net/location-service
 
@@ -50,7 +47,7 @@ parts:
     configflags:
       - -DCMAKE_VERBOSE_MAKEFILE=ON
       - -DSNAPPY_UBUNTU_CORE=yes
-      - -DUBUNTU_LOCATION_SERVICE_VERSION_MAJOR=3
+      - -DUBUNTU_LOCATION_SERVICE_VERSION_MAJOR=4
     source: .
     build-packages:
       - curl
@@ -68,6 +65,7 @@ parts:
       - libc6-dev
       - libdbus-1-dev
       - libdbus-cpp-dev
+      - libglib2.0-dev
       - libgoogle-glog-dev
       - libgtest-dev
       - libiw-dev
@@ -87,6 +85,7 @@ parts:
       - libboost-system1.58.0
       - libdbus-cpp5
       - libgflags2v5
+      - libglib2.0-0
       - libgoogle-glog0v5
       - libjson-c2
       - libnet-cpp2

@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+  <interface name="fi.w1.wpa_supplicant1">
+    <signal name="InterfaceAdded">
+      <arg name="path" type="o"/>
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+    <signal name="InterfaceRemoved">
+      <arg name="path" type="o"/>
+    </signal>
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+    <property name="Interfaces" type="ao" access="read"/>
+  </interface>
+
+  <interface name="fi.w1.wpa_supplicant1.Interface">
+    <annotation name="org.gtk.GDBus.C.Name" value="FiW1Wpa_supplicant1WirelessInterface"/>
+    <method name="Scan">
+      <arg name="args" type="a{sv}" direction="in"/>
+    </method>
+    <property name="BSSs" type="ao" access="read"/>
+    <signal name="BSSAdded">
+      <arg name="BSS" type="o"/>
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+    <signal name="BSSRemoved">
+      <arg name="BSS" type="o"/>
+    </signal>
+    <signal name="ScanDone">
+      <arg name="success" type="b"/>
+    </signal>
+  </interface>
+
+  <interface name="fi.w1.wpa_supplicant1.BSS">
+    <property name="BSSID" type="ay" access="read">
+      <annotation name="org.gtk.GDBus.C.ForceGVariant" value="yes"/>
+    </property>
+    <property name="SSID" type="ay" access="read">
+      <annotation name="org.gtk.GDBus.C.ForceGVariant" value="yes"/>
+    </property>
+    <property name="Mode" type="s" access="read"/>
+    <property name="Frequency" type="q" access="read"/>
+    <property name="Signal" type="n" access="read"/>
+    <property name="Age" type="u" access="read"/>
+  </interface>
+</node>

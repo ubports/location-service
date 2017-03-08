@@ -22,10 +22,9 @@
 
 #include <location/optional.h>
 #include <location/service.h>
+#include <location/dbus/bus.h>
 #include <location/util/cli.h>
 #include <location/visibility.h>
-
-#include <core/dbus/well_known_bus.h>
 
 #include <boost/filesystem.hpp>
 
@@ -76,7 +75,7 @@ public:
 
 private:
     std::shared_ptr<Delegate> delegate; // We dispatch summary information to this delegate implementation.
-    core::dbus::WellKnownBus bus;       // The bus we should connect to.
+    dbus::Bus bus;                      // The bus we should connect to.
 };
 }
 }

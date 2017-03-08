@@ -70,8 +70,9 @@ struct LOCATION_DLL_PUBLIC WirelessNetwork
     typedef BoundedInteger
     <
         Tag::SignalStrength,
-        0,
-        100
+        std::numeric_limits<int>::min(),
+        std::numeric_limits<int>::max(),
+        std::numeric_limits<int>::max()
     > SignalStrength;
 
     /** @cond */

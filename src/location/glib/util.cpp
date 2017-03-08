@@ -1,5 +1,5 @@
 /*
- * Copyright © 2016 Canonical Ltd.
+ * Copyright © 2017 Canonical Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License version 3,
@@ -16,26 +16,17 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <location/serializing_bus.h>
+#include <location/glib/util.h>
 
-std::shared_ptr<location::SerializingBus> location::SerializingBus::create()
+#include <boost/format.hpp>
+
+std::exception_ptr location::glib::wrap_error_as_exception(GError* error)
 {
-    return std::shared_ptr<location::SerializingBus>{new location::SerializingBus{}};
-}
+    boost::format f("%s[%d]: %s");
+    auto result = std::make_exception_ptr(
+                std::runtime_error(
+                    (f % g_quark_to_string(error->domain) % error->code % error->message).str()));
 
-location::SerializingBus::SerializingBus()
-{
-}
-
-void location::SerializingBus::subscribe(const Event::Receiver::Ptr& receiver)
-{
-
-}
-
-void location::SerializingBus::unsubscribe(const Event::Receiver::Ptr& receiver)
-{
-}
-
-void location::SerializingBus::dispatch(const Event::Ptr& event)
-{
+    g_error_free(error);
+    return result;
 }

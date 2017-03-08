@@ -143,12 +143,11 @@ public:
     virtual void add_provider(const Provider::Ptr& provider) = 0;
 
     /**
-     * @brief Starts a new session for the given criteria
-     * @throw std::runtime_error in case of errors.
-     * @param criteria The client's requirements in terms of accuraccy and functionality
-     * @return A session instance.
-     */
-    virtual Session::Ptr create_session_for_criteria(const Criteria& criteria) = 0;
+      * @brief Starts a new session for the given criteria
+      * @param critiera The client's requirements in terms of accuracy and functionality
+      * @param cb Callback functor that is invoked once the session has been created
+      */
+    virtual void create_session_for_criteria(const Criteria& criteria, const std::function<void(const Session::Ptr&)>& cb) = 0;
 
 protected:
     Service() = default;

@@ -23,11 +23,11 @@ if (NOT DEFINED UBUNTU_LOCATION_SERVICE_VERSION_MAJOR)
   #   - errors
   # we define the version to be 2.0.0
   if (${DISTRO_CODENAME} STREQUAL "vivid")
-    set(UBUNTU_LOCATION_SERVICE_VERSION_MAJOR 2)
+    set(UBUNTU_LOCATION_SERVICE_VERSION_MAJOR 3)
     set(UBUNTU_LOCATION_SERVICE_VERSION_MINOR 0)
     set(UBUNTU_LOCATION_SERVICE_VERSION_PATCH 0)
   else ()
-    set(UBUNTU_LOCATION_SERVICE_VERSION_MAJOR 3)
+    set(UBUNTU_LOCATION_SERVICE_VERSION_MAJOR 4)
     set(UBUNTU_LOCATION_SERVICE_VERSION_MINOR 0)
     set(UBUNTU_LOCATION_SERVICE_VERSION_PATCH 0)
   endif()
@@ -38,7 +38,7 @@ message(STATUS "${CMAKE_PROJECT_NAME} ${UBUNTU_LOCATION_SERVICE_VERSION_MAJOR}.$
 set(UBUNTU_LOCATION_SERVICE_TRUST_STORE_SERVICE_NAME "UbuntuLocationService")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wextra -fPIC")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -fno-strict-aliasing -fvisibility=hidden -fvisibility-inlines-hidden -pedantic -Wextra -fPIC -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -fno-strict-aliasing -fvisibility=hidden -fvisibility-inlines-hidden -pedantic -Wextra -fPIC -pthread")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -65,6 +65,8 @@ pkg_check_modules(PROCESS_CPP process-cpp REQUIRED)
 pkg_check_modules(PROPERTIES_CPP properties-cpp REQUIRED)
 pkg_check_modules(TRUST_STORE trust-store REQUIRED)
 pkg_check_modules(UBUNTU_PLATFORM_HARDWARE_API ubuntu-platform-hardware-api)
+pkg_check_modules(GIO gio-2.0)
+pkg_check_modules(GIO_UNIX gio-unix-2.0)
 #####################################################################
 # Enable code coverage calculation with gcov/gcovr/lcov
 # Usage:
@@ -114,6 +116,8 @@ include_directories(
   ${TRUST_STORE_INCLUDE_DIRS}
   ${GLog_INCLUDE_DIR}
   ${GFlags_INCLUDE_DIR}
+  ${GIO_INCLUDE_DIRS}
+  ${GIO_UNIX_INCLUDE_DIRS}
 
   ${CMAKE_SOURCE_DIR}/include
   ${CMAKE_SOURCE_DIR}/src

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2014 Canonical Ltd.
+ * Copyright © 2017 Canonical Ltd.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License version 3,
@@ -16,13 +16,36 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 
-#include <location/providers/remote/stub.h>
+#ifndef LOCATION_GLIB_HOLDER_H_
+#define LOCATION_GLIB_HOLDER_H_
 
-#include "provider.h"
+#include <boost/core/ignore_unused.hpp>
 
-namespace remote = location::providers::remote;
+#include <glib.h>
 
-void remote::stub::create_with_configuration(const remote::stub::Configuration& configuration, const std::function<void(const location::Provider::Ptr&)>& cb)
+namespace location
 {
-    remote::Provider::Stub::create_instance_with_config(configuration, cb);
-}
+namespace glib
+{
+
+template<typename T>
+struct Holder
+{
+    static void destroy_notify(gpointer data)
+    {
+        delete static_cast<Holder<T>*>(data);
+    }
+
+    static void closure_notify(gpointer data, GClosure* closure)
+    {
+        boost::ignore_unused(closure);
+        delete static_cast<Holder<T>*>(data);
+    }
+
+    T value;
+};
+
+}  // namespace glib
+}  // namespace location
+
+#endif  // LOCATION_GLIB_HOLDER_H_

@@ -21,31 +21,12 @@
 
 #include <location/criteria.h>
 #include <location/dbus/stub/service.h>
+#include <location/glib/runtime.h>
 #include <location/runtime.h>
-#include <location/util/well_known_bus.h>
-
-#include <core/dbus/asio/executor.h>
-#include <core/posix/signal.h>
 
 #include <type_traits>
 
 namespace cli = location::util::cli;
-
-namespace
-{
-struct Retry
-{
-    template<unsigned int retry_count, typename Operation>
-    static auto times(const Operation& op) -> typename std::result_of<Operation>::type
-    {
-        for (unsigned int count = 0; count < retry_count; count++)
-            try { return op(); }
-            catch(...) {}
-
-        throw std::runtime_error{"Operation failed"};
-    }
-};
-}
 
 location::cmds::Monitor::PrintingDelegate::PrintingDelegate(std::ostream& out) : out{out}
 {
@@ -69,59 +50,55 @@ void location::cmds::Monitor::PrintingDelegate::on_new_velocity(const Update<uni
 location::cmds::Monitor::Monitor(const std::shared_ptr<Delegate>& delegate)
     : CommandWithFlagsAndAction{cli::Name{"monitor"}, cli::Usage{"monitor"}, cli::Description{"monitors the daemon"}},
       delegate{delegate},
-      bus{core::dbus::WellKnownBus::system}
+      bus{dbus::Bus::system}
 {
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
     action([this](const Context& ctxt)
     {
-        // We exit cleanly for SIGINT and SIGTERM.
-        auto trap = core::posix::trap_signals_for_all_subsequent_threads({core::posix::Signal::sig_int, core::posix::Signal::sig_term});
-        trap->signal_raised().connect([trap](core::posix::Signal)
+        glib::Runtime runtime;
+
+        location::dbus::stub::Service::create(bus, [this, &ctxt](const Result<location::dbus::stub::Service::Ptr>& result) mutable
         {
-            trap->stop();
+            if (!result)
+            {
+                glib::Runtime::instance()->stop();
+                return;
+            }
+
+            auto service = result.value();
+            service->create_session_for_criteria(location::Criteria{}, [this, &ctxt, service](const Result<Service::Session::Ptr>& result)
+            {
+                if (!result)
+                {
+                    glib::Runtime::instance()->stop();
+                    return;
+                }
+
+                auto session = result.value();
+
+                session->updates().position.changed().connect([this, session](const location::Update<location::Position>& pos)
+                {
+                    Monitor::delegate->on_new_position(pos);
+                });
+
+                session->updates().heading.changed().connect([this, session](const location::Update<location::units::Degrees>& heading)
+                {
+                    Monitor::delegate->on_new_heading(heading);
+                });
+
+                session->updates().velocity.changed().connect([this, session](const location::Update<location::units::MetersPerSecond>& velocity)
+                {
+                    Monitor::delegate->on_new_velocity(velocity);
+                });
+
+                session->updates().position_status = location::Service::Session::Updates::Status::enabled;
+                session->updates().heading_status = location::Service::Session::Updates::Status::enabled;
+                session->updates().velocity_status = location::Service::Session::Updates::Status::enabled;
+
+                ctxt.cout << "Enabled position/heading/velocity updates..." << std::endl;
+            });
         });
 
-        auto rt = location::Runtime::create();
-
-        auto conn = std::make_shared<core::dbus::Bus>(bus);
-        conn->install_executor(core::dbus::asio::make_executor(conn, rt->service()));
-
-        rt->start();
-
-        core::dbus::Service::Ptr service = core::dbus::Service::use_service<location::dbus::Service>(conn);
-
-        auto stub = std::make_shared<location::dbus::stub::Service>(conn, service, service->object_for_path(core::dbus::types::ObjectPath{location::dbus::Service::path()}));
-        auto session = stub->create_session_for_criteria(location::Criteria{});
-
-        session->updates().position.changed().connect([this](const location::Update<location::Position>& pos)
-        {
-            Monitor::delegate->on_new_position(pos);
-        });
-
-        session->updates().heading.changed().connect([this](const location::Update<location::units::Degrees>& heading)
-        {
-            Monitor::delegate->on_new_heading(heading);
-        });
-
-        session->updates().velocity.changed().connect([this](const location::Update<location::units::MetersPerSecond>& velocity)
-        {
-            Monitor::delegate->on_new_velocity(velocity);
-        });
-
-        session->updates().position_status = location::Service::Session::Updates::Status::enabled;
-        session->updates().heading_status = location::Service::Session::Updates::Status::enabled;
-        session->updates().velocity_status = location::Service::Session::Updates::Status::enabled;
-
-        ctxt.cout << "Enabled position/heading/velocity updates..." << std::endl;
-
-        trap->run();
-
-        session->updates().position_status = location::Service::Session::Updates::Status::disabled;
-        session->updates().heading_status = location::Service::Session::Updates::Status::disabled;
-        session->updates().velocity_status = location::Service::Session::Updates::Status::disabled;
-
-        conn->stop(); rt->stop();
-
-        return EXIT_SUCCESS;
+        return runtime.run();
     });
 }

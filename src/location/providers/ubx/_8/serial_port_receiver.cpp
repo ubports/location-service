@@ -21,20 +21,17 @@ ubx::_8::SerialPortReceiver::SerialPortReceiver(boost::asio::io_service& ios, co
 
 void ubx::_8::SerialPortReceiver::start()
 {
-    LOG(INFO) << __PRETTY_FUNCTION__ << std::endl;
     auto flush_rc = ::tcflush(sp.lowest_layer().native_handle(), TCIOFLUSH);
     start_read();
     if (flush_rc) throw std::system_error(errno, std::system_category());
 }
 
 void ubx::_8::SerialPortReceiver::stop() {
-    LOG(INFO) << __PRETTY_FUNCTION__ << std::endl;
     sp.cancel();
 }
 
 void ubx::_8::SerialPortReceiver::start_read()
 {
-    LOG(INFO) << __PRETTY_FUNCTION__ << std::endl;
     auto thiz = shared_from_this();
     boost::asio::async_read(sp, boost::asio::buffer(&buffer.front(), buffer.size()),
                             [thiz, this](const boost::system::error_code& ec, std::size_t transferred) {
@@ -52,7 +49,7 @@ void ubx::_8::SerialPortReceiver::start_read()
                                     }
                                     catch(...)
                                     {
-                                        LOG(WARNING) << "Error processing NMEA chunk";
+                                        LOG(WARNING) << "Error processing NMEA chunk.";
                                     }
 
                                     start_read();

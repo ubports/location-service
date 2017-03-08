@@ -20,13 +20,12 @@
 
 #include <location/provider.h>
 #include <location/provider_factory.h>
+#include <location/result.h>
 #include <location/visibility.h>
 
-#include <location/providers/remote/skeleton.h>
-#include <location/providers/remote/stub.h>
+#include <location/glib/shared_object.h>
 
-#include <core/dbus/bus.h>
-#include <core/dbus/object.h>
+#include <location/providers/remote/provider_gen.h>
 
 namespace location
 {
@@ -34,65 +33,24 @@ namespace providers
 {
 namespace remote
 {
-struct LOCATION_DLL_PUBLIC  Provider
+struct LOCATION_DLL_PUBLIC Provider
 {
-    class Observer
+    static constexpr const char* name()
+    {
+        return "com.ubuntu.location.Service.Provider";
+    }
+
+    class Stub : public location::Provider, public std::enable_shared_from_this<Stub>
     {
     public:
-        virtual ~Observer() = default;
-
-        virtual void on_new_position(const Update<Position>&) = 0;
-        virtual void on_new_heading(const Update<units::Degrees>&) = 0;
-        virtual void on_new_velocity(const Update<units::MetersPerSecond>&) = 0;
-
-        class Stub;
-        class Skeleton;
-    };
-
-    class Observer::Stub : public Observer
-    {
-    public:
-        explicit Stub(const core::dbus::Object::Ptr& object);
-
-        // From Observer
-        void on_new_position(const Update<Position>&) override;
-        void on_new_heading(const Update<units::Degrees>&) override;
-        void on_new_velocity(const Update<units::MetersPerSecond>&) override;
-
-    private:
-        core::dbus::Object::Ptr object;
-    };
-
-    class Observer::Skeleton : public Observer
-    {
-    public:
-        explicit Skeleton(const core::dbus::Bus::Ptr& bus, const core::dbus::Object::Ptr& object, const std::shared_ptr<Observer>& impl);
-
-        // From Observer
-        void on_new_position(const Update<Position>&) override;
-        void on_new_heading(const Update<units::Degrees>&) override;
-        void on_new_velocity(const Update<units::MetersPerSecond>&) override;
-
-    private:
-        core::dbus::Bus::Ptr bus;
-        core::dbus::Object::Ptr object;
-        std::shared_ptr<Observer> impl;
-    };
-
-    class Stub : public location::Provider, public Observer, public std::enable_shared_from_this<Stub>
-    {
-    public:
-        // Creates a new provider instance with the given config object.
-        static void create_instance_with_config(const stub::Configuration& config, const std::function<void(const Provider::Ptr&)>& cb);
+        // Asynchronously tries to create a new Stub instance, setting up proxy access to the remote
+        // end. Reports errors via 'cb'.
+        static void create(const glib::SharedObject<GDBusConnection>& connection,
+                           const std::string& name,
+                           const std::string& path,
+                           std::function<void(const Result<Provider::Ptr>&)> cb);
 
         ~Stub() noexcept;
-
-        void add_observer(const std::shared_ptr<Observer>& observer);
-
-        // From Observer
-        void on_new_position(const Update<Position>&) override;
-        void on_new_heading(const Update<units::Degrees>&) override;
-        void on_new_velocity(const Update<units::MetersPerSecond>&) override;
 
         // From location::Provider
         void on_new_event(const Event& event) override;
@@ -103,30 +61,47 @@ struct LOCATION_DLL_PUBLIC  Provider
 
         Requirements requirements() const override;
         bool satisfies(const Criteria& criteria) override;
+
         const core::Signal<Update<Position>>& position_updates() const override;
         const core::Signal<Update<units::Degrees>>& heading_updates() const override;
         const core::Signal<Update<units::MetersPerSecond>>& velocity_updates() const override;
 
     private:
-        Stub(const stub::Configuration& config, Requirements requirements);
+        struct OnProxyReadyContext
+        {
+            std::function<void(const location::Result<location::Provider::Ptr>&)> cb;
+        };
 
-        // Yeah, two stage init is evil.
-        std::shared_ptr<Stub> finalize();
+        static void on_proxy_ready(GObject* source_object, GAsyncResult* res, gpointer user_data);
+        static void on_requirements_changed(GObject* object, GParamSpec* spec, gpointer user_data);
+        static void on_position_updated(GObject* object, GParamSpec* spec, gpointer user_data);
+        static void on_heading_updated(GObject* object, GParamSpec* spec, gpointer user_data);
+        static void on_velocity_updated(GObject* object, GParamSpec* spec, gpointer user_data);
 
-        struct Private;
-        std::shared_ptr<Private> d;
+        Stub(const glib::SharedObject<ComUbuntuLocationServiceProvider>& stub);
+        std::shared_ptr<Stub> finalize_construction();
+
+        glib::SharedObject<ComUbuntuLocationServiceProvider> stub_;
+        Requirements requirements_;
+        core::Signal<Update<Position>> position_updates_;
+        core::Signal<Update<units::Degrees>> heading_updates_;
+        core::Signal<Update<units::MetersPerSecond>> velocity_updates_;
     };
 
-    class Skeleton : public location::Provider
+    class Skeleton : public location::Provider, public std::enable_shared_from_this<Skeleton>
     {
     public:
-        Skeleton(const remote::skeleton::Configuration& config);
+        // Asynchronously tries to create a new Skeleton instance, setting up
+        // proxy access to the remote end. Reports errors via cb.
+        static Provider::Ptr create(
+                const glib::SharedObject<GDBusConnection>& connection,
+                const std::string& path,
+                const Provider::Ptr& impl);
+
         ~Skeleton() noexcept;
 
-        void add_observer(const std::shared_ptr<Observer>& observer);
-
+        // From location::Provider
         void on_new_event(const Event& event) override;
-
         void enable() override;
         void disable() override;
         void activate() override;
@@ -134,13 +109,32 @@ struct LOCATION_DLL_PUBLIC  Provider
 
         Requirements requirements() const override;
         bool satisfies(const Criteria& criteria) override;
+
         const core::Signal<Update<Position>>& position_updates() const override;
         const core::Signal<Update<units::Degrees>>& heading_updates() const override;
         const core::Signal<Update<units::MetersPerSecond>>& velocity_updates() const override;
 
     private:
-        struct Private;
-        std::shared_ptr<Private> d;
+        static bool handle_on_new_event(
+                ComUbuntuLocationServiceProvider* provider, GDBusMethodInvocation* invocation, GVariant* event, gpointer user_data);
+        static bool handle_satisfies(
+                ComUbuntuLocationServiceProvider* provider, GDBusMethodInvocation* invocation, GVariant* requirements, gpointer user_data);
+        static bool handle_enable(
+                ComUbuntuLocationServiceProvider* provider, GDBusMethodInvocation* invocation, gpointer user_data);
+        static bool handle_disable(
+                ComUbuntuLocationServiceProvider* provider, GDBusMethodInvocation* invocation, gpointer user_data);
+        static bool handle_activate(
+                ComUbuntuLocationServiceProvider* provider, GDBusMethodInvocation* invocation, gpointer user_data);
+        static bool handle_deactivate(
+                ComUbuntuLocationServiceProvider* provider, GDBusMethodInvocation* invocation, gpointer user_data);
+
+        Skeleton(const glib::SharedObject<ComUbuntuLocationServiceProvider>& skeleton,
+                 const Provider::Ptr& impl);
+
+        std::shared_ptr<Skeleton> finalize_construction();
+
+        glib::SharedObject<ComUbuntuLocationServiceProvider> skeleton_;
+        Provider::Ptr impl_;
     };
 };
 }
