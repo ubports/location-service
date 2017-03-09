@@ -28,6 +28,7 @@ namespace nmea
 /// @brief Talker enumerates well-known participants on an NMEA bus.
 enum class Talker
 {
+    ga, ///< GALILEO receiver
     gl, ///< GLONASS receiver
     gn, ///< Global Navigation Satellite System (GNSS)
     gp  ///< Global Positioning System (GPS)

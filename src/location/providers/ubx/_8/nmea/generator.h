@@ -58,6 +58,7 @@ public:
     field_separator %= ',';
     checksum %= boost::spirit::karma::hex;
     talker.add
+        (Talker::ga, "GA")
         (Talker::gl, "GL")
         (Talker::gn, "GN")
         (Talker::gp, "GP");
@@ -165,7 +166,7 @@ public:
                   << boost::spirit::karma::maxwidth(1)[-boost::spirit::karma::uint_generator<std::uint8_t, 10>()]           << field_separator
                   << boost::spirit::karma::maxwidth(1)[-boost::spirit::karma::uint_generator<std::uint8_t, 10>()]           << field_separator
                   << boost::spirit::karma::right_align(2, '0')[-boost::spirit::karma::uint_generator<std::uint16_t, 10>()]
-                  << +(gsv_info);
+                  << *(gsv_info);
 
     rmc %= talker << "RMC"                                                                              << field_separator
                   << -utc                                                                               << field_separator

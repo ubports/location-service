@@ -60,6 +60,7 @@ public:
     field_separator %= ',';
     checksum %= boost::spirit::qi::hex;
     talker.add
+        ("GA", Talker::ga)
         ("GL", Talker::gl)
         ("GN", Talker::gn)
         ("GP", Talker::gp);
@@ -164,7 +165,7 @@ public:
                   >> -boost::spirit::qi::uint_parser<std::uint8_t, 10, 1, 1>()  >> field_separator
                   >> -boost::spirit::qi::uint_parser<std::uint8_t, 10, 1, 1>()  >> field_separator
                   >> -boost::spirit::qi::uint_parser<std::uint16_t, 10, 2, 2>()
-                  >> +(gsv_info);
+                  >> *(gsv_info);
 
     rmc %= talker >> "RMC"                                                                                        >> field_separator
                   >> -utc                                                                                         >> field_separator
