@@ -45,52 +45,64 @@ void location::dbus::stub::Service::create(Bus bus, std::function<void(const loc
     g_bus_get(static_cast<GBusType>(bus), nullptr, on_bus_acquired, new BusAcquisitionContext{std::move(callback)});
 }
 
-location::dbus::stub::Service::Service(const glib::SharedObject<GDBusConnection>& connection,
-                                       const glib::SharedObject<ComUbuntuLocationService>& proxy)
-    : connection{connection},
-      proxy{proxy},
-      state_{boost::lexical_cast<Service::State>(com_ubuntu_location_service_get_state(proxy.get()))},
-      does_satellite_based_positioning_{com_ubuntu_location_service_get_does_satellite_based_positioning(proxy.get())},
-      does_report_cell_and_wifi_ids_{com_ubuntu_location_service_get_does_report_cell_and_wifi_ids(proxy.get())},
-      is_online_{com_ubuntu_location_service_get_is_online(proxy.get())}
+location::dbus::stub::Service::Service()
 {
 }
 
-std::shared_ptr<location::dbus::stub::Service> location::dbus::stub::Service::finalize_construction()
+void location::dbus::stub::Service::deinit()
+{
+    for (auto id : signal_handler_ids)
+        g_signal_handler_disconnect(proxy_.get(), id);
+
+    signal_handler_ids.clear();
+}
+
+std::shared_ptr<location::dbus::stub::Service> location::dbus::stub::Service::init(
+        const glib::SharedObject<GDBusConnection>& connection, const glib::SharedObject<ComUbuntuLocationService>& service)
 {
     auto sp = shared_from_this();
     std::weak_ptr<Service> wp{sp};
 
+    deinit();
+
+    connection_ = connection;
+    proxy_ = service;
+
+    state_ = boost::lexical_cast<Service::State>(com_ubuntu_location_service_get_state(proxy_.get()));
+    does_satellite_based_positioning_ = com_ubuntu_location_service_get_does_satellite_based_positioning(proxy_.get());
+    does_report_cell_and_wifi_ids_ = com_ubuntu_location_service_get_does_report_cell_and_wifi_ids(proxy_.get());
+    is_online_ = com_ubuntu_location_service_get_is_online(proxy_.get());
+
     does_satellite_based_positioning_.changed().connect([this, wp](bool value)
     {
         if (auto sp = wp.lock())
-            com_ubuntu_location_service_set_does_satellite_based_positioning(Service::proxy.get(), value);
+            com_ubuntu_location_service_set_does_satellite_based_positioning(proxy_.get(), value);
     });
 
     does_report_cell_and_wifi_ids_.changed().connect([this, wp](bool value)
     {
         if (auto sp = wp.lock())
-            com_ubuntu_location_service_set_does_report_cell_and_wifi_ids(Service::proxy.get(), value);
+            com_ubuntu_location_service_set_does_report_cell_and_wifi_ids(proxy_.get(), value);
     });
 
     is_online_.changed().connect([this, wp](bool value)
     {
         if (auto sp = wp.lock())
-            com_ubuntu_location_service_set_is_online(Service::proxy.get(), value);
+            com_ubuntu_location_service_set_is_online(proxy_.get(), value);
     });
 
     signal_handler_ids.insert(
-                g_signal_connect_data(Service::proxy.get(), "notify::does-satellite-based-positioning",
+                g_signal_connect_data(proxy_.get(), "notify::does-satellite-based-positioning",
                                       G_CALLBACK(on_does_satellite_based_positioning_changed),
                                       new Holder{wp}, Holder::closure_notify, GConnectFlags(0)));
 
     signal_handler_ids.insert(
-                g_signal_connect_data(Service::proxy.get(), "notify::does-report-cell-and-wifi-ids",
+                g_signal_connect_data(proxy_.get(), "notify::does-report-cell-and-wifi-ids",
                                       G_CALLBACK(on_does_report_cell_and_wifi_ids_changed),
                                       new Holder{wp}, Holder::closure_notify, GConnectFlags(0)));
 
     signal_handler_ids.insert(
-                g_signal_connect_data(Service::proxy.get(), "notify::is-online",
+                g_signal_connect_data(proxy_.get(), "notify::is-online",
                                       G_CALLBACK(on_is_online_changed),
                                       new Holder{wp}, Holder::closure_notify, GConnectFlags(0)));
 
@@ -99,8 +111,7 @@ std::shared_ptr<location::dbus::stub::Service> location::dbus::stub::Service::fi
 
 location::dbus::stub::Service::~Service()
 {
-    for (auto id : signal_handler_ids)
-        g_signal_handler_disconnect(proxy.get(), id);
+    deinit();
 }
 
 void location::dbus::stub::Service::create_session_for_criteria(const Criteria& criteria, const std::function<void(const Session::Ptr&)>& cb)
@@ -109,7 +120,7 @@ void location::dbus::stub::Service::create_session_for_criteria(const Criteria& 
     std::weak_ptr<Service> wp{sp};
 
     com_ubuntu_location_service_call_create_session_for_criteria(
-                proxy.get(), dbus::encode(criteria), nullptr, on_session_ready, new Service::SessionCreationContext{std::move(cb), wp});
+                proxy_.get(), dbus::encode(criteria), nullptr, on_session_ready, new Service::SessionCreationContext{std::move(cb), wp});
 }
 
 void location::dbus::stub::Service::add_provider(const Provider::Ptr& provider)
@@ -118,10 +129,10 @@ void location::dbus::stub::Service::add_provider(const Provider::Ptr& provider)
     std::weak_ptr<Service> wp{sp};
 
     auto path = "/providers/" + std::to_string(provider_counter++);
-    auto skeleton = location::providers::remote::Provider::Skeleton::create(connection, path, provider);
+    auto skeleton = location::providers::remote::Provider::Skeleton::create(connection_, path, provider);
 
     com_ubuntu_location_service_call_add_provider(
-                proxy.get(), path.c_str(), nullptr, Service::on_provider_added, new Service::ProviderAdditionContext{skeleton, wp});
+                proxy_.get(), path.c_str(), nullptr, Service::on_provider_added, new Service::ProviderAdditionContext{skeleton, wp});
 }
 
 const core::Property<location::Service::State>& location::dbus::stub::Service::state() const
@@ -152,7 +163,6 @@ core::Property<std::map<location::SpaceVehicle::Key, location::SpaceVehicle>>& l
 void location::dbus::stub::Service::on_proxy_ready(GObject* source, GAsyncResult* res, gpointer user_data)
 {
     LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
-
     boost::ignore_unused(source);
 
     if (auto context = static_cast<Service::ProxyCreationContext*>(user_data))
@@ -166,10 +176,9 @@ void location::dbus::stub::Service::on_proxy_ready(GObject* source, GAsyncResult
         }
         else
         {
-            location::dbus::stub::Service::Ptr sp{
-                new location::dbus::stub::Service{
-                    context->connection, location::glib::make_shared_object(stub)}};
-            context->cb(make_result(sp->finalize_construction()));
+            context->cb(make_result(
+                            context->instance->init(
+                                context->connection, location::glib::make_shared_object(stub))));
         }
 
         delete context;
@@ -179,7 +188,6 @@ void location::dbus::stub::Service::on_proxy_ready(GObject* source, GAsyncResult
 void location::dbus::stub::Service::on_bus_acquired(GObject* source, GAsyncResult* res, gpointer user_data)
 {
     LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
-
     boost::ignore_unused(source);
 
     if (auto context = static_cast<Service::BusAcquisitionContext*>(user_data))
@@ -193,11 +201,40 @@ void location::dbus::stub::Service::on_bus_acquired(GObject* source, GAsyncResul
         }
         else
         {
-            com_ubuntu_location_service_proxy_new(
-                        bus, G_DBUS_PROXY_FLAGS_NONE, location::dbus::Service::name(), location::dbus::Service::path(),
-                        nullptr, on_proxy_ready, new Service::ProxyCreationContext{location::glib::make_shared_object(bus), context->cb});
+            auto name_appeared_for_creation_context =
+                    new NameAppearedForCreationContext{0, std::move(context->cb)};
+
+            name_appeared_for_creation_context->watch_id =
+                    g_bus_watch_name_on_connection(
+                        bus, location::dbus::Service::name(), G_BUS_NAME_WATCHER_FLAGS_NONE,
+                        on_name_appeared_for_creation, nullptr,
+                        name_appeared_for_creation_context, nullptr);
         }
 
+        delete context;
+    }
+}
+
+void location::dbus::stub::Service::on_name_appeared_for_creation(
+        GDBusConnection* bus, const gchar* name, const gchar* name_owner, gpointer user_data)
+{
+    LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
+    boost::ignore_unused(name, name_owner);
+
+    if (auto context = static_cast<NameAppearedForCreationContext*>(user_data))
+    {
+        com_ubuntu_location_service_proxy_new(
+                    bus, G_DBUS_PROXY_FLAGS_NONE, location::dbus::Service::name(), location::dbus::Service::path(),
+                    nullptr, on_proxy_ready, new Service::ProxyCreationContext
+                    {
+                        location::glib::make_shared_object(bus),
+                        Ptr{new Service{}},
+                        context->cb
+                    });
+
+        // Make sure that we only react to name appeared events once in this code path.
+        g_bus_unwatch_name(context->watch_id);
+        // Clean up our context.
         delete context;
     }
 }
@@ -205,7 +242,6 @@ void location::dbus::stub::Service::on_bus_acquired(GObject* source, GAsyncResul
 void location::dbus::stub::Service::on_provider_added(GObject *source, GAsyncResult *res, gpointer user_data)
 {
     LOCATION_DBUS_TRACE_STATIC_TRAMPOLIN;
-
     boost::ignore_unused(source);
 
     if (auto context = static_cast<Service::ProviderAdditionContext*>(user_data))
@@ -214,7 +250,7 @@ void location::dbus::stub::Service::on_provider_added(GObject *source, GAsyncRes
         {
             GError* error{nullptr};
             if (com_ubuntu_location_service_call_add_provider_finish(
-                        sp->proxy.get(), res, &error))
+                        sp->proxy_.get(), res, &error))
             {
                 sp->providers.insert(context->provider);
             }
@@ -239,12 +275,12 @@ void location::dbus::stub::Service::on_session_ready(GObject *source, GAsyncResu
         {
             GError* error{nullptr}; char* path{nullptr};
             com_ubuntu_location_service_call_create_session_for_criteria_finish(
-                        sp->proxy.get(), &path, res, &error);
+                        sp->proxy_.get(), &path, res, &error);
 
             if (!error)
             {
                 auto cb = context->cb;
-                stub::Session::create(sp->connection, path, [cb](const Result<stub::Session::Ptr>& result)
+                stub::Session::create(sp->connection_, path, [cb](const Result<stub::Session::Ptr>& result)
                 {
                     if (result)
                         cb(result.value());
@@ -271,7 +307,7 @@ void location::dbus::stub::Service::on_does_satellite_based_positioning_changed(
         {
             sp->does_satellite_based_positioning() =
                     com_ubuntu_location_service_get_does_satellite_based_positioning(
-                        sp->proxy.get());
+                        sp->proxy_.get());
         }
     }
 }
@@ -287,7 +323,7 @@ void location::dbus::stub::Service::on_does_report_cell_and_wifi_ids_changed(GOb
         {
             sp->does_report_cell_and_wifi_ids() =
                     com_ubuntu_location_service_get_does_report_cell_and_wifi_ids(
-                        sp->proxy.get());
+                        sp->proxy_.get());
         }
     }
 }
@@ -303,7 +339,7 @@ void location::dbus::stub::Service::on_is_online_changed(GObject* object, GParam
         {
             sp->is_online() =
                     com_ubuntu_location_service_get_is_online(
-                        sp->proxy.get());
+                        sp->proxy_.get());
         }
     }
 }

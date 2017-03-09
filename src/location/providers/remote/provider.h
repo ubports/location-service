@@ -43,6 +43,8 @@ struct LOCATION_DLL_PUBLIC Provider
     class Stub : public location::Provider, public std::enable_shared_from_this<Stub>
     {
     public:
+        using Ptr = std::shared_ptr<Stub>;
+
         // Asynchronously tries to create a new Stub instance, setting up proxy access to the remote
         // end. Reports errors via 'cb'.
         static void create(const glib::SharedObject<GDBusConnection>& connection,
@@ -91,6 +93,8 @@ struct LOCATION_DLL_PUBLIC Provider
     class Skeleton : public location::Provider, public std::enable_shared_from_this<Skeleton>
     {
     public:
+        using Ptr = std::shared_ptr<Skeleton>;
+
         // Asynchronously tries to create a new Skeleton instance, setting up
         // proxy access to the remote end. Reports errors via cb.
         static Provider::Ptr create(
