@@ -59,9 +59,18 @@ class Service : public location::Service, public std::enable_shared_from_this<Se
     };
     static void on_bus_acquired(GObject* source, GAsyncResult* res, gpointer user_data);
 
+    struct NameAppearedForCreationContext
+    {
+        guint watch_id;
+        std::function<void(const Result<Service::Ptr>&)> cb;
+    };
+    static void on_name_appeared_for_creation(
+            GDBusConnection* connection_, const gchar* name, const gchar* name_owner, gpointer user_data);
+
     struct ProxyCreationContext
     {
         glib::SharedObject<GDBusConnection> connection;
+        Service::Ptr instance;
         std::function<void(const Result<Service::Ptr>&)> cb;
     };
     static void on_proxy_ready(GObject* source, GAsyncResult* res, gpointer user_data);
@@ -84,13 +93,14 @@ class Service : public location::Service, public std::enable_shared_from_this<Se
     static void on_does_report_cell_and_wifi_ids_changed(GObject* object, GParamSpec* spec, gpointer user_data);
     static void on_is_online_changed(GObject* object, GParamSpec* spec, gpointer user_data);
 
-    Service(const glib::SharedObject<GDBusConnection>& connection,
-            const glib::SharedObject<ComUbuntuLocationService>& service);
+    Service();
 
-    std::shared_ptr<Service> finalize_construction();
+    void deinit();
+    std::shared_ptr<Service> init(const glib::SharedObject<GDBusConnection>& connection_,
+                                  const glib::SharedObject<ComUbuntuLocationService>& service);
 
-    glib::SharedObject<GDBusConnection> connection;
-    glib::SharedObject<ComUbuntuLocationService> proxy;
+    glib::SharedObject<GDBusConnection> connection_;
+    glib::SharedObject<ComUbuntuLocationService> proxy_;
     std::set<ulong> signal_handler_ids;
 
     std::uint64_t provider_counter{0};
