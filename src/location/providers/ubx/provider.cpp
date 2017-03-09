@@ -20,6 +20,7 @@
 
 #include <location/logging.h>
 #include <location/runtime.h>
+#include <location/glib/runtime.h>
 
 #include <core/posix/this_process.h>
 
@@ -72,7 +73,10 @@ void ubx::Provider::Monitor::operator()(const _8::nmea::Gga& gga) const
         if (gga.hdop)
             position.accuracy().horizontal(gga.hdop.get() * 3. * units::meters);
 
-        provider->updates.position(location::Update<location::Position>{position});
+        glib::Runtime::instance()->dispatch([this, position]()
+        {
+            provider->updates.position(location::Update<location::Position>{position});
+        });
     }
 }
 
@@ -103,14 +107,17 @@ void ubx::Provider::Monitor::operator()(const _8::nmea::Txt&) const
 
 void ubx::Provider::Monitor::operator()(const _8::nmea::Vtg& vtg) const
 {
-    if (vtg.cog_true)
-        provider->updates.heading(
-                    Update<units::Degrees>(
-                        vtg.cog_true.get() * units::degrees));
-    if (vtg.sog_kmh)
-        provider->updates.velocity(
-                    Update<units::MetersPerSecond>(
-                        vtg.sog_kmh.get() * 1000./3600. * units::meters_per_second));
+    glib::Runtime::instance()->dispatch([this, vtg]()
+    {
+        if (vtg.cog_true)
+            provider->updates.heading(
+                        Update<units::Degrees>(
+                            vtg.cog_true.get() * units::degrees));
+        if (vtg.sog_kmh)
+            provider->updates.velocity(
+                        Update<units::MetersPerSecond>(
+                            vtg.sog_kmh.get() * 1000./3600. * units::meters_per_second));
+    });
 }
 
 location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderFactory::Configuration& config)
@@ -127,7 +134,7 @@ ubx::Provider::Provider(const boost::filesystem::path& device)
     : runtime{location::Runtime::create(1)},
       monitor{std::make_shared<Monitor>(this)},
       receiver{_8::SerialPortReceiver::create(runtime->service(), device, monitor)}
-{
+{   
     runtime->start();
 }
 

@@ -70,6 +70,15 @@ location::cmds::Run::Run()
             engine->add_provider(std::make_shared<location::providers::dummy::Provider>());
         }
 
+        try
+        {
+            engine->add_provider(location::providers::ubx::Provider::create_instance(ProviderFactory::Configuration{}));
+        }
+        catch (...)
+        {
+            ctxt.cout << "Error adding UBX provider." << std::endl;
+        }
+
         location::dbus::skeleton::Service::Configuration config
         {
             bus,
