@@ -13,17 +13,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef UBX_8_MESSAGE_H_
-#define UBX_8_MESSAGE_H_
+#ifndef UBX_8_GNSS_ID_H_
+#define UBX_8_GNSS_ID_H_
 
-#include <location/providers/ubx/_8/ack/ack.h>
-#include <location/providers/ubx/_8/ack/nak.h>
-#include <location/providers/ubx/_8/cfg/gnss.h>
-#include <location/providers/ubx/_8/cfg/msg.h>
-#include <location/providers/ubx/_8/nav/pvt.h>
-#include <location/providers/ubx/_8/nav/sat.h>
+#include <cstdint>
 
-#include <boost/variant.hpp>
+#include <iosfwd>
 
 namespace location
 {
@@ -34,18 +29,23 @@ namespace ubx
 namespace _8
 {
 
-using Message = boost::variant<
-    ack::Ack,
-    ack::Nak,
-    cfg::Gnss,
-    cfg::Msg,
-    nav::Pvt,
-    nav::Sat
->;
+enum class GnssId : std::uint8_t
+{
+    gps = 0,
+    sbas = 1,
+    galileo = 2,
+    beidou = 3,
+    imes = 4,
+    qzss = 5,
+    glonass = 6
+
+};
+
+std::ostream& operator<<(std::ostream& out, GnssId gnss_id);
 
 }  // namespace _8
 }  // namespace ubx
 }  // namespace providers
-}  // namespace location
+}  // namepsace location
 
-#endif // UBX_8_MESSAGE_H_
+#endif  // UBX_8_GNSS_ID_H_

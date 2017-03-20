@@ -1,4 +1,4 @@
-// Copyright (C) 2016 Thomas Voss <thomas.voss.bochum@gmail.com>
+// Copyright (C) 2017 Thomas Voss <thomas.voss.bochum@gmail.com>
 //
 // This library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published
@@ -13,17 +13,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef UBX_8_MESSAGE_H_
-#define UBX_8_MESSAGE_H_
+#ifndef UBX_BITS_H_
+#define UBX_BITS_H_
 
-#include <location/providers/ubx/_8/ack/ack.h>
-#include <location/providers/ubx/_8/ack/nak.h>
-#include <location/providers/ubx/_8/cfg/gnss.h>
-#include <location/providers/ubx/_8/cfg/msg.h>
-#include <location/providers/ubx/_8/nav/pvt.h>
-#include <location/providers/ubx/_8/nav/sat.h>
-
-#include <boost/variant.hpp>
+#include <cstdint>
 
 namespace location
 {
@@ -31,21 +24,18 @@ namespace providers
 {
 namespace ubx
 {
-namespace _8
+namespace bits
 {
 
-using Message = boost::variant<
-    ack::Ack,
-    ack::Nak,
-    cfg::Gnss,
-    cfg::Msg,
-    nav::Pvt,
-    nav::Sat
->;
+template<std::size_t begin, std::size_t end, typename T, typename U>
+void set(T& bitfield, U value)
+{
+    bitfield |= (value << begin);
+}
 
-}  // namespace _8
+}  // namespace bits
 }  // namespace ubx
 }  // namespace providers
 }  // namespace location
 
-#endif // UBX_8_MESSAGE_H_
+#endif  // UBX_BITS_H_

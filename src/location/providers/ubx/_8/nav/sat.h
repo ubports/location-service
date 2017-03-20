@@ -13,17 +13,15 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef UBX_8_MESSAGE_H_
-#define UBX_8_MESSAGE_H_
+#ifndef UBX_8_NAV_SAT_H_
+#define UBX_8_NAV_SAT_H_
 
-#include <location/providers/ubx/_8/ack/ack.h>
-#include <location/providers/ubx/_8/ack/nak.h>
-#include <location/providers/ubx/_8/cfg/gnss.h>
-#include <location/providers/ubx/_8/cfg/msg.h>
-#include <location/providers/ubx/_8/nav/pvt.h>
-#include <location/providers/ubx/_8/nav/sat.h>
+#include <location/providers/ubx/_8/gnss_id.h>
 
-#include <boost/variant.hpp>
+#include <cstdint>
+
+#include <iosfwd>
+#include <vector>
 
 namespace location
 {
@@ -34,18 +32,40 @@ namespace ubx
 namespace _8
 {
 
-using Message = boost::variant<
-    ack::Ack,
-    ack::Nak,
-    cfg::Gnss,
-    cfg::Msg,
-    nav::Pvt,
-    nav::Sat
->;
+class Reader;
 
+namespace nav
+{
+
+struct Sat
+{
+    static constexpr std::uint8_t class_id{0x01};
+    static constexpr std::uint8_t message_id{0x35};
+
+    struct Info
+    {
+        GnssId gnss_id;
+        std::uint8_t satellite_id;
+        std::uint8_t carrier_to_noise;
+        std::int8_t elevation;
+        std::int16_t azimuth;
+        float pseudo_range_residual;
+        std::uint32_t flags;
+    };
+
+    void read(Reader& reader);
+
+    std::uint32_t itow;
+    std::uint8_t version;
+    std::vector<Info> info;
+};
+
+std::ostream& operator<<(std::ostream& out, const Sat& sat);
+
+}  // namespace nav
 }  // namespace _8
 }  // namespace ubx
 }  // namespace providers
 }  // namespace location
 
-#endif // UBX_8_MESSAGE_H_
+#endif  // UBX_8_NAV_SAT_H_

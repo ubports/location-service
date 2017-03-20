@@ -1,4 +1,4 @@
-// Copyright (C) 2016 Thomas Voss <thomas.voss.bochum@gmail.com>
+// Copyright (C) 2017 Thomas Voss <thomas.voss.bochum@gmail.com>
 //
 // This library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published
@@ -13,39 +13,23 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef UBX_8_MESSAGE_H_
-#define UBX_8_MESSAGE_H_
-
 #include <location/providers/ubx/_8/ack/ack.h>
-#include <location/providers/ubx/_8/ack/nak.h>
-#include <location/providers/ubx/_8/cfg/gnss.h>
-#include <location/providers/ubx/_8/cfg/msg.h>
-#include <location/providers/ubx/_8/nav/pvt.h>
-#include <location/providers/ubx/_8/nav/sat.h>
 
-#include <boost/variant.hpp>
+#include <location/providers/ubx/_8/reader.h>
 
-namespace location
+#include <iostream>
+
+namespace ack = location::providers::ubx::_8::ack;
+
+void ack::Ack::read(Reader& reader)
 {
-namespace providers
-{
-namespace ubx
-{
-namespace _8
-{
+    ackd_class_id = reader.read_unsigned_char();
+    ackd_message_id = reader.read_unsigned_char();
+}
 
-using Message = boost::variant<
-    ack::Ack,
-    ack::Nak,
-    cfg::Gnss,
-    cfg::Msg,
-    nav::Pvt,
-    nav::Sat
->;
-
-}  // namespace _8
-}  // namespace ubx
-}  // namespace providers
-}  // namespace location
-
-#endif // UBX_8_MESSAGE_H_
+std::ostream& ack::operator<<(std::ostream& out, const ack::Ack& a)
+{
+    return out << "ack-ack:" << std::endl
+               << "  class_id: " << a.ackd_class_id << std::endl
+               << "  message_id: " << a.ackd_message_id << std::endl;
+}

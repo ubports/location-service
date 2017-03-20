@@ -13,39 +13,24 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef UBX_8_MESSAGE_H_
-#define UBX_8_MESSAGE_H_
+#include <location/providers/ubx/_8/gnss_id.h>
 
-#include <location/providers/ubx/_8/ack/ack.h>
-#include <location/providers/ubx/_8/ack/nak.h>
-#include <location/providers/ubx/_8/cfg/gnss.h>
-#include <location/providers/ubx/_8/cfg/msg.h>
-#include <location/providers/ubx/_8/nav/pvt.h>
-#include <location/providers/ubx/_8/nav/sat.h>
+#include <iostream>
 
-#include <boost/variant.hpp>
+namespace _8 = location::providers::ubx::_8;
 
-namespace location
+std::ostream& _8::operator<<(std::ostream& out, GnssId gnss_id)
 {
-namespace providers
-{
-namespace ubx
-{
-namespace _8
-{
+    switch (gnss_id)
+    {
+    case GnssId::gps: out << "gps"; break;
+    case GnssId::sbas: out << "sbas"; break;
+    case GnssId::galileo: out << "galileo"; break;
+    case GnssId::beidou: out << "beidou"; break;
+    case GnssId::imes: out << "imes"; break;
+    case GnssId::qzss: out << "qzss"; break;
+    case GnssId::glonass: out << "glonass"; break;
+    }
 
-using Message = boost::variant<
-    ack::Ack,
-    ack::Nak,
-    cfg::Gnss,
-    cfg::Msg,
-    nav::Pvt,
-    nav::Sat
->;
-
-}  // namespace _8
-}  // namespace ubx
-}  // namespace providers
-}  // namespace location
-
-#endif // UBX_8_MESSAGE_H_
+    return out;
+}

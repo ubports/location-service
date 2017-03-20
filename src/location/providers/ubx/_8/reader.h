@@ -13,17 +13,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef UBX_8_MESSAGE_H_
-#define UBX_8_MESSAGE_H_
+#ifndef UBX_8_READER_H_
+#define UBX_8_READER_H_
 
-#include <location/providers/ubx/_8/ack/ack.h>
-#include <location/providers/ubx/_8/ack/nak.h>
-#include <location/providers/ubx/_8/cfg/gnss.h>
-#include <location/providers/ubx/_8/cfg/msg.h>
-#include <location/providers/ubx/_8/nav/pvt.h>
-#include <location/providers/ubx/_8/nav/sat.h>
-
-#include <boost/variant.hpp>
+#include <cstdint>
+#include <vector>
 
 namespace location
 {
@@ -34,18 +28,31 @@ namespace ubx
 namespace _8
 {
 
-using Message = boost::variant<
-    ack::Ack,
-    ack::Nak,
-    cfg::Gnss,
-    cfg::Msg,
-    nav::Pvt,
-    nav::Sat
->;
+class Reader
+{
+public:
+    explicit Reader(std::vector<std::uint8_t>::const_iterator begin,
+                    std::vector<std::uint8_t>::const_iterator end);
+
+    std::uint8_t read_unsigned_char();
+    std::int8_t read_signed_char();
+    std::uint16_t read_unsigned_short();
+    std::int16_t read_signed_short();
+    std::uint32_t read_unsigned_long();
+    std::int32_t read_signed_long();
+    float read_float();
+    double read_double();
+    const char* read_string(std::size_t size);
+
+private:
+    std::vector<std::uint8_t>::const_iterator begin;
+    std::vector<std::uint8_t>::const_iterator current;
+    std::vector<std::uint8_t>::const_iterator end;
+};
 
 }  // namespace _8
 }  // namespace ubx
 }  // namespace providers
 }  // namespace location
 
-#endif // UBX_8_MESSAGE_H_
+#endif // UBX_8_READER_H_

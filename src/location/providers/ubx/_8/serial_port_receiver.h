@@ -44,6 +44,9 @@ public:
     void start();
     void stop();
 
+protected:
+    void send_encoded_message(const std::vector<std::uint8_t>& data) override;
+
 private:
     /// @brief Receiver initializes a new instance opening the serial port
     /// located at path.

@@ -13,17 +13,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef UBX_8_MESSAGE_H_
-#define UBX_8_MESSAGE_H_
-
-#include <location/providers/ubx/_8/ack/ack.h>
-#include <location/providers/ubx/_8/ack/nak.h>
-#include <location/providers/ubx/_8/cfg/gnss.h>
-#include <location/providers/ubx/_8/cfg/msg.h>
-#include <location/providers/ubx/_8/nav/pvt.h>
-#include <location/providers/ubx/_8/nav/sat.h>
-
-#include <boost/variant.hpp>
+#ifndef UBX_8_MAGIC_H_
+#define UBX_8_MAGIC_H_
 
 namespace location
 {
@@ -34,18 +25,12 @@ namespace ubx
 namespace _8
 {
 
-using Message = boost::variant<
-    ack::Ack,
-    ack::Nak,
-    cfg::Gnss,
-    cfg::Msg,
-    nav::Pvt,
-    nav::Sat
->;
+constexpr const std::uint8_t sync_char_1{0xb5};
+constexpr const std::uint8_t sync_char_2{0x62};
 
 }  // namespace _8
 }  // namespace ubx
 }  // namespace providers
 }  // namespace location
 
-#endif // UBX_8_MESSAGE_H_
+#endif // UBX_8_MAGIC_H_
