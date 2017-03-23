@@ -43,6 +43,8 @@ namespace _8
 class AssistNowOnlineClient
 {
 public:
+    static constexpr const char* service_url{"http://online-live1.services.u-blox.com/GetOnlineData.ashx?token="};
+
     enum class DataType
     {
         ephemeris = 0,

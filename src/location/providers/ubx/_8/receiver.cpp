@@ -56,6 +56,10 @@ void ubx::_8::Receiver::process_chunk(Buffer::iterator it, Buffer::iterator itE)
             }
             catch (...)
             {
+                // Dropping the exception as there is hardly any reasonable measure
+                // we can take. Both scanners are designed to recover from issues, and we
+                // we just trap the exception here to guarantee that we keep on consuming the
+                // entire buffer.
             }
         }
         else if (!std::get<1>(result))
@@ -66,9 +70,12 @@ void ubx::_8::Receiver::process_chunk(Buffer::iterator it, Buffer::iterator itE)
                 {
                     monitor->on_new_nmea_sentence(nmea::parse_sentence(nmea_scanner.finalize()));
                 }
-                catch (const std::exception& e)
+                catch (...)
                 {
-
+                    // Dropping the exception as there is hardly any reasonable measure
+                    // we can take. Both scanners are designed to recover from issues, and we
+                    // we just trap the exception here to guarantee that we keep on consuming the
+                    // entire buffer.
                 }
             }
         }

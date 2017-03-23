@@ -107,7 +107,7 @@ void _8::AssistNowOnlineClient::request_assistance_data(const Parameters& parame
         }
     }
 
-    auto uri = "http://online-live1.services.u-blox.com/GetOnlineData.ashx?token=" + parameters.token;
+    auto uri = service_url + parameters.token;
     for (const auto& param : query)
         uri += (boost::format("&%1%=%2%") % param.first % param.second).str();
 
