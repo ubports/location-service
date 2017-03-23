@@ -35,6 +35,9 @@ class LOCATION_DLL_PUBLIC Test : public util::cli::CommandWithFlagsAndAction
 public:
     // List initializes a new instance.
     Test();
+
+private:
+    Optional<std::string> test_suite;   // The test suite that should be executed.
 };
 }
 }

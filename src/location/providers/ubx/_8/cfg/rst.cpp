@@ -13,41 +13,31 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef UBX_8_MESSAGE_H_
-#define UBX_8_MESSAGE_H_
-
-#include <location/providers/ubx/_8/ack/ack.h>
-#include <location/providers/ubx/_8/ack/nak.h>
-#include <location/providers/ubx/_8/cfg/gnss.h>
-#include <location/providers/ubx/_8/cfg/msg.h>
 #include <location/providers/ubx/_8/cfg/rst.h>
-#include <location/providers/ubx/_8/nav/pvt.h>
-#include <location/providers/ubx/_8/nav/sat.h>
 
-#include <boost/variant.hpp>
+#include <location/providers/ubx/bits.h>
+#include <location/providers/ubx/_8/writer.h>
 
-namespace location
+#include <cstdint>
+#include <iostream>
+
+namespace cfg = location::providers::ubx::_8::cfg;
+
+std::size_t cfg::Rst::size() const
 {
-namespace providers
-{
-namespace ubx
-{
-namespace _8
-{
+    return 4;
+}
 
-using Message = boost::variant<
-    ack::Ack,
-    ack::Nak,
-    cfg::Gnss,
-    cfg::Msg,
-    cfg::Rst,
-    nav::Pvt,
-    nav::Sat
->;
+void cfg::Rst::write(Writer& writer) const
+{
+    writer.write_unsigned_short(bits);
+    writer.write_unsigned_char(mode);
+    writer.write_unsigned_char(0);
+}
 
-}  // namespace _8
-}  // namespace ubx
-}  // namespace providers
-}  // namespace location
-
-#endif // UBX_8_MESSAGE_H_
+std::ostream& cfg::operator<<(std::ostream& out, const cfg::Rst& rst)
+{
+    return out << "cfg-rst:" << std::endl
+        << "  bits: " << rst.bits << std::endl
+        << "  mode: " << rst.mode << std::endl;
+}

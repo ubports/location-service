@@ -7,6 +7,8 @@ add_library(
 
   bits.h
 
+  _8/assist_now_online_client.h
+  _8/assist_now_online_client.cpp
   _8/checksum.h
   _8/checksum.cpp
   _8/gnss_id.h
@@ -25,11 +27,12 @@ add_library(
   _8/ack/ack.cpp
   _8/ack/nak.h
   _8/ack/nak.cpp
-  _8/cfg/cfg.h
   _8/cfg/gnss.h
   _8/cfg/gnss.cpp
   _8/cfg/msg.h
   _8/cfg/msg.cpp
+  _8/cfg/rst.h
+  _8/cfg/rst.cpp
   _8/nav/pvt.h
   _8/nav/pvt.cpp
   _8/nav/sat.h

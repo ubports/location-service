@@ -58,6 +58,9 @@ public:
     Message finalize();
 
 private:
+
+    void reset();
+
     Expect next;
     Checksum checksum;
     std::uint8_t class_id;

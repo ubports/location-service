@@ -74,6 +74,10 @@ location::cmds::Run::Run()
         {
             engine->add_provider(location::providers::ubx::Provider::create_instance(ProviderFactory::Configuration{}));
         }
+        catch (const std::exception& e)
+        {
+            ctxt.cout << "Error adding UBX provider: " << e.what() << std::endl;
+        }
         catch (...)
         {
             ctxt.cout << "Error adding UBX provider." << std::endl;

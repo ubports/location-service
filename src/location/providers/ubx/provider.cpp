@@ -20,6 +20,7 @@
 
 #include <location/logging.h>
 #include <location/runtime.h>
+#include <location/events/reference_position_updated.h>
 #include <location/glib/runtime.h>
 
 #include <location/providers/ubx/_8/cfg/gnss.h>
@@ -27,7 +28,10 @@
 #include <location/providers/ubx/_8/nav/pvt.h>
 #include <location/providers/ubx/_8/nav/sat.h>
 
+#include <core/net/http/client.h>
 #include <core/posix/this_process.h>
+
+#include <boost/lexical_cast.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -36,6 +40,29 @@
 
 namespace env = core::posix::this_process::env;
 namespace ubx = location::providers::ubx;
+
+namespace
+{
+
+struct SettingsHelper
+{
+    template<typename T>
+    static T get_value(std::string key, T&& default_value)
+    {
+        static const std::string snap_path = env::get("SNAP_PATH");
+
+        boost::filesystem::path path{snap_path};
+        std::replace(key.begin(), key.begin(), '.', '/');
+        path /= key;
+
+        std::ifstream in{path.string().c_str()};
+        T value{default_value}; in >> value;
+
+        return value;
+    }
+};
+
+}
 
 std::string ubx::Provider::class_name()
 {
@@ -49,7 +76,7 @@ ubx::Provider::Monitor::Monitor(Provider* provider) : provider{provider}
 void ubx::Provider::Monitor::on_new_ubx_message(const _8::Message& message)
 {
     VLOG(1) << message;
-    if (provider->protocol == Provider::Protocol::ubx)
+    if (provider->configuration.protocol == Provider::Protocol::ubx)
         boost::apply_visitor(*this, message);
 }
 
@@ -57,7 +84,7 @@ void ubx::Provider::Monitor::on_new_ubx_message(const _8::Message& message)
 void ubx::Provider::Monitor::on_new_nmea_sentence(const _8::nmea::Sentence& sentence)
 {
     VLOG(1) << sentence;
-    if (provider->protocol == Provider::Protocol::nmea)
+    if (provider->configuration.protocol == Provider::Protocol::nmea)
         boost::apply_visitor(*this, sentence);
 }
 
@@ -160,22 +187,133 @@ void ubx::Provider::Monitor::operator()(const _8::nmea::Vtg& vtg) const
 
 location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderFactory::Configuration& config)
 {
-    std::string device_path = "/dev/ttyACM0";
-    std::ifstream in(env::get("SNAP_DATA") + "/ubx/provider/path");
-    in >> device_path;
+    Configuration configuration
+    {
+        Protocol::ubx,
+        config.get<std::string>(
+            "device", SettingsHelper::get_value<std::string>(
+                    "ubx.provider.path",
+                    "/dev/ttyACM1"
+            )
+        ),
+        {
+            SettingsHelper::get_value<std::string>(
+                "ubx.provider.assist_now.enable",
+                "true"
+            ) == "true",
+            SettingsHelper::get_value<std::string>(
+                "ubx.provider.assist_now.token",
+                ""
+            ),
+            boost::posix_time::seconds(
+                boost::lexical_cast<std::uint64_t>(
+                    SettingsHelper::get_value<std::string>(
+                        "ubx.provider.assist_now.acquisition_timeout",
+                        "5"
+                    )
+                )
+            )
+        }
+    };
 
-    return location::Provider::Ptr{new ubx::Provider{
-            Protocol::ubx, config.get<std::string>("device", device_path)}};
+    return location::Provider::Ptr{new ubx::Provider{configuration}};
 }
 
-ubx::Provider::Provider(Protocol protocol, const boost::filesystem::path& device)
-    : protocol{protocol},
+ubx::Provider::Provider(const Configuration& configuration)
+    : configuration{configuration},
       runtime{location::Runtime::create(1)},
       monitor{std::make_shared<Monitor>(this)},
-      receiver{_8::SerialPortReceiver::create(runtime->service(), device, monitor)}
-{   
+      receiver{_8::SerialPortReceiver::create(runtime->service(), configuration.device, monitor)},
+      assist_now_online_client{std::make_shared<_8::AssistNowOnlineClient>(core::net::http::make_client())},
+      acquisition_timer{runtime->service()}
+{
     runtime->start();
 
+    updates.position.connect([this](const Update<Position>&)
+    {
+        acquisition_timer.cancel();
+    });
+
+    configure_gnss();
+    configure_protocol();
+}
+
+ubx::Provider::~Provider() noexcept
+{
+    deactivate();
+    runtime->stop();
+}
+
+void ubx::Provider::reset()
+{
+    receiver->send_message(_8::cfg::Rst{_8::cfg::Rst::Bits::cold_start, _8::cfg::Rst::Mode::controlled_software_reset_gnss});
+}
+
+void ubx::Provider::on_new_event(const Event&)
+{
+    // TODO(tvoss): Use incoming reference position updates
+    // to query assistance data.
+}
+
+location::Provider::Requirements ubx::Provider::requirements() const
+{
+    return Requirements::none;
+}
+
+bool ubx::Provider::satisfies(const location::Criteria&)
+{
+    return true;
+}
+
+void ubx::Provider::enable()
+{
+}
+
+void ubx::Provider::disable()
+{
+}
+
+void ubx::Provider::activate()
+{
+    receiver->start();
+
+    if (configuration.assist_now.enable)
+    {
+        auto thiz = shared_from_this();
+        std::weak_ptr<Provider> wp{thiz};
+
+        acquisition_timer.expires_from_now(configuration.assist_now.acquisition_timeout);
+        acquisition_timer.async_wait([this, wp](boost::system::error_code ec)
+        {
+            if (auto sp = wp.lock())
+                if (!ec) request_assist_now_online_data(Optional<Position>{});
+        });
+    }
+}
+
+void ubx::Provider::deactivate()
+{
+    receiver->stop();
+    acquisition_timer.cancel();
+}
+
+const core::Signal<location::Update<location::Position>>& ubx::Provider::position_updates() const
+{
+    return updates.position;
+}
+
+const core::Signal<location::Update<location::units::Degrees>>& ubx::Provider::heading_updates() const
+{
+    return updates.heading;
+}
+
+const core::Signal<location::Update<location::units::MetersPerSecond>>& ubx::Provider::velocity_updates() const
+{
+    return updates.velocity;
+}
+
+void ubx::Provider::configure_gnss()
+{
     _8::cfg::Gnss::Gps gps;
     gps.l1ca = true;
     gps.enable = true;
@@ -207,8 +345,11 @@ ubx::Provider::Provider(Protocol protocol, const boost::filesystem::path& device
     gnss.sbas = sbas;
 
     receiver->send_message(gnss);
+}
 
-    if (protocol == Protocol::ubx)
+void ubx::Provider::configure_protocol()
+{
+    if (configuration.protocol == Protocol::ubx)
     {
         _8::cfg::Msg cfg_msg{ubx::_8::nav::Pvt::class_id, ubx::_8::nav::Pvt::message_id, { 0 }};
         cfg_msg.rate[_8::cfg::Msg::Port::usb] = 1;
@@ -221,55 +362,47 @@ ubx::Provider::Provider(Protocol protocol, const boost::filesystem::path& device
     }
 }
 
-ubx::Provider::~Provider() noexcept
+void ubx::Provider::request_assist_now_online_data(const Optional<Position>& position)
 {
-    deactivate();
-    runtime->stop();
-}
+    auto thiz = shared_from_this();
+    std::weak_ptr<Provider> wp{thiz};
 
-void ubx::Provider::on_new_event(const Event&)
-{
-}
+    _8::AssistNowOnlineClient::Parameters params;
+    params.token = configuration.assist_now.token;
+    params.gnss = {_8::GnssId::gps, _8::GnssId::glonass, _8::GnssId::galileo};
+    params.data_types =
+    {
+        _8::AssistNowOnlineClient::DataType::almanac,
+        _8::AssistNowOnlineClient::DataType::ephemeris
+    };
+    params.position = position;
 
-location::Provider::Requirements ubx::Provider::requirements() const
-{
-    return Requirements::none;
-}
-
-bool ubx::Provider::satisfies(const location::Criteria&)
-{
-    return true;
-}
-
-void ubx::Provider::enable()
-{
-}
-
-void ubx::Provider::disable()
-{
-}
-
-void ubx::Provider::activate()
-{
-    receiver->start();
-}
-
-void ubx::Provider::deactivate()
-{
-    receiver->stop();
-}
-
-const core::Signal<location::Update<location::Position>>& ubx::Provider::position_updates() const
-{
-    return updates.position;
-}
-
-const core::Signal<location::Update<location::units::Degrees>>& ubx::Provider::heading_updates() const
-{
-    return updates.heading;
-}
-
-const core::Signal<location::Update<location::units::MetersPerSecond>>& ubx::Provider::velocity_updates() const
-{
-    return updates.velocity;
+    assist_now_online_client->request_assistance_data(params, [this, wp](const Result<std::string>& result)
+    {
+        if (result)
+        {
+            if (auto sp = wp.lock())
+            {
+                LOG(INFO) << "Successfully queried assistance data, injecting into chipset now.";
+                receiver->send_encoded_message(
+                        std::vector<std::uint8_t>(
+                            result.value().begin(), result.value().end()));
+            }
+        }
+        else
+        {
+            try
+            {
+                result.rethrow();
+            }
+            catch (const std::exception& e)
+            {
+                LOG(WARNING) << "Failed to query AssistNow for aiding data: " << e.what() << std::endl;
+            }
+            catch (...)
+            {
+                LOG(WARNING) << "Failed to query AssistNow for aiding data." << std::endl;
+            }
+        }
+    });
 }

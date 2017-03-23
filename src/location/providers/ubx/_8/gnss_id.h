@@ -41,6 +41,7 @@ enum class GnssId : std::uint8_t
 
 };
 
+bool operator<(GnssId lhs, GnssId rhs);
 std::ostream& operator<<(std::ostream& out, GnssId gnss_id);
 
 }  // namespace _8

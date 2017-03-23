@@ -21,6 +21,7 @@
 #include <boost/filesystem.hpp>
 
 #include <array>
+#include <atomic>
 
 namespace location
 {
@@ -44,10 +45,15 @@ public:
     void start();
     void stop();
 
-protected:
     void send_encoded_message(const std::vector<std::uint8_t>& data) override;
 
 private:
+    enum class State
+    {
+        running,
+        stopped
+    };
+
     /// @brief Receiver initializes a new instance opening the serial port
     /// located at path.
     ///
@@ -65,7 +71,7 @@ private:
 
     Receiver::Buffer buffer;
     boost::asio::io_service& ios;
-    boost::asio::serial_port sp;
+    boost::asio::serial_port serial_port;
 };
 }
 }

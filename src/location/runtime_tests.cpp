@@ -20,12 +20,17 @@
 #include <location/runtime_tests.h>
 
 #include <location/clock.h>
+#include <location/glib/runtime.h>
 #include <location/providers/gps/hardware_abstraction_layer.h>
+#include <location/providers/ubx/provider.h>
+
+#include <core/posix/this_process.h>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/mean.hpp>
 #include <boost/accumulators/statistics/variance.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <cstdlib>
 
@@ -35,6 +40,7 @@
 #include <mutex>
 #include <thread>
 
+namespace env = core::posix::this_process::env;
 namespace gps = location::providers::gps;
 
 namespace
@@ -172,14 +178,125 @@ int snr_and_ttff(std::ostream& cout, std::ostream& cerr)
     return 0;
 }
 #else
-int snr_and_ttff(std::ostream&, std::ostream&) { return 0; }
+int snr_and_ttff(const std::string& test_suite, std::ostream&, std::ostream&) { return 0; }
 #endif // LOCATION_PROVIDERS_GPS
+
+int ubx(std::ostream& cout, std::ostream& cerr)
+{
+    typedef boost::accumulators::accumulator_set<
+        double,
+        boost::accumulators::stats<
+            boost::accumulators::tag::mean,
+            boost::accumulators::tag::variance
+        >
+    > Statistics;
+
+    using boost::accumulators::mean;
+    using boost::accumulators::variance;
+
+    static const unsigned int trials = 15;
+
+    Statistics stats;
+    location::providers::ubx::Provider::Configuration configuration
+    {
+        location::providers::ubx::Provider::Protocol::ubx,
+        env::get_or_throw("UBX_PROVIDER_TEST_DEVICE"),
+        {
+            env::get("UBX_PROVIDER_TEST_ASSIST_NOW_ENABLE", "false") == "true",
+            env::get_or_throw("UBX_PROVIDER_TEST_ASSIST_NOW_TOKEN"),
+            boost::posix_time::seconds(
+                boost::lexical_cast<std::uint64_t>(
+                    env::get("UBX_PROVIDER_TEST_ASSIST_NOW_ACQUISITION_TIMEOUT", "5")))
+        }
+    };
+    auto provider = std::make_shared<location::providers::ubx::Provider>(configuration);
+
+    struct State
+    {
+        State() : worker{[this]() { runtime.run(); }}, fix_received(false)
+        {
+        }
+
+        ~State()
+        {
+            runtime.stop();
+            if (worker.joinable())
+                worker.join();
+        }
+
+        bool wait_for_fix_for(const std::chrono::seconds& seconds)
+        {
+            std::unique_lock<std::mutex> ul(guard);
+            return wait_condition.wait_for(
+                        ul,
+                        seconds,
+                        [this]() {return fix_received == true;});
+        }
+
+        void on_position_updated(const location::Position&)
+        {
+            fix_received = true;
+            wait_condition.notify_all();
+        }
+
+        void reset()
+        {
+            fix_received = false;
+        }
+
+        location::glib::Runtime runtime;
+        std::thread worker;
+        std::mutex guard;
+        std::condition_variable wait_condition;
+        bool fix_received;
+    } state;
+
+    provider->position_updates().connect([&state](const location::Update<location::Position>& update)
+    {
+        state.on_position_updated(update.value);
+    });
+
+    for (unsigned int i = 0; i < trials; i++)
+    {
+        provider->reset();
+
+        state.reset();
+        auto start = std::chrono::duration_cast<std::chrono::microseconds>(location::Clock::now().time_since_epoch());
+        {
+            provider->activate();
+
+            // We expect a maximum cold start time of 15 minutes. The theoretical
+            // limit is 12.5 minutes, and we add up some grace period to make the
+            // test more robust (see http://en.wikipedia.org/wiki/Time_to_first_fix).
+            expect<true, std::runtime_error>(state.wait_for_fix_for(std::chrono::seconds{15 * 60}), "Wait for fix timed out.");
+            provider->deactivate();
+        }
+        auto stop = std::chrono::duration_cast<std::chrono::microseconds>(location::Clock::now().time_since_epoch());
+
+        stats((stop - start).count());
+    }
+
+    cout << "Mean time to first fix in [ms]: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(
+                     std::chrono::microseconds(
+                         static_cast<std::uint64_t>(mean(stats)))).count()
+              << std::endl;
+    cout << "Std.dev. in time to first fix in [ms]: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(
+                     std::chrono::microseconds(
+                         static_cast<std::uint64_t>(std::sqrt(variance(stats))))).count()
+              << std::endl;
+
+    return 0;
 }
 
-int location::execute_runtime_tests(std::ostream& cout, std::ostream& cerr)
+}  // namespace
+
+int location::execute_runtime_tests(const std::string& test_suite, std::ostream& cout, std::ostream& cerr)
 {
-    Fixture fixture; // This throws in case of issues.
-    auto rc = snr_and_ttff(cout, cerr); if (rc != 0) return rc;
-    // Other runtime tests go here;
-    return rc;
+    if (test_suite == "android-gps")
+        return snr_and_ttff(cout, cerr);
+    else if (test_suite == "ubx")
+        return ubx(cout, cerr);
+    return 0;
 }

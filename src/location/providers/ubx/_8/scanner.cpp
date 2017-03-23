@@ -65,15 +65,12 @@ std::tuple<_8::Scanner::Expect, bool> _8::Scanner::update(std::uint8_t c)
 {
     bool consumed = false;
 
-    // TODO(tvoss): This lacks a lot of validiation and verification.
-    // UBX allows us to partially parse while we scan and carry out online
-    // checksum calculation. Ideally, we would have a common class State that
-    // captures behavior and transition logic.
     switch (next)
     {
     case Expect::sync_char_1:
         if (c == sync_char_1)
         {
+            reset();
             next = Expect::sync_char_2;
             consumed = true;
         }
@@ -143,16 +140,27 @@ _8::Message _8::Scanner::finalize()
     if (next != Expect::nothing_more)
         throw std::logic_error{"Not ready for extraction."};
 
+    struct Scope
+    {
+        Scope(Scanner& scanner) : scanner{scanner} {}
+        ~Scope() { scanner.reset(); }
+
+        Scanner& scanner;
+    } scope{*this};
+
     if (ck_a != checksum.ck_a() || ck_b != checksum.ck_b())
-        throw std::runtime_error{"Verification failed."};
+        throw std::runtime_error("Failed to verify ubx protocol message integrity.");
 
     auto it = factories.find(std::make_tuple(class_id, message_id));
 
     if (it == factories.end())
-        throw std::runtime_error{"Could not decode message."};
+        throw std::runtime_error{"Failed to decode ubx protocol message."};
 
-    auto result = it->second(payload);
+    return it->second(payload);
+}
 
+void _8::Scanner::reset()
+{
     checksum = Checksum{};
     next = Expect::sync_char_1;
     class_id = 0;
@@ -161,6 +169,4 @@ _8::Message _8::Scanner::finalize()
     payload.clear();
     payload_iterator = payload.end();
     ck_a = ck_b = 0;
-
-    return result;
 }

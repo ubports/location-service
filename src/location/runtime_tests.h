@@ -19,12 +19,13 @@
 #define LOCATION_RUNTIME_TESTS_H_
 
 #include <iosfwd>
+#include <string>
 
 namespace location
 {
 // execute_runtime_tests runs all configured runtime tests.
 // Returns 0 if successful.
-int execute_runtime_tests(std::ostream& cout, std::ostream& cerr);
+int execute_runtime_tests(const std::string& test_suite, std::ostream& cout, std::ostream& cerr);
 }
 
 #endif // LOCATION_RUNTIME_TESTS_H_

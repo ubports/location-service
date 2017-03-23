@@ -26,6 +26,11 @@ struct EncodingVisitor : public boost::static_visitor<std::vector<std::uint8_t>>
     {
         return ubx::_8::encode_message(msg);
     }
+
+    std::vector<std::uint8_t> operator()(const ubx::_8::cfg::Rst& rst) const
+    {
+        return ubx::_8::encode_message(rst);
+    }
 };
 
 }  // namespace
@@ -44,11 +49,28 @@ void ubx::_8::Receiver::process_chunk(Buffer::iterator it, Buffer::iterator itE)
         auto result = ubx_scanner.update(*it);
 
         if (std::get<0>(result) == Scanner::Expect::nothing_more)
-            monitor->on_new_ubx_message(ubx_scanner.finalize());
-        if (!std::get<1>(result))
+        {
+            try
+            {
+                monitor->on_new_ubx_message(ubx_scanner.finalize());
+            }
+            catch (...)
+            {
+            }
+        }
+        else if (!std::get<1>(result))
         {
             if (nmea::Scanner::Expect::nothing_more == nmea_scanner.update(*it))
-                monitor->on_new_nmea_sentence(nmea::parse_sentence(nmea_scanner.finalize()));
+            {
+                try
+                {
+                    monitor->on_new_nmea_sentence(nmea::parse_sentence(nmea_scanner.finalize()));
+                }
+                catch (const std::exception& e)
+                {
+
+                }
+            }
         }
         ++it;
     }
