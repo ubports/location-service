@@ -71,26 +71,24 @@ std::string ubx::Provider::class_name()
     return "ubx::Provider";
 }
 
-ubx::Provider::Monitor::Monitor(Provider* provider) : provider{provider}
-{
-}
-
 void ubx::Provider::Monitor::on_new_ubx_message(const _8::Message& message)
 {
     VLOG(1) << message;
-    if (provider->configuration.protocol == Provider::Protocol::ubx)
-        boost::apply_visitor(*this, message);
+    if (auto sp = provider.lock())
+        if (sp->configuration.protocol == Provider::Protocol::ubx)
+            boost::apply_visitor(*this, message);
 }
 
 
 void ubx::Provider::Monitor::on_new_nmea_sentence(const _8::nmea::Sentence& sentence)
 {
     VLOG(1) << sentence;
-    if (provider->configuration.protocol == Provider::Protocol::nmea)
-        boost::apply_visitor(*this, sentence);
+    if (auto sp = provider.lock())
+        if (sp->configuration.protocol == Provider::Protocol::nmea)
+            boost::apply_visitor(*this, sentence);
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Gga& gga) const
+void ubx::Provider::Monitor::operator()(const _8::nmea::Gga& gga)
 {   
     if (gga.latitude && gga.longitude)
     {
@@ -111,14 +109,19 @@ void ubx::Provider::Monitor::operator()(const _8::nmea::Gga& gga) const
         if (gga.hdop)
             position.accuracy().horizontal(gga.hdop.get() * 3. * units::meters);
 
-        glib::Runtime::instance()->dispatch([this, position]()
+        auto thiz = shared_from_this();
+        std::weak_ptr<ubx::Provider::Monitor> wp{thiz};
+
+        glib::Runtime::instance()->dispatch([position, wp]()
         {
-            provider->updates.position(location::Update<location::Position>{position});
+            if (auto sp = wp.lock())
+                if (auto spp = sp->provider.lock())
+                    spp->updates.position(location::Update<location::Position>{position});
         });
     }
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nav::Pvt& pvt) const
+void ubx::Provider::Monitor::operator()(const _8::nav::Pvt& pvt)
 {
     if (pvt.fix_type == _8::nav::Pvt::FixType::no_fix)
         return;
@@ -139,51 +142,68 @@ void ubx::Provider::Monitor::operator()(const _8::nav::Pvt& pvt) const
     units::Degrees heading = pvt.heading.vehicle * units::degrees;
     units::MetersPerSecond speed = pvt.speed_over_ground * 1e-3 * units::meters_per_second;
 
-    glib::Runtime::instance()->dispatch([this, position, heading, speed]()
+    auto thiz = shared_from_this();
+    std::weak_ptr<ubx::Provider::Monitor> wp{thiz};
+
+    glib::Runtime::instance()->dispatch([position, heading, speed, wp]()
     {
-        provider->updates.position(location::Update<location::Position>{position});
-        provider->updates.heading(location::Update<units::Degrees>{heading});
-        provider->updates.velocity(location::Update<units::MetersPerSecond>{speed});
+        if (auto sp = wp.lock())
+        {
+            if (auto spp = sp->provider.lock())
+            {
+                spp->updates.position(location::Update<location::Position>{position});
+                spp->updates.heading(location::Update<units::Degrees>{heading});
+                spp->updates.velocity(location::Update<units::MetersPerSecond>{speed});
+            }
+        }
     });
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Gsa&) const
+void ubx::Provider::Monitor::operator()(const _8::nmea::Gsa&)
 {
     // Empty on purpose
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Gll&) const
+void ubx::Provider::Monitor::operator()(const _8::nmea::Gll&)
 {
     // Empty on purpose
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Gsv&) const
+void ubx::Provider::Monitor::operator()(const _8::nmea::Gsv&)
 {
     // Empty on purpose
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Rmc&) const
+void ubx::Provider::Monitor::operator()(const _8::nmea::Rmc&)
 {
     // Empty on purpose
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Txt&) const
+void ubx::Provider::Monitor::operator()(const _8::nmea::Txt&)
 {
     // Empty on purpose
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Vtg& vtg) const
+void ubx::Provider::Monitor::operator()(const _8::nmea::Vtg& vtg)
 {
-    glib::Runtime::instance()->dispatch([this, vtg]()
+    auto thiz = shared_from_this();
+    std::weak_ptr<ubx::Provider::Monitor> wp{thiz};
+
+    glib::Runtime::instance()->dispatch([vtg, wp]()
     {
-        if (vtg.cog_true)
-            provider->updates.heading(
-                        Update<units::Degrees>(
-                            vtg.cog_true.get() * units::degrees));
-        if (vtg.sog_kmh)
-            provider->updates.velocity(
-                        Update<units::MetersPerSecond>(
-                            vtg.sog_kmh.get() * 1000./3600. * units::meters_per_second));
+        if (auto sp = wp.lock())
+        {
+            if (vtg.cog_true)
+                if (auto spp = sp->provider.lock())
+                    spp->updates.heading(
+                                Update<units::Degrees>(
+                                    vtg.cog_true.get() * units::degrees));
+            if (vtg.sog_kmh)
+                if (auto spp = sp->provider.lock())
+                    spp->updates.velocity(
+                                Update<units::MetersPerSecond>(
+                                    vtg.sog_kmh.get() * 1000./3600. * units::meters_per_second));
+        }
     });
 }
 
@@ -201,7 +221,7 @@ location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderF
         {
             SettingsHelper::get_value<std::string>(
                 "ubx.provider.assist_now.enable",
-                "true"
+                "false"
             ) == "true",
             SettingsHelper::get_value<std::string>(
                 "ubx.provider.assist_now.token",
@@ -218,23 +238,26 @@ location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderF
         }
     };
 
-    return location::Provider::Ptr{new ubx::Provider{configuration}};
+    return ubx::Provider::create(configuration);
 }
+
+// Create a new instance with configuration.
+std::shared_ptr<ubx::Provider> ubx::Provider::create(const Configuration& configuration)
+{
+    auto sp = std::shared_ptr<Provider>{new Provider{configuration}};
+    return sp->finalize_construction();
+}
+
 
 ubx::Provider::Provider(const Configuration& configuration)
     : configuration{configuration},
       runtime{location::Runtime::create(1)},
-      monitor{std::make_shared<Monitor>(this)},
+      monitor{std::make_shared<Monitor>()},
       receiver{_8::SerialPortReceiver::create(runtime->service(), configuration.device, monitor)},
       assist_now_online_client{std::make_shared<_8::AssistNowOnlineClient>(core::net::http::make_client())},
       acquisition_timer{runtime->service()}
 {
     runtime->start();
-
-    updates.position.connect([this](const Update<Position>&)
-    {
-        acquisition_timer.cancel();
-    });
 
     configure_gnss();
     configure_protocol();
@@ -312,6 +335,21 @@ const core::Signal<location::Update<location::units::Degrees>>& ubx::Provider::h
 const core::Signal<location::Update<location::units::MetersPerSecond>>& ubx::Provider::velocity_updates() const
 {
     return updates.velocity;
+}
+
+std::shared_ptr<ubx::Provider> ubx::Provider::finalize_construction()
+{
+    auto thiz = shared_from_this();
+    std::weak_ptr<ubx::Provider> wp{thiz};
+
+    updates.position.connect([wp](const Update<Position>&)
+    {
+        if (auto sp = wp.lock())
+            sp->acquisition_timer.cancel();
+    });
+
+    monitor->provider = wp;
+    return thiz;
 }
 
 void ubx::Provider::configure_gnss()

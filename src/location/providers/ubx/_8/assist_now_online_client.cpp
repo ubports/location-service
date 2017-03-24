@@ -112,16 +112,24 @@ void _8::AssistNowOnlineClient::request_assistance_data(const Parameters& parame
         uri += (boost::format("&%1%=%2%") % param.first % param.second).str();
 
     auto request = http_client->get(http::Request::Configuration::from_uri_as_string(uri));
+    http::Request::Handler handler;
 
-    request->async_execute(http::Request::Handler().on_response([cb](const http::Response& response)
+    handler.on_response([cb](const http::Response& response)
     {
         if (response.status == http::Status::ok)
             cb(make_result(response.body));
         else
             cb(make_error_result<std::string>(
-                   std::make_exception_ptr(
-                       std::runtime_error{response.body})));
-    }));
+                std::make_exception_ptr(
+                    std::runtime_error{response.body})));
+    });
+
+    handler.on_error([cb](const core::net::Error& error)
+    {
+        cb(make_error_result<std::string>(std::make_exception_ptr(error)));
+    });
+
+    request->async_execute(handler);
 }
 
 bool _8::operator<(AssistNowOnlineClient::DataType lhs, AssistNowOnlineClient::DataType rhs)

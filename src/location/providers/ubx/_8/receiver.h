@@ -38,7 +38,7 @@ namespace _8
 class Receiver
 {
 public:
-    using Buffer = std::array<char, 1024>;
+    using Buffer = std::array<std::uint8_t, 4096>;
 
     /// @brief Monitor provides calling code with means for monitoring
     /// receiver operation.

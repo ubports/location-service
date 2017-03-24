@@ -209,7 +209,7 @@ int ubx(std::ostream& cout, std::ostream& cerr)
                     env::get("UBX_PROVIDER_TEST_ASSIST_NOW_ACQUISITION_TIMEOUT", "5")))
         }
     };
-    auto provider = std::make_shared<location::providers::ubx::Provider>(configuration);
+    auto provider = location::providers::ubx::Provider::create(configuration);
 
     struct State
     {

@@ -17,6 +17,7 @@ ubx::_8::SerialPortReceiver::SerialPortReceiver(boost::asio::io_service& ios, co
                                                 const std::shared_ptr<Monitor>& monitor)
     : Receiver{monitor}, ios{ios}, serial_port{ios, dev.string().c_str()}
 {
+    serial_port.set_option(boost::asio::serial_port::baud_rate(9600));
 }
 
 void ubx::_8::SerialPortReceiver::send_encoded_message(const std::vector<std::uint8_t>& data)

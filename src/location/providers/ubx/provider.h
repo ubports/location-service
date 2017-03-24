@@ -47,13 +47,6 @@ namespace ubx
 class Provider : public location::Provider, public std::enable_shared_from_this<Provider>
 {
 public:
-    // For integration with the Provider factory.
-    static std::string class_name();
-    // Instantiates a new provider instance, populating the configuration object
-    // from the provided property bundle. Please see dummy::Configuration::Keys
-    // for the list of known options.
-    static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
-
     enum class Protocol
     {
         ubx,  // Rely on ubx.
@@ -73,8 +66,16 @@ public:
         } assist_now;                                       // All parameters for configuring AssistNow go here.
     };
 
-    // Creates a new provider instance talking via device to the ubx chipset.
-    Provider(const Configuration& configuration);
+    // For integration with the Provider factory.
+    static std::string class_name();
+    // Instantiates a new provider instance, populating the configuration object
+    // from the provided property bundle. Please see dummy::Configuration::Keys
+    // for the list of known options.
+    static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
+
+    // Create a new instance with configuration.
+    static std::shared_ptr<Provider> create(const Configuration& configuration);
+
     // Cleans up all resources and stops the updates.
     ~Provider() noexcept;
 
@@ -98,10 +99,8 @@ public:
 
 private:
     // Relays incoming sentences to a provider instance.
-    struct Monitor : public _8::Receiver::Monitor, public boost::static_visitor<>
+    struct Monitor : public std::enable_shared_from_this<ubx::Provider::Monitor>, public _8::Receiver::Monitor, public boost::static_visitor<>
     {
-        explicit Monitor(Provider* provider);
-
         // From Receiver::Monitor
         void on_new_ubx_message(const _8::Message& message) override;
         void on_new_nmea_sentence(const _8::nmea::Sentence& sentence) override;
@@ -109,18 +108,23 @@ private:
         template<typename T>
         void operator()(const T&) const {}
 
-        void operator()(const _8::nav::Pvt& pvt) const;
+        void operator()(const _8::nav::Pvt& pvt);
 
-        void operator()(const _8::nmea::Gga& gga) const;
-        void operator()(const _8::nmea::Gsa& gsa) const;
-        void operator()(const _8::nmea::Gll& gll) const;
-        void operator()(const _8::nmea::Gsv& gsv) const;
-        void operator()(const _8::nmea::Rmc& rmc) const;
-        void operator()(const _8::nmea::Txt& txt) const;
-        void operator()(const _8::nmea::Vtg& vtg) const;
+        void operator()(const _8::nmea::Gga& gga);
+        void operator()(const _8::nmea::Gsa& gsa);
+        void operator()(const _8::nmea::Gll& gll);
+        void operator()(const _8::nmea::Gsv& gsv);
+        void operator()(const _8::nmea::Rmc& rmc);
+        void operator()(const _8::nmea::Txt& txt);
+        void operator()(const _8::nmea::Vtg& vtg);
 
-        Provider* provider;
+        std::weak_ptr<Provider> provider;
     };
+
+    // Creates a new provider instance talking via device to the ubx chipset.
+    Provider(const Configuration& configuration);
+
+    std::shared_ptr<Provider> finalize_construction();
 
     void configure_gnss();
     void configure_protocol();
