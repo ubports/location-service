@@ -24,6 +24,9 @@ apps:
   provide:
     command: bin/locationd provider --bus=system
     plugs: [client-control]
+  test:
+    command: bin/locationd test
+    plugs: [ubx]
 
 slots:
     service-observe:

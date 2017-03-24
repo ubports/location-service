@@ -49,11 +49,13 @@ struct SettingsHelper
     template<typename T>
     static T get_value(std::string key, T&& default_value)
     {
-        static const std::string snap_path = env::get("SNAP_PATH");
+        static const std::string snap_path = env::get("SNAP_DATA");
 
         boost::filesystem::path path{snap_path};
-        std::replace(key.begin(), key.begin(), '.', '/');
+        std::replace(key.begin(), key.end(), '.', '/');
         path /= key;
+
+        LOG(INFO) << "Reading setting from " << path.string();
 
         std::ifstream in{path.string().c_str()};
         T value{default_value}; in >> value;
