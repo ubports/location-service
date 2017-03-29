@@ -12,8 +12,13 @@
 //
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #ifndef UBX_8_RECEIVER_H_
 #define UBX_8_RECEIVER_H_
+
+#include <location/providers/ubx/_8/codec.h>
+#include <location/providers/ubx/_8/message.h>
+#include <location/providers/ubx/_8/scanner.h>
 
 #include <location/providers/ubx/_8/nmea/scanner.h>
 #include <location/providers/ubx/_8/nmea/sentence.h>
@@ -49,13 +54,17 @@ public:
         Monitor& operator=(Monitor&&) = delete;
         /// @endcond
 
-        /// @brief on_new_chunk is invoked for every incoming chunk of raw data.
-        virtual void on_new_chunk(Buffer::iterator it, Buffer::iterator itE) = 0;
+        /// @brief on_new_ubx_message is invoked for every complete and parsed
+        /// ubx message.
+        virtual void on_new_ubx_message(const ubx::_8::Message& message) = 0;
 
         /// @brief on_new_nmea_sentence is invoked for every complete and parsed
         /// nmea sentence.
-        virtual void on_new_nmea_sentence(const nmea::Sentence& sentence) = 0;
+        virtual void on_new_nmea_sentence(const ubx::_8::nmea::Sentence& sentence) = 0;
     };
+
+    /// @brief send_message encodes and sends 'message' to the receiver.
+    void send_message(const Message& message);
 
 protected:
     /// @brief Receiver initializes a new instance with monitor
@@ -69,13 +78,18 @@ protected:
     /// Calls out to a configured monitor instance for announcing results.
     void process_chunk(Buffer::iterator it, Buffer::iterator itE);
 
+    /// @brief send_encoded_message sends out data to the receiver.
+    virtual void send_encoded_message(const std::vector<std::uint8_t>& data) = 0;
+
 private:
     std::shared_ptr<Monitor> monitor;
-    nmea::Scanner nmea_scanner;
+    ubx::_8::nmea::Scanner nmea_scanner;
+    ubx::_8::Scanner ubx_scanner;
 };
-}
-}
-}
-}
+
+}  // namespace _8
+}  // namespace ubx
+}  // namespace providers
+}  // namespace location
 
 #endif // UBX_8_RECEIVER_H_

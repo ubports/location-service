@@ -22,9 +22,16 @@
 #include <location/runtime.h>
 #include <location/glib/runtime.h>
 
+#include <location/providers/ubx/_8/cfg/gnss.h>
+#include <location/providers/ubx/_8/cfg/msg.h>
+#include <location/providers/ubx/_8/nav/pvt.h>
+#include <location/providers/ubx/_8/nav/sat.h>
+
 #include <core/posix/this_process.h>
 
 #include <fstream>
+#include <iostream>
+#include <iterator>
 #include <thread>
 
 namespace env = core::posix::this_process::env;
@@ -39,17 +46,19 @@ ubx::Provider::Monitor::Monitor(Provider* provider) : provider{provider}
 {
 }
 
-void ubx::Provider::Monitor::on_new_chunk(_8::Receiver::Buffer::iterator, _8::Receiver::Buffer::iterator)
+void ubx::Provider::Monitor::on_new_ubx_message(const _8::Message& message)
 {
-    // We drop the chunk on purpose.
+    VLOG(1) << message;
+    if (provider->protocol == Provider::Protocol::ubx)
+        boost::apply_visitor(*this, message);
 }
+
 
 void ubx::Provider::Monitor::on_new_nmea_sentence(const _8::nmea::Sentence& sentence)
 {
-    // TODO(tvoss): This is a little verbose and we should remove it
-    // for production scenarios.
-    LOG(INFO) << sentence;
-    boost::apply_visitor(*this, sentence);
+    VLOG(1) << sentence;
+    if (provider->protocol == Provider::Protocol::nmea)
+        boost::apply_visitor(*this, sentence);
 }
 
 void ubx::Provider::Monitor::operator()(const _8::nmea::Gga& gga) const
@@ -78,6 +87,35 @@ void ubx::Provider::Monitor::operator()(const _8::nmea::Gga& gga) const
             provider->updates.position(location::Update<location::Position>{position});
         });
     }
+}
+
+void ubx::Provider::Monitor::operator()(const _8::nav::Pvt& pvt) const
+{
+    if (pvt.fix_type == _8::nav::Pvt::FixType::no_fix)
+        return;
+
+    Position position
+    {
+        pvt.latitude * units::degrees,
+        pvt.longitude * units::degrees
+    };
+    position.accuracy().horizontal(pvt.accuracy.horizontal * 1e-3 * units::meters);
+
+    if (pvt.fix_type == _8::nav::Pvt::FixType::fix_3d)
+    {
+        position.altitude(pvt.height.above_msl * 1e-3 * units::meters);
+        position.accuracy().vertical(pvt.accuracy.vertical * 1e-3 * units::meters);
+    }
+
+    units::Degrees heading = pvt.heading.vehicle * units::degrees;
+    units::MetersPerSecond speed = pvt.speed_over_ground * 1e-3 * units::meters_per_second;
+
+    glib::Runtime::instance()->dispatch([this, position, heading, speed]()
+    {
+        provider->updates.position(location::Update<location::Position>{position});
+        provider->updates.heading(location::Update<units::Degrees>{heading});
+        provider->updates.velocity(location::Update<units::MetersPerSecond>{speed});
+    });
 }
 
 void ubx::Provider::Monitor::operator()(const _8::nmea::Gsa&) const
@@ -122,20 +160,65 @@ void ubx::Provider::Monitor::operator()(const _8::nmea::Vtg& vtg) const
 
 location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderFactory::Configuration& config)
 {
-    std::string device_path;
+    std::string device_path = "/dev/ttyACM0";
     std::ifstream in(env::get("SNAP_DATA") + "/ubx/provider/path");
-
     in >> device_path;
 
-    return location::Provider::Ptr{new ubx::Provider{config.get<std::string>("device", device_path.empty() ? "/dev/ttyACM0" : device_path)}};
+    return location::Provider::Ptr{new ubx::Provider{
+            Protocol::ubx, config.get<std::string>("device", device_path)}};
 }
 
-ubx::Provider::Provider(const boost::filesystem::path& device)
-    : runtime{location::Runtime::create(1)},
+ubx::Provider::Provider(Protocol protocol, const boost::filesystem::path& device)
+    : protocol{protocol},
+      runtime{location::Runtime::create(1)},
       monitor{std::make_shared<Monitor>(this)},
       receiver{_8::SerialPortReceiver::create(runtime->service(), device, monitor)}
 {   
     runtime->start();
+
+    _8::cfg::Gnss::Gps gps;
+    gps.l1ca = true;
+    gps.enable = true;
+    gps.min_tracking_channels = 4;
+    gps.max_tracking_channels = 8;
+
+    _8::cfg::Gnss::Galileo galileo;
+    galileo.e1os = true;
+    galileo.enable = true;
+    galileo.min_tracking_channels = 4;
+    galileo.max_tracking_channels = 8;
+
+    _8::cfg::Gnss::Glonass glonass;
+    glonass.l1of = true;
+    glonass.enable = true;
+    glonass.min_tracking_channels = 4;
+    glonass.max_tracking_channels = 8;
+
+    _8::cfg::Gnss::Sbas sbas;
+    sbas.l1ca = true;
+    sbas.enable = true;
+    sbas.min_tracking_channels = 4;
+    sbas.max_tracking_channels = 8;
+
+    _8::cfg::Gnss gnss;
+    gnss.gps = gps;
+    gnss.galileo = galileo;
+    gnss.glonass = glonass;
+    gnss.sbas = sbas;
+
+    receiver->send_message(gnss);
+
+    if (protocol == Protocol::ubx)
+    {
+        _8::cfg::Msg cfg_msg{ubx::_8::nav::Pvt::class_id, ubx::_8::nav::Pvt::message_id, { 0 }};
+        cfg_msg.rate[_8::cfg::Msg::Port::usb] = 1;
+        cfg_msg.rate[_8::cfg::Msg::Port::uart1] = 1;
+        receiver->send_message(cfg_msg);
+
+        cfg_msg.configured_class_id = _8::nav::Sat::class_id;
+        cfg_msg.configured_message_id = _8::nav::Sat::message_id;
+        receiver->send_message(cfg_msg);
+    }
 }
 
 ubx::Provider::~Provider() noexcept

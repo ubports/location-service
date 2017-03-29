@@ -53,8 +53,14 @@ public:
     // for the list of known options.
     static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
 
+    enum class Protocol
+    {
+        ubx,  // Rely on ubx.
+        nmea  // Rely on nmea.
+    };
+
     // Creates a new provider instance talking via device to the ubx chipset.
-    Provider(const boost::filesystem::path& device);
+    Provider(Protocol protocol, const boost::filesystem::path& device);
     // Cleans up all resources and stops the updates.
     ~Provider() noexcept;
 
@@ -79,8 +85,13 @@ private:
         explicit Monitor(Provider* provider);
 
         // From Receiver::Monitor
-        void on_new_chunk(_8::Receiver::Buffer::iterator it, _8::Receiver::Buffer::iterator itE) override;
+        void on_new_ubx_message(const _8::Message& message) override;
         void on_new_nmea_sentence(const _8::nmea::Sentence& sentence) override;
+
+        template<typename T>
+        void operator()(const T&) const {}
+
+        void operator()(const _8::nav::Pvt& pvt) const;
 
         void operator()(const _8::nmea::Gga& gga) const;
         void operator()(const _8::nmea::Gsa& gsa) const;
@@ -93,6 +104,7 @@ private:
         Provider* provider;
     };
 
+    Protocol protocol;
     std::shared_ptr<location::Runtime> runtime;
     std::shared_ptr<Monitor> monitor;
     std::shared_ptr<_8::SerialPortReceiver> receiver;
