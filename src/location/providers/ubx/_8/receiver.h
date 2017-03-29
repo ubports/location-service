@@ -38,7 +38,7 @@ namespace _8
 class Receiver
 {
 public:
-    using Buffer = std::array<char, 1024>;
+    using Buffer = std::array<std::uint8_t, 4096>;
 
     /// @brief Monitor provides calling code with means for monitoring
     /// receiver operation.
@@ -66,6 +66,9 @@ public:
     /// @brief send_message encodes and sends 'message' to the receiver.
     void send_message(const Message& message);
 
+    /// @brief send_encoded_message sends out data to the receiver.
+    virtual void send_encoded_message(const std::vector<std::uint8_t> &data) = 0;
+
 protected:
     /// @brief Receiver initializes a new instance with monitor
     ///
@@ -77,9 +80,6 @@ protected:
     ///
     /// Calls out to a configured monitor instance for announcing results.
     void process_chunk(Buffer::iterator it, Buffer::iterator itE);
-
-    /// @brief send_encoded_message sends out data to the receiver.
-    virtual void send_encoded_message(const std::vector<std::uint8_t>& data) = 0;
 
 private:
     std::shared_ptr<Monitor> monitor;

@@ -15,51 +15,63 @@ std::shared_ptr<ubx::_8::SerialPortReceiver> ubx::_8::SerialPortReceiver::create
 
 ubx::_8::SerialPortReceiver::SerialPortReceiver(boost::asio::io_service& ios, const boost::filesystem::path& dev,
                                                 const std::shared_ptr<Monitor>& monitor)
-    : Receiver{monitor}, ios{ios}, sp{ios, dev.string().c_str()}
+    : Receiver{monitor}, ios{ios}, serial_port{ios, dev.string().c_str()}
 {
+    serial_port.set_option(boost::asio::serial_port::baud_rate(9600));
 }
 
 void ubx::_8::SerialPortReceiver::send_encoded_message(const std::vector<std::uint8_t>& data)
 {
-    ios.dispatch([this, data]()
+    auto thiz = shared_from_this();
+    std::weak_ptr<SerialPortReceiver> wp{thiz};
+
+    ios.dispatch([this, wp, data]()
     {
-        boost::asio::write(sp, boost::asio::buffer(data), boost::asio::transfer_all());
+        if (auto sp = wp.lock())
+            boost::asio::write(serial_port, boost::asio::buffer(data), boost::asio::transfer_all());
     });
 }
 
 void ubx::_8::SerialPortReceiver::start()
 {
+    ::tcflush(serial_port.lowest_layer().native_handle(), TCIFLUSH);
     start_read();
 }
 
 void ubx::_8::SerialPortReceiver::stop()
 {
-    sp.cancel();
+    serial_port.cancel();
 }
 
 void ubx::_8::SerialPortReceiver::start_read()
 {
     auto thiz = shared_from_this();
-    boost::asio::async_read(sp, boost::asio::buffer(&buffer.front(), buffer.size()),
-                            [thiz, this](const boost::system::error_code& ec, std::size_t transferred) {
+    std::weak_ptr<SerialPortReceiver> wp{thiz};
+
+    boost::asio::async_read(serial_port, boost::asio::buffer(&buffer.front(), buffer.size()),
+                            [this, wp](const boost::system::error_code& ec, std::size_t transferred) {
                                 if (ec == boost::asio::error::operation_aborted)
                                     return;
-                                if (not ec)
-                                {
-                                    try
-                                    {
-                                        process_chunk(buffer.begin(), buffer.begin() + transferred);
-                                    }
-                                    catch(const std::exception& e)
-                                    {
-                                        LOG(WARNING) << "Error processing NMEA chunk: " << e.what();
-                                    }
-                                    catch(...)
-                                    {
-                                        LOG(WARNING) << "Error processing NMEA chunk.";
-                                    }
 
-                                    start_read();
+                                if (auto sp = wp.lock())
+                                {
+                                    if (not ec)
+                                    {
+                                        try
+                                        {
+                                            process_chunk(buffer.begin(), buffer.begin() + transferred);
+                                        }
+                                        catch(const std::exception& e)
+                                        {
+                                            LOG(WARNING) << "Error processing data chunk: " << e.what();
+                                        }
+                                        catch(...)
+                                        {
+                                            LOG(WARNING) << "Error processing data chunk.";
+                                        }
+
+                                        start_read();
+                                    }
                                 }
                             });
 }

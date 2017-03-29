@@ -4,3 +4,18 @@ if path=$(snapctl get ubx.provider.path); then
     mkdir -p $SNAP_DATA/ubx/provider
     echo "$path" > $SNAP_DATA/ubx/provider/path
 fi
+
+if enable=$(snapctl get ubx.provider.assistnow.enable); then
+    mkdir -p $SNAP_DATA/ubx/provider/assist_now
+    echo "$enable" > $SNAP_DATA/ubx/provider/assist_now/enable
+fi
+
+if token=$(snapctl get ubx.provider.assistnow.token); then
+    mkdir -p $SNAP_DATA/ubx/provider/assist_now
+    echo "$token" > $SNAP_DATA/ubx/provider/assist_now/token
+fi
+
+if timeout=$(snapctl get ubx.provider.assistnow.acquisition_timeout); then
+    mkdir -p $SNAP_DATA/ubx/provider/assist_now
+    echo "$timeout" > $SNAP_DATA/ubx/provider/assist_now/acquisition_timeout
+fi

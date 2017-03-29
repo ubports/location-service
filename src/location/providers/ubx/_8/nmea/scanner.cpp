@@ -23,6 +23,7 @@ nmea::Scanner::Expect nmea::Scanner::update(char c) {
   switch (state) {
     case Expect::dollar:
       if (c == '$') {
+        ss = std::stringstream{};
         ss << c;
         state = Expect::more_data;
       }
@@ -58,8 +59,7 @@ std::string nmea::Scanner::finalize() {
   if (state != Expect::nothing_more) throw std::runtime_error{"Incomplete"};
 
   auto result = ss.str();
-  ss.str("");
-  ss.clear();
+  ss = std::stringstream{};
   state = Expect::dollar;
 
   return result;

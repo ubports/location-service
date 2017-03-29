@@ -12,7 +12,7 @@ apps:
     daemon: simple
     command: bin/locationd run --bus=system
     slots: [service-control, service-observe]
-    plugs: [ubx, network-manager]
+    plugs: [ubx, network, network-manager]
   list-providers:
     command: bin/locationd list    
   status:
@@ -23,7 +23,10 @@ apps:
     plugs: [client-control, client-observe]
   provide:
     command: bin/locationd provider --bus=system
-    plugs: [client-control]
+    plugs: [client-control, network]
+  test:
+    command: bin/locationd test
+    plugs: [ubx, network]
 
 slots:
     service-observe:

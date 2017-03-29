@@ -22,6 +22,7 @@
 #include <location/provider_factory.h>
 #include <location/runtime.h>
 
+#include <location/providers/ubx/_8/assist_now_online_client.h>
 #include <location/providers/ubx/_8/serial_port_receiver.h>
 
 #include <boost/filesystem.hpp>
@@ -43,9 +44,28 @@ namespace ubx
 //
 // Configuration parameters:
 //   - device[=/dev/ttyUSB1] serial device connecting to the receiver.
-class Provider : public location::Provider
+class Provider : public location::Provider, public std::enable_shared_from_this<Provider>
 {
 public:
+    enum class Protocol
+    {
+        ubx,  // Rely on ubx.
+        nmea  // Rely on nmea.
+    };
+
+    // Configuration bundles all construction time parameters.
+    struct Configuration
+    {
+        Protocol protocol;                                  // The protocol used for communicating with the receiver.
+        boost::filesystem::path device;                     // Serial device used for communicating with the receiver.
+        struct
+        {
+            bool enable;                                    // Whether or not the provider should use AssistNow.
+            std::string token;                              // Token for validating requests to the AssistNow service.
+            boost::posix_time::seconds acquisition_timeout; // Query assistance data after this many seconds.
+        } assist_now;                                       // All parameters for configuring AssistNow go here.
+    };
+
     // For integration with the Provider factory.
     static std::string class_name();
     // Instantiates a new provider instance, populating the configuration object
@@ -53,16 +73,15 @@ public:
     // for the list of known options.
     static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
 
-    enum class Protocol
-    {
-        ubx,  // Rely on ubx.
-        nmea  // Rely on nmea.
-    };
+    // Create a new instance with configuration.
+    static std::shared_ptr<Provider> create(const Configuration& configuration);
 
-    // Creates a new provider instance talking via device to the ubx chipset.
-    Provider(Protocol protocol, const boost::filesystem::path& device);
     // Cleans up all resources and stops the updates.
     ~Provider() noexcept;
+
+    // Resets the chipset and drops all cached data.
+    // The next positioning request will be a cold start.
+    void reset();
 
     // From Provider
     void on_new_event(const Event& event) override;
@@ -80,10 +99,8 @@ public:
 
 private:
     // Relays incoming sentences to a provider instance.
-    struct Monitor : public _8::Receiver::Monitor, public boost::static_visitor<>
+    struct Monitor : public std::enable_shared_from_this<ubx::Provider::Monitor>, public _8::Receiver::Monitor, public boost::static_visitor<>
     {
-        explicit Monitor(Provider* provider);
-
         // From Receiver::Monitor
         void on_new_ubx_message(const _8::Message& message) override;
         void on_new_nmea_sentence(const _8::nmea::Sentence& sentence) override;
@@ -91,23 +108,36 @@ private:
         template<typename T>
         void operator()(const T&) const {}
 
-        void operator()(const _8::nav::Pvt& pvt) const;
+        void operator()(const _8::nav::Pvt& pvt);
 
-        void operator()(const _8::nmea::Gga& gga) const;
-        void operator()(const _8::nmea::Gsa& gsa) const;
-        void operator()(const _8::nmea::Gll& gll) const;
-        void operator()(const _8::nmea::Gsv& gsv) const;
-        void operator()(const _8::nmea::Rmc& rmc) const;
-        void operator()(const _8::nmea::Txt& txt) const;
-        void operator()(const _8::nmea::Vtg& vtg) const;
+        void operator()(const _8::nmea::Gga& gga);
+        void operator()(const _8::nmea::Gsa& gsa);
+        void operator()(const _8::nmea::Gll& gll);
+        void operator()(const _8::nmea::Gsv& gsv);
+        void operator()(const _8::nmea::Rmc& rmc);
+        void operator()(const _8::nmea::Txt& txt);
+        void operator()(const _8::nmea::Vtg& vtg);
 
-        Provider* provider;
+        std::weak_ptr<Provider> provider;
     };
 
-    Protocol protocol;
+    // Creates a new provider instance talking via device to the ubx chipset.
+    Provider(const Configuration& configuration);
+
+    std::shared_ptr<Provider> finalize_construction();
+
+    void configure_gnss();
+    void configure_protocol();
+
+    void request_assist_now_online_data(const Optional<Position>& position);
+
+    Configuration configuration;
     std::shared_ptr<location::Runtime> runtime;
     std::shared_ptr<Monitor> monitor;
     std::shared_ptr<_8::SerialPortReceiver> receiver;
+    std::shared_ptr<_8::AssistNowOnlineClient> assist_now_online_client;
+    boost::asio::deadline_timer acquisition_timer;
+
     struct
     {
         core::Signal<Update<Position>> position;

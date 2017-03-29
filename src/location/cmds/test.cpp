@@ -25,8 +25,16 @@ namespace cli = location::util::cli;
 location::cmds::Test::Test()
     : CommandWithFlagsAndAction{cli::Name{"test"}, cli::Usage{"test"}, cli::Description{"executes runtime tests against the gps provider."}}
 {
+    flag(cli::make_flag(cli::Name{"test-suite"}, cli::Description{"test-suite that should be executed"}, test_suite));
+
     action([this](const Context& ctxt)
     {
-        return location::execute_runtime_tests(ctxt.cout, ctxt.cout);
+        if (not test_suite)
+        {
+            ctxt.cout << "Missing parameter test-suite." << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        return execute_runtime_tests(*test_suite, ctxt.cout, ctxt.cout);
     });
 }

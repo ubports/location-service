@@ -16,6 +16,7 @@
 #include <location/providers/ubx/_8/gnss_id.h>
 
 #include <iostream>
+#include <type_traits>
 
 namespace _8 = location::providers::ubx::_8;
 
@@ -25,12 +26,18 @@ std::ostream& _8::operator<<(std::ostream& out, GnssId gnss_id)
     {
     case GnssId::gps: out << "gps"; break;
     case GnssId::sbas: out << "sbas"; break;
-    case GnssId::galileo: out << "galileo"; break;
-    case GnssId::beidou: out << "beidou"; break;
+    case GnssId::galileo: out << "gal"; break;
+    case GnssId::beidou: out << "bds"; break;
     case GnssId::imes: out << "imes"; break;
     case GnssId::qzss: out << "qzss"; break;
-    case GnssId::glonass: out << "glonass"; break;
+    case GnssId::glonass: out << "glo"; break;
     }
 
     return out;
+}
+
+bool _8::operator<(GnssId lhs, GnssId rhs)
+{
+    using UT = typename std::underlying_type<GnssId>::type;
+    return static_cast<UT>(lhs) < static_cast<UT>(rhs);
 }
