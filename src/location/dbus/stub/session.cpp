@@ -191,13 +191,16 @@ void location::dbus::stub::Session::on_position_changed(GObject* object, GParamS
     {
         if (auto thiz = holder->value.lock())
         {
-            auto update =
-                location::dbus::decode<
-                    location::Update<location::Position>
-                >(com_ubuntu_location_service_session_get_position(thiz->session_.get()));
+            if (auto variant = com_ubuntu_location_service_session_get_position(thiz->session_.get()))
+            {
+                auto update =
+                    location::dbus::decode<
+                        location::Update<location::Position>
+                    >(variant);
 
-            if (update)
-                thiz->updates().position = *update;
+                if (update)
+                    thiz->updates().position = *update;
+            }
         }
     }
 }
@@ -212,13 +215,16 @@ void location::dbus::stub::Session::on_heading_changed(GObject* object, GParamSp
     {
         if (auto thiz = holder->value.lock())
         {
-            auto update =
-                    location::dbus::decode<
-                        location::Update<units::Degrees>
-                    >(com_ubuntu_location_service_session_get_heading(thiz->session_.get()));
+            if (auto variant = com_ubuntu_location_service_session_get_heading(thiz->session_.get()))
+            {
+                auto update =
+                        location::dbus::decode<
+                            location::Update<units::Degrees>
+                        >(variant);
 
-            if (update)
-                thiz->updates().heading = *update;
+                if (update)
+                    thiz->updates().heading = *update;
+            }
         }
     }
 }
@@ -233,13 +239,16 @@ void location::dbus::stub::Session::on_velocity_changed(GObject* object, GParamS
     {
         if (auto thiz = holder->value.lock())
         {
-            auto update =
-                    location::dbus::decode<
-                        location::Update<units::MetersPerSecond>
-                    >(com_ubuntu_location_service_session_get_velocity(thiz->session_.get()));
+            if (auto variant = com_ubuntu_location_service_session_get_velocity(thiz->session_.get()))
+            {
+                auto update =
+                        location::dbus::decode<
+                            location::Update<units::MetersPerSecond>
+                        >(variant);
 
-            if (update)
-                thiz->updates().velocity = *update;
+                if (update)
+                    thiz->updates().velocity = *update;
+            }
         }
     }
 }
