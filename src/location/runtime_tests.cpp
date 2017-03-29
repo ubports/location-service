@@ -194,7 +194,7 @@ int ubx(std::ostream& cout, std::ostream& cerr)
     using boost::accumulators::mean;
     using boost::accumulators::variance;
 
-    static const unsigned int trials = 15;
+    const unsigned int trials = boost::lexical_cast<unsigned int>(env::get("UBX_PROVIDER_TEST_TRIALS", "15"));
 
     Statistics stats;
     location::providers::ubx::Provider::Configuration configuration
