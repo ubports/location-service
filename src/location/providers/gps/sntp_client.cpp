@@ -28,6 +28,7 @@
 #include <future>
 #include <iostream>
 #include <thread>
+#include <vector>
 
 namespace gps = location::providers::gps;
 namespace ip = boost::asio::ip;

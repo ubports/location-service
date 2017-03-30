@@ -53,6 +53,8 @@ parts:
       - -DUBUNTU_LOCATION_SERVICE_VERSION_MAJOR=4
     source: .
     build-packages:
+      - cmake
+      - cmake-extras
       - curl
       - doxygen
       - gcc

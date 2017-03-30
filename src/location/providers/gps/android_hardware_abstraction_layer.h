@@ -23,6 +23,8 @@
 
 #include <ubuntu/hardware/gps.h>
 
+#include <vector>
+
 namespace location { namespace providers { namespace gps
 {
 namespace android

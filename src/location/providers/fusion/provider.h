@@ -21,6 +21,8 @@
 #include <location/provider.h>
 #include <location/providers/fusion/update_selector.h>
 
+#include <vector>
+
 namespace location
 {
 namespace providers

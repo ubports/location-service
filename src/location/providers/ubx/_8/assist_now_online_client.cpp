@@ -18,6 +18,8 @@
 #include <core/net/uri.h>
 #include <core/net/http/response.h>
 
+#include <boost/format.hpp>
+
 #include <iostream>
 
 namespace _8 = location::providers::ubx::_8;
