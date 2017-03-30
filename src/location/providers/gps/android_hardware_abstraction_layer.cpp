@@ -30,6 +30,7 @@
 #include <boost/property_tree/ini_parser.hpp>
 
 #include <random>
+#include <vector>
 
 namespace gps = location::providers::gps;
 namespace android = location::providers::gps::android;

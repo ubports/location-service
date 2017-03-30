@@ -21,6 +21,7 @@
 #include <location/provider.h>
 
 #include <set>
+#include <vector>
 
 namespace location
 {
