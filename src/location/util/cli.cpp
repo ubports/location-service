@@ -65,7 +65,7 @@ location::util::cli::ProgressBar::ProgressBar(std::ostream& out, const std::stri
 
 location::util::cli::ProgressBar::~ProgressBar()
 {
-    out << std::endl;
+    out << "\r";
 }
 
 void location::util::cli::ProgressBar::update(double percentage)

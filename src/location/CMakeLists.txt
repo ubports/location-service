@@ -89,6 +89,8 @@ add_library(
   cmds/test.h
   cmds/test.cpp
 
+  util/benchmark.h
+  util/benchmark.cpp
   util/cli.h
   util/cli.cpp
   util/do_not_copy_or_move.h

@@ -39,6 +39,7 @@ namespace util
 {
 namespace cli
 {
+
 /// @brief ProgressBar prints a progress bar on the terminal.
 ///
 /// Looks like:

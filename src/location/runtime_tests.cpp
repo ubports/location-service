@@ -23,13 +23,11 @@
 #include <location/glib/runtime.h>
 #include <location/providers/gps/hardware_abstraction_layer.h>
 #include <location/providers/ubx/provider.h>
+#include <location/util/benchmark.h>
+#include <location/util/cli.h>
 
 #include <core/posix/this_process.h>
 
-#include <boost/accumulators/accumulators.hpp>
-#include <boost/accumulators/statistics/stats.hpp>
-#include <boost/accumulators/statistics/mean.hpp>
-#include <boost/accumulators/statistics/variance.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <cstdlib>
@@ -40,6 +38,8 @@
 #include <mutex>
 #include <thread>
 
+namespace ba = boost::accumulators;
+namespace cli = location::util::cli;
 namespace env = core::posix::this_process::env;
 namespace gps = location::providers::gps;
 
@@ -79,20 +79,8 @@ struct Fixture
 #if defined(LOCATION_PROVIDERS_GPS)
 int snr_and_ttff(std::ostream& cout, std::ostream& cerr)
 {
-    typedef boost::accumulators::accumulator_set<
-        double,
-        boost::accumulators::stats<
-            boost::accumulators::tag::mean,
-            boost::accumulators::tag::variance
-        >
-    > Statistics;
+    location::util::Benchmark benchmark{boost::lexical_cast<unsigned int>(env::get("SNR_AND_TTF_PROVIDER_TEST_TRIALS", "15")), "ttff in [ms]"};
 
-    using boost::accumulators::mean;
-    using boost::accumulators::variance;
-
-    static const unsigned int trials = 3;
-
-    Statistics stats;
     auto hal = gps::HardwareAbstractionLayer::create_default_instance();
 
     struct State
@@ -144,36 +132,28 @@ int snr_and_ttff(std::ostream& cout, std::ostream& cerr)
             cout << sv.key().id() << " " << sv.snr() << " " << sv.has_almanac_data() << " " << sv.has_ephimeris_data() << " " << sv.used_in_fix() << " " << sv.azimuth().value() << " " << sv.elevation().value() << std::endl;
     });
 
-    for (unsigned int i = 0; i < trials; i++)
     {
-        // We want to force a cold start per trial.
-        hal->delete_all_aiding_data();
+        cli::ProgressBar pb(cout, "snr and ttf runtime test: ", 30);
 
-        state.reset();
-        auto start = std::chrono::duration_cast<std::chrono::microseconds>(location::Clock::now().time_since_epoch());
-        {
-            hal->start_positioning();
-            // We expect a maximum cold start time of 15 minutes. The theoretical
-            // limit is 12.5 minutes, and we add up some grace period to make the
-            // test more robust (see http://en.wikipedia.org/wiki/Time_to_first_fix).
-            expect<true, std::runtime_error>(state.wait_for_fix_for(std::chrono::seconds{15 * 60}), "Wait for fix timed out.");
-            hal->stop_positioning();
-        }
-        auto stop = std::chrono::duration_cast<std::chrono::microseconds>(location::Clock::now().time_since_epoch());
+        benchmark.run(
+            [&](std::size_t)
+            {
+                hal->delete_all_aiding_data(); state.reset();
+            },
+            [&](std::size_t trial)
+            {
+                pb.update(trial / static_cast<double>(benchmark.trials()));
 
-        stats((stop - start).count());
+                hal->start_positioning();
+                // We expect a maximum cold start time of 15 minutes. The theoretical
+                // limit is 12.5 minutes, and we add up some grace period to make the
+                // test more robust (see http://en.wikipedia.org/wiki/Time_to_first_fix).
+                expect<true, std::runtime_error>(state.wait_for_fix_for(std::chrono::seconds{15 * 60}), "Wait for fix timed out.");
+                hal->stop_positioning();
+            });
     }
 
-    cout << "Mean time to first fix in [ms]: "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(
-                     std::chrono::microseconds(
-                         static_cast<std::uint64_t>(mean(stats)))).count()
-              << std::endl;
-    cout << "Variance in time to first fix in [ms]: "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(
-                     std::chrono::microseconds(
-                         static_cast<std::uint64_t>(variance(stats)))).count()
-              << std::endl;
+    cout << benchmark << std::endl;
 
     return 0;
 }
@@ -181,34 +161,23 @@ int snr_and_ttff(std::ostream& cout, std::ostream& cerr)
 int snr_and_ttff(const std::string& test_suite, std::ostream&, std::ostream&) { return 0; }
 #endif // LOCATION_PROVIDERS_GPS
 
-int ubx(std::ostream& cout, std::ostream& cerr)
+int ubx(std::ostream& cout, std::ostream&)
 {
-    typedef boost::accumulators::accumulator_set<
-        double,
-        boost::accumulators::stats<
-            boost::accumulators::tag::mean,
-            boost::accumulators::tag::variance
-        >
-    > Statistics;
+    location::util::Benchmark benchmark{boost::lexical_cast<unsigned int>(env::get("UBX_PROVIDER_TEST_TRIALS", "15")), "ttff in [ms]"};
 
-    using boost::accumulators::mean;
-    using boost::accumulators::variance;
+    auto test_device = env::get_or_throw("UBX_PROVIDER_TEST_DEVICE");
+    auto assist_now_enabled = env::get("UBX_PROVIDER_TEST_ASSIST_NOW_ENABLE", "false") == "true";
+    auto assist_now_token = env::get("UBX_PROVIDER_TEST_ASSIST_NOW_TOKEN", "");
+    auto assist_now_acquisition_timeout = boost::posix_time::seconds(
+                boost::lexical_cast<std::uint64_t>(
+                    env::get("UBX_PROVIDER_TEST_ASSIST_NOW_ACQUISITION_TIMEOUT", "5")));
 
-    const unsigned int trials = boost::lexical_cast<unsigned int>(env::get("UBX_PROVIDER_TEST_TRIALS", "15"));
-
-    Statistics stats;
     location::providers::ubx::Provider::Configuration configuration
     {
-        location::providers::ubx::Provider::Protocol::ubx,
-        env::get_or_throw("UBX_PROVIDER_TEST_DEVICE"),
-        {
-            env::get("UBX_PROVIDER_TEST_ASSIST_NOW_ENABLE", "false") == "true",
-            env::get_or_throw("UBX_PROVIDER_TEST_ASSIST_NOW_TOKEN"),
-            boost::posix_time::seconds(
-                boost::lexical_cast<std::uint64_t>(
-                    env::get("UBX_PROVIDER_TEST_ASSIST_NOW_ACQUISITION_TIMEOUT", "5")))
-        }
+        location::providers::ubx::Provider::Protocol::ubx, test_device,
+        {assist_now_enabled, assist_now_token, assist_now_acquisition_timeout}
     };
+
     auto provider = location::providers::ubx::Provider::create(configuration);
 
     struct State
@@ -256,36 +225,28 @@ int ubx(std::ostream& cout, std::ostream& cerr)
         state.on_position_updated(update.value);
     });
 
-    for (unsigned int i = 0; i < trials; i++)
     {
-        provider->reset();
+        cli::ProgressBar pb(cout, "ubx runtime test: ", 30);
 
-        state.reset();
-        auto start = std::chrono::duration_cast<std::chrono::microseconds>(location::Clock::now().time_since_epoch());
-        {
-            provider->activate();
+        benchmark.run(
+            [&](std::size_t)
+            {
+                provider->reset(); state.reset();
+            },
+            [&](std::size_t trial)
+            {
+                pb.update(trial / static_cast<double>(benchmark.trials()));
 
-            // We expect a maximum cold start time of 15 minutes. The theoretical
-            // limit is 12.5 minutes, and we add up some grace period to make the
-            // test more robust (see http://en.wikipedia.org/wiki/Time_to_first_fix).
-            expect<true, std::runtime_error>(state.wait_for_fix_for(std::chrono::seconds{15 * 60}), "Wait for fix timed out.");
-            provider->deactivate();
-        }
-        auto stop = std::chrono::duration_cast<std::chrono::microseconds>(location::Clock::now().time_since_epoch());
-
-        stats((stop - start).count());
+                provider->activate();
+                // We expect a maximum cold start time of 15 minutes. The theoretical
+                // limit is 12.5 minutes, and we add up some grace period to make the
+                // test more robust (see http://en.wikipedia.org/wiki/Time_to_first_fix).
+                expect<true, std::runtime_error>(state.wait_for_fix_for(std::chrono::seconds{15 * 60}), "Wait for fix timed out.");
+                provider->deactivate();
+            });
     }
 
-    cout << "Mean time to first fix in [ms]: "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(
-                     std::chrono::microseconds(
-                         static_cast<std::uint64_t>(mean(stats)))).count()
-              << std::endl;
-    cout << "Std.dev. in time to first fix in [ms]: "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(
-                     std::chrono::microseconds(
-                         static_cast<std::uint64_t>(std::sqrt(variance(stats))))).count()
-              << std::endl;
+    cout << benchmark << std::endl;
 
     return 0;
 }
