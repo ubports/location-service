@@ -26,6 +26,24 @@
 
 namespace ba = boost::accumulators;
 
+
+namespace
+{
+
+std::ostream& print_row(std::ostream& out, std::size_t, char)
+{
+    return out;
+}
+
+template<typename Column, typename... Columns>
+std::ostream& print_row(std::ostream& out, std::size_t column_width, char fill, const Column& column, const Columns&... columns)
+{
+    out << std::setw(column_width) << std::setfill(fill) << std::left << column;
+    return print_row(out, column_width, fill, columns...);
+}
+
+}  // namespace
+
 location::util::Benchmark::Benchmark(std::size_t trials, const std::string& title)
     : trials_{trials}, title_{title}
 {
@@ -59,24 +77,10 @@ std::ostream& location::util::Benchmark::print(std::ostream& out) const
 {
     static constexpr std::size_t column_width{15};
 
-    return out << std::setw(column_width) << std::setfill(' ') << std::left << title_ << " | "
-               << std::setw(column_width) << std::setfill(' ') << std::left << "min" << " "
-               << std::setw(column_width) << std::setfill(' ') << std::left << "1st quartile" << " "
-               << std::setw(column_width) << std::setfill(' ') << std::left << "median" << " "
-               << std::setw(column_width) << std::setfill(' ') << std::left << "3rd quartile" << " "
-               << std::setw(column_width) << std::setfill(' ') << std::left << "max" << std::endl
-               << std::setw(column_width) << std::setfill('-') << std::left << "-" << "---"
-               << std::setw(column_width) << std::setfill('-') << std::left << "-" << "-"
-               << std::setw(column_width) << std::setfill('-') << std::left << "-" << "-"
-               << std::setw(column_width) << std::setfill('-') << std::left << "-" << "-"
-               << std::setw(column_width) << std::setfill('-') << std::left << "-" << "-"
-               << std::setw(column_width) << std::setfill('-') << std::left << "-" << std::endl
-               << std::setw(column_width) << std::setfill(' ') << std::left << " " << "| "
-               << std::setw(column_width) << std::setfill(' ') << std::left << ba::min(min_median_max) << " "
-               << std::setw(column_width) << std::setfill(' ') << std::left << ba::p_square_quantile(first_quartile) << " "
-               << std::setw(column_width) << std::setfill(' ') << std::left << ba::median(min_median_max) << " "
-               << std::setw(column_width) << std::setfill(' ') << std::left << ba::p_square_quantile(third_quartile) << " "
-               << std::setw(column_width) << std::setfill(' ') << std::left << ba::max(min_median_max) << " ";
+    print_row(out, column_width, ' ', title_, "min", "1st quartile", "median", "3rd quartile", "max") << std::endl;
+    print_row(out, column_width, ' ', title_, ba::min(min_median_max), ba::p_square_quantile(first_quartile), ba::median(min_median_max), ba::p_square_quantile(third_quartile), ba::max(min_median_max));
+
+    return out;
 }
 
 std::ostream& location::util::operator<<(std::ostream& out, const Benchmark& benchmark)
