@@ -79,7 +79,7 @@ struct Fixture
 #if defined(LOCATION_PROVIDERS_GPS)
 int snr_and_ttff(std::ostream& cout, std::ostream& cerr)
 {
-    location::util::Benchmark benchmark{boost::lexical_cast<unsigned int>(env::get("SNR_AND_TTF_PROVIDER_TEST_TRIALS", "15")), "ttff in [ms]"};
+    location::util::Benchmark benchmark{boost::lexical_cast<unsigned int>(env::get("SNR_AND_TTF_PROVIDER_TEST_TRIALS", "15")), "ttff in [µs]"};
 
     auto hal = gps::HardwareAbstractionLayer::create_default_instance();
 
@@ -163,7 +163,7 @@ int snr_and_ttff(const std::string& test_suite, std::ostream&, std::ostream&) { 
 
 int ubx(std::ostream& cout, std::ostream&)
 {
-    location::util::Benchmark benchmark{boost::lexical_cast<unsigned int>(env::get("UBX_PROVIDER_TEST_TRIALS", "15")), "ttff in [ms]"};
+    location::util::Benchmark benchmark{boost::lexical_cast<unsigned int>(env::get("UBX_PROVIDER_TEST_TRIALS", "15")), "ttff in [µs]"};
 
     auto test_device = env::get_or_throw("UBX_PROVIDER_TEST_DEVICE");
     auto assist_now_enabled = env::get("UBX_PROVIDER_TEST_ASSIST_NOW_ENABLE", "false") == "true";

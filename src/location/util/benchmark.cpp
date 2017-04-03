@@ -71,7 +71,7 @@ std::ostream& location::util::Benchmark::print(std::ostream& out) const
                << std::setw(column_width) << std::setfill('-') << std::left << "-" << "-"
                << std::setw(column_width) << std::setfill('-') << std::left << "-" << "-"
                << std::setw(column_width) << std::setfill('-') << std::left << "-" << std::endl
-               << std::string(column_width, ' ') << " | "
+               << std::setw(column_width) << std::setfill(' ') << std::left << " " << "| "
                << std::setw(column_width) << std::setfill(' ') << std::left << ba::min(min_median_max) << " "
                << std::setw(column_width) << std::setfill(' ') << std::left << ba::p_square_quantile(first_quartile) << " "
                << std::setw(column_width) << std::setfill(' ') << std::left << ba::median(min_median_max) << " "
