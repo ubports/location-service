@@ -9,22 +9,23 @@ configure_file(
 )
 
 include_directories(
-    ${CMAKE_BINARY_DIR}/src
-    ${UBUNTU_PLATFORM_HARDWARE_API_INCLUDE_DIRS})
+  ${CMAKE_BINARY_DIR}/src
+  ${CMAKE_BINARY_DIR}/data
+  ${UBUNTU_PLATFORM_HARDWARE_API_INCLUDE_DIRS})
 
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/dbus")
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/data/location/dbus")
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/providers/remote")
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/connectivity")
 
 find_program(GDBUS_CODEGEN_EXECUTABLE NAMES gdbus-codegen)
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/dbus/service_gen.h" "${CMAKE_CURRENT_BINARY_DIR}/dbus/service_gen.c"
-  COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --generate-c-code "${CMAKE_CURRENT_BINARY_DIR}/dbus/service_gen" "${CMAKE_CURRENT_SOURCE_DIR}/dbus/service.xml")
+  OUTPUT "${CMAKE_BINARY_DIR}/data/location/dbus/service_gen.h" "${CMAKE_BINARY_DIR}/data/location/dbus/service_gen.c"
+  COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --generate-c-code "${CMAKE_BINARY_DIR}/data/location/dbus/service_gen" "${CMAKE_SOURCE_DIR}/data/location/dbus/service.xml")
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/dbus/session_gen.h" "${CMAKE_CURRENT_BINARY_DIR}/dbus/session_gen.c"
-  COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --c-generate-object-manager --generate-c-code "${CMAKE_CURRENT_BINARY_DIR}/dbus/session_gen" "${CMAKE_CURRENT_SOURCE_DIR}/dbus/session.xml")
+  OUTPUT "${CMAKE_BINARY_DIR}/data/location/dbus/session_gen.h" "${CMAKE_BINARY_DIR}/data/location/dbus/session_gen.c"
+  COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --c-generate-object-manager --generate-c-code "${CMAKE_BINARY_DIR}/data/location/dbus/session_gen" "${CMAKE_SOURCE_DIR}/data/location/dbus/session.xml")
 
 add_custom_command(
   OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/providers/remote/provider_gen.h" "${CMAKE_CURRENT_BINARY_DIR}/providers/remote/provider_gen.c"
@@ -95,11 +96,11 @@ add_library(
   util/cli.cpp
   util/do_not_copy_or_move.h
 
-  "${CMAKE_CURRENT_BINARY_DIR}/dbus/service_gen.h"
-  "${CMAKE_CURRENT_BINARY_DIR}/dbus/service_gen.c"
+  "${CMAKE_BINARY_DIR}/data/location/dbus/service_gen.h"
+  "${CMAKE_BINARY_DIR}/data/location/dbus/service_gen.c"
 
-  "${CMAKE_CURRENT_BINARY_DIR}/dbus/session_gen.h"
-  "${CMAKE_CURRENT_BINARY_DIR}/dbus/session_gen.c"
+  "${CMAKE_BINARY_DIR}/data/location/dbus/session_gen.h"
+  "${CMAKE_BINARY_DIR}/data/location/dbus/session_gen.c"
 
   dbus/bus.h
   dbus/bus.cpp

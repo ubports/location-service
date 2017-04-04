@@ -1,0 +1,32 @@
+<node>
+  <interface name='com.ubuntu.location.Service.Session'>
+    <!-- Requests the session to start delivering updates to Position -->
+    <method name='StartPositionUpdates'/>
+    <!-- Requests the session to stop delivering updates to Position -->
+    <method name='StopPositionUpdates'/>
+    <!-- Requests the session to start delivering updates to Velocity -->
+    <method name='StartVelocityUpdates'/>
+    <!-- Requests the session to stop delivering updates to Velocity -->
+    <method name='StopVelocityUpdates'/>
+    <!-- Requests the session to start delivering updates to Heading -->
+    <method name='StartHeadingUpdates'/>
+    <!-- Requests the session to stop delivering updates to Heading -->
+    <method name='StopHeadingUpdates'/>
+    <!--
+	Timestamped updates of position. Clock refers to unix time in
+	microseconds. The following keys are always available in the
+	dictionary:
+        - latitude: double, in [°]
+        - longitude: double, in [°]
+        The following keys are optional:
+        - horizontal-accuracy: double, in [m]
+        - altitude: double, in [m]
+        - vertical-accuracy: double, in [m]
+    -->
+    <property name='Position' type='(ta{sv})' access='read'/>
+    <!-- Timestamped updates to the current velocity in [m/s]. Clock refers to unix time in microseconds. -->
+    <property name='Velocity' type='(t(d))' access='read' />
+    <!-- Timestamped updates to the current heading in [°]. Clock refers to unix time in microseconds. -->
+    <property name='Heading' type='(t(d))' access='read' />
+  </interface>
+</node>
