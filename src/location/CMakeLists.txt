@@ -14,7 +14,6 @@ include_directories(
   ${UBUNTU_PLATFORM_HARDWARE_API_INCLUDE_DIRS})
 
 file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/data/location/dbus")
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/providers/remote")
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/connectivity")
 
 find_program(GDBUS_CODEGEN_EXECUTABLE NAMES gdbus-codegen)
@@ -28,8 +27,8 @@ add_custom_command(
   COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --c-generate-object-manager --generate-c-code "${CMAKE_BINARY_DIR}/data/location/dbus/session_gen" "${CMAKE_SOURCE_DIR}/data/location/dbus/session.xml")
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/providers/remote/provider_gen.h" "${CMAKE_CURRENT_BINARY_DIR}/providers/remote/provider_gen.c"
-  COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --generate-c-code "${CMAKE_CURRENT_BINARY_DIR}/providers/remote/provider_gen" "${CMAKE_CURRENT_SOURCE_DIR}/providers/remote/provider.xml")
+  OUTPUT "${CMAKE_BINARY_DIR}/data/location/dbus/provider_gen.h" "${CMAKE_BINARY_DIR}/data/location/dbus/provider_gen.c"
+  COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --generate-c-code "${CMAKE_BINARY_DIR}/data/location/dbus/provider_gen" "${CMAKE_SOURCE_DIR}/data/location/dbus/provider.xml")
 
 add_custom_command(
   OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/connectivity/w11t_gen.h" "${CMAKE_CURRENT_BINARY_DIR}/connectivity/w11t_gen.c"
@@ -142,8 +141,8 @@ add_library(
   providers/state_tracking_provider.h
   providers/state_tracking_provider.cpp
 
-  "${CMAKE_CURRENT_BINARY_DIR}/providers/remote/provider_gen.h"
-  "${CMAKE_CURRENT_BINARY_DIR}/providers/remote/provider_gen.c"
+  "${CMAKE_BINARY_DIR}/data/location/dbus/provider_gen.h"
+  "${CMAKE_BINARY_DIR}/data/location/dbus/provider_gen.c"
   providers/remote/provider.h
   providers/remote/provider.cpp
 )
