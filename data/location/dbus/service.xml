@@ -24,18 +24,18 @@
       <arg name='path' type='o' direction='out'/>
     </method>
 
-    <!-- Registers 'object' implementing com.ubuntu.location.Provider
+    <!-- Registers 'object' implementing com.ubuntu.location.Service.Provider
 	 with the service. Returns an error in case of issues.
     -->
     <method name='AddProvider'>
-      <!-- Path to an object implementing com.ubuntu.location.Provider -->
+      <!-- Path to an object implementing com.ubuntu.location.Service.Provider -->
       <arg name='object' type='o' direction='in'/>
     </method>
 
-    <!-- Removes 'object implementing com.ubuntu.location.Provider
+    <!-- Removes 'object' implementing com.ubuntu.location.Service.Provider
          from the service -->
     <method name='RemoveProvider'>
-      <!-- Path to an object implementing com.ubuntu.location.Provider -->
+      <!-- Path to an object implementing com.ubuntu.location.Service.Provider -->
       <arg name='object' type='o' direction='in'/>
     </method>
 

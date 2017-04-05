@@ -1,12 +1,26 @@
 # API
 
-Location service exposes a DBus API to interact with a service instance.
-We do not expose introspection for the API, yet. Instead, we provide a C++ client API that 
-abstracts away from the underlying IPC mechanism.
+Locationd offers multiple different ways of interfacing with the
+service. The primary protocol is using DBus. We offer a plain C++ API,
+too, that abstracts away the protocol details.
+
+All APIs we expose are guaranteed to remain ABI stable within any
+given major release.
+
+## DBus
+
+The DBus introspection files are available in
+[`${SOURCE}/data/location/dbus`](http://bazaar.launchpad.net/~thomas-voss/location-service/next/files/head:/data/) ready
+for consumption by static and dynamic binding generators. Methods,
+properties and signals are documented within the respective
+introspection files.
+
+## C++
 
 A client application then uses the API to establish a session with a
 service, register observers to receive updates and to control the
-status of updates. The following snippet illustrates basic usage of the client API:
+status of updates. The following snippet illustrates basic usage of
+the client API:
 
 ```{cpp}
 auto service = location::connect_to_service(...);
