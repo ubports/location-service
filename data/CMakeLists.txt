@@ -1,4 +1,4 @@
-# Copyright © 2013 Canonical Ltd.
+# Copyright © 2017 Canonical Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 3 as
@@ -53,4 +53,12 @@ install(
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/ubuntu-location-service-trust-stored.conf
   DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/upstart/sessions/
+)
+
+install(
+  FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/location/dbus/provider.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/location/dbus/service.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/location/dbus/session.xml
+  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/ubuntu-location-service/dbus/
 )
