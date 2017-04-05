@@ -1,0 +1,62 @@
+<node name='/com/ubuntu/location/Service'>
+  <interface name='com.ubuntu.location.Service'>
+    <!-- Creates a new session for monitoring updates delivered by the
+         service. Returns a path to an object implementing
+         com.ubuntu.location.Session.Service on success, an error
+         otherwise.
+    -->
+    <method name='CreateSessionForCriteria'>
+      <!--
+	  The following keys are handled by the service implementation:
+          - 'wants-position': boolean
+          - 'wants-heading': boolean
+          - 'wants-velocity': boolean
+          - 'horizontal-accuracy': double, in [m]
+          - 'vertical-accuracy': double, in [m]
+          - 'velocity-accuracy': double, in [m/s]
+          - 'heading-accuracy': double, in [°]
+      -->
+      <arg name='requirements' type='a{sv}' direction='in'/>
+      <!--
+	  Path to an object implementation to
+	  com.ubuntu.location.Service.Session.
+      -->
+      <arg name='path' type='o' direction='out'/>
+    </method>
+
+    <!-- Registers 'object' implementing com.ubuntu.location.Service.Provider
+	 with the service. Returns an error in case of issues.
+    -->
+    <method name='AddProvider'>
+      <!-- Path to an object implementing com.ubuntu.location.Service.Provider -->
+      <arg name='object' type='o' direction='in'/>
+    </method>
+
+    <!-- Removes 'object' implementing com.ubuntu.location.Service.Provider
+         from the service -->
+    <method name='RemoveProvider'>
+      <!-- Path to an object implementing com.ubuntu.location.Service.Provider -->
+      <arg name='object' type='o' direction='in'/>
+    </method>
+
+    <!-- The current state of the service, takes values from {disabled, enabled, active} -->
+    <property name='State' type='s' access='readwrite'/>
+    <!-- Indicates whether the service considers providers relying on
+         satellite constellation for positioning requests -->
+    <property name='DoesSatelliteBasedPositioning' type='b' access='readwrite'/>
+    <!-- Indicates whether the service considers providers relying
+	 on visible cell and wifi networks for positioning requests -->
+    <property name='DoesReportCellAndWifiIds' type='b' access='readwrite'/>
+    <!-- Indicates whether the positioning engine powering the service
+         is online or not. -->
+    <property name='IsOnline' type='b' access='readwrite'/>
+    <!--
+        Within every dict, at least the following keys are available:
+        * 'type': string * 'id': int32 * 'snr': double *
+        'has-almanac-data': boolean * 'has-ephimeris-data': boolean *
+        'used-in-fix': boolean * 'azimuth': double * 'elevation':
+        double
+    -->
+    <property name='VisibleSpaceVehicles' type='aa{sv}' access='read'/>
+  </interface>
+</node>

@@ -25,7 +25,7 @@
 
 #include <location/glib/shared_object.h>
 
-#include <location/providers/remote/provider_gen.h>
+#include <location/dbus/provider_gen.h>
 
 namespace location
 {

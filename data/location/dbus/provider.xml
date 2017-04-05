@@ -1,0 +1,68 @@
+<node>
+  <interface name='com.ubuntu.location.Service.Provider'>
+    <!-- Satisfies checks if a given set of requirements
+	 can be satisfied by a Provider -->
+    <method name='Satisfies'>
+      <!--
+          The following keys are optional:
+          - position: boolean
+          - heading: boolean
+          - velocity: boolean
+      -->
+      <arg name="requirements" type="a{sv}" direction='in'/>
+      <!-- Result is true if the requirements can be satsified, false otherwise -->
+      <arg name="result" type="b" direction='out'/>
+    </method>
+    <!-- Enable requests the Provider to prepare for subsequent activation calls -->
+    <method name='Enable'/>
+    <!-- Disable requests the Provider to give up as many resources required for operation as possible -->
+    <method name='Disable'/>
+    <!-- Activate requests the Provider to start up and provide position/velocity/heading updates -->
+    <method name='Activate'/>
+    <!-- Deactivate requests the Provider to stop providing position/velocity/heading updates -->
+    <method name='Deactivate'/>
+    <!--
+	OnNewEvent is called whenever new system events are available. The 'event' will always
+	contain the following key/value pairs:
+	- 'type': string, one of {location::ReferencePositionUpdated, location::WifiAndCellReportingStateChanged}
+	Depending on 'type', the following key/value pairs are present in 'event':
+	- location::ReferencePositionUpdated:
+         - 'when': uint64, timestamp of the event, unix time in [µs}
+	 - 'latitude': double, latitude of the position in [°]
+	 - 'longitude': double, longitude of the position in [°]
+	 - optional['altitude']: double, height above mean sea level of the position in [m]
+	 - optional['horizontal-accuracy']: double, accuracy estimate of the position in [m]
+	 - optional['vertical-accurady']: double, accuracy estimate of the altitue in [m]
+	- location::WifiAndCellReportingStateChanged:
+	 - 'new-state': string, one of {enabled, disabled}
+    -->
+    <method name='OnNewEvent'>
+      <arg name="event" type="a{sv}" direction="in"/>
+    </method>
+    <!--
+        Describes the minimum requirements of a Provider.
+	The following key/value pairs are known:
+	- 'needs-cell-network': boolean
+	- 'needs-data-network': boolean
+	- 'needs-monetary-spending': boolean
+	- 'needs-satellites': boolean
+    -->
+    <property name='Requirements' type='a{sv}' access='read'/>
+    <!--
+	Timestamped updates of position. Clock refers to unix time in
+	microseconds. The following keys are always available in the
+	dictionary:
+        - latitude: double, in [°]
+        - longitude: double, in [°]
+        The following keys are optional:
+        - horizontal-accuracy: double, in [m]
+        - altitude: double, in [m]
+        - vertical-accuracy: double, in [m]
+    -->
+    <property name='Position' type='(ta{sv})' access='read'/>
+    <!-- Timestamped updates to the current velocity in [m/s]. Clock refers to unix time in microseconds. -->
+    <property name='Velocity' type='(t(d))' access='read' />
+    <!-- Timestamped updates to the current heading in [°]. Clock refers to unix time in microseconds. -->
+    <property name='Heading' type='(t(d))' access='read' />
+  </interface>
+</node>
