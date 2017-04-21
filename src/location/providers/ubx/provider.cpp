@@ -211,7 +211,9 @@ location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderF
 {
     Configuration configuration
     {
-        Protocol::ubx,
+        SettingsHelper::get_value<Protocol>(
+            "ubx.provider.protocol",
+            Protocol::ubx),
         config.get<std::string>(
             "device", SettingsHelper::get_value<std::string>(
                     "ubx.provider.path",
@@ -445,4 +447,32 @@ void ubx::Provider::request_assist_now_online_data(const Optional<Position>& pos
             }
         }
     });
+}
+
+std::istream& ubx::operator>>(std::istream& in, Provider::Protocol& protocol)
+{
+    std::string value;
+    in >> value;
+
+    if (value == "ubx")
+        protocol = Provider::Protocol::ubx;
+    if (value == "nmea")
+        protocol = Provider::Protocol::nmea;
+
+    return in;
+}
+
+std::ostream& ubx::operator<<(std::ostream& out, Provider::Protocol protocol)
+{
+    switch (protocol)
+    {
+    case Provider::Protocol::ubx:
+        out << "ubx";
+        break;
+    case Provider::Protocol::nmea:
+        out << "nmea";
+        break;
+    }
+
+    return out;
 }
