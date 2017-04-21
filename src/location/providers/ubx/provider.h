@@ -27,6 +27,7 @@
 
 #include <boost/filesystem.hpp>
 
+#include <iosfwd>
 #include <thread>
 
 namespace location
@@ -145,8 +146,12 @@ private:
         core::Signal<Update<units::MetersPerSecond>> velocity;
     } updates;
 };
-}
-}
-}
+
+std::istream& operator>>(std::istream&, Provider::Protocol&);
+std::ostream& operator<<(std::ostream&, Provider::Protocol);
+
+}  // namespace ubx
+}  // namespace providers
+}  // namespace location
 
 #endif // LOCATION_PROVIDERS_UBX_PROVIDER_H_
