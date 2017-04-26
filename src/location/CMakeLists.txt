@@ -123,6 +123,7 @@ add_library(
   events/reference_position_updated.cpp
   events/wifi_and_cell_id_reporting_state_changed.cpp
 
+  glib/context.cpp
   glib/holder.h
   glib/runtime.h
   glib/runtime.cpp

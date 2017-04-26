@@ -52,7 +52,7 @@ TEST(SerializingBus, dispatches_events_serially)
 {
     using namespace ::testing;
 
-    location::glib::Runtime runtime;
+    location::glib::Runtime runtime{location::glib::Runtime::WithOwnMainLoop{}};
 
     auto sb = location::glib::SerializingBus::create();
     auto receiver = std::make_shared<NiceMock<MockEventReceiver>>();

@@ -23,25 +23,36 @@ status of updates. The following snippet illustrates basic usage of
 the client API:
 
 ```{cpp}
-auto service = location::connect_to_service(...);
-auto session = service->create_session_for_criteria(location::Criteria{});
+#include <location/service.h>
+#include <location/session.h>
 
-session->updates().position.changed().connect([this](const location::Update<location::Position>& pos)
+#include <location/glib/context.h>
+
+auto context = location::glib::Context::create_for_system_bus();
+
+context->connect_to_service([context](const location::Service::Ptr& service)
 {
-  std::cout << pos << std::endl;
+	service->create_session_for_criteria(location::Criteria{}, [context, service](const location::Session::Ptr& session)
+	{
+		session->updates().position.changed().connect([this](const location::Update<location::Position>& pos)
+		{
+			std::cout << pos << std::endl;
+		});
+
+	    session->updates().heading.changed().connect([this](const location::Update<location::units::Degrees>& heading)
+	    {
+		    std::cout << pos << std::endl;
+	    });
+
+        session->updates().velocity.changed().connect([this](const location::Update<location::units::MetersPerSecond>& velocity)
+	    {
+		    std::cout << pos << std::endl;
+	    });
+
+	    session->updates().position_status = location::Service::Session::Updates::Status::enabled;
+	    session->updates().heading_status = location::Service::Session::Updates::Status::enabled;
+	    session->updates().velocity_status = location::Service::Session::Updates::Status::enabled;
+	});
 });
 
-session->updates().heading.changed().connect([this](const location::Update<location::units::Degrees>& heading)
-{
-  std::cout << pos << std::endl;
-});
-
-session->updates().velocity.changed().connect([this](const location::Update<location::units::MetersPerSecond>& velocity)
-{
-  std::cout << pos << std::endl;
-});
-
-session->updates().position_status = location::Service::Session::Updates::Status::enabled;
-session->updates().heading_status = location::Service::Session::Updates::Status::enabled;
-session->updates().velocity_status = location::Service::Session::Updates::Status::enabled;
 ```

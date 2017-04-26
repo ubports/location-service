@@ -37,10 +37,17 @@ namespace glib
 class LOCATION_DLL_PUBLIC Runtime
 {
 public:
+    struct WithOwnMainLoop {};
+
     static Runtime* instance();
 
     Runtime();
+    explicit Runtime(WithOwnMainLoop);
     ~Runtime();
+
+    // redirect_logging interacts with the glib runtime
+    // to redirect logging to location::Logging facilities.
+    void redirect_logging();
 
     // executes the underlying event loop and blocks until
     // the runtime is stopped or a SIGINT/SIGTERM is delivered

@@ -88,36 +88,57 @@ location::glib::Runtime* location::glib::Runtime::instance()
 }
 
 location::glib::Runtime::Runtime()
-    : main_loop_{g_main_loop_new(nullptr, false)},
+    : main_loop_{nullptr},
       event_fd_{event_fd_or_throw()},
-      signal_fd_{signal_fd_or_throw()},
-      event_fd_input_stream{make_shared_object(g_unix_input_stream_new(event_fd_, true))},
-      signal_fd_input_stream{make_shared_object(g_unix_input_stream_new(signal_fd_, true))}
+      signal_fd_{-1},
+      event_fd_input_stream{make_shared_object(g_unix_input_stream_new(event_fd_, true))}
 {
-    g_log_set_default_handler(handle_log_message, nullptr);
-
-    g_input_stream_read_async(signal_fd_input_stream.get(), &signal_fd_buffer, sizeof(signal_fd_buffer), G_PRIORITY_LOW,
-                              nullptr, Runtime::on_signal_fd_read_finished, this);
     g_input_stream_read_async(event_fd_input_stream.get(), &event_fd_buffer, sizeof(event_fd_buffer), G_PRIORITY_LOW,
                               nullptr, Runtime::on_event_fd_read_finished, this);
 
     runtime = this;
 }
 
+location::glib::Runtime::Runtime(WithOwnMainLoop)
+    : main_loop_{g_main_loop_new(nullptr, false)},
+      event_fd_{event_fd_or_throw()},
+      signal_fd_{signal_fd_or_throw()},
+      event_fd_input_stream{make_shared_object(g_unix_input_stream_new(event_fd_, true))},
+      signal_fd_input_stream{make_shared_object(g_unix_input_stream_new(signal_fd_, true))}
+{
+    g_input_stream_read_async(event_fd_input_stream.get(), &event_fd_buffer, sizeof(event_fd_buffer), G_PRIORITY_LOW,
+                              nullptr, Runtime::on_event_fd_read_finished, this);
+
+    g_input_stream_read_async(signal_fd_input_stream.get(), &signal_fd_buffer, sizeof(signal_fd_buffer), G_PRIORITY_LOW,
+                              nullptr, Runtime::on_signal_fd_read_finished, this);
+    runtime = this;
+}
+
 location::glib::Runtime::~Runtime()
 {
-    g_main_loop_unref(main_loop_);
+    if (main_loop_)
+        g_main_loop_unref(main_loop_);
     runtime = nullptr;
+}
+
+void location::glib::Runtime::redirect_logging()
+{
+    g_log_set_default_handler(handle_log_message, nullptr);
 }
 
 int location::glib::Runtime::run()
 {
+    if (!main_loop_)
+        throw std::runtime_error{"Missing main loop"};
     g_main_loop_run(main_loop_);
+
     return EXIT_SUCCESS;
 }
 
 void location::glib::Runtime::stop()
 {
+    if (!main_loop_)
+        throw std::runtime_error{"Missing main loop"};
     g_main_loop_quit(main_loop_);
 }
 

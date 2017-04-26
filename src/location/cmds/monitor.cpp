@@ -55,7 +55,8 @@ location::cmds::Monitor::Monitor(const std::shared_ptr<Delegate>& delegate)
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
     action([this](const Context& ctxt)
     {
-        glib::Runtime runtime;
+        glib::Runtime runtime{glib::Runtime::WithOwnMainLoop{}};
+        runtime.redirect_logging();
 
         location::dbus::stub::Service::create(bus, [this, &ctxt](const Result<location::dbus::stub::Service::Ptr>& result) mutable
         {
