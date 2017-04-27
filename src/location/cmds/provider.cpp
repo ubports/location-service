@@ -47,7 +47,8 @@ location::cmds::Provider::Provider()
     {
         die_if(not id, ctxt.cout, "name of actual provider implementation is missing");
 
-        glib::Runtime runtime;
+        glib::Runtime runtime{glib::Runtime::WithOwnMainLoop{}};
+        runtime.redirect_logging();
 
         location::dbus::stub::Service::create(bus, [this](const location::Result<location::dbus::stub::Service::Ptr>& result)
         {

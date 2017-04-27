@@ -49,7 +49,8 @@ location::cmds::Run::Run()
     {
         account_for_lp1447110();
 
-        glib::Runtime runtime;
+        glib::Runtime runtime{glib::Runtime::WithOwnMainLoop{}};
+        runtime.redirect_logging();
 
         // The engine instance is the core piece of functionality.
         auto engine = std::make_shared<location::Engine>(
