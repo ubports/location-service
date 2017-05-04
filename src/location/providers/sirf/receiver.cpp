@@ -1,10 +1,11 @@
-#include <location/providers/ubx/_8/receiver.h>
+#include <location/providers/sirf/receiver.h>
 
 #include <location/nmea/sentence.h>
+#include <location/providers/sirf/message.h>
 
 #include <iostream>
 
-namespace ubx = location::providers::ubx;
+namespace sirf = location::providers::sirf;
 
 namespace
 {
@@ -17,42 +18,37 @@ struct EncodingVisitor : public boost::static_visitor<std::vector<std::uint8_t>>
         throw std::logic_error{"Encoding not supported"};
     }
 
-    std::vector<std::uint8_t> operator()(const ubx::_8::cfg::Gnss& gnss) const
+    std::vector<std::uint8_t> operator()(const sirf::InitializeDataSource& ids) const
     {
-        return ubx::_8::encode_message(gnss);
+        return sirf::encode_message(ids);
     }
 
-    std::vector<std::uint8_t> operator()(const ubx::_8::cfg::Msg& msg) const
+    std::vector<std::uint8_t> operator()(const sirf::SetProtocol& sp) const
     {
-        return ubx::_8::encode_message(msg);
-    }
-
-    std::vector<std::uint8_t> operator()(const ubx::_8::cfg::Rst& rst) const
-    {
-        return ubx::_8::encode_message(rst);
+        return sirf::encode_message(sp);
     }
 };
 
 }  // namespace
 
-ubx::_8::Receiver::Receiver(const std::shared_ptr<Monitor>& monitor) : monitor{monitor} {}
+sirf::Receiver::Receiver(const std::shared_ptr<Monitor>& monitor) : monitor{monitor} {}
 
-void ubx::_8::Receiver::send_message(const Message& message)
+void sirf::Receiver::send_message(const Message& message)
 {
     send_encoded_message(boost::apply_visitor(EncodingVisitor{}, message));
 }
 
-void ubx::_8::Receiver::process_chunk(Buffer::iterator it, Buffer::iterator itE)
+void sirf::Receiver::process_chunk(Buffer::iterator it, Buffer::iterator itE)
 {
     while (it != itE)
     {
-        auto result = ubx_scanner.update(*it);
+        auto result = sirf_scanner.update(*it);
 
         if (std::get<0>(result) == Scanner::Expect::nothing_more)
         {
             try
             {
-                monitor->on_new_ubx_message(ubx_scanner.finalize());
+                monitor->on_new_sirf_message(sirf_scanner.finalize());
             }
             catch (...)
             {

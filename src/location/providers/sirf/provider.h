@@ -15,15 +15,14 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-#ifndef LOCATION_PROVIDERS_UBX_PROVIDER_H_
-#define LOCATION_PROVIDERS_UBX_PROVIDER_H_
+#ifndef LOCATION_PROVIDERS_SIRF_PROVIDER_H_
+#define LOCATION_PROVIDERS_SIRF_PROVIDER_H_
 
 #include <location/provider.h>
 #include <location/provider_factory.h>
 #include <location/runtime.h>
 #include <location/nmea/sentence.h>
-#include <location/providers/ubx/_8/assist_now_online_client.h>
-#include <location/providers/ubx/_8/serial_port_receiver.h>
+#include <location/providers/sirf/serial_port_receiver.h>
 
 #include <boost/filesystem.hpp>
 
@@ -34,9 +33,9 @@ namespace location
 {
 namespace providers
 {
-namespace ubx
+namespace sirf
 {
-// ubx::Provider integrates GNSS receivers relying on
+// sirf::Provider integrates GNSS receivers relying on
 // ublox chipsets with locationd.
 //
 // In this version, only receivers connected to a serial port
@@ -50,7 +49,7 @@ class Provider : public location::Provider, public std::enable_shared_from_this<
 public:
     enum class Protocol
     {
-        ubx,  // Rely on ubx.
+        sirf, // Rely on sirf.
         nmea  // Rely on nmea.
     };
 
@@ -59,12 +58,6 @@ public:
     {
         Protocol protocol;                                  // The protocol used for communicating with the receiver.
         boost::filesystem::path device;                     // Serial device used for communicating with the receiver.
-        struct
-        {
-            bool enable;                                    // Whether or not the provider should use AssistNow.
-            std::string token;                              // Token for validating requests to the AssistNow service.
-            boost::posix_time::seconds acquisition_timeout; // Query assistance data after this many seconds.
-        } assist_now;                                       // All parameters for configuring AssistNow go here.
     };
 
     // For integration with the Provider factory.
@@ -100,16 +93,16 @@ public:
 
 private:
     // Relays incoming sentences to a provider instance.
-    struct Monitor : public std::enable_shared_from_this<ubx::Provider::Monitor>, public _8::Receiver::Monitor, public boost::static_visitor<>
+    struct Monitor : public std::enable_shared_from_this<sirf::Provider::Monitor>, public sirf::Receiver::Monitor, public boost::static_visitor<>
     {
         // From Receiver::Monitor
-        void on_new_ubx_message(const _8::Message& message) override;
+        void on_new_sirf_message(const Message& message) override;
         void on_new_nmea_sentence(const nmea::Sentence& sentence) override;
 
         template<typename T>
         void operator()(const T&) const {}
 
-        void operator()(const _8::nav::Pvt& pvt);
+        void operator()(const GeodeticNavigationData& gnd);
 
         void operator()(const nmea::Gga& gga);
         void operator()(const nmea::Gsa& gsa);
@@ -126,19 +119,12 @@ private:
     Provider(const Configuration& configuration);
 
     std::shared_ptr<Provider> finalize_construction();
-
-    void configure_gnss();
     void configure_protocol();
-
-    void request_assist_now_online_data(const Optional<Position>& position);
 
     Configuration configuration;
     std::shared_ptr<location::Runtime> runtime;
     std::shared_ptr<Monitor> monitor;
-    std::shared_ptr<_8::SerialPortReceiver> receiver;
-    std::shared_ptr<_8::AssistNowOnlineClient> assist_now_online_client;
-    boost::asio::deadline_timer acquisition_timer;
-
+    std::shared_ptr<SerialPortReceiver> receiver;
     struct
     {
         core::Signal<Update<Position>> position;
@@ -150,8 +136,8 @@ private:
 std::istream& operator>>(std::istream&, Provider::Protocol&);
 std::ostream& operator<<(std::ostream&, Provider::Protocol);
 
-}  // namespace ubx
+}  // namespace sirf
 }  // namespace providers
 }  // namespace location
 
-#endif // LOCATION_PROVIDERS_UBX_PROVIDER_H_
+#endif // LOCATION_PROVIDERS_SIRF_PROVIDER_H_

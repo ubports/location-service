@@ -22,6 +22,7 @@
 #include <location/clock.h>
 #include <location/glib/runtime.h>
 #include <location/providers/gps/hardware_abstraction_layer.h>
+#include <location/providers/sirf/provider.h>
 #include <location/providers/ubx/provider.h>
 #include <location/util/benchmark.h>
 #include <location/util/cli.h>
@@ -251,12 +252,98 @@ int ubx(std::ostream& cout, std::ostream&)
     return 0;
 }
 
+int sirf(std::ostream& cout, std::ostream&)
+{
+    location::util::Benchmark benchmark{boost::lexical_cast<unsigned int>(env::get("SIRF_PROVIDER_TEST_TRIALS", "15")), "ttff in [µs]"};
+
+    auto test_device = env::get_or_throw("SIRF_PROVIDER_TEST_DEVICE");
+
+    location::providers::sirf::Provider::Configuration configuration
+    {
+        location::providers::sirf::Provider::Protocol::sirf, test_device
+    };
+
+    auto provider = location::providers::sirf::Provider::create(configuration);
+
+    struct State
+    {
+        State() : worker{[this]() { runtime.run(); }}, fix_received(false)
+        {
+        }
+
+        ~State()
+        {
+            runtime.stop();
+            if (worker.joinable())
+                worker.join();
+        }
+
+        bool wait_for_fix_for(const std::chrono::seconds& seconds)
+        {
+            std::unique_lock<std::mutex> ul(guard);
+            return wait_condition.wait_for(
+                        ul,
+                        seconds,
+                        [this]() {return fix_received == true;});
+        }
+
+        void on_position_updated(const location::Position&)
+        {
+            fix_received = true;
+            wait_condition.notify_all();
+        }
+
+        void reset()
+        {
+            fix_received = false;
+        }
+
+        location::glib::Runtime runtime{location::glib::Runtime::WithOwnMainLoop{}};
+        std::thread worker;
+        std::mutex guard;
+        std::condition_variable wait_condition;
+        bool fix_received;
+    } state;
+
+    provider->position_updates().connect([&state](const location::Update<location::Position>& update)
+    {
+        state.on_position_updated(update.value);
+    });
+
+    {
+        cli::ProgressBar pb(cout, "sirf runtime test: ", 30);
+
+        benchmark.run(
+            [&](std::size_t)
+            {
+                provider->reset(); state.reset();
+            },
+            [&](std::size_t trial)
+            {
+                pb.update(trial / static_cast<double>(benchmark.trials()));
+
+                provider->activate();
+                // We expect a maximum cold start time of 15 minutes. The theoretical
+                // limit is 12.5 minutes, and we add up some grace period to make the
+                // test more robust (see http://en.wikipedia.org/wiki/Time_to_first_fix).
+                expect<true, std::runtime_error>(state.wait_for_fix_for(std::chrono::seconds{15 * 60}), "Wait for fix timed out.");
+                provider->deactivate();
+            });
+    }
+
+    cout << benchmark << std::endl;
+
+    return 0;
+}
+
 }  // namespace
 
 int location::execute_runtime_tests(const std::string& test_suite, std::ostream& cout, std::ostream& cerr)
 {
     if (test_suite == "android-gps")
         return snr_and_ttff(cout, cerr);
+    else if (test_suite == "sirf")
+        return sirf(cout, cerr);
     else if (test_suite == "ubx")
         return ubx(cout, cerr);
     return 0;
