@@ -105,7 +105,7 @@ std::tuple<_8::Scanner::Expect, bool> _8::Scanner::update(std::uint8_t c)
         expected_size |= (c << 8);
         payload.resize(expected_size);
         payload_iterator = payload.begin();
-        next = Expect::payload;
+        next = expected_size > 0 ? Expect::payload : Expect::ck_a;
         consumed = true;
         break;
     case Expect::payload:
