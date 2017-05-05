@@ -80,7 +80,7 @@ void ubx::Provider::Monitor::on_new_ubx_message(const _8::Message& message)
 }
 
 
-void ubx::Provider::Monitor::on_new_nmea_sentence(const _8::nmea::Sentence& sentence)
+void ubx::Provider::Monitor::on_new_nmea_sentence(const nmea::Sentence& sentence)
 {
     VLOG(1) << sentence;
     if (auto sp = provider.lock())
@@ -88,7 +88,7 @@ void ubx::Provider::Monitor::on_new_nmea_sentence(const _8::nmea::Sentence& sent
             boost::apply_visitor(*this, sentence);
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Gga& gga)
+void ubx::Provider::Monitor::operator()(const nmea::Gga& gga)
 {   
     if (gga.latitude && gga.longitude)
     {
@@ -159,32 +159,32 @@ void ubx::Provider::Monitor::operator()(const _8::nav::Pvt& pvt)
     });
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Gsa&)
+void ubx::Provider::Monitor::operator()(const nmea::Gsa&)
 {
     // Empty on purpose
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Gll&)
+void ubx::Provider::Monitor::operator()(const nmea::Gll&)
 {
     // Empty on purpose
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Gsv&)
+void ubx::Provider::Monitor::operator()(const nmea::Gsv&)
 {
     // Empty on purpose
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Rmc&)
+void ubx::Provider::Monitor::operator()(const nmea::Rmc&)
 {
     // Empty on purpose
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Txt&)
+void ubx::Provider::Monitor::operator()(const nmea::Txt&)
 {
     // Empty on purpose
 }
 
-void ubx::Provider::Monitor::operator()(const _8::nmea::Vtg& vtg)
+void ubx::Provider::Monitor::operator()(const nmea::Vtg& vtg)
 {
     auto thiz = shared_from_this();
     std::weak_ptr<ubx::Provider::Monitor> wp{thiz};

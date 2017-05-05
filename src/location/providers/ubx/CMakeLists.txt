@@ -37,10 +37,13 @@ add_library(
   _8/nav/pvt.cpp
   _8/nav/sat.h
   _8/nav/sat.cpp
-  _8/nmea/scanner.cpp
-  _8/nmea/sentence.cpp
 
   provider.h provider.cpp)
+
+target_link_libraries(
+  ubx
+
+  nmea)
 
 set(
   ENABLED_PROVIDER_TARGETS

@@ -20,6 +20,7 @@
 
 #include "dummy/provider.h"
 #include "mls/provider.h"
+#include "sirf/provider.h"
 #include "ubx/provider.h"
 
 #include <map>
@@ -45,6 +46,12 @@ static FactoryInjector mls_injector
 {
     "mls::Provider",
     location::providers::mls::Provider::create_instance
+};
+
+static FactoryInjector sirf_injector
+{
+    "sirf::Provider",
+    location::providers::sirf::Provider::create_instance
 };
 
 static FactoryInjector ubx_injector

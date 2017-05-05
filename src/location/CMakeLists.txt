@@ -35,6 +35,12 @@ add_custom_command(
   COMMAND ${GDBUS_CODEGEN_EXECUTABLE} --generate-c-code "${CMAKE_CURRENT_BINARY_DIR}/connectivity/w11t_gen" "${CMAKE_CURRENT_SOURCE_DIR}/connectivity/w11t.xml")
 
 add_library(
+  nmea
+
+  nmea/scanner.cpp
+  nmea/sentence.cpp)
+
+add_library(
   ubuntu-location-service SHARED
 
   ${UBUNTU_LOCATION_SERVICE_PUBLIC_HEADERS}
@@ -88,7 +94,7 @@ add_library(
   cmds/status.cpp
   cmds/test.h
   cmds/test.cpp
-
+  
   util/benchmark.h
   util/benchmark.cpp
   util/cli.h

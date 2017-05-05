@@ -13,12 +13,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef UBX_8_RECEIVER_H_
-#define UBX_8_RECEIVER_H_
+#ifndef LOCATION_PROVIDERS_SIRF_RECEIVER_H_
+#define LOCATION_PROVIDERS_SIRF_RECEIVER_H_
 
-#include <location/providers/ubx/_8/codec.h>
-#include <location/providers/ubx/_8/message.h>
-#include <location/providers/ubx/_8/scanner.h>
+#include <location/providers/sirf/codec.h>
+#include <location/providers/sirf/message.h>
+#include <location/providers/sirf/scanner.h>
 
 #include <location/nmea/scanner.h>
 #include <location/nmea/sentence.h>
@@ -29,9 +29,7 @@ namespace location
 {
 namespace providers
 {
-namespace ubx
-{
-namespace _8
+namespace sirf
 {
 
 /// @brief Receiver connects to a ublox 8 GNSS receiver.
@@ -56,7 +54,7 @@ public:
 
         /// @brief on_new_ubx_message is invoked for every complete and parsed
         /// ubx message.
-        virtual void on_new_ubx_message(const ubx::_8::Message& message) = 0;
+        virtual void on_new_sirf_message(const sirf::Message& message) = 0;
 
         /// @brief on_new_nmea_sentence is invoked for every complete and parsed
         /// nmea sentence.
@@ -84,12 +82,11 @@ protected:
 private:
     std::shared_ptr<Monitor> monitor;
     nmea::Scanner nmea_scanner;
-    ubx::_8::Scanner ubx_scanner;
+    sirf::Scanner sirf_scanner;
 };
 
-}  // namespace _8
-}  // namespace ubx
+}  // namespace sirf
 }  // namespace providers
 }  // namespace location
 
-#endif // UBX_8_RECEIVER_H_
+#endif // LOCATION_PROVIDERS_SIRF_RECEIVER_H_

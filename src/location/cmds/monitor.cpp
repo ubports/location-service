@@ -20,6 +20,7 @@
 #include <location/cmds/monitor.h>
 
 #include <location/criteria.h>
+#include <location/logging.h>
 #include <location/dbus/stub/service.h>
 #include <location/glib/runtime.h>
 #include <location/runtime.h>
@@ -34,17 +35,84 @@ location::cmds::Monitor::PrintingDelegate::PrintingDelegate(std::ostream& out) :
 
 void location::cmds::Monitor::PrintingDelegate::on_new_position(const Update<Position>& pos)
 {
-    out << pos << std::endl;
+    last_position_update = pos;
+    print_row();
 }
 
 void location::cmds::Monitor::PrintingDelegate::on_new_heading(const Update<units::Degrees>& heading)
 {
-    out << heading << std::endl;
+    last_heading_update = heading;
+    print_row();
 }
 
 void location::cmds::Monitor::PrintingDelegate::on_new_velocity(const Update<units::MetersPerSecond>& velocity)
 {
-    out << velocity << std::endl;
+    last_velocity_update = velocity;
+    print_row();
+}
+
+void location::cmds::Monitor::PrintingDelegate::print_header()
+{
+    out << std::left << std::setw(15) << std::setfill(' ') << "lat.[deg]"
+        << std::left << std::setw(15) << std::setfill(' ') << "lon.[deg]"
+        << std::left << std::setw(15) << std::setfill(' ') << "hor.acc.[m]"
+        << std::left << std::setw(15) << std::setfill(' ') << "alt.[m]"
+        << std::left << std::setw(15) << std::setfill(' ') << "ver.acc.[m]"
+        << std::left << std::setw(15) << std::setfill(' ') << "heading[deg]"
+        << std::left << std::setw(15) << std::setfill(' ') << "vel.[m/s]" << std::endl;
+}
+
+void location::cmds::Monitor::PrintingDelegate::print_row()
+{
+    if (last_position_update)
+    {
+        out << std::left << std::setw(15) << std::setfill(' ') << std::fixed << std::setprecision(5) << last_position_update->value.latitude().value();
+        out << std::left << std::setw(15) << std::setfill(' ') << std::fixed << std::setprecision(5) << last_position_update->value.longitude().value();
+
+        if (last_position_update->value.accuracy().horizontal())
+            out << std::left << std::setw(15) << std::setfill(' ') << std::fixed << std::setprecision(2) << last_position_update->value.accuracy().horizontal()->value() ;
+        else
+            out << std::left << std::setw(15) << std::setfill(' ') << "n/a" ;
+
+        if (last_position_update->value.altitude())
+            out << std::left << std::setw(15) << std::setfill(' ') << std::fixed << std::setprecision(2) << last_position_update->value.altitude()->value() ;
+        else
+            out << std::left << std::setw(15) << std::setfill(' ') << "n/a" ;
+
+        if (last_position_update->value.accuracy().vertical())
+            out << std::left << std::setw(15) << std::setfill(' ') << std::fixed << std::setprecision(2) << last_position_update->value.accuracy().vertical()->value() ;
+        else
+            out << std::left << std::setw(15) << std::setfill(' ') << "n/a" ;
+    }
+    else
+    {
+        out << std::left << std::setw(15) << std::setfill(' ') << "n/a"   // latitude
+            << std::left << std::setw(15) << std::setfill(' ') << "n/a"   // longitude
+            << std::left << std::setw(15) << std::setfill(' ') << "n/a"   // horizontal accuracy
+            << std::left << std::setw(15) << std::setfill(' ') << "n/a"   // altitude
+            << std::left << std::setw(15) << std::setfill(' ') << "n/a" ; // vertical accuracy
+    }
+
+    if (last_heading_update)
+    {
+        out << std::left << std::setw(15) << std::setfill(' ') << last_heading_update->value.value() ;
+    }
+    else
+    {
+        out << std::left << std::setw(15) << std::setfill(' ') << "n/a" ;
+    }
+
+    if (last_velocity_update)
+    {
+        out << std::left << std::setw(15) << std::setfill(' ') << last_velocity_update->value.value();
+    }
+    else
+    {
+        out << std::left << std::setw(15) << std::setfill(' ') << "n/a";
+    }
+
+    out << std::endl;
+
 }
 
 location::cmds::Monitor::Monitor(const std::shared_ptr<Delegate>& delegate)
@@ -96,7 +164,7 @@ location::cmds::Monitor::Monitor(const std::shared_ptr<Delegate>& delegate)
                 session->updates().heading_status = location::Service::Session::Updates::Status::enabled;
                 session->updates().velocity_status = location::Service::Session::Updates::Status::enabled;
 
-                ctxt.cout << "Enabled position/heading/velocity updates..." << std::endl;
+                LOG(INFO) << "Enabled position/heading/velocity updates..." << std::endl;
             });
         });
 
