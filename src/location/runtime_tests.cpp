@@ -214,7 +214,7 @@ int ubx(std::ostream& cout, std::ostream&)
             fix_received = false;
         }
 
-        location::glib::Runtime runtime;
+        location::glib::Runtime runtime{location::glib::Runtime::WithOwnMainLoop{}};
         std::thread worker;
         std::mutex guard;
         std::condition_variable wait_condition;
