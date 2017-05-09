@@ -22,22 +22,75 @@
 #include <location/logging.h>
 
 #include <core/net/http/client.h>
+#include <core/posix/this_process.h>
 
+#include <boost/filesystem.hpp>
+
+#include <algorithm>
+#include <fstream>
 #include <thread>
 
 namespace connectivity = com::ubuntu::location::connectivity;
+namespace env = core::posix::this_process::env;
+namespace fs = boost::filesystem;
 namespace mls = location::providers::mls;
 
-std::string mls::Provider::class_name()
+namespace
 {
-    return "mls::Provider";
+
+struct SettingsHelper
+{
+    template<typename T>
+    static T get_value(std::string key, T&& default_value)
+    {
+        static const std::string snap_path = env::get("SNAP_DATA");
+
+        boost::filesystem::path path{snap_path};
+        std::string key_path{key};
+        std::replace_copy(key.begin(), key.end(), key_path.begin(), '.', '/');
+        path /= key_path;
+
+        LOG(INFO) << "Reading setting from " << path.string();
+
+        T value{default_value};
+
+        if (fs::exists(path))
+        {
+            std::ifstream in{path.string().c_str()};
+            in >> value;
+        }
+
+        return value;
+    }
+};
+
+namespace options
+{
+
+constexpr const char* host{"mls.provider.host"};
+constexpr const char* api_key{"mls.provider.api_key"};
+
+}  // namespace options
+}  // namespace
+
+void mls::Provider::add_to_registry()
+{
+    ProviderRegistry::instance().add_provider_for_name("mls::Provider", [](const ProviderRegistry::Configuration& configuration)
+    {
+        return mls::Provider::create_instance(configuration);
+    },
+    {
+        {options::host, "connect to this ichnaea host"},
+        {options::api_key, "use this key to authenticate requests to the ichnaea host"}
+    });
 }
 
-location::Provider::Ptr mls::Provider::create_instance(const location::ProviderFactory::Configuration& config)
+location::Provider::Ptr mls::Provider::create_instance(const location::ProviderRegistry::Configuration& config)
 {
     mls::Configuration configuration;
-    configuration.host = config.get("Host", ichnaea::Client::default_host);
-    configuration.api_key = config.get("ApiKey", "test");
+
+    configuration.host = config.get(options::host, SettingsHelper::get_value<std::string>(options::host, ichnaea::Client::default_host));
+    configuration.api_key = config.get(options::api_key, SettingsHelper::get_value<std::string>(options::api_key, "test"));
 
     return location::Provider::Ptr{new mls::Provider{configuration}};
 }

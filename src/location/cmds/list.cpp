@@ -18,7 +18,7 @@
  */
 
 #include <location/cmds/list.h>
-#include <location/provider_factory.h>
+#include <location/provider_registry.h>
 
 namespace cli = location::util::cli;
 
@@ -27,9 +27,11 @@ location::cmds::List::List()
 {
     action([this](const Context& ctxt)
     {
-        location::ProviderFactory::instance().enumerate([&ctxt](const std::string& name, const location::ProviderFactory::Factory&)
+        location::ProviderRegistry::instance().enumerate([&ctxt](const std::string& name, const location::ProviderRegistry::Factory&, const location::ProviderRegistry::Options& options)
         {
             ctxt.cout << "  - " << name << std::endl;
+            for (const auto& option : options)
+                ctxt.cout << "    - " << option.name << ": " << option.description << std::endl;
         });
         return EXIT_SUCCESS;
     });

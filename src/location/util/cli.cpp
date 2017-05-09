@@ -161,7 +161,7 @@ void cli::CommandWithSubcommands::help(std::ostream& out)
     {
         out << std::endl << pattern::options << std::endl;
         for (const auto& flag : flags_)
-            out << boost::format(pattern::option) % flag->name() % flag->description() << std::endl;
+            out << (boost::format(pattern::option) % flag->name() % flag->description()) << std::endl;
     }
 
     if (commands_.size() > 0)
@@ -278,7 +278,7 @@ void cli::CommandWithFlagsAndAction::help(std::ostream& out)
     {
         out << std::endl << boost::format(pattern::options) << std::endl;
         for (const auto& flag : flags_)
-            out << boost::format(pattern::option) % flag->name() % flag->description() << std::endl;
+            out << (boost::format(pattern::option) % flag->name() % flag->description()) << std::endl;
     }
 }
 

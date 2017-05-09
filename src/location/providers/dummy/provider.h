@@ -19,7 +19,7 @@
 #define LOCATION_PROVIDERS_DUMMY_PROVIDER_H_
 
 #include <location/provider.h>
-#include <location/provider_factory.h>
+#include <location/provider_registry.h>
 
 #include <thread>
 
@@ -37,35 +37,35 @@ struct Configuration
     {
         static constexpr const char* update_period
         {
-            "UpdatePeriodInMs"
+            "dummy.provider.update_period"
         };
         static constexpr const char* reference_position_lat
         {
-            "ReferenceLocationLat"
+            "dummy.provider.ref.lat"
         };
         static constexpr const char* reference_position_lon
         {
-            "ReferenceLocationLon"
+            "dummy.provider.ref.lon"
         };
         static constexpr const char* reference_position_alt
         {
-            "ReferenceLocationAlt"
+            "dummy.provider.ref.alt"
         };
         static constexpr const char* reference_horizontal_accuracy
         {
-            "ReferenceHorizontalAccuracy"
+            "dummy.provider.acc.hor"
         };
         static constexpr const char* reference_vertical_accuracy
         {
-            "ReferenceVerticalAccuracy"
+            "dummy.provider.acc.ver"
         };
         static constexpr const char* reference_velocity
         {
-            "ReferenceVelocity"
+            "dummy.provider.ref.sog"
         };
         static constexpr const char* reference_heading
         {
-            "ReferenceHeading"
+            "dummy.provider.ref.cog"
         };
     };
 
@@ -92,11 +92,11 @@ class Provider : public location::Provider
 {
   public:
     // For integration with the Provider factory.
-    static std::string class_name();
+    static void add_to_registry();
     // Instantiates a new provider instance, populating the configuration object
     // from the provided property bundle. Please see dummy::Configuration::Keys
     // for the list of known options.
-    static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
+    static Provider::Ptr create_instance(const ProviderRegistry::Configuration&);
 
     // Creates a new provider instance from the given configuration.
     Provider(const Configuration& config = Configuration{});

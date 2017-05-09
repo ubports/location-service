@@ -21,26 +21,77 @@
 #include <location/logging.h>
 #include <location/glib/runtime.h>
 
+#include <core/posix/this_process.h>
+
+#include <boost/filesystem.hpp>
+
+#include <fstream>
 #include <thread>
 
 namespace dummy = location::providers::dummy;
+namespace env = core::posix::this_process::env;
+namespace fs = boost::filesystem;
 
-std::string dummy::Provider::class_name()
+namespace
 {
-    return "dummy::Provider";
+
+struct SettingsHelper
+{
+    template<typename T>
+    static T get_value(std::string key, T&& default_value)
+    {
+        static const std::string snap_path = env::get("SNAP_DATA");
+
+        boost::filesystem::path path{snap_path};
+        std::string key_path{key};
+        std::replace_copy(key.begin(), key.end(), key_path.begin(), '.', '/');
+        path /= key_path;
+
+        LOG(INFO) << "Reading setting from " << path.string();
+
+        T value{default_value};
+
+        if (fs::exists(path))
+        {
+            std::ifstream in{path.string().c_str()};
+            in >> value;
+        }
+
+        return value;
+    }
+};
+
+}  // namespace
+
+void dummy::Provider::add_to_registry()
+{
+    ProviderRegistry::instance().add_provider_for_name("dummy::Provider", [](const ProviderRegistry::Configuration& configuration)
+    {
+        return dummy::Provider::create_instance(configuration);
+    },
+    {
+        {dummy::Configuration::Keys::reference_position_lat, "latitude reported by the provider instance"},
+        {dummy::Configuration::Keys::reference_position_lon, "longitude reported by the provider instance"},
+        {dummy::Configuration::Keys::reference_position_alt, "altitude reported by the provider instance"},
+        {dummy::Configuration::Keys::reference_velocity, "velocity reported by the provider instance"},
+        {dummy::Configuration::Keys::reference_heading, "heading reported by the provider instance"},
+        {dummy::Configuration::Keys::reference_horizontal_accuracy, "horizontal accuracy reported by the provider instance"},
+        {dummy::Configuration::Keys::reference_vertical_accuracy, "vertical accuracy reported by the provider instance"},
+        {dummy::Configuration::Keys::update_period, "updates are emitted at this rate"},
+    });
 }
 
-location::Provider::Ptr dummy::Provider::create_instance(const location::ProviderFactory::Configuration& config)
+location::Provider::Ptr dummy::Provider::create_instance(const location::ProviderRegistry::Configuration& config)
 {
     dummy::Configuration provider_config;
 
     provider_config.update_period = std::chrono::milliseconds
     {
-        config.get(dummy::Configuration::Keys::update_period, 500)
+        config.get(Configuration::Keys::update_period, SettingsHelper::get_value(Configuration::Keys::update_period, 500))
     };
     provider_config.reference_position
-            .latitude(config.get(dummy::Configuration::Keys::reference_position_lat, 51.) * location::units::degrees)
-            .longitude(config.get(dummy::Configuration::Keys::reference_position_lon, 7.) * location::units::degrees);
+            .latitude(config.get(Configuration::Keys::reference_position_lat, SettingsHelper::get_value(Configuration::Keys::reference_position_lat, 51.)) * location::units::degrees)
+            .longitude(config.get(dummy::Configuration::Keys::reference_position_lon, SettingsHelper::get_value(Configuration::Keys::reference_position_lon, 7.)) * location::units::degrees);
 
     if (config.count(dummy::Configuration::Keys::reference_position_alt) > 0)
         provider_config.reference_position.altitude(config.get(dummy::Configuration::Keys::reference_position_alt, 0.) * location::units::meters);
@@ -51,13 +102,14 @@ location::Provider::Ptr dummy::Provider::create_instance(const location::Provide
     if (config.count(dummy::Configuration::Keys::reference_vertical_accuracy) > 0)
         provider_config.reference_position.accuracy().vertical(config.get(dummy::Configuration::Keys::reference_vertical_accuracy, 0.) * location::units::meters);
 
-    provider_config.reference_velocity = config.get(dummy::Configuration::Keys::reference_velocity, 9.) * location::units::meters_per_second;
-    provider_config.reference_heading = config.get(dummy::Configuration::Keys::reference_heading, 127.) * location::units::degrees;
+    provider_config.reference_velocity = config.get(dummy::Configuration::Keys::reference_velocity, SettingsHelper::get_value(Configuration::Keys::reference_velocity, 9.)) * location::units::meters_per_second;
+    provider_config.reference_heading = config.get(dummy::Configuration::Keys::reference_heading, SettingsHelper::get_value(Configuration::Keys::reference_heading, 127.)) * location::units::degrees;
 
     return location::Provider::Ptr{new dummy::Provider{provider_config}};
 }
 
-dummy::Provider::Provider(const dummy::Configuration&)
+dummy::Provider::Provider(const dummy::Configuration& configuration)
+    : configuration{configuration}
 {
 }
 

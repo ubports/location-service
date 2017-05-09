@@ -19,7 +19,7 @@
 #define LOCATION_PROVIDERS_SIRF_PROVIDER_H_
 
 #include <location/provider.h>
-#include <location/provider_factory.h>
+#include <location/provider_registry.h>
 #include <location/runtime.h>
 #include <location/nmea/sentence.h>
 #include <location/providers/sirf/serial_port_receiver.h>
@@ -60,12 +60,12 @@ public:
         boost::filesystem::path device;                     // Serial device used for communicating with the receiver.
     };
 
-    // For integration with the Provider factory.
-    static std::string class_name();
+    static void add_to_registry();
+
     // Instantiates a new provider instance, populating the configuration object
     // from the provided property bundle. Please see dummy::Configuration::Keys
     // for the list of known options.
-    static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
+    static Provider::Ptr create_instance(const ProviderRegistry::Configuration&);
 
     // Create a new instance with configuration.
     static std::shared_ptr<Provider> create(const Configuration& configuration);

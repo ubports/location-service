@@ -19,7 +19,7 @@
 #define LOCATION_PROVIDERS_MLS_PROVIDER_H_
 
 #include <location/provider.h>
-#include <location/provider_factory.h>
+#include <location/provider_registry.h>
 #include <location/runtime.h>
 
 #include <location/connectivity/manager.h>
@@ -49,11 +49,11 @@ class Provider : public std::enable_shared_from_this<Provider>, public location:
 {
   public:
     // For integration with the Provider factory.
-    static std::string class_name();
+    static void add_to_registry();
     // Instantiates a new provider instance, populating the configuration object
     // from the provided property bundle. Please see dummy::Configuration::Keys
     // for the list of known options.
-    static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
+    static Provider::Ptr create_instance(const ProviderRegistry::Configuration&);
 
     // Creates a new provider instance from the given configuration.
     Provider(const Configuration& config = Configuration{});

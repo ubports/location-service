@@ -23,25 +23,34 @@
 #include <location/visibility.h>
 
 #include <functional>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace location
 {
 class Provider;
 
-class LOCATION_DLL_PUBLIC ProviderFactory
+class LOCATION_DLL_PUBLIC ProviderRegistry
 {
   public:
     typedef location::Configuration Configuration;
     typedef std::function<Provider::Ptr(const Configuration&)> Factory;
 
-    static ProviderFactory& instance();
+    struct Option
+    {
+        std::string name;
+        std::string description;
+    };
+
+    typedef std::vector<Option> Options;
+
+    static ProviderRegistry& instance();
 
     // Makes the given factory functor known for the given name.
-    void add_factory_for_name(const std::string& name, const Factory& factory);
+    void add_provider_for_name(const std::string& name, const Factory& factory, const Options& options = {});
 
     // Tries to lookup the factory for the given name, and create a provider instance
     // by calling the factory and passing it the given config. Please note that the name
@@ -54,19 +63,17 @@ class LOCATION_DLL_PUBLIC ProviderFactory
     // Async version of above.
     void create_provider_for_name_with_config(const std::string& name, const Configuration& config, const std::function<void(Provider::Ptr)>& cb);
 
-    void enumerate(const std::function<void(const std::string&, const Factory&)>& enumerator);
-
-    static std::string extract_undecorated_name(const std::string& name);
+    void enumerate(const std::function<void(const std::string&, const Factory&, const Options&)>& enumerator);
 
   private:
-    ProviderFactory() = default;
-    ~ProviderFactory() = default;
+    ProviderRegistry() = default;
+    ~ProviderRegistry() = default;
 
-    ProviderFactory(const ProviderFactory&) = delete;
-    ProviderFactory& operator=(const ProviderFactory&) = delete;
+    ProviderRegistry(const ProviderRegistry&) = delete;
+    ProviderRegistry& operator=(const ProviderRegistry&) = delete;
 
     std::mutex guard;
-    std::map<std::string, Factory> factory_store;
+    std::unordered_map<std::string, std::tuple<Factory, Options>> provider_store;
 };
 }
 
