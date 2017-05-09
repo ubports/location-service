@@ -19,7 +19,7 @@
 
 #include <location/cmds/provider.h>
 
-#include <location/provider_factory.h>
+#include <location/provider_registry.h>
 
 #include <location/dbus/stub/service.h>
 #include <location/glib/runtime.h>
@@ -43,14 +43,29 @@ location::cmds::Provider::Provider()
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
     flag(cli::make_flag(cli::Name{"id"}, cli::Description{"id of the actual provider implementation."}, id));
 
+    ProviderRegistry::instance().enumerate([this](const std::string& name, const ProviderRegistry::Factory&, const ProviderRegistry::Options& options)
+    {
+        for (const auto& option : options)
+        {
+            provider_options.push_back(cli::make_flag<std::string>(option.name, option.description));
+            flag(provider_options.back());
+        }
+    });
+
     action([this](const Context& ctxt)
     {
         die_if(not id, ctxt.cout, "name of actual provider implementation is missing");
 
+        ProviderRegistry::Configuration config;
+
+        for (const auto& option : provider_options)
+            if (option->value())
+                config.put(option->name().as_string(), option->value().get());
+
         glib::Runtime runtime{glib::Runtime::WithOwnMainLoop{}};
         runtime.redirect_logging();
 
-        location::dbus::stub::Service::create(bus, [this](const location::Result<location::dbus::stub::Service::Ptr>& result)
+        location::dbus::stub::Service::create(bus, [this, config](const location::Result<location::dbus::stub::Service::Ptr>& result)
         {
             if (!result)
             {
@@ -59,8 +74,8 @@ location::cmds::Provider::Provider()
             }
 
             service = result.value();
-            service->add_provider(location::ProviderFactory::instance().create_provider_for_name_with_config(
-                                      *id, location::Configuration{}));
+            service->add_provider(location::ProviderRegistry::instance().create_provider_for_name_with_config(
+                                      *id, config));
         });
 
         return runtime.run();

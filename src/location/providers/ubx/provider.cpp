@@ -31,6 +31,7 @@
 #include <core/net/http/client.h>
 #include <core/posix/this_process.h>
 
+#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include <fstream>
@@ -39,6 +40,7 @@
 #include <thread>
 
 namespace env = core::posix::this_process::env;
+namespace fs = boost::filesystem;
 namespace ubx = location::providers::ubx;
 
 namespace
@@ -52,23 +54,54 @@ struct SettingsHelper
         static const std::string snap_path = env::get("SNAP_DATA");
 
         boost::filesystem::path path{snap_path};
-        std::replace(key.begin(), key.end(), '.', '/');
-        path /= key;
+        std::string key_path{key};
+        std::replace_copy(key.begin(), key.end(), key_path.begin(), '.', '/');
+        path /= key_path;
 
         LOG(INFO) << "Reading setting from " << path.string();
 
-        std::ifstream in{path.string().c_str()};
-        T value{default_value}; in >> value;
+        T value{default_value};
+
+        if (fs::exists(path))
+        {
+            std::ifstream in{path.string().c_str()};
+            in >> value;
+        }
 
         return value;
     }
 };
 
-}
-
-std::string ubx::Provider::class_name()
+namespace options
 {
-    return "ubx::Provider";
+
+constexpr const char* protocol{"ubx.provider.protocol"};
+constexpr const char* device{"ubx.provider.device"};
+
+namespace assist_now
+{
+
+constexpr const char* enable{"ubx.provider.assist_now.enable"};
+constexpr const char* token{"ubx.provider.assist_now.token"};
+constexpr const char* timeout{"ubx.provider.assist_now.timeout"};
+
+}  // namespace assist_now
+}  // namespace options
+}  // namespace
+
+void ubx::Provider::add_to_registry()
+{
+    ProviderRegistry::instance().add_provider_for_name("ubx::Provider", [](const ProviderRegistry::Configuration& configuration)
+    {
+        return ubx::Provider::create_instance(configuration);
+    },
+    {
+        {options::protocol, "switch between binary ublox or textual NMEA protocol"},
+        {options::device, "read data from this device"},
+        {options::assist_now::enable, "enable usage of assistance data from AssistNow Online"},
+        {options::assist_now::token, "token for verifying requests to the AssistNow Online service"},
+        {options::assist_now::timeout, "wait this many seconds before querying the AssistNow service"}
+    });
 }
 
 void ubx::Provider::Monitor::on_new_ubx_message(const _8::Message& message)
@@ -78,7 +111,6 @@ void ubx::Provider::Monitor::on_new_ubx_message(const _8::Message& message)
         if (sp->configuration.protocol == Provider::Protocol::ubx)
             boost::apply_visitor(*this, message);
 }
-
 
 void ubx::Provider::Monitor::on_new_nmea_sentence(const nmea::Sentence& sentence)
 {
@@ -207,33 +239,45 @@ void ubx::Provider::Monitor::operator()(const nmea::Vtg& vtg)
     });
 }
 
-location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderFactory::Configuration& config)
+location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderRegistry::Configuration& config)
 {
     Configuration configuration
     {
-        SettingsHelper::get_value<Protocol>(
-            "ubx.provider.protocol",
-            Protocol::ubx),
+        config.get<Protocol>(
+            options::protocol,
+            SettingsHelper::get_value<Protocol>(
+                options::protocol,
+                Protocol::ubx
+            )
+        ),
         config.get<std::string>(
-            "device", SettingsHelper::get_value<std::string>(
-                    "ubx.provider.path",
-                    "/dev/ttyACM1"
+            options::device,
+            SettingsHelper::get_value<std::string>(
+                options::device,
+                "/dev/ttyACM1"
             )
         ),
         {
-            SettingsHelper::get_value<std::string>(
-                "ubx.provider.assist_now.enable",
-                "false"
-            ) == "true",
-            SettingsHelper::get_value<std::string>(
-                "ubx.provider.assist_now.token",
-                ""
+            config.get<bool>(
+                options::assist_now::enable,
+                SettingsHelper::get_value<bool>(
+                    options::assist_now::enable,
+                    "false"
+                )
+            ),
+            config.get<std::string>(
+                options::assist_now::token,
+                SettingsHelper::get_value<std::string>(
+                    options::assist_now::token,
+                    ""
+                )
             ),
             boost::posix_time::seconds(
-                boost::lexical_cast<std::uint64_t>(
-                    SettingsHelper::get_value<std::string>(
-                        "ubx.provider.assist_now.acquisition_timeout",
-                        "5"
+                config.get<std::uint64_t>(
+                    options::assist_now::timeout,
+                    SettingsHelper::get_value<std::uint64_t>(
+                        options::assist_now::timeout,
+                        5
                     )
                 )
             )

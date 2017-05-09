@@ -20,7 +20,7 @@
 #define LOCATION_PROVIDERS_GPS_PROVIDER_H_
 
 #include <location/provider.h>
-#include <location/provider_factory.h>
+#include <location/provider_registry.h>
 
 #include "hardware_abstraction_layer.h"
 
@@ -36,7 +36,7 @@ class Provider : public location::Provider
   public:
     // For integration with the Provider factory.
     static std::string class_name();
-    static Provider::Ptr create_instance(const ProviderFactory::Configuration&);
+    static Provider::Ptr create_instance(const ProviderRegistry::Configuration&);
 
     Provider(const std::shared_ptr<HardwareAbstractionLayer>& hal = HardwareAbstractionLayer::create_default_instance());
     Provider(const Provider&) = delete;

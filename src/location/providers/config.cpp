@@ -16,7 +16,7 @@
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
 #include <location/provider.h>
-#include <location/provider_factory.h>
+#include <location/provider_registry.h>
 
 #include "dummy/provider.h"
 #include "mls/provider.h"
@@ -27,38 +27,30 @@
 
 namespace
 {
+
 struct FactoryInjector
 {
-    FactoryInjector(const std::string& name, const std::function<location::Provider::Ptr(const location::ProviderFactory::Configuration&)>& f)
+    FactoryInjector(const std::string& name, const std::function<location::Provider::Ptr(const location::ProviderRegistry::Configuration&)>& f)
     {
-        location::ProviderFactory::instance().add_factory_for_name(name, f);
+        location::ProviderRegistry::instance().add_provider_for_name(name, f);
     }
 };
-}
 
-static FactoryInjector dummy_injector
+template<typename T>
+struct ProviderRegistrar
 {
-    "dummy::Provider",
-    location::providers::dummy::Provider::create_instance
+    ProviderRegistrar()
+    {
+        T::add_to_registry();
+    }
 };
 
-static FactoryInjector mls_injector
-{
-    "mls::Provider",
-    location::providers::mls::Provider::create_instance
-};
+}  // namespace
 
-static FactoryInjector sirf_injector
-{
-    "sirf::Provider",
-    location::providers::sirf::Provider::create_instance
-};
-
-static FactoryInjector ubx_injector
-{
-    "ubx::Provider",
-    location::providers::ubx::Provider::create_instance
-};
+static ProviderRegistrar<location::providers::dummy::Provider> dummy_registrar{};
+static ProviderRegistrar<location::providers::mls::Provider> mls_registrar{};
+static ProviderRegistrar<location::providers::sirf::Provider> sirf_registrar{};
+static ProviderRegistrar<location::providers::ubx::Provider> ubx_registrar{};
 
 #if defined(LOCATION_PROVIDERS_GPS)
 #include <location/providers/gps/provider.h>

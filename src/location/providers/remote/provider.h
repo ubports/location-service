@@ -19,7 +19,7 @@
 #define LOCATION_PROVIDERS_REMOTE_PROVIDER_H_
 
 #include <location/provider.h>
-#include <location/provider_factory.h>
+#include <location/provider_registry.h>
 #include <location/result.h>
 #include <location/visibility.h>
 

@@ -67,16 +67,10 @@ LOCATION_SERVICE_ADD_TEST(boost_ptree_settings_test boost_ptree_settings_test.cp
 LOCATION_SERVICE_ADD_TEST(daemon_and_cli_tests daemon_and_cli_tests.cpp)
 LOCATION_SERVICE_ADD_TEST(engine_test engine_test.cpp)
 LOCATION_SERVICE_ADD_TEST(event_test event_test.cpp)
-# LOCATION_SERVICE_ADD_TEST(harvester_test harvester_test.cpp)
-# LOCATION_SERVICE_ADD_TEST(demultiplexing_reporter_test demultiplexing_reporter_test.cpp)
 LOCATION_SERVICE_ADD_TEST(time_based_update_policy_test time_based_update_policy_test.cpp)
 
-if (NET_CPP_FOUND)
-#  LOCATION_SERVICE_ADD_TEST(ichnaea_reporter_test ichnaea_reporter_test.cpp)
-endif()
-
 LOCATION_SERVICE_ADD_TEST(position_test position_test.cpp)
-LOCATION_SERVICE_ADD_TEST(provider_factory_test provider_factory_test.cpp)
+LOCATION_SERVICE_ADD_TEST(provider_registry_test provider_registry_test.cpp)
 LOCATION_SERVICE_ADD_TEST(provider_test provider_test.cpp)
 LOCATION_SERVICE_ADD_TEST(reference_position_updated_test reference_position_updated_test.cpp)
 LOCATION_SERVICE_ADD_TEST(runtime_test runtime_test.cpp)

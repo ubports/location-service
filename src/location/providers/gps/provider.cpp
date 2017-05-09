@@ -31,7 +31,7 @@ std::string location::providers::gps::Provider::class_name()
     return "gps::Provider";
 }
 
-location::Provider::Ptr location::providers::gps::Provider::create_instance(const location::ProviderFactory::Configuration&)
+location::Provider::Ptr location::providers::gps::Provider::create_instance(const location::ProviderRegistry::Configuration&)
 {
     return location::Provider::Ptr{new location::providers::gps::Provider{location::providers::gps::HardwareAbstractionLayer::create_default_instance()}};
 }

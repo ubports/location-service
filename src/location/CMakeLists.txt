@@ -54,7 +54,7 @@ add_library(
   features.cpp
   position.cpp
   provider.cpp
-  provider_factory.cpp  
+  provider_registry.cpp
   satellite_based_positioning_state.cpp
   settings.cpp
   space_vehicle.cpp

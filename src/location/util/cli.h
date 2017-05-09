@@ -107,9 +107,9 @@ LOCATION_DLL_PUBLIC std::ostream& operator<<(std::ostream& out, const SizeConstr
 }
 
 // We are imposing size constraints to ensure a consistent CLI layout.
-typedef SizeConstrainedString<15> Name;
+typedef SizeConstrainedString<40> Name;
 typedef SizeConstrainedString<60> Usage;
-typedef SizeConstrainedString<60> Description;
+typedef SizeConstrainedString<100> Description;
 
 /// @brief Flag models an input parameter to a command.
 class LOCATION_DLL_PUBLIC Flag : public DoNotCopyOrMove

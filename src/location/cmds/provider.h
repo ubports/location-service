@@ -42,9 +42,11 @@ public:
     Provider();
 
 private:
-    dbus::Bus bus;              // The bus we should connect to.
-    Optional<std::string> id;   // The id of the actual provider implementation.
-    Service::Ptr service;       // The service instance.
+    using StringFlag = util::cli::TypedFlag<std::string>;
+    dbus::Bus bus;                                  // The bus we should connect to.
+    Optional<std::string> id;                       // The id of the actual provider implementation.
+    Service::Ptr service;                           // The service instance.
+    std::vector<StringFlag::Ptr> provider_options;  // All options supported by providers.
 };
 }
 }

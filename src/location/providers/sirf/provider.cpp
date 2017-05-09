@@ -59,12 +59,14 @@ struct SettingsHelper
     }
 };
 
-}
-
-std::string sirf::Provider::class_name()
+namespace options
 {
-    return "sirf::Provider";
-}
+
+constexpr const char* protocol{"sirf.provider.protocol"};
+constexpr const char* device{"sirf.provider.device"};
+
+}  // namespace options
+}  // namespace
 
 void sirf::Provider::Monitor::on_new_sirf_message(const Message& message)
 {
@@ -198,17 +200,34 @@ void sirf::Provider::Monitor::operator()(const nmea::Vtg& vtg)
     });
 }
 
-location::Provider::Ptr sirf::Provider::create_instance(const location::ProviderFactory::Configuration& config)
+void sirf::Provider::add_to_registry()
+{
+    ProviderRegistry::instance().add_provider_for_name("sirf::Provider", [](const ProviderRegistry::Configuration& configuration)
+    {
+        return sirf::Provider::create_instance(configuration);
+    },
+    {
+        {options::protocol, "switch between binary SiRF or textual NMEA protocol"},
+        {options::device, "read data from this device"}
+    });
+}
+
+location::Provider::Ptr sirf::Provider::create_instance(const location::ProviderRegistry::Configuration& config)
 {
     Configuration configuration
     {
-        SettingsHelper::get_value<Protocol>(
-            "sirf.provider.protocol",
-            Protocol::sirf),
+        config.get<Protocol>(
+            options::protocol,
+            SettingsHelper::get_value<Protocol>(
+                options::protocol,
+                Protocol::sirf
+            )
+        ),
         config.get<std::string>(
-            "device", SettingsHelper::get_value<std::string>(
-                    "sirf.provider.path",
-                    "/dev/ttyUSB1"
+            options::device,
+            SettingsHelper::get_value<std::string>(
+                options::device,
+                "/dev/ttyUSB0"
             )
         )
     };
