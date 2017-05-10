@@ -39,9 +39,9 @@ class LOCATION_DLL_PUBLIC Monitor : public util::cli::CommandWithFlagsAndAction
 {
 public:
     // Format enumerates all known output formats.
-    enum class Format
+    enum class OutputFormat
     {
-        tabular, // Prints a table of values.
+        table, // Prints a table of values.
         kml      // Prints incoming updates as kml.
     };
 
@@ -58,11 +58,11 @@ public:
     };
 
     // PrintingDelegate implements Delegate, printing updates to the given output stream.
-    class PrintingDelegate : public Delegate
+    class TableOutputDelegate : public Delegate
     {
     public:
         // PrintingDelegate initializes a new instance with out.
-        PrintingDelegate(std::ostream& out = std::cout);
+        TableOutputDelegate(std::ostream& out = std::cout);
 
         // From Delegate
         void on_new_position(const Update<Position>& pos) override;
@@ -79,12 +79,12 @@ public:
         Optional<Update<units::MetersPerSecond>> last_velocity_update;
     };
 
-    class KmlDelegate : public Delegate
+    class KmlOutputDelegate : public Delegate
     {
     public:
         // KmlDelegate initializes a new instance with out.
-        KmlDelegate(std::ostream& out = std::cout);
-        ~KmlDelegate();
+        KmlOutputDelegate(std::ostream& out = std::cout);
+        ~KmlOutputDelegate();
 
         // From Delegate
         void on_new_position(const Update<Position>& pos) override;
@@ -104,11 +104,11 @@ public:
 private:
     std::shared_ptr<Delegate> delegate; // All updates are forwarded to a delegate.
     dbus::Bus bus;                      // The bus we should connect to.
-    Format format;                      // The output format.
+    OutputFormat output_format;                // The output format.
 };
 
 // operator>> parses format from in.
-std::istream& operator>>(std::istream& in, Monitor::Format& format);
+std::istream& operator>>(std::istream& in, Monitor::OutputFormat& format);
 
 }  // namespace cmds
 }  // namespace location
