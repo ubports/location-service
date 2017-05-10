@@ -25,6 +25,9 @@
 #include <location/glib/runtime.h>
 #include <location/runtime.h>
 
+#include <boost/locale.hpp>
+
+#include <iostream>
 #include <type_traits>
 
 namespace cli = location::util::cli;
@@ -115,16 +118,65 @@ void location::cmds::Monitor::PrintingDelegate::print_row()
 
 }
 
+location::cmds::Monitor::KmlDelegate::KmlDelegate(std::ostream& out) : out{out}
+{
+    out.imbue(std::locale("C"));
+    out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        << "<kml xmlns=\"http://www.opengis.net/kml/2.2\">"
+        << "<Folder><open>1</open><name>Recorded positions</name>";
+}
+
+location::cmds::Monitor::KmlDelegate::~KmlDelegate()
+{
+    out << "</Folder></kml>";
+}
+
+void location::cmds::Monitor::KmlDelegate::on_new_position(const Update<Position>& pos)
+{
+    static constexpr const char* placemark_pattern{"<Placemark><name>{1}</name><Point><coordinates>{2},{3},{4}</coordinates></Point></Placemark>"};
+    out << boost::locale::format(placemark_pattern)
+           % pos.when.time_since_epoch().count()
+           % pos.value.longitude().value()
+           % pos.value.latitude().value()
+           % (pos.value.altitude() ? pos.value.altitude()->value() : 0.);
+}
+
+void location::cmds::Monitor::KmlDelegate::on_new_heading(const Update<units::Degrees>&)
+{
+    // Empty on purpose.
+}
+
+void location::cmds::Monitor::KmlDelegate::on_new_velocity(const Update<units::MetersPerSecond>&)
+{
+    // Empty on purpose.
+}
+
 location::cmds::Monitor::Monitor(const std::shared_ptr<Delegate>& delegate)
     : CommandWithFlagsAndAction{cli::Name{"monitor"}, cli::Usage{"monitor"}, cli::Description{"monitors the daemon"}},
       delegate{delegate},
-      bus{dbus::Bus::system}
+      bus{dbus::Bus::system},
+      format{Format::tabular}
 {
     flag(cli::make_flag(cli::Name{"bus"}, cli::Description{"bus instance to connect to, defaults to system"}, bus));
+    flag(cli::make_flag(cli::Name{"format"}, cli::Description{"output format in {tabular, kml}"}, format));
+
     action([this](const Context& ctxt)
     {
         glib::Runtime runtime{glib::Runtime::WithOwnMainLoop{}};
         runtime.redirect_logging();
+
+        if (!Monitor::delegate)
+        {
+            switch (format)
+            {
+            case Format::tabular:
+                Monitor::delegate = std::make_shared<PrintingDelegate>();
+                break;
+            case Format::kml:
+                Monitor::delegate = std::make_shared<KmlDelegate>();
+                break;
+            }
+        }
 
         location::dbus::stub::Service::create(bus, [this, &ctxt](const Result<location::dbus::stub::Service::Ptr>& result) mutable
         {
@@ -170,4 +222,16 @@ location::cmds::Monitor::Monitor(const std::shared_ptr<Delegate>& delegate)
 
         return runtime.run();
     });
+}
+
+std::istream& location::cmds::operator>>(std::istream& in, location::cmds::Monitor::Format& format)
+{
+    std::string s; in >> s;
+
+    if (s == "kml")
+        format = location::cmds::Monitor::Format::kml;
+    if (s == "tabular")
+        format = location::cmds::Monitor::Format::tabular;
+
+    return in;
 }

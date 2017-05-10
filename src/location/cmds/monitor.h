@@ -38,6 +38,13 @@ namespace cmds
 class LOCATION_DLL_PUBLIC Monitor : public util::cli::CommandWithFlagsAndAction
 {
 public:
+    // Format enumerates all known output formats.
+    enum class Format
+    {
+        tabular, // Prints a table of values.
+        kml      // Prints incoming updates as kml.
+    };
+
     // Delegate abstracts handling of incoming updates.
     class Delegate : public util::DoNotCopyOrMove
     {
@@ -72,14 +79,38 @@ public:
         Optional<Update<units::MetersPerSecond>> last_velocity_update;
     };
 
+    class KmlDelegate : public Delegate
+    {
+    public:
+        // KmlDelegate initializes a new instance with out.
+        KmlDelegate(std::ostream& out = std::cout);
+        ~KmlDelegate();
+
+        // From Delegate
+        void on_new_position(const Update<Position>& pos) override;
+        void on_new_heading(const Update<units::Degrees>& heading) override;
+        void on_new_velocity(const Update<units::MetersPerSecond>& velocity) override;
+
+    private:
+        std::ostream& out;
+        Optional<Update<Position>> last_position_update;
+        Optional<Update<units::Degrees>> last_heading_update;
+        Optional<Update<units::MetersPerSecond>> last_velocity_update;
+    };
+
     // Monitor initializes a new instance.
-    Monitor(const std::shared_ptr<Delegate>& delegate = std::make_shared<PrintingDelegate>());
+    Monitor(const std::shared_ptr<Delegate>& delegate = std::shared_ptr<Delegate>{});
 
 private:
     std::shared_ptr<Delegate> delegate; // All updates are forwarded to a delegate.
     dbus::Bus bus;                      // The bus we should connect to.
+    Format format;                      // The output format.
 };
-}
-}
+
+// operator>> parses format from in.
+std::istream& operator>>(std::istream& in, Monitor::Format& format);
+
+}  // namespace cmds
+}  // namespace location
 
 #endif // LOCATION_CMDS_MONITOR_H_
