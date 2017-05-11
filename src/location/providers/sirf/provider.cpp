@@ -263,7 +263,7 @@ void sirf::Provider::reset()
 {
     InitializeDataSource ids;
     ids.channels = InitializeDataSource::max_number_channels;
-    ids.reset_configuration = InitializeDataSource::clear_ephemeris_data | InitializeDataSource::clear_all_history;
+    ids.reset_configuration = InitializeDataSource::clear_ephemeris_data | InitializeDataSource::clear_all_history | InitializeDataSource::reset;
     receiver->send_message(Message{ids});
 }
 
@@ -333,6 +333,7 @@ void sirf::Provider::configure_protocol()
     {
         static const std::string set_serial_port{"$PSRF100,0,4800,8,1,0*0F\r\n"};
         receiver->send_encoded_message(std::vector<std::uint8_t>{set_serial_port.begin(), set_serial_port.end()});
+        receiver->send_message(Message{SetMessageRate{SetMessageRate::one_message, GeodeticNavigationData::id, 1}});
         break;
     }
     case Protocol::nmea:

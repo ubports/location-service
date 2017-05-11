@@ -100,6 +100,8 @@ add_library(
   util/cli.h
   util/cli.cpp
   util/do_not_copy_or_move.h
+  util/settings.h
+  util/settings.cpp
 
   "${CMAKE_BINARY_DIR}/data/location/dbus/service_gen.h"
   "${CMAKE_BINARY_DIR}/data/location/dbus/service_gen.c"
