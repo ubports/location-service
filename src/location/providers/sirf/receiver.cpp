@@ -23,6 +23,11 @@ struct EncodingVisitor : public boost::static_visitor<std::vector<std::uint8_t>>
         return sirf::encode_message(ids);
     }
 
+    std::vector<std::uint8_t> operator()(const sirf::SetMessageRate& smr) const
+    {
+        return sirf::encode_message(smr);
+    }
+
     std::vector<std::uint8_t> operator()(const sirf::SetProtocol& sp) const
     {
         return sirf::encode_message(sp);

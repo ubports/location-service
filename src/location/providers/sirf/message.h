@@ -18,6 +18,7 @@
 
 #include <location/providers/sirf/geodetic_navigation_data.h>
 #include <location/providers/sirf/initialize_data_source.h>
+#include <location/providers/sirf/set_message_rate.h>
 #include <location/providers/sirf/set_protocol.h>
 
 #include <boost/variant.hpp>
@@ -37,6 +38,7 @@ using Message = boost::variant<
     Null,
     InitializeDataSource,
     GeodeticNavigationData,
+    SetMessageRate,
     SetProtocol
 >;
 
