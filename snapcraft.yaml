@@ -65,6 +65,7 @@ parts:
       - g++
       - libapparmor-dev
       - libboost-filesystem-dev
+      - libboost-locale-dev
       - libboost-program-options-dev
       - libboost-system-dev
       - libc6-dev
