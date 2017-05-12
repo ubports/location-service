@@ -11,7 +11,7 @@ namespace
 {
 struct Factory
 {
-    MOCK_METHOD1(create, cul::Provider::Ptr(const cul::ProviderRegistry::Configuration&));
+    MOCK_METHOD1(create, cul::Provider::Ptr(const location::util::settings::Source&));
 };
 }
 
@@ -43,7 +43,7 @@ TEST(ProviderRegistry, creating_for_known_name_invokes_factory_function)
     auto factory_function = std::bind(&Factory::create, std::ref(factory), std::placeholders::_1);
     cul::ProviderRegistry::instance().add_provider_for_name(provider_name, factory_function);
 
-    cul::ProviderRegistry::instance().create_provider_for_name_with_config(provider_name, cul::ProviderRegistry::Configuration{});
+    cul::ProviderRegistry::instance().create_provider_for_name_with_config(provider_name, location::util::settings::Source{});
 }
 
 TEST(ProviderRegistry, attempt_to_create_for_unknown_name_returns_null_ptr)
@@ -51,5 +51,5 @@ TEST(ProviderRegistry, attempt_to_create_for_unknown_name_returns_null_ptr)
     EXPECT_EQ(cul::Provider::Ptr{},
               cul::ProviderRegistry::instance().create_provider_for_name_with_config(
                   "AnUnknownProvider", 
-                  cul::ProviderRegistry::Configuration{}));
+                  location::util::settings::Source{}));
 }

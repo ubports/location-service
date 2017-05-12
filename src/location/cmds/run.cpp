@@ -73,7 +73,7 @@ location::cmds::Run::Run()
 
         try
         {
-            engine->add_provider(location::providers::ubx::Provider::create_instance(ProviderRegistry::Configuration{}));
+            engine->add_provider(location::providers::ubx::Provider::create_instance(util::settings::Source{}));
         }
         catch (const std::exception& e)
         {

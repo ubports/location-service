@@ -56,16 +56,18 @@ location::cmds::Provider::Provider()
     {
         die_if(not id, ctxt.cout, "name of actual provider implementation is missing");
 
-        ProviderRegistry::Configuration config;
+        boost::property_tree::ptree config;
 
         for (const auto& option : provider_options)
             if (option->value())
                 config.put(option->name().as_string(), option->value().get());
 
+        util::settings::Source settings{config};
+
         glib::Runtime runtime{glib::Runtime::WithOwnMainLoop{}};
         runtime.redirect_logging();
 
-        location::dbus::stub::Service::create(bus, [this, config](const location::Result<location::dbus::stub::Service::Ptr>& result)
+        location::dbus::stub::Service::create(bus, [this, settings](const location::Result<location::dbus::stub::Service::Ptr>& result)
         {
             if (!result)
             {
@@ -75,7 +77,7 @@ location::cmds::Provider::Provider()
 
             service = result.value();
             service->add_provider(location::ProviderRegistry::instance().create_provider_for_name_with_config(
-                                      *id, config));
+                                      *id, settings));
         });
 
         return runtime.run();

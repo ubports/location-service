@@ -23,6 +23,7 @@
 #include <location/runtime.h>
 #include <location/nmea/sentence.h>
 #include <location/providers/sirf/serial_port_receiver.h>
+#include <location/util/settings.h>
 
 #include <boost/filesystem.hpp>
 
@@ -65,7 +66,7 @@ public:
     // Instantiates a new provider instance, populating the configuration object
     // from the provided property bundle. Please see dummy::Configuration::Keys
     // for the list of known options.
-    static Provider::Ptr create_instance(const ProviderRegistry::Configuration&);
+    static Provider::Ptr create_instance(const util::settings::Source&);
 
     // Create a new instance with configuration.
     static std::shared_ptr<Provider> create(const Configuration& configuration);

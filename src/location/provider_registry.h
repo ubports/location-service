@@ -21,6 +21,7 @@
 #include <location/configuration.h>
 #include <location/provider.h>
 #include <location/visibility.h>
+#include <location/util/settings.h>
 
 #include <functional>
 #include <memory>
@@ -37,7 +38,7 @@ class LOCATION_DLL_PUBLIC ProviderRegistry
 {
   public:
     typedef location::Configuration Configuration;
-    typedef std::function<Provider::Ptr(const Configuration&)> Factory;
+    typedef std::function<Provider::Ptr(const util::settings::Source&)> Factory;
 
     struct Option
     {
@@ -50,7 +51,7 @@ class LOCATION_DLL_PUBLIC ProviderRegistry
     static ProviderRegistry& instance();
 
     // Makes the given factory functor known for the given name.
-    void add_provider_for_name(const std::string& name, const Factory& factory, const Options& options = {});
+    void add_provider_for_name(const std::string& name, const Factory& factory, const Options& options = Options{});
 
     // Tries to lookup the factory for the given name, and create a provider instance
     // by calling the factory and passing it the given config. Please note that the name
@@ -58,10 +59,7 @@ class LOCATION_DLL_PUBLIC ProviderRegistry
     // Eg.:
     // --provider=remote::Provider@espoo --remote::Provider@espoo::name="com.ubuntu.espoo.service.Provider" --remote::Provider@espoo::path="/espoo/service/Provider"
     // --provider=remote::Provider@gps --remote::Provider@gps::name="com.ubuntu.android.gps.Provider" --remote::Provider@gps::path="/android/gps/Provider"
-    Provider::Ptr create_provider_for_name_with_config(const std::string& name, const Configuration& config);
-
-    // Async version of above.
-    void create_provider_for_name_with_config(const std::string& name, const Configuration& config, const std::function<void(Provider::Ptr)>& cb);
+    Provider::Ptr create_provider_for_name_with_config(const std::string& name, const util::settings::Source& settings);
 
     void enumerate(const std::function<void(const std::string&, const Factory&, const Options&)>& enumerator);
 
