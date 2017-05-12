@@ -20,6 +20,7 @@
 
 #include <location/provider.h>
 #include <location/provider_registry.h>
+#include <location/util/settings.h>
 
 #include <thread>
 
@@ -96,7 +97,7 @@ class Provider : public location::Provider
     // Instantiates a new provider instance, populating the configuration object
     // from the provided property bundle. Please see dummy::Configuration::Keys
     // for the list of known options.
-    static Provider::Ptr create_instance(const ProviderRegistry::Configuration&);
+    static Provider::Ptr create_instance(const util::settings::Source&);
 
     // Creates a new provider instance from the given configuration.
     Provider(const Configuration& config = Configuration{});

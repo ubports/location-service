@@ -35,8 +35,9 @@ class Provider : public location::Provider
 {
   public:
     // For integration with the Provider factory.
-    static std::string class_name();
-    static Provider::Ptr create_instance(const ProviderRegistry::Configuration&);
+    static void add_to_registry();
+
+    static Provider::Ptr create_instance(const util::settings::Source& source);
 
     Provider(const std::shared_ptr<HardwareAbstractionLayer>& hal = HardwareAbstractionLayer::create_default_instance());
     Provider(const Provider&) = delete;
@@ -69,6 +70,7 @@ class Provider : public location::Provider
         core::Signal<Update<std::set<SpaceVehicle>>> svs;
     } updates;
 };
+
 }
 }
 }

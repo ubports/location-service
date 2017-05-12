@@ -22,42 +22,20 @@
 #include <location/runtime.h>
 #include <location/events/reference_position_updated.h>
 #include <location/glib/runtime.h>
+#include <location/util/settings.h>
 
 #include <core/net/http/client.h>
-#include <core/posix/this_process.h>
 
 #include <boost/lexical_cast.hpp>
 
-#include <fstream>
 #include <iostream>
 #include <iterator>
 #include <thread>
 
-namespace env = core::posix::this_process::env;
 namespace sirf = location::providers::sirf;
 
 namespace
 {
-
-struct SettingsHelper
-{
-    template<typename T>
-    static T get_value(std::string key, T&& default_value)
-    {
-        static const std::string snap_path = env::get("SNAP_DATA");
-
-        boost::filesystem::path path{snap_path};
-        std::replace(key.begin(), key.end(), '.', '/');
-        path /= key;
-
-        LOG(INFO) << "Reading setting from " << path.string();
-
-        std::ifstream in{path.string().c_str()};
-        T value{default_value}; in >> value;
-
-        return value;
-    }
-};
 
 namespace options
 {
@@ -202,9 +180,9 @@ void sirf::Provider::Monitor::operator()(const nmea::Vtg& vtg)
 
 void sirf::Provider::add_to_registry()
 {
-    ProviderRegistry::instance().add_provider_for_name("sirf::Provider", [](const ProviderRegistry::Configuration& configuration)
+    ProviderRegistry::instance().add_provider_for_name("sirf::Provider", [](const util::settings::Source& settings)
     {
-        return sirf::Provider::create_instance(configuration);
+        return sirf::Provider::create_instance(settings);
     },
     {
         {options::protocol, "switch between binary SiRF or textual NMEA protocol"},
@@ -212,24 +190,12 @@ void sirf::Provider::add_to_registry()
     });
 }
 
-location::Provider::Ptr sirf::Provider::create_instance(const location::ProviderRegistry::Configuration& config)
+location::Provider::Ptr sirf::Provider::create_instance(const util::settings::Source& settings)
 {
     Configuration configuration
     {
-        config.get<Protocol>(
-            options::protocol,
-            SettingsHelper::get_value<Protocol>(
-                options::protocol,
-                Protocol::sirf
-            )
-        ),
-        config.get<std::string>(
-            options::device,
-            SettingsHelper::get_value<std::string>(
-                options::device,
-                "/dev/ttyUSB0"
-            )
-        )
+        settings.get_value<Protocol>(options::protocol, Protocol::sirf),
+        settings.get_value<std::string>(options::device, "/dev/ttyUSB0")
     };
 
     return sirf::Provider::create(configuration);

@@ -26,12 +26,13 @@
 #include <ubuntu/hardware/gps.h>
 
 
-std::string location::providers::gps::Provider::class_name()
+void location::providers::gps::Provider::add_to_registry()
 {
-    return "gps::Provider";
+    ProviderRegistry::instance().add_provider_for_name(
+                "gps::Provider", [](const util::settings::Source& settings) { return Provider::create_instance(settings); });
 }
 
-location::Provider::Ptr location::providers::gps::Provider::create_instance(const location::ProviderRegistry::Configuration&)
+location::Provider::Ptr location::providers::gps::Provider::create_instance(const util::settings::Source&)
 {
     return location::Provider::Ptr{new location::providers::gps::Provider{location::providers::gps::HardwareAbstractionLayer::create_default_instance()}};
 }

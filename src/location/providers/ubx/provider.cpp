@@ -22,6 +22,7 @@
 #include <location/runtime.h>
 #include <location/events/reference_position_updated.h>
 #include <location/glib/runtime.h>
+#include <location/util/settings.h>
 
 #include <location/providers/ubx/_8/cfg/gnss.h>
 #include <location/providers/ubx/_8/cfg/msg.h>
@@ -45,33 +46,6 @@ namespace ubx = location::providers::ubx;
 
 namespace
 {
-
-struct SettingsHelper
-{
-    template<typename T>
-    static T get_value(std::string key, T&& default_value)
-    {
-        static const std::string snap_path = env::get("SNAP_DATA");
-
-        boost::filesystem::path path{snap_path};
-        std::string key_path{key};
-        std::replace_copy(key.begin(), key.end(), key_path.begin(), '.', '/');
-        path /= key_path;
-
-        LOG(INFO) << "Reading setting from " << path.string();
-
-        T value{default_value};
-
-        if (fs::exists(path))
-        {
-            std::ifstream in{path.string().c_str()};
-            in >> value;
-        }
-
-        return value;
-    }
-};
-
 namespace options
 {
 
@@ -91,9 +65,9 @@ constexpr const char* timeout{"ubx.provider.assist_now.timeout"};
 
 void ubx::Provider::add_to_registry()
 {
-    ProviderRegistry::instance().add_provider_for_name("ubx::Provider", [](const ProviderRegistry::Configuration& configuration)
+    ProviderRegistry::instance().add_provider_for_name("ubx::Provider", [](const util::settings::Source& settings)
     {
-        return ubx::Provider::create_instance(configuration);
+        return ubx::Provider::create_instance(settings);
     },
     {
         {options::protocol, "switch between binary ublox or textual NMEA protocol"},
@@ -239,48 +213,16 @@ void ubx::Provider::Monitor::operator()(const nmea::Vtg& vtg)
     });
 }
 
-location::Provider::Ptr ubx::Provider::create_instance(const location::ProviderRegistry::Configuration& config)
+location::Provider::Ptr ubx::Provider::create_instance(const util::settings::Source& settings)
 {
     Configuration configuration
     {
-        config.get<Protocol>(
-            options::protocol,
-            SettingsHelper::get_value<Protocol>(
-                options::protocol,
-                Protocol::ubx
-            )
-        ),
-        config.get<std::string>(
-            options::device,
-            SettingsHelper::get_value<std::string>(
-                options::device,
-                "/dev/ttyACM1"
-            )
-        ),
+        settings.get_value<Protocol>(options::protocol, Protocol::ubx),
+        settings.get_value<std::string>(options::device, "/dev/ttyACM1"),
         {
-            config.get<bool>(
-                options::assist_now::enable,
-                SettingsHelper::get_value<bool>(
-                    options::assist_now::enable,
-                    "false"
-                )
-            ),
-            config.get<std::string>(
-                options::assist_now::token,
-                SettingsHelper::get_value<std::string>(
-                    options::assist_now::token,
-                    ""
-                )
-            ),
-            boost::posix_time::seconds(
-                config.get<std::uint64_t>(
-                    options::assist_now::timeout,
-                    SettingsHelper::get_value<std::uint64_t>(
-                        options::assist_now::timeout,
-                        5
-                    )
-                )
-            )
+            settings.get_value<bool>(options::assist_now::enable, false),
+            settings.get_value<std::string>(options::assist_now::token, ""),
+            boost::posix_time::seconds(settings.get_value<std::uint64_t>(options::assist_now::timeout, 5))
         }
     };
 

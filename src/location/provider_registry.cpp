@@ -40,25 +40,13 @@ void location::ProviderRegistry::add_provider_for_name(
 
 location::Provider::Ptr location::ProviderRegistry::create_provider_for_name_with_config(
         const std::string& name,
-        const location::ProviderRegistry::Configuration& config)
+        const util::settings::Source& settings)
 {
     std::lock_guard<std::mutex> lg(guard);
     if (provider_store.count(name) == 0)
         return Provider::Ptr{};
     
-    return location::Provider::Ptr{std::get<0>(provider_store.at(name))(config)};
-}
-
-void location::ProviderRegistry::create_provider_for_name_with_config(
-        const std::string& name,
-        const location::ProviderRegistry::Configuration& config,
-        const std::function<void(Provider::Ptr)>& cb)
-{
-    std::lock_guard<std::mutex> lg(guard);
-    if (provider_store.count(name) == 0)
-        return;
-
-    cb(location::Provider::Ptr{std::get<0>(provider_store.at(name))(config)});
+    return location::Provider::Ptr{std::get<0>(provider_store.at(name))(settings)};
 }
 
 void location::ProviderRegistry::enumerate(

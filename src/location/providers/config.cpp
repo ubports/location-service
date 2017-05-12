@@ -28,14 +28,6 @@
 namespace
 {
 
-struct FactoryInjector
-{
-    FactoryInjector(const std::string& name, const std::function<location::Provider::Ptr(const location::ProviderRegistry::Configuration&)>& f)
-    {
-        location::ProviderRegistry::instance().add_provider_for_name(name, f);
-    }
-};
-
 template<typename T>
 struct ProviderRegistrar
 {
@@ -54,9 +46,5 @@ static ProviderRegistrar<location::providers::ubx::Provider> ubx_registrar{};
 
 #if defined(LOCATION_PROVIDERS_GPS)
 #include <location/providers/gps/provider.h>
-static FactoryInjector gps_injector
-{
-    "gps::Provider", 
-    location::providers::gps::Provider::create_instance
-};
+static ProviderRegistrar<location::providers::gps::Provider> gps_registrar{};
 #endif // LOCATION_PROVIDERS_GPS
