@@ -55,9 +55,9 @@ constexpr const char* device{"ubx.provider.device"};
 namespace assist_now
 {
 
-constexpr const char* enable{"ubx.provider.assist_now.enable"};
-constexpr const char* token{"ubx.provider.assist_now.token"};
-constexpr const char* timeout{"ubx.provider.assist_now.timeout"};
+constexpr const char* enable{"ubx.provider.assistnow.enable"};
+constexpr const char* token{"ubx.provider.assistnow.token"};
+constexpr const char* timeout{"ubx.provider.assistnow.timeout"};
 
 }  // namespace assist_now
 }  // namespace options

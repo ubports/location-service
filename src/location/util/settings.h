@@ -51,8 +51,18 @@ public:
         return value;
     }
 
+    template<typename T>
+    void set_value(const std::string& key, const T& value)
+    {
+        std::ostringstream oss;
+        oss << value;
+
+        set(key, oss.str());
+    }
+
 private:
     Optional<std::string> get(const std::string& key) const;
+    void set(const std::string& key, const std::string& value);
 
     boost::property_tree::ptree ptree;
 };
