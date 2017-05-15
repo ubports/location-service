@@ -24,6 +24,9 @@ apps:
   provide:
     command: bin/locationd provider --bus=system
     plugs: [client-control, network]
+  set:
+    command: bin/locationd set
+    plugs: []
   test:
     command: bin/locationd test
     plugs: [ubx, network]

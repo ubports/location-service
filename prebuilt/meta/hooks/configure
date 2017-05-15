@@ -1,21 +1,41 @@
 #!/bin/sh
 
-if path=$(snapctl get ubx.provider.path); then
-    mkdir -p $SNAP_DATA/ubx/provider
-    echo "$path" > $SNAP_DATA/ubx/provider/path
+# TODO(tvoss): We should add a mechanism
+# to list all the keys supported by locationd and
+# its in-tree providers.
+
+ubx_device=$(snapctl get ubx.provider.device)
+ubx_protocol=$(snapctl get ubx.provider.protocol)
+ubx_enable=$(snapctl get ubx.provider.assistnow.enable)
+ubx_token=$(snapctl get ubx.provider.assistnow.token)
+ubx_timeout=$(snapctl get ubx.provider.assistnow.timeout)
+sirf_device=$(snapctl get sirf.provider.device)
+sirf_protocol=$(snapctl get sirf.provider.protocol)
+
+if [ -n "$ubx_device" ]; then
+    /snap/bin/locationd.set --key=ubx.provider.path --value="$ubx_device"
 fi
 
-if enable=$(snapctl get ubx.provider.assistnow.enable); then
-    mkdir -p $SNAP_DATA/ubx/provider/assist_now
-    echo "$enable" > $SNAP_DATA/ubx/provider/assist_now/enable
+if [ -n "$ubx_protocol" ]; then
+    /snap/bin/locationd.set --key=ubx.provider.protocol --value="$ubx_protocol"
 fi
 
-if token=$(snapctl get ubx.provider.assistnow.token); then
-    mkdir -p $SNAP_DATA/ubx/provider/assist_now
-    echo "$token" > $SNAP_DATA/ubx/provider/assist_now/token
+if [ -n "$ubx_enable" ]; then
+    /snap/bin/locationd.set --key=ubx.provider.path --value="$ubx_enable"
 fi
 
-if timeout=$(snapctl get ubx.provider.assistnow.acquisition_timeout); then
-    mkdir -p $SNAP_DATA/ubx/provider/assist_now
-    echo "$timeout" > $SNAP_DATA/ubx/provider/assist_now/acquisition_timeout
+if [ -n "$ubx_token" ]; then
+    /snap/bin/locationd.set --key=ubx.provider.assist_now.token --value="$ubx_token"
+fi
+
+if [ -n "$ubx_timeout" ]; then
+    /snap/bin/locationd.set --key=ubx.provider.assist_now.timeout --value="$ubx_timeout"
+fi
+
+if [ -n "$sirf_device" ]; then
+    /snap/bin/locationd.set --key=sirf.provider.path --value="$sirf_device"
+fi
+
+if [ -n "$sirf_protocol" ]; then
+    /snap/bin/locationd.set --key=sirf.provider.protocol --value="$sirf_protocol"
 fi

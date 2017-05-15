@@ -23,6 +23,7 @@
 #include <location/cmds/monitor.h>
 #include <location/cmds/provider.h>
 #include <location/cmds/run.h>
+#include <location/cmds/set.h>
 #include <location/cmds/status.h>
 #include <location/cmds/test.h>
 
@@ -39,6 +40,7 @@ location::Daemon::Daemon()
     cmd.command(std::make_shared<location::cmds::Monitor>());
     cmd.command(std::make_shared<location::cmds::Provider>());
     cmd.command(std::make_shared<location::cmds::Run>());
+    cmd.command(std::make_shared<location::cmds::Set>());
     cmd.command(std::make_shared<location::cmds::Status>());
     cmd.command(std::make_shared<location::cmds::Test>());
 }

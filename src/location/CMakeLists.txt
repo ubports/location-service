@@ -90,6 +90,8 @@ add_library(
   cmds/provider.cpp
   cmds/run.h
   cmds/run.cpp
+  cmds/set.h
+  cmds/set.cpp
   cmds/status.h
   cmds/status.cpp
   cmds/test.h

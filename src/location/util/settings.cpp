@@ -57,3 +57,20 @@ location::Optional<std::string> settings::Source::get(const std::string& key) co
 
     return Optional<std::string>{};
 }
+
+void settings::Source::set(const std::string &key, const std::string &value)
+{
+    namespace env = core::posix::this_process::env;
+    namespace fs = boost::filesystem;
+
+    static const std::string snap_path = env::get("SNAP_DATA");
+
+    fs::path path{snap_path};
+    auto path_from_key = key;
+    std::replace(path_from_key.begin(), path_from_key.end(), '.', '/');
+    path /= path_from_key;
+
+    fs::create_directories(path.parent_path());
+    std::ofstream out{path.string(), std::ios_base::out | std::ios_base::trunc};
+    out << value;
+}
