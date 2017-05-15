@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(ubuntu-location-service)
+project(locationd)
 
 if (DEFINED SNAPPY_UBUNTU_CORE)
   add_definitions(-DSNAPPY_UBUNTU_CORE)
@@ -9,7 +9,7 @@ endif()
 # We haven't received version information via the packaging setup.
 # For that, we try to determine sensible values on our own, ensuring
 # plain old invocations to cmake still work as expected.
-if (NOT DEFINED UBUNTU_LOCATION_SERVICE_VERSION_MAJOR)
+if (NOT DEFINED LOCATIOND_VERSION_MAJOR)
   find_program(LSB_RELEASE lsb_release)
   execute_process(
     COMMAND ${LSB_RELEASE} -c -s
@@ -23,19 +23,17 @@ if (NOT DEFINED UBUNTU_LOCATION_SERVICE_VERSION_MAJOR)
   #   - errors
   # we define the version to be 2.0.0
   if (${DISTRO_CODENAME} STREQUAL "vivid")
-    set(UBUNTU_LOCATION_SERVICE_VERSION_MAJOR 3)
-    set(UBUNTU_LOCATION_SERVICE_VERSION_MINOR 0)
-    set(UBUNTU_LOCATION_SERVICE_VERSION_PATCH 0)
+    set(LOCATIOND_VERSION_MAJOR 3)
+    set(LOCATIOND_VERSION_MINOR 0)
+    set(LOCATIOND_VERSION_PATCH 0)
   else ()
-    set(UBUNTU_LOCATION_SERVICE_VERSION_MAJOR 4)
-    set(UBUNTU_LOCATION_SERVICE_VERSION_MINOR 0)
-    set(UBUNTU_LOCATION_SERVICE_VERSION_PATCH 0)
+    set(LOCATIOND_VERSION_MAJOR 4)
+    set(LOCATIOND_VERSION_MINOR 0)
+    set(LOCATIOND_VERSION_PATCH 0)
   endif()
 endif()
 
-message(STATUS "${CMAKE_PROJECT_NAME} ${UBUNTU_LOCATION_SERVICE_VERSION_MAJOR}.${UBUNTU_LOCATION_SERVICE_VERSION_MINOR}.${UBUNTU_LOCATION_SERVICE_VERSION_PATCH}")
-
-set(UBUNTU_LOCATION_SERVICE_TRUST_STORE_SERVICE_NAME "UbuntuLocationService")
+message(STATUS "${CMAKE_PROJECT_NAME} ${LOCATIOND_VERSION_MAJOR}.${LOCATIOND_VERSION_MINOR}.${LOCATIOND_VERSION_PATCH}")
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -Wextra -fPIC")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -fno-strict-aliasing -fvisibility=hidden -fvisibility-inlines-hidden -pedantic -Wextra -fPIC -pthread")
@@ -43,10 +41,6 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-include(cmake/EnableCoverageReport.cmake)
-include(cmake/FindGFlags.cmake)
-include(cmake/FindGLog.cmake)
-include(cmake/PrePush.cmake)
 include(CTest)
 
 include(GNUInstallDirs)
@@ -67,20 +61,6 @@ pkg_check_modules(TRUST_STORE trust-store REQUIRED)
 pkg_check_modules(UBUNTU_PLATFORM_HARDWARE_API ubuntu-platform-hardware-api)
 pkg_check_modules(GIO gio-2.0)
 pkg_check_modules(GIO_UNIX gio-unix-2.0)
-#####################################################################
-# Enable code coverage calculation with gcov/gcovr/lcov
-# Usage:
-#  * Switch build type to coverage (use ccmake or cmake-gui)
-#  * Invoke make, make test, make coverage
-#  * Find html report in subdir coveragereport
-#  * Find xml report feasible for jenkins in coverage.xml
-#####################################################################
-IF(CMAKE_BUILD_TYPE MATCHES [cC][oO][vV][eE][rR][aA][gG][eE])
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftest-coverage -fprofile-arcs" )
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ftest-coverage -fprofile-arcs" )
-  SET(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -ftest-coverage -fprofile-arcs" )
-  SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -ftest-coverage -fprofile-arcs" )
-ENDIF(CMAKE_BUILD_TYPE MATCHES [cC][oO][vV][eE][rR][aA][gG][eE])
 
 option (DISABLE_ERROR_ON_LOCAL_TYPEDEFS_WARNINGS "Disable errors when local typedefs are unused" ON)
 if (DISABLE_ERROR_ON_LOCAL_TYPEDEFS_WARNINGS)
@@ -96,9 +76,9 @@ if (NOT CLANG_FORMAT_COMMAND)
 endif()
 
 if (CLANG_FORMAT_COMMAND)
-  file(GLOB_RECURSE UBUNTU_LOCATION_SERVICE_INTERFACE_HEADER_FILES ${CMAKE_SOURCE_DIR}/include/*.h)
-  file(GLOB_RECURSE UBUNTU_LOCATION_SERVICE_IMPLEMENTATION_FILES ${CMAKE_SOURCE_DIR}/src/*.h ${CMAKE_SOURCE_DIR}/src/*.cpp)
-  add_custom_target(formatcode ${CLANG_FORMAT_COMMAND} -i ${UBUNTU_LOCATION_SERVICE_INTERFACE_HEADER_FILES} ${UBUNTU_LOCATION_SERVICE_IMPLEMENTATION_FILES} SOURCES _clang-format)
+  file(GLOB_RECURSE LOCATIOND_INTERFACE_HEADER_FILES ${CMAKE_SOURCE_DIR}/include/*.h)
+  file(GLOB_RECURSE LOCATIOND_IMPLEMENTATION_FILES ${CMAKE_SOURCE_DIR}/src/*.h ${CMAKE_SOURCE_DIR}/src/*.cpp)
+  add_custom_target(formatcode ${CLANG_FORMAT_COMMAND} -i ${LOCATIOND_INTERFACE_HEADER_FILES} ${LOCATIOND_IMPLEMENTATION_FILES} SOURCES _clang-format)
 endif()
 
 include_directories(
@@ -124,7 +104,7 @@ include_directories(
   ${CMAKE_BINARY_DIR}/src
 )
 
-file(GLOB_RECURSE UBUNTU_LOCATION_SERVICE_PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR} *.h)
+file(GLOB_RECURSE LOCATIOND_PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR} *.h)
 
 add_subdirectory(3rd-party/ichnaea)
 
@@ -135,5 +115,3 @@ add_subdirectory(include)
 add_subdirectory(po)
 add_subdirectory(src)
 add_subdirectory(tests)
-
-enable_coverage_report(service)
