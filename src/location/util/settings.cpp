@@ -26,6 +26,17 @@
 
 namespace settings = location::util::settings;
 
+namespace
+{
+
+std::string init_config_root()
+{
+    namespace env = core::posix::this_process::env;
+    return env::get("SNAP_DATA", "/etc/locationd");
+}
+
+}  // namespace
+
 settings::Source::Source(const boost::property_tree::ptree& ptree)
     : ptree{ptree}
 {
@@ -33,12 +44,12 @@ settings::Source::Source(const boost::property_tree::ptree& ptree)
 
 location::Optional<std::string> settings::Source::get(const std::string& key) const
 {
-    namespace env = core::posix::this_process::env;
+
     namespace fs = boost::filesystem;
 
-    static const std::string snap_path = env::get("SNAP_DATA");
+    static const std::string config_root = init_config_root();
 
-    fs::path path{snap_path};
+    fs::path path{config_root};
     auto path_from_key = key;
     std::replace(path_from_key.begin(), path_from_key.end(), '.', '/');
     path /= path_from_key;
