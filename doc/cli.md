@@ -34,6 +34,27 @@ For testing purposes, it is often handy to inspect position/velocity/heading est
 The `monitor` command helps here. It connects to the service, starts the positioning engine and outputs 
 position estimates to stdout until it receives a SIGTERM.
 
+~~~bash
+$ locationd.monitor
+I0516 08:36:56.752629  8124 monitor.cpp:226] Enabled position/heading/velocity updates...
+51.44483       7.21064        13.27          n/a            n/a            n/a            n/a
+51.44483       7.21064        13.26          n/a            n/a            n/a            n/a
+51.44483       7.21069        16.36          n/a            n/a            n/a            n/a
+51.44483       7.21069        16.36          n/a            n/a            n/a            n/a
+51.44483       7.21068        15.94          n/a            n/a            n/a            n/a
+51.44483       7.21064        12.66          n/a            n/a            n/a            n/a
+51.44484       7.21063        12.26          n/a            n/a            n/a            n/a
+51.44484       7.21063        12.26          n/a            n/a            n/a            n/a
+51.44485       7.21059        10.00          n/a            n/a            n/a            n/a
+51.44485       7.21059        10.00          n/a            n/a            n/a            n/a
+51.44485       7.21058        10.08          n/a            n/a            n/a            n/a
+51.44485       7.21058        10.08          n/a            n/a            n/a            n/a
+51.44485       7.21059        10.00          n/a            n/a            n/a            n/a
+51.44485       7.21059        10.00          n/a            n/a            n/a            n/a
+51.44485       7.21059        10.00          n/a            n/a            n/a            n/a
+51.44485       7.21059        10.00          n/a            n/a            n/a            n/a
+~~~
+
 ## Standalone Runtime Tests
 
 Sometimes it is convenient to be able to test specific provider
@@ -41,7 +62,8 @@ implementations in isolation, i.e., without the respective provider
 running in the context of locationd. To this end, the `test` command
 is available.  Right now, two test suites `sirf` and `ubx` are
 available. Please make sure that the underlying serial devices are not
-in use by any other process before executing the test suite. The behavior of the test-suites can be adjusted by the following environment variables:
+in use by any other process before executing the test suite. 
+The behavior of the test-suites can be adjusted by the following environment variables:
 
  * `ubx`:
    * `UBX_PROVIDER_TEST_DEVICE`: Mandatory, path to the serial device connecting to the uBlox receiver.
@@ -56,4 +78,26 @@ in use by any other process before executing the test suite. The behavior of the
 ## Verbose Logging
 
 locationd and all of its commands can be switched to verbose mode by
-setting the environment variable `GLOG_v` to `1`.
+setting the environment variable `GLOG_v` to `1`, e.g.:
+
+~~~bash
+$ sudo GLOG_v=1 locationd.provide --id=mls::Provider
+I0516 08:40:15.010741  8200 service.cpp:190] static void location::dbus::stub::Service::on_bus_acquired(GObject*, GAsyncResult*, gpointer)
+I0516 08:40:15.015348  8200 service.cpp:221] static void location::dbus::stub::Service::on_name_appeared_for_creation(GDBusConnection*, const gchar*, const gchar*, gpointer)
+I0516 08:40:15.022554  8200 service.cpp:165] static void location::dbus::stub::Service::on_proxy_ready(GObject*, GAsyncResult*, gpointer)
+I0516 08:40:15.029153  8200 w11t_manager.cpp:452] static void location::connectivity::w11t::Supplicant::on_bus_ready(GObject*, GAsyncResult*, gpointer)
+I0516 08:40:15.033778  8200 service.cpp:244] static void location::dbus::stub::Service::on_provider_added(GObject*, GAsyncResult*, gpointer)
+I0516 08:40:15.034494  8200 w11t_manager.cpp:477] static void location::connectivity::w11t::Supplicant::on_proxy_ready(GObject*, GAsyncResult*, gpointer)
+I0516 08:40:15.036355  8200 w11t_manager.cpp:285] static void location::connectivity::w11t::Interface::on_proxy_ready(GObject*, GAsyncResult*, gpointer)
+I0516 08:40:21.915056  8200 provider.cpp:467] static bool location::providers::remote::Provider::Skeleton::handle_activate(ComUbuntuLocationServiceProvider*, GDBusMethodInvocation*, gpointer)
+I0516 08:40:26.832139  8200 w11t_manager.cpp:310] static void location::connectivity::w11t::Interface::handle_scan_done(FiW1Wpasupplicant1WirelessInterface*, gboolean, gpointer)
+I0516 08:40:26.832207  8200 provider.cpp:91] Wireless network scan finished.
+I0516 08:40:33.293536  8200 w11t_manager.cpp:325] static void location::connectivity::w11t::Interface::handle_bss_added(FiW1Wpasupplicant1WirelessInterface*, const char*, GVariant*, gpointer)
+I0516 08:40:33.294180  8200 w11t_manager.cpp:310] static void location::connectivity::w11t::Interface::handle_scan_done(FiW1Wpasupplicant1WirelessInterface*, gboolean, gpointer)
+I0516 08:40:33.294219  8200 provider.cpp:91] Wireless network scan finished.
+I0516 08:40:33.297814  8200 w11t_manager.cpp:98] static void location::connectivity::w11t::BSS::on_proxy_ready(GObject*, GAsyncResult*, gpointer)
+I0516 08:40:43.278961  8200 w11t_manager.cpp:354] static void location::connectivity::w11t::Interface::handle_bss_removed(FiW1Wpasupplicant1WirelessInterface*, const char*, gpointer)
+I0516 08:40:43.279033  8200 w11t_manager.cpp:310] static void location::connectivity::w11t::Interface::handle_scan_done(FiW1Wpasupplicant1WirelessInterface*, gboolean, gpointer)
+I0516 08:40:43.279059  8200 provider.cpp:91] Wireless network scan finished.
+I0516 08:40:43.284925  8200 w11t_manager.cpp:169] static void location::connectivity::w11t::BSS::on_age_changed(GObject*, GParamSpec*, gpointer)
+~~~
