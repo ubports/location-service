@@ -75,6 +75,12 @@ The behavior of the test-suites can be adjusted by the following environment var
    * `SIRF_PROVIDER_TEST_DEVICE`: Mandatory, path to the serial device connecting to the SiRF receiver.
    * `SIRF_PROVIDER_TEST_TRIALS`: Defaults to 15, number of independent positioning attempts from cold start.
 
+An example invocation for testing the uBlox provider would look like:
+
+~~~bash
+$ sudo UBX_PROVIDER_TEST_DEVICE=/dev/ttyACM1 UBX_PROVIDER_TEST_TRIALS=50 locationd.test --test-suite=ubx
+~~~
+
 ## Verbose Logging
 
 locationd and all of its commands can be switched to verbose mode by
