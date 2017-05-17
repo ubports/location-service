@@ -70,23 +70,31 @@ struct Configuration
         };
     };
 
+    struct Values
+    {
+        static const std::uint64_t reference_update_period;
+        static const float reference_latitude;
+        static const float reference_longitude;
+        static const float reference_altitude;
+        static const float reference_velocity;
+        static const float reference_heading;
+        static const float reference_horizontal_accuracy;
+        static const float reference_vertical_accuracy;
+    };
+
+    Configuration();
+
     // Updates are delivered every update_period milliseconds.
-    std::chrono::milliseconds update_period{10};
+    std::chrono::milliseconds update_period;
 
     // The reference position that is delivered in every upate cycle.
-    Position reference_position{Position{9. * units::degrees, 53. * units::degrees}.altitude(-2 * units::meters)};
+    Position reference_position;
 
     // The reference velocity that is delivered in every update cycle.
-    units::MetersPerSecond reference_velocity
-    {
-        9 * units::meters_per_second
-    };
+    units::MetersPerSecond reference_velocity;
 
     // The reference heading that is delivered in every update cycle.
-    units::Degrees reference_heading
-    {
-        127 * units::degrees
-    };
+    units::Degrees reference_heading;
 };
 
 class Provider : public location::Provider

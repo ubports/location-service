@@ -32,6 +32,31 @@ namespace dummy = location::providers::dummy;
 namespace env = core::posix::this_process::env;
 namespace fs = boost::filesystem;
 
+const std::uint64_t dummy::Configuration::Values::reference_update_period = 10;
+const float dummy::Configuration::Values::reference_latitude = 9.;
+const float dummy::Configuration::Values::reference_longitude = 53.;
+const float dummy::Configuration::Values::reference_altitude = -2.;
+const float dummy::Configuration::Values::reference_velocity = 9.;
+const float dummy::Configuration::Values::reference_heading = 127.;
+const float dummy::Configuration::Values::reference_horizontal_accuracy = 5.;
+const float dummy::Configuration::Values::reference_vertical_accuracy = 5.;
+
+dummy::Configuration::Configuration()
+    : update_period{Values::reference_update_period},
+      reference_position
+      {
+          Position{}
+          .latitude(Values::reference_latitude * units::degrees)
+          .longitude(Values::reference_longitude * units::degrees)
+          .altitude(Values::reference_altitude * units::meters)
+      },
+      reference_velocity{Values::reference_velocity * units::meters_per_second},
+      reference_heading{Values::reference_heading * units::degrees}
+{
+    reference_position.accuracy().horizontal(Values::reference_horizontal_accuracy * units::meters);
+    reference_position.accuracy().vertical(Values::reference_vertical_accuracy * units::meters);
+}
+
 void dummy::Provider::add_to_registry()
 {
     ProviderRegistry::instance().add_provider_for_name("dummy::Provider", [](const util::settings::Source& settings)
@@ -56,23 +81,23 @@ location::Provider::Ptr dummy::Provider::create_instance(const util::settings::S
 
     provider_config.update_period = std::chrono::milliseconds
     {
-        settings.get_value<std::uint64_t>(Configuration::Keys::update_period, 500)
+        settings.get_value<std::uint64_t>(Configuration::Keys::update_period, Configuration::Values::reference_update_period)
     };
 
     provider_config.reference_position
-            .latitude(settings.get_value<float>(Configuration::Keys::reference_position_lat, 51.) * location::units::degrees)
-            .longitude(settings.get_value<float>(Configuration::Keys::reference_position_lon,7.) * location::units::degrees);
+            .latitude(settings.get_value<float>(Configuration::Keys::reference_position_lat, Configuration::Values::reference_latitude) * location::units::degrees)
+            .longitude(settings.get_value<float>(Configuration::Keys::reference_position_lon, Configuration::Values::reference_longitude) * location::units::degrees);
     provider_config.reference_position
-            .altitude(settings.get_value<float>(Configuration::Keys::reference_position_alt, 0.) * location::units::meters);
+            .altitude(settings.get_value<float>(Configuration::Keys::reference_position_alt, Configuration::Values::reference_altitude) * location::units::meters);
     provider_config.reference_position.accuracy()
-            .horizontal(settings.get_value<float>(Configuration::Keys::reference_horizontal_accuracy, 0.) * location::units::meters);
+            .horizontal(settings.get_value<float>(Configuration::Keys::reference_horizontal_accuracy, Configuration::Values::reference_horizontal_accuracy) * location::units::meters);
     provider_config.reference_position.accuracy()
-            .vertical(settings.get_value<float>(dummy::Configuration::Keys::reference_vertical_accuracy, 0.) * location::units::meters);
+            .vertical(settings.get_value<float>(dummy::Configuration::Keys::reference_vertical_accuracy, Configuration::Values::reference_vertical_accuracy) * location::units::meters);
 
     provider_config.reference_velocity =
-            settings.get_value<float>(Configuration::Keys::reference_velocity, 9.) * location::units::meters_per_second;
+            settings.get_value<float>(Configuration::Keys::reference_velocity, Configuration::Values::reference_velocity) * location::units::meters_per_second;
     provider_config.reference_heading =
-            settings.get_value<float>(Configuration::Keys::reference_heading, 127.) * location::units::degrees;
+            settings.get_value<float>(Configuration::Keys::reference_heading, Configuration::Values::reference_heading) * location::units::degrees;
 
     return location::Provider::Ptr{new dummy::Provider{provider_config}};
 }

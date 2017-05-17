@@ -40,7 +40,7 @@ public:
     explicit Source(const boost::property_tree::ptree& ptree = boost::property_tree::ptree{});
 
     template<typename T>
-    T get_value(const std::string& key, T&& value) const
+    T get_value(const std::string& key, T value) const
     {
         if (auto v = get(key))
         {
