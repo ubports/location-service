@@ -2,17 +2,6 @@ find_package(Threads)
 
 add_definitions(-DCORE_DBUS_ENABLE_GOOGLE_TEST_FIXTURE -DBOOST_ASIO_DISABLE_MOVE)
 
-option(
-    LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER 
-    "Rely on dbus test runner to start a private session for testing purposes" 
-    ON
-)
-
-if (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
-    find_program(DBUS_TEST_RUNNER_EXECUTABLE dbus-test-runner)
-    message(STATUS "Executing test suite under dbus-test-runner")
-endif (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
-
 # Build mongoose as static library to leverage in location reporter testing
 add_library(mongoose mongoose.c)
 # Explicitly select c99 when compiling mongoose

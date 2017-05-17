@@ -20,10 +20,7 @@
 
 namespace location
 {
-static constexpr const char* trust_store_service_name
-{
-    "@UBUNTU_LOCATION_SERVICE_TRUST_STORE_SERVICE_NAME@"
-};
+
 }
 
 #endif // LOCATION_CONFIG_H_
