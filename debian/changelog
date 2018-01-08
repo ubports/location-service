@@ -1,3 +1,9 @@
+location-service (3.0.1+ubports) xenial; urgency=medium
+
+  * Imported to UBports
+
+ -- UBports auto importer <infra@ubports.com>  Mon, 08 Jan 2018 17:49:56 +0000
+
 location-service (3.0.0+16.10.20160616-0ubuntu1) yakkety; urgency=medium
 
   [ Scott Sweeny ]
