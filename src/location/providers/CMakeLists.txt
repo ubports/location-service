@@ -3,7 +3,7 @@ add_subdirectory(fusion)
 add_subdirectory(mls)
 # add_subdirectory(remote)
 add_subdirectory(gps)
-add_subdirectory(sirf)
+#add_subdirectory(sirf)
 add_subdirectory(ubx)
 
 set(
