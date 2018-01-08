@@ -1,3 +1,9 @@
+location-service (4.0.1) xenial; urgency=medium
+
+  * No change rebuild for ubports xenial
+
+ -- Dan Chapman <dan@ubports.com>  Mon, 08 Jan 2018 19:43:27 +0000
+
 location-service (3.0.1+ubports) xenial; urgency=medium
 
   * Imported to UBports
