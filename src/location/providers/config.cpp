@@ -20,7 +20,7 @@
 
 #include "dummy/provider.h"
 #include "mls/provider.h"
-#include "sirf/provider.h"
+//#include "sirf/provider.h"
 #include "ubx/provider.h"
 
 #include <map>
@@ -41,7 +41,7 @@ struct ProviderRegistrar
 
 static ProviderRegistrar<location::providers::dummy::Provider> dummy_registrar{};
 static ProviderRegistrar<location::providers::mls::Provider> mls_registrar{};
-static ProviderRegistrar<location::providers::sirf::Provider> sirf_registrar{};
+//static ProviderRegistrar<location::providers::sirf::Provider> sirf_registrar{};
 static ProviderRegistrar<location::providers::ubx::Provider> ubx_registrar{};
 
 #if defined(LOCATION_PROVIDERS_GPS)

@@ -22,7 +22,7 @@
 #include <location/clock.h>
 #include <location/glib/runtime.h>
 #include <location/providers/gps/hardware_abstraction_layer.h>
-#include <location/providers/sirf/provider.h>
+//#include <location/providers/sirf/provider.h>
 #include <location/providers/ubx/provider.h>
 #include <location/util/benchmark.h>
 #include <location/util/cli.h>
@@ -252,6 +252,7 @@ int ubx(std::ostream& cout, std::ostream&)
     return 0;
 }
 
+/*
 int sirf(std::ostream& cout, std::ostream&)
 {
     location::util::Benchmark benchmark{boost::lexical_cast<unsigned int>(env::get("SIRF_PROVIDER_TEST_TRIALS", "15")), "ttff in [µs]"};
@@ -335,6 +336,7 @@ int sirf(std::ostream& cout, std::ostream&)
 
     return 0;
 }
+*/
 
 }  // namespace
 
@@ -342,8 +344,8 @@ int location::execute_runtime_tests(const std::string& test_suite, std::ostream&
 {
     if (test_suite == "android-gps")
         return snr_and_ttff(cout, cerr);
-    else if (test_suite == "sirf")
-        return sirf(cout, cerr);
+//    else if (test_suite == "sirf")
+//        return sirf(cout, cerr);
     else if (test_suite == "ubx")
         return ubx(cout, cerr);
     return 0;
