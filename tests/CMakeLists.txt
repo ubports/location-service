@@ -3,8 +3,8 @@ find_package(Threads)
 add_definitions(-DCORE_DBUS_ENABLE_GOOGLE_TEST_FIXTURE -DBOOST_ASIO_DISABLE_MOVE)
 
 option(
-    LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER 
-    "Rely on dbus test runner to start a private session for testing purposes" 
+    LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER
+    "Rely on dbus test runner to start a private session for testing purposes"
     ON
 )
 
@@ -21,11 +21,7 @@ set_target_properties(
     PROPERTIES COMPILE_FLAGS "-std=c99")
 
 # Build with system gmock and embedded gtest
-set (GMOCK_INCLUDE_DIR "/usr/include/gmock/include" CACHE PATH "gmock source include directory")
-set (GMOCK_SOURCE_DIR "/usr/src/gmock" CACHE PATH "gmock source directory")
-set (GTEST_INCLUDE_DIR "${GMOCK_SOURCE_DIR}/gtest/include" CACHE PATH "gtest source include directory")
-
-add_subdirectory(${GMOCK_SOURCE_DIR} "${CMAKE_CURRENT_BINARY_DIR}/gmock")
+find_package(GMock)
 
 macro(LOCATION_SERVICE_ADD_TEST test_name src)
   add_executable(
@@ -49,10 +45,8 @@ macro(LOCATION_SERVICE_ADD_TEST test_name src)
 
     ${ARGN}
 
-    gmock
-
-    gtest
-    gtest_main)
+    ${GMOCK_LIBRARIES}
+    ${GTEST_BOTH_LIBRARIES})
 
   add_test(${test_name} ${CMAKE_CURRENT_BINARY_DIR}/${test_name} --gtest_filter=*-*requires*)
 
@@ -106,15 +100,14 @@ if (LOCATION_SERVICE_ENABLE_GEOCLUE_PROVIDERS)
   add_executable(geoclue_provider_test geoclue_provider_test.cpp)
   target_link_libraries(
     geoclue_provider_test
-    
+
     ubuntu-location-service
 
     ${CMAKE_THREAD_LIBS_INIT}
     ${Boost_LIBRARIES}
     ${PROCESS_CPP_LIBRARIES}
 
-    gtest
-    gtest_main
+    ${GTEST_BOTH_LIBRARIES}
   )
   if (LOCATION_SERVICE_ENABLE_DBUS_TEST_RUNNER)
     add_test(geoclue_provider_test ${DBUS_TEST_RUNNER_EXECUTABLE} --task=${CMAKE_CURRENT_BINARY_DIR}/geoclue_provider_test)
