@@ -1,3 +1,9 @@
+location-service (3.0.0+ubports1) bionic; urgency=medium
+
+  * Build for bionic 
+
+ -- Marius <mariogrip@ubuntu.com>  Sun, 18 Feb 2018 14:21:32 +0100
+
 location-service (3.0.0+16.10.20160912-0ubuntu1) yakkety; urgency=medium
 
   [ Scott Sweeny, You-Sheng Yang ]
