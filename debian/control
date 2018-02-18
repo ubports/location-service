@@ -34,6 +34,7 @@ Build-Depends: cmake,
                libproperties-cpp-dev,
                lsb-release,
                trust-store-bin,
+               cmake-extras,
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/location-service
 # If you aren't a member of ~phablet-team but need to upload packaging changes,
