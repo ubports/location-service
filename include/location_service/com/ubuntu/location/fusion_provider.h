@@ -22,6 +22,8 @@
 #include <com/ubuntu/location/provider_selection_policy.h>
 #include <com/ubuntu/location/update_selector.h>
 
+#include <vector>
+
 namespace com
 {
 namespace ubuntu

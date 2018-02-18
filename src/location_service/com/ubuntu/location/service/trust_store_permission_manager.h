@@ -22,6 +22,8 @@
 
 #include <core/trust/agent.h>
 
+#include <functional>
+
 namespace core
 {
 namespace dbus

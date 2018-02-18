@@ -19,6 +19,8 @@
  #include <com/ubuntu/location/logging.h>
  #include <com/ubuntu/location/update.h>
 
+#include <vector>
+
 namespace cu = com::ubuntu;
 namespace cul = com::ubuntu::location;
 
@@ -50,7 +52,7 @@ cul::FusionProvider::FusionProvider(const std::set<location::Provider::Ptr>& pro
                   // if this is the first update, use it
                   if (!last_position) {
                       mutable_updates().position((*(last_position = WithSource<Update<Position>>{provider, u})).value);
-                      
+
                   // otherwise use the selector
                   } else {
                       try {
