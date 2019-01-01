@@ -19,6 +19,7 @@
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_PERMISSION_MANAGER_H_
 
 #include <memory>
+#include <sys/types.h>
 
 namespace com
 {
