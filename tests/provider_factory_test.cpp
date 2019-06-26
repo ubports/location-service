@@ -57,5 +57,4 @@ TEST(ProviderFactory, attempt_to_create_for_unknown_name_returns_null_ptr)
 TEST(ProviderFactory, extracting_undecorated_provider_name_works)
 {
     EXPECT_EQ("remote::Provider", cul::ProviderFactory::extract_undecorated_name("remote::Provider@gps"));
-    EXPECT_EQ("remote::Provider", cul::ProviderFactory::extract_undecorated_name("remote::Provider@espoo"));
 }
