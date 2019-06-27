@@ -15,13 +15,7 @@ export DPKG_GENSYMBOLS_CHECK_LEVEL=4
 
 include /usr/share/dpkg/default.mk
 
-distro=$(shell lsb_release -c -s)
-
-ifeq ($(distro),vivid)
-	full_version=$(shell cat $(CURDIR)/debian/VERSION.vivid)
-else
-	full_version=$(shell cat $(CURDIR)/debian/VERSION)
-endif
+full_version=$(shell cat $(CURDIR)/debian/VERSION)
 
 major=$(shell echo $(full_version) | cut -d'.' -f1)
 minor=$(shell echo $(full_version) | cut -d'.' -f2)
@@ -45,6 +39,6 @@ override_dh_strip:
 override_dh_auto_configure:
 	dh_auto_configure -- -DCMAKE_INSTALL_LIBEXECDIR=/usr/lib/$(DEB_HOST_MULTIARCH)/ubuntu-location-service -DCMAKE_C_COMPILER=$(CC) -DCMAKE_CXX_COMPILER=$(CXX) -DLOCATION_SERVICE_ENABLE_GPS_PROVIDER=$(LOCATION_SERVICE_ENABLE_GPS_PROVIDER) -DUBUNTU_LOCATION_SERVICE_VERSION_MAJOR=$(major) -DUBUNTU_LOCATION_SERVICE_VERSION_MINOR=$(minor) -DUBUNTU_LOCATION_SERVICE_VERSION_PATCH=$(patch)
 
-override_dh_auto_clean:
-	/bin/sh $(CURDIR)/debian/bileto_pre_release_hook
-	dh_auto_clean
+override_dh_auto_test:
+	# Don't run tests in parallel as fake web servers all bind to same port
+	dh_auto_test --no-parallel
