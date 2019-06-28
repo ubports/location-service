@@ -102,27 +102,6 @@ _A_ssistance) are enabled.
    terminal and will take ~10 minutes or less. The test will
    automatically report success or failure.
 
-### Espoo / HERE provider
-
-This applies only if the Espoo / HERE remote provider is enabled. This
-provider should be enabled by default and may either work standalone
-as the only provider or as an assistance for the GPS hardware to lock.
-
- - Add the silo; special exception for lxc-android-config: see https://wiki.ubuntu.com/Touch/Testing/lxc-android-config
- - If noted, deploy an updated custom tarball:
-   - Download the tarball under /tmp ('''NOT''' under /)
-   - Unpack there: `cd /tmp; sudo tar xvf custom-vendor-here-*.tar.xz`
-   - Remove older bits: `sudo rm -rf /custom/vendor/here/`
-   - Update custom bits: `sudo mv /tmp/system/custom/vendor/here /custom/vendor`
- - Reboot
- - After boot, check you have these three processes running on top of location-service:
-   - slpgwd
-   - posclientd
-   - ubuntu-espoo-service
- - Make sure SIM is unlocked and attached to the network (has some reliable signal) and that WiFi is turned on.
- - Install OSMTouch app
- - Run OSMTouch app, hit the position button every other second until you get a blue circle showing your current location; 
-
 # Connectivity API
 
 For integration of network-based positioning providers, the location
