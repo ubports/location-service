@@ -1,6 +1,6 @@
-location-service (3.0.0+ubports1) bionic; urgency=medium
+location-service (3.0.0+ubports1~16.04.1) xenial; urgency=medium
 
-  * Build for bionic 
+  * Build for xenial.
 
  -- Marius <mariogrip@ubuntu.com>  Sun, 18 Feb 2018 14:21:32 +0100
 
