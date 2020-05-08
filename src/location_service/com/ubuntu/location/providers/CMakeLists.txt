@@ -4,6 +4,7 @@ add_subdirectory(geoclue)
 add_subdirectory(gps)
 add_subdirectory(skyhook)
 add_subdirectory(mls)
+add_subdirectory(gpsd)
 
 set(
   ENABLED_PROVIDER_TARGETS

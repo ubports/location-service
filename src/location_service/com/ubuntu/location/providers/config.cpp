@@ -73,6 +73,15 @@ static FactoryInjector mls_injector
 };
 #endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_MLS
 
+#if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GPSD)
+#include <com/ubuntu/location/providers/gpsd/provider.h>
+static FactoryInjector gpsd_injector
+{
+    "gpsd::Provider",
+    com::ubuntu::location::providers::gpsd::Provider::create_instance
+};
+#endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GPSD
+
 #if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GPS)
 #include <com/ubuntu/location/providers/gps/provider.h>
 static FactoryInjector gps_injector

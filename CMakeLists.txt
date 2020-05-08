@@ -60,6 +60,7 @@ pkg_check_modules(PROCESS_CPP process-cpp REQUIRED)
 pkg_check_modules(PROPERTIES_CPP properties-cpp REQUIRED)
 pkg_check_modules(TRUST_STORE trust-store REQUIRED)
 pkg_check_modules(UBUNTU_PLATFORM_HARDWARE_API ubuntu-platform-hardware-api)
+pkg_check_modules(GPSD libgps)
 #####################################################################
 # Enable code coverage calculation with gcov/gcovr/lcov
 # Usage:
