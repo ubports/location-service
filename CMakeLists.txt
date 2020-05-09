@@ -120,6 +120,12 @@ include_directories(
 
 file(GLOB_RECURSE UBUNTU_LOCATION_SERVICE_PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR} *.h)
 
+add_subdirectory(3rd-party/ichnaea)
+
+include_directories(
+  3rd-party/ichnaea/include
+)
+
 add_subdirectory(data)
 add_subdirectory(doc)
 add_subdirectory(examples)

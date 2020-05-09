@@ -3,6 +3,7 @@ add_subdirectory(remote)
 add_subdirectory(geoclue)
 add_subdirectory(gps)
 add_subdirectory(skyhook)
+add_subdirectory(mls)
 
 set(
   ENABLED_PROVIDER_TARGETS

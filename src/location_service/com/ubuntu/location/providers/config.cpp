@@ -64,6 +64,15 @@ static FactoryInjector geoclue_injector
 };
 #endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GEOCLUE
 
+#if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_MLS)
+#include <com/ubuntu/location/providers/mls/provider.h>
+static FactoryInjector mls_injector
+{
+    "mls::Provider",
+    com::ubuntu::location::providers::mls::Provider::create_instance
+};
+#endif // COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_MLS
+
 #if defined(COM_UBUNTU_LOCATION_SERVICE_PROVIDERS_GPS)
 #include <com/ubuntu/location/providers/gps/provider.h>
 static FactoryInjector gps_injector
