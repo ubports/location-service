@@ -30,7 +30,12 @@ Build-Depends: cmake,
                lsb-release,
                trust-store-bin,
                cmake-extras,
-               libgps-dev
+               libgps-dev,
+               libubuntu-application-api-dev (>= 3.0.1),
+               qt5-default,
+               qtbase5-dev,
+               qtlocation5-dev,
+               qtpositioning5-dev,
 Standards-Version: 3.9.4
 Homepage: http://launchpad.net/location-service
 # If you aren't a member of ~phablet-team but need to upload packaging changes,

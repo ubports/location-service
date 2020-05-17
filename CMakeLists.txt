@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 2.8)
 
 project(ubuntu-location-service)
 
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+# Instruct CMake to run moc automatically when needed.
+set(CMAKE_AUTOMOC ON)
+
 # We haven't received version information via the packaging setup.
 # For that, we try to determine sensible values on our own, ensuring
 # plain old invocations to cmake still work as expected.
@@ -134,6 +139,7 @@ add_subdirectory(include)
 add_subdirectory(po)
 add_subdirectory(src)
 add_subdirectory(tests)
+add_subdirectory(qt)
 
 # There's no nice way to format this. Thanks CMake.
 add_test(LGPL-required
