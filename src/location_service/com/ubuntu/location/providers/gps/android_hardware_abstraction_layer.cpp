@@ -473,7 +473,17 @@ bool android::HardwareAbstractionLayer::is_capable_of(gps::Capability capability
 bool android::HardwareAbstractionLayer::start_positioning()
 {
     VLOG(1) << __PRETTY_FUNCTION__ << ": " << this << ", " << impl.gps_handle;
-    return u_hardware_gps_start(impl.gps_handle);
+    bool ok = u_hardware_gps_start(impl.gps_handle);
+    if (ok)
+    {
+        const char* supl_server = "supl.google.com";
+        const int port = 7275;
+        u_hardware_gps_agps_set_server_for_type(
+            impl.gps_handle,
+            U_HARDWARE_GPS_AGPS_TYPE_SUPL,
+            supl_server,
+            port);
+    }
 }
 
 bool android::HardwareAbstractionLayer::stop_positioning()
