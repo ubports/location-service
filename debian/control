@@ -50,6 +50,7 @@ Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends}
 Depends: ${misc:Depends},
          ${shlibs:Depends},
+         ubuntu-application-api3-desktop,
 Description: location service aggregating position/velocity/heading
  updates and exporting them over dbus.
  .
