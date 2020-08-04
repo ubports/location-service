@@ -15,7 +15,7 @@
  *
  * Authored by: Thomas Voß <thomas.voss@canonical.com>
  */
-
+#include <string>
 #include <com/ubuntu/location/service/state.h>
 
 #include <map>
