@@ -7,10 +7,10 @@ Build-Depends: cmake,
                curl,
                libdbus-cpp-dev (>= 4.1.0),
                debhelper (>= 9),
-               doxygen,
+               doxygen <!nodoc>,
                geoclue-ubuntu-geoip,
                google-mock (>= 1.6.0+svn437),
-               graphviz,
+               graphviz <!nodoc>,
                libapparmor-dev,
                libboost-filesystem-dev,
                libboost-program-options-dev,
@@ -117,6 +117,7 @@ Architecture: all
 Multi-Arch: foreign
 Depends: ${misc:Depends},
          ${shlibs:Depends},
+Build-Profiles: <!nodoc>
 Recommends: ubuntu-location-service-examples,
 Description: location service aggregating position/velocity/heading
  updates and exporting them over dbus.
