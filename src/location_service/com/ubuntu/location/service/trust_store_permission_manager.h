@@ -22,8 +22,6 @@
 
 #include <core/trust/agent.h>
 
-#include <functional>
-
 namespace core
 {
 namespace dbus
@@ -49,12 +47,6 @@ public:
     // Just a convenience typedef.
     typedef std::shared_ptr<TrustStorePermissionManager> Ptr;
 
-    // Functor for resolving a process id to an app-armor profile name.
-    typedef std::function<std::string(const core::trust::Pid&)> AppArmorProfileResolver;
-
-    // Returns an AppArmorProfileResolver leveraging libapparmor.
-    static AppArmorProfileResolver libapparmor_profile_resolver();
-
     // The default feature tag we use when calling out to the agent.
     static core::trust::Feature default_feature();
 
@@ -65,8 +57,7 @@ public:
     // Sets up the manager for operation and stores the agent and resolver
     // instances given to the ctor.
     TrustStorePermissionManager(
-            const std::shared_ptr<core::trust::Agent>& agent,
-            AppArmorProfileResolver app_armor_profile_resolver);
+            const std::shared_ptr<core::trust::Agent>& agent);
 
     // From PermissionManager
     Result check_permission_for_credentials(const Criteria&, const Credentials& credentials) override;
@@ -75,9 +66,6 @@ private:
     // The agent instance we leverage to authenticate
     // permission requests.
     std::shared_ptr<core::trust::Agent> agent;
-
-    // Helper to resolve an application's pid to an app-armor profile name.
-    AppArmorProfileResolver app_armor_profile_resolver;
 };
 }
 }

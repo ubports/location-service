@@ -22,6 +22,8 @@
 
 #include <core/dbus/types/object_path.h>
 
+#include <sys/apparmor.h>
+
 namespace cul = com::ubuntu::location;
 namespace culs = com::ubuntu::location::service;
 namespace culss = com::ubuntu::location::service::session;
@@ -41,18 +43,75 @@ dbus::Message::Ptr the_empty_reply()
 }
 }
 
-culs::Skeleton::DBusDaemonCredentialsResolver::DBusDaemonCredentialsResolver(const dbus::Bus::Ptr& bus)
-    : daemon(bus)
+culs::Skeleton::DBusDaemonCredentialsResolver::DBusDaemonCredentialsResolver(
+    const dbus::Bus::Ptr& bus,
+    AppArmorProfileResolver app_armor_profile_resolver)
+    : daemon(bus),
+      app_armor_profile_resolver{app_armor_profile_resolver}
 {
+}
+
+culs::Skeleton::DBusDaemonCredentialsResolver::AppArmorProfileResolver
+culs::Skeleton::DBusDaemonCredentialsResolver::libapparmor_profile_resolver()
+{
+    return [](pid_t pid)
+    {
+        static const int app_armor_error{-1};
+
+        // We make sure to clean up the returned string.
+        struct Scope
+        {
+            ~Scope()
+            {
+                if (con) ::free(con);
+            }
+
+            char* con{nullptr};
+            char* mode{nullptr};
+        } scope;
+
+        // Reach out to apparmor
+        auto rc = aa_gettaskcon(pid, &scope.con, &scope.mode);
+
+        // From man aa_gettaskcon:
+        // On success size of data placed in the buffer is returned, this includes the mode if
+        //present and any terminating characters. On error, -1 is returned, and errno(3) is
+        //set appropriately.
+        if (rc == app_armor_error) throw std::system_error
+        {
+            errno,
+            std::system_category()
+        };
+
+        // Safely construct the string
+        return std::string
+        {
+            scope.con ? scope.con : ""
+        };
+    };
 }
 
 culs::Credentials
 culs::Skeleton::DBusDaemonCredentialsResolver::resolve_credentials_for_incoming_message(const dbus::Message::Ptr& msg)
 {
+    /* We should really use the GetConnectionCredentials method here, but
+     * dbus-cpp does not support it. So, get the PID and use the apparmor
+     * client library to obtain the profile label.
+     */
+    std::string profile;
+    auto pid = static_cast<pid_t>(daemon.get_connection_unix_process_id(msg->sender()));
+    try {
+        profile = app_armor_profile_resolver(pid);
+    } catch(const std::exception& e)
+    {
+        SYSLOG(ERROR) << "Could not resolve PID " << pid << " to apparmor profile: " << e.what();
+    }
+
     return culs::Credentials
     {
-        static_cast<pid_t>(daemon.get_connection_unix_process_id(msg->sender())),
-        static_cast<uid_t>(daemon.get_connection_unix_user(msg->sender()))
+        pid,
+        static_cast<uid_t>(daemon.get_connection_unix_user(msg->sender())),
+        profile,
     };
 }
 

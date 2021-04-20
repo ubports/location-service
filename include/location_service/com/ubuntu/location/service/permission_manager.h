@@ -19,6 +19,9 @@
 #define LOCATION_SERVICE_COM_UBUNTU_LOCATION_SERVICE_PERMISSION_MANAGER_H_
 
 #include <memory>
+#include <string>
+
+#include <sys/types.h>
 
 namespace com
 {
@@ -36,6 +39,8 @@ struct Credentials
     pid_t pid;
     /** @brief The user id the remote peer runs under. */
     uid_t uid;
+    /** @brief The AppArmor profile of the remote peer. */
+    std::string profile;
 };
 
 /**

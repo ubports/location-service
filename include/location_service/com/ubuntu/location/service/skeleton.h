@@ -30,6 +30,8 @@
 
 #include <core/dbus/interfaces/properties.h>
 
+#include <functional>
+
 namespace com
 {
 namespace ubuntu
@@ -63,14 +65,24 @@ public:
     //   * GetConnectionUnixUser
     struct DBusDaemonCredentialsResolver : public CredentialsResolver
     {
+        // Functor for resolving a process id to an app-armor profile name.
+        typedef std::function<std::string(pid_t)> AppArmorProfileResolver;
+
+        // Returns an AppArmorProfileResolver leveraging libapparmor.
+        static AppArmorProfileResolver libapparmor_profile_resolver();
+
         // Sets up a new instance for the given bus connection.
-        DBusDaemonCredentialsResolver(const core::dbus::Bus::Ptr& bus);
+        DBusDaemonCredentialsResolver(const core::dbus::Bus::Ptr& bus,
+                                      AppArmorProfileResolver app_armor_profile_resolver);
 
         // Resolves the sender of msg to pid, uid by calling out to the dbus daemon.
         Credentials resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg);
 
         // Stub for accessing the dbus daemon.
         core::dbus::DBus daemon;
+
+        // Helper to resolve an application's pid to an app-armor profile name.
+        AppArmorProfileResolver app_armor_profile_resolver;
     };
 
     // Models the generation of stable and unique object paths for client-specific sessions.
