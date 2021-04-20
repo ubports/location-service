@@ -73,7 +73,9 @@ struct Daemon
             /** @brief Indicates whether the positioning engine leverages wifi and cell ids for positioning. */
             does_report_wifi_and_cell_ids,
             /** @brief The list of currently visible space-vehicles. */
-            visible_space_vehicles
+            visible_space_vehicles,
+            /** @brief The list of applications ID receiving position information. */
+            client_applications,
         };
 
         /** @brief Parameters for an invocation of the CLI. */
@@ -90,6 +92,7 @@ struct Daemon
                                             does_satellite_based_positioning [get/set]
                                             does_report_wifi_and_cell_ids [get/set]
                                             visible_space_vehicles [get]
+                                            client_applications [get]
              * --set arg                 Adjust the value of the property.
              * --get                     Query the value of the property.
              * --test                    Executes runtime tests.

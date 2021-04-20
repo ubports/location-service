@@ -38,7 +38,8 @@ struct culs::Stub::Private
           does_satellite_based_positioning(object->get_property<culs::Interface::Properties::DoesSatelliteBasedPositioning>()),
           does_report_cell_and_wifi_ids(object->get_property<culs::Interface::Properties::DoesReportCellAndWifiIds>()),
           is_online(object->get_property<culs::Interface::Properties::IsOnline>()),
-          visible_space_vehicles(object->get_property<culs::Interface::Properties::VisibleSpaceVehicles>())
+          visible_space_vehicles(object->get_property<culs::Interface::Properties::VisibleSpaceVehicles>()),
+          client_applications(object->get_property<culs::Interface::Properties::ClientApplications>())
     {
     }
 
@@ -49,6 +50,7 @@ struct culs::Stub::Private
     std::shared_ptr<dbus::Property<culs::Interface::Properties::DoesReportCellAndWifiIds>> does_report_cell_and_wifi_ids;
     std::shared_ptr<dbus::Property<culs::Interface::Properties::IsOnline>> is_online;
     std::shared_ptr<dbus::Property<culs::Interface::Properties::VisibleSpaceVehicles>> visible_space_vehicles;
+    std::shared_ptr<dbus::Property<culs::Interface::Properties::ClientApplications>> client_applications;
 };
 
 culs::Stub::Stub(const dbus::Bus::Ptr& connection) : dbus::Stub<culs::Interface>(connection),
@@ -99,4 +101,9 @@ core::Property<bool>& culs::Stub::is_online()
 core::Property<std::map<cul::SpaceVehicle::Key, cul::SpaceVehicle>>& culs::Stub::visible_space_vehicles()
 {
     return *d->visible_space_vehicles;
+}
+
+core::Property<std::vector<std::string>>& culs::Stub::client_applications()
+{
+    return *d->client_applications;
 }

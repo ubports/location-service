@@ -46,6 +46,7 @@ class Stub : public core::dbus::Stub<Interface>
     core::Property<bool>& does_report_cell_and_wifi_ids();
     core::Property<bool>& is_online();
     core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles();
+    core::Property<std::vector<std::string>>& client_applications();
 
   private:
     struct Private;
