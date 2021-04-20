@@ -40,7 +40,7 @@ namespace location
 {
 namespace service
 {
-// A PermmissionManager implementation leveraging the trust-store
+// A PermissionManager implementation leveraging the trust-store
 // infrastructure to cache a user's answer and to dispatch
 // to user-specific trust-store instances.
 class TrustStorePermissionManager : public PermissionManager

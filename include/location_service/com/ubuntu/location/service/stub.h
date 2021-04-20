@@ -44,7 +44,7 @@ class Stub : public core::dbus::Stub<Interface>
     const core::Property<State>& state() const;
     core::Property<bool>& does_satellite_based_positioning();
     core::Property<bool>& does_report_cell_and_wifi_ids();
-    core::Property<bool>& is_online();    
+    core::Property<bool>& is_online();
     core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles();
 
   private:

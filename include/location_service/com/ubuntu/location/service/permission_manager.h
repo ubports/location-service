@@ -70,7 +70,7 @@ public:
     virtual Result check_permission_for_credentials(
         const Criteria& criteria,
         const Credentials& credentials) = 0;
-    
+
 protected:
     PermissionManager() = default;
 };
