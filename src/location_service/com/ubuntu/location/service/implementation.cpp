@@ -52,7 +52,8 @@ culs::Implementation::Implementation(const culs::Implementation::Configuration& 
               {
                   new culs::Skeleton::DBusDaemonCredentialsResolver
                   {
-                      config.outgoing
+                      config.outgoing,
+                      culs::Skeleton::DBusDaemonCredentialsResolver::libapparmor_profile_resolver(),
                   }
               },
               culs::Skeleton::ObjectPathGenerator::Ptr

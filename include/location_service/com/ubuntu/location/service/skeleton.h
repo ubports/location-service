@@ -30,6 +30,8 @@
 
 #include <core/dbus/interfaces/properties.h>
 
+#include <functional>
+
 namespace com
 {
 namespace ubuntu
@@ -63,14 +65,24 @@ public:
     //   * GetConnectionUnixUser
     struct DBusDaemonCredentialsResolver : public CredentialsResolver
     {
+        // Functor for resolving a process id to an app-armor profile name.
+        typedef std::function<std::string(pid_t)> AppArmorProfileResolver;
+
+        // Returns an AppArmorProfileResolver leveraging libapparmor.
+        static AppArmorProfileResolver libapparmor_profile_resolver();
+
         // Sets up a new instance for the given bus connection.
-        DBusDaemonCredentialsResolver(const core::dbus::Bus::Ptr& bus);
+        DBusDaemonCredentialsResolver(const core::dbus::Bus::Ptr& bus,
+                                      AppArmorProfileResolver app_armor_profile_resolver);
 
         // Resolves the sender of msg to pid, uid by calling out to the dbus daemon.
         Credentials resolve_credentials_for_incoming_message(const core::dbus::Message::Ptr& msg);
 
         // Stub for accessing the dbus daemon.
         core::dbus::DBus daemon;
+
+        // Helper to resolve an application's pid to an app-armor profile name.
+        AppArmorProfileResolver app_armor_profile_resolver;
     };
 
     // Models the generation of stable and unique object paths for client-specific sessions.
@@ -116,6 +128,7 @@ public:
     core::Property<bool>& does_report_cell_and_wifi_ids();
     core::Property<bool>& is_online();
     core::Property<std::map<SpaceVehicle::Key, SpaceVehicle>>& visible_space_vehicles();
+    core::Property<std::vector<std::string>>& client_applications();
 
 protected:
     // Enable subclasses to alter the state.
@@ -135,6 +148,9 @@ private:
     // Removes the session with the given path from the session store.
     void remove_from_session_store_for_path(const core::dbus::types::ObjectPath& path);
 
+    void add_client_application(const std::string& app_id);
+    void remove_client_application(const std::string& app_id);
+
     // Called whenever the overall state of the service changes.
     void on_state_changed(State state);
     // Called whenever the value of the respective property changes.
@@ -143,6 +159,7 @@ private:
     void on_does_report_cell_and_wifi_ids_changed(bool value);
     // Called whenever the value of the respective property changes.
     void on_is_online_changed(bool value);
+    void on_client_applications_changed(const std::vector<std::string>& value);
 
     // Stores the configuration passed in at creation time.
     Configuration configuration;
@@ -165,6 +182,7 @@ private:
         std::shared_ptr< core::dbus::Property<Interface::Properties::DoesReportCellAndWifiIds> > does_report_cell_and_wifi_ids;
         std::shared_ptr< core::dbus::Property<Interface::Properties::IsOnline> > is_online;
         std::shared_ptr< core::dbus::Property<Interface::Properties::VisibleSpaceVehicles> > visible_space_vehicles;
+        std::shared_ptr< core::dbus::Property<Interface::Properties::ClientApplications> > client_applications;
     } properties;
     // We sign up to property changes here, to be able to report them to the bus
     struct
@@ -173,6 +191,7 @@ private:
         core::ScopedConnection does_satellite_based_positioning;
         core::ScopedConnection does_report_cell_and_wifi_ids;
         core::ScopedConnection is_online;
+        core::ScopedConnection client_applications;
     } connections;
     // Guards the session store.
     std::mutex guard;

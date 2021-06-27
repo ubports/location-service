@@ -30,8 +30,6 @@
 
 #include <boost/format.hpp>
 
-#include <sys/apparmor.h>
-
 namespace location = com::ubuntu::location;
 namespace service = com::ubuntu::location::service;
 
@@ -57,45 +55,6 @@ std::string tr(const std::string& msg)
 }
 }
 
-service::TrustStorePermissionManager::AppArmorProfileResolver service::TrustStorePermissionManager::libapparmor_profile_resolver()
-{
-    return [](core::trust::Pid pid)
-    {
-        static const int app_armor_error{-1};
-
-        // We make sure to clean up the returned string.
-        struct Scope
-        {
-            ~Scope()
-            {
-                if (con) ::free(con);
-            }
-
-            char* con{nullptr};
-            char* mode{nullptr};
-        } scope;
-
-        // Reach out to apparmor
-        auto rc = aa_gettaskcon(pid.value, &scope.con, &scope.mode);
-
-        // From man aa_gettaskcon:
-        // On success size of data placed in the buffer is returned, this includes the mode if
-        //present and any terminating characters. On error, -1 is returned, and errno(3) is
-        //set appropriately.
-        if (rc == app_armor_error) throw std::system_error
-        {
-            errno,
-            std::system_category()
-        };
-
-        // Safely construct the string
-        return std::string
-        {
-            scope.con ? scope.con : ""
-        };
-    };
-}
-
 core::trust::Feature service::TrustStorePermissionManager::default_feature()
 {
     return core::trust::Feature{0};
@@ -110,16 +69,13 @@ service::TrustStorePermissionManager::Ptr service::TrustStorePermissionManager::
             core::trust::dbus::create_multi_user_agent_for_bus_connection(
                         bus,
                         com::ubuntu::location::service::trust_store_service_name),
-            TrustStorePermissionManager::libapparmor_profile_resolver()
         }
     };
 }
 
 service::TrustStorePermissionManager::TrustStorePermissionManager(
-        const std::shared_ptr<core::trust::Agent>& agent,
-        service::TrustStorePermissionManager::AppArmorProfileResolver app_armor_profile_resolver)
-    : agent{agent},
-      app_armor_profile_resolver{app_armor_profile_resolver}
+        const std::shared_ptr<core::trust::Agent>& agent)
+    : agent{agent}
 {
 }
 
@@ -132,17 +88,8 @@ service::PermissionManager::Result service::TrustStorePermissionManager::check_p
     if (is_running_under_testing())
         return Result::granted;
 
-    std::string profile;
-    try
-    {
-        profile = app_armor_profile_resolver(core::trust::Pid{credentials.pid});
-    } catch(const std::exception& e)
-    {
-        SYSLOG(ERROR) << "Could not resolve PID " << credentials.pid << " to apparmor profile: " << e.what();
-        return service::PermissionManager::Result::rejected;
-    } catch(...)
-    {
-        SYSLOG(ERROR) << "Could not resolve PID " << credentials.pid << " to apparmor profile.";
+    if (credentials.profile.empty()) {
+        SYSLOG(ERROR) << "Could not resolve PID " << credentials.pid << " to apparmor profile";
         return service::PermissionManager::Result::rejected;
     }
 
@@ -152,7 +99,7 @@ service::PermissionManager::Result service::TrustStorePermissionManager::check_p
     {
         core::trust::Uid{credentials.uid},
         core::trust::Pid{credentials.pid},
-        profile,
+        credentials.profile,
         TrustStorePermissionManager::default_feature(),
         description
     };

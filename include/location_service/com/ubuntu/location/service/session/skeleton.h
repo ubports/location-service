@@ -31,6 +31,7 @@
 #include <core/dbus/skeleton.h>
 
 #include <memory>
+#include <string>
 
 namespace com
 {
@@ -63,6 +64,8 @@ public:
         // The remote object corresponding to the client, implementing
         // com.ubuntu.location.service.session.Interface
         core::dbus::Object::Ptr object;
+        // The application ID of the client
+        std::string app_id;
     };
 
     struct Configuration
@@ -79,6 +82,7 @@ public:
     virtual ~Skeleton() noexcept;
 
     virtual const core::dbus::types::ObjectPath& path() const;
+    const std::string& remote_app_id() const { return configuration.remote.app_id; }
 
 private:
     // Handle incoming requests for Start/StopPositionUpdates

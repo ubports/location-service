@@ -272,7 +272,8 @@ location::ProgramOptions init_cli_options()
                 "   is_online [get/set]\n"
                 "   does_satellite_based_positioning [get/set]\n"
                 "   does_report_wifi_and_cell_ids [get/set]\n"
-                "   visible_space_vehicles [get]",
+                "   visible_space_vehicles [get]\n"
+                "   client_applications [get]",
                 location::service::Daemon::Cli::Property::unknown);
     options.add<std::string>("set", "Adjust the value of the property.");
     options.add("get", "Query the value of the property.");
@@ -467,6 +468,27 @@ int location::service::Daemon::Cli::main(const location::service::Daemon::Cli::C
         }
         break;
     }
+    case Property::client_applications:
+    {
+        switch (config.command)
+        {
+        case Command::get:
+        {
+            auto svs = location_service->client_applications().get();
+            std::cout << "Client applications:" << std::endl;
+            for (const auto& sv : svs)
+                std::cout << "\t" << sv << std::endl;
+            break;
+        }
+        case Command::set:
+            std::cout << "Property client_applications is not set-able, aborting now." << std::endl;
+            location::service::Daemon::Cli::print_help(std::cout);
+            return EXIT_FAILURE;
+        default:
+        case Command::unknown: break;
+        }
+        break;
+    }
     case Property::unknown:
         std::cout << "Unknown property, aborting now." << std::endl;
         location::service::Daemon::Cli::print_help(std::cout);
@@ -485,7 +507,8 @@ std::istream& location::service::operator>>(std::istream& in, location::service:
         {"is_online", location::service::Daemon::Cli::Property::is_online},
         {"does_satellite_based_positioning", location::service::Daemon::Cli::Property::does_satellite_based_positioning},
         {"does_report_wifi_and_cell_ids", location::service::Daemon::Cli::Property::does_report_wifi_and_cell_ids},
-        {"visible_space_vehicles", location::service::Daemon::Cli::Property::visible_space_vehicles}
+        {"visible_space_vehicles", location::service::Daemon::Cli::Property::visible_space_vehicles},
+        {"client_applications", location::service::Daemon::Cli::Property::client_applications},
     };
 
     std::string value; in >> value;
@@ -516,6 +539,8 @@ std::ostream& location::service::operator<<(std::ostream& out, location::service
         out << "does_report_wifi_and_cell_ids"; break;
     case location::service::Daemon::Cli::Property::visible_space_vehicles:
         out << "visible_space_vehicles"; break;
+    case location::service::Daemon::Cli::Property::client_applications:
+        out << "client_applications"; break;
     case location::service::Daemon::Cli::Property::unknown:
         out << "unknown"; break;
     }

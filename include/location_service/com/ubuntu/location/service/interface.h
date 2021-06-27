@@ -26,6 +26,7 @@
 #include <core/dbus/service.h>
 #include <core/dbus/traits/service.h>
 #include <core/dbus/types/object_path.h>
+#include <core/dbus/types/stl/vector.h>
 
 #include <chrono>
 #include <functional>
@@ -173,6 +174,23 @@ class Interface
             static const bool readable = true;
             static const bool writable = false;
         };
+
+        struct ClientApplications
+        {
+            inline static const std::string& name()
+            {
+                static const std::string s
+                {
+                    "ClientApplications"
+                };
+                return s;
+            }
+
+            typedef com::ubuntu::location::service::Interface Interface;
+            typedef std::vector<std::string> ValueType;
+            static const bool readable = true;
+            static const bool writable = false;
+        };
     };
 
     Interface() = default;
@@ -234,6 +252,12 @@ class Interface
      * @return A session instance.
      */
     virtual session::Interface::Ptr create_session_for_criteria(const Criteria& criteria) = 0;
+
+    /**
+      * @brief List of application IDs currently requesting position
+      * information.
+      */
+    virtual core::Property<std::vector<std::string>>& client_applications() = 0;
 };
 }
 }
